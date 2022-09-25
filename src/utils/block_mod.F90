@@ -30,7 +30,7 @@ module block_mod
     type(state_type), allocatable :: state(:)
     type(static_type) static
     type(tend_type), allocatable :: tend(:)
-    type(adv_batch_type) adv_batch_mass ! For mass, potential temperature
+    type(adv_batch_type) adv_batch_pt! For potential temperature
     type(adv_batch_type) adv_batch_pv
     type(adv_batch_type), allocatable :: adv_batches(:)
     type(filter_type) big_filter
@@ -111,8 +111,8 @@ contains
     do i = 1, size(this%tend)
       call this%tend(i)%clear()
     end do
-    call this%adv_batch_mass%clear()
-    call this%adv_batch_pv  %clear()
+    call this%adv_batch_pt%clear()
+    call this%adv_batch_pv%clear()
     if (allocated(this%adv_batches)) then
       do i = 1, size(this%adv_batches)
         call this%adv_batches(i)%clear()

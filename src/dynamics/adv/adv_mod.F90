@@ -341,7 +341,7 @@ contains
     real(r8) unique_tracer_dt(100)
 
     if (.not. advection) then
-      call block%adv_batch_mass%init(block%mesh, 'cell', 'mass', dt_dyn, dynamic=.true.)
+      call block%adv_batch_pt%init(block%mesh, 'cell', 'pt', dt_dyn, dynamic=.true.)
       ! call block%adv_batch_pv  %init(block%mesh, 'vtx' , 'pv'  , dt_dyn, dynamic=.true.)
     end if
 

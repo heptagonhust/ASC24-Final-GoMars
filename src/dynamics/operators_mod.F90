@@ -223,7 +223,7 @@ contains
     we_lev(:,:,mesh%half_lev_iend) = 0.0_r8
     call fill_halo(block, we_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-    call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
+    call block%adv_batch_pt%accum_we_lev(we_lev, m_lev, dt)
 
     call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
     call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
@@ -562,7 +562,7 @@ contains
                mfy_lat => state%mfy_lat, & ! out
                mfy_lon => state%mfy_lon, & ! out
                mfx_lat => state%mfx_lat)   ! out
-    call block%adv_batch_mass%accum_uv_cell(u_lon, v_lat, dt)
+    call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
@@ -577,10 +577,7 @@ contains
         end do
       end do
     end do
-    !call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mfx_lon, mfy_lat, dt)
-    !call fill_halo(block, mfx_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-    !call fill_halo(block, mfy_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-    call block%adv_batch_mass%accum_mf_cell(mfx_lon, mfy_lat)
+    call block%adv_batch_pt%accum_mf_cell(mfx_lon, mfy_lat)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -1026,7 +1023,7 @@ contains
                dptfdlon => tend%dptfdlon, & ! out
                dptfdlat => tend%dptfdlat, & ! out
                dptfdlev => tend%dptfdlev)   ! out
-    call adv_calc_tracer_hflx_cell(block, block%adv_batch_mass, pt, ptf_lon, ptf_lat, dt)
+    call adv_calc_tracer_hflx_cell(block, block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
@@ -1088,7 +1085,7 @@ contains
     do k = mesh%full_lev_iend + 1, mesh%full_lev_iend + 2
       pt(:,:,k) = 2 * pt(:,:,k-1) - pt(:,:,k-2)
     end do
-    call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
+    call adv_calc_tracer_vflx_cell(block, block%adv_batch_pt, pt, ptf_lev, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend

@@ -31,23 +31,23 @@ module adv_batch_mod
     character(10), allocatable, dimension(:) :: tracer_names
     character(30), allocatable, dimension(:) :: tracer_long_names
     character(10), allocatable, dimension(:) :: tracer_units
-    real(r8), allocatable, dimension(:,:,:) :: old_m ! Recorded old mass for converting mixing ratio
+    real(r8), allocatable, dimension(:,:,:    ) :: old_m ! Recorded old mass for converting mixing ratio
     real(r8), allocatable, dimension(:,:,:,:,:) :: q
-    real(r8), allocatable, dimension(:,:,:) :: qmf_lon
-    real(r8), allocatable, dimension(:,:,:) :: qmf_lat
-    real(r8), allocatable, dimension(:,:,:) :: qmf_lev
-    real(r8), allocatable, dimension(:,:,:) :: mfx
-    real(r8), allocatable, dimension(:,:,:) :: mfy
-    real(r8), allocatable, dimension(:,:,:) :: m_lev
-    real(r8), allocatable, dimension(:,:,:) :: u
-    real(r8), allocatable, dimension(:,:,:) :: v
-    real(r8), allocatable, dimension(:,:,:) :: we
-    real(r8), allocatable, dimension(:,:,:) :: cflx ! CFL number along x-axis
-    real(r8), allocatable, dimension(:,:,:) :: cfly ! CFL number along y-axis
-    real(r8), allocatable, dimension(:,:,:) :: cflz ! CFL number along z-axis
-    real(r8), allocatable, dimension(:,:,:) :: divx ! Divergence along x-axis
-    real(r8), allocatable, dimension(:,:,:) :: divy ! Divergence along y-axis
-    real(r8), allocatable, dimension(:,:,:) :: qx   ! Tracer mixing ratio due to advective operator along x axis
+    real(r8), allocatable, dimension(:,:,:    ) :: qmf_lon
+    real(r8), allocatable, dimension(:,:,:    ) :: qmf_lat
+    real(r8), allocatable, dimension(:,:,:    ) :: qmf_lev
+    real(r8), allocatable, dimension(:,:,:    ) :: mfx
+    real(r8), allocatable, dimension(:,:,:    ) :: mfy
+    real(r8), allocatable, dimension(:,:,:    ) :: m
+    real(r8), allocatable, dimension(:,:,:    ) :: u
+    real(r8), allocatable, dimension(:,:,:    ) :: v
+    real(r8), allocatable, dimension(:,:,:    ) :: we
+    real(r8), allocatable, dimension(:,:,:    ) :: cflx ! CFL number along x-axis
+    real(r8), allocatable, dimension(:,:,:    ) :: cfly ! CFL number along y-axis
+    real(r8), allocatable, dimension(:,:,:    ) :: cflz ! CFL number along z-axis
+    real(r8), allocatable, dimension(:,:,:    ) :: divx ! Divergence along x-axis
+    real(r8), allocatable, dimension(:,:,:    ) :: divy ! Divergence along y-axis
+    real(r8), allocatable, dimension(:,:,:    ) :: qx   ! Tracer mixing ratio due to advective operator along x axis
     real(r8), allocatable, dimension(:,:,:) :: qy   ! Tracer mixing ratio due to advective operator along y axis
     real(r8), allocatable, dimension(:,:,:) :: qlx  ! Tracer mixing ratio at left cell edge along x axis
     real(r8), allocatable, dimension(:,:,:) :: qly  ! Tracer mixing ratio at left cell edge along y axis
@@ -93,22 +93,22 @@ contains
 
     select case (loc)
     case ('cell')
-      call allocate_array(mesh, this%old_m, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%mfx , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%mfy , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%m_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%u   , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%v   , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%we  , full_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%cflx, half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%cfly, full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%cflz, full_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%divx, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%divy, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%old_m  , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%mfx    , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%mfy    , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%m      , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%u      , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%v      , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%we     , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%cflx   , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cfly   , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cflz   , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%divx   , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%divy   , full_lon=.true., full_lat=.true., full_lev=.true.)
       select case (adv_scheme)
       case ('ffsl')
-        call allocate_array(mesh, this%qx, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qy, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qx   , full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qy   , full_lon=.true., full_lat=.true., full_lev=.true.)
         if (ffsl_flux_type == 'ppm') then
           call allocate_array(mesh, this%qlx, full_lon=.true., full_lat=.true., full_lev=.true.)
           call allocate_array(mesh, this%qly, full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -119,18 +119,16 @@ contains
         end if
       end select
     case ('vtx')
-      call allocate_array(mesh, this%mfx , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%mfy , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%u   , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%v   , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%cflx, full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%cfly, half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%divx, half_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%divy, half_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%mfx    , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%mfy    , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%u      , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%v      , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cflx   , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cfly   , half_lon=.true., full_lat=.true., full_lev=.true.)
       select case (adv_scheme)
       case ('ffsl')
-        call allocate_array(mesh, this%qx, half_lon=.true., half_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qy, half_lon=.true., half_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qx   , half_lon=.true., half_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qy   , half_lon=.true., half_lat=.true., full_lev=.true.)
         if (ffsl_flux_type == 'ppm') then
           call allocate_array(mesh, this%qlx, half_lon=.true., half_lat=.true., full_lev=.true.)
           call allocate_array(mesh, this%qly, half_lon=.true., half_lat=.true., full_lev=.true.)
@@ -171,25 +169,25 @@ contains
     if (allocated(this%qmf_lon)) deallocate(this%qmf_lon)
     if (allocated(this%qmf_lat)) deallocate(this%qmf_lat)
     if (allocated(this%qmf_lev)) deallocate(this%qmf_lev)
-    if (allocated(this%mfx )) deallocate(this%mfx )
-    if (allocated(this%mfy )) deallocate(this%mfy )
-    if (allocated(this%m_lev)) deallocate(this%m_lev)
-    if (allocated(this%u   )) deallocate(this%u   )
-    if (allocated(this%v   )) deallocate(this%v   )
-    if (allocated(this%we  )) deallocate(this%we  )
-    if (allocated(this%cflx)) deallocate(this%cflx)
-    if (allocated(this%cfly)) deallocate(this%cfly)
-    if (allocated(this%cflz)) deallocate(this%cflz)
-    if (allocated(this%divx)) deallocate(this%divx)
-    if (allocated(this%divy)) deallocate(this%divy)
-    if (allocated(this%qx  )) deallocate(this%qx  )
-    if (allocated(this%qy  )) deallocate(this%qy  )
-    if (allocated(this%qlx )) deallocate(this%qlx )
-    if (allocated(this%qly )) deallocate(this%qly )
-    if (allocated(this%dqx )) deallocate(this%dqx )
-    if (allocated(this%dqy )) deallocate(this%dqy )
-    if (allocated(this%q6x )) deallocate(this%q6x )
-    if (allocated(this%q6y )) deallocate(this%q6y )
+    if (allocated(this%mfx    )) deallocate(this%mfx    )
+    if (allocated(this%mfy    )) deallocate(this%mfy    )
+    if (allocated(this%m      )) deallocate(this%m      )
+    if (allocated(this%u      )) deallocate(this%u      )
+    if (allocated(this%v      )) deallocate(this%v      )
+    if (allocated(this%we     )) deallocate(this%we     )
+    if (allocated(this%cflx   )) deallocate(this%cflx   )
+    if (allocated(this%cfly   )) deallocate(this%cfly   )
+    if (allocated(this%cflz   )) deallocate(this%cflz   )
+    if (allocated(this%divx   )) deallocate(this%divx   )
+    if (allocated(this%divy   )) deallocate(this%divy   )
+    if (allocated(this%qx     )) deallocate(this%qx     )
+    if (allocated(this%qy     )) deallocate(this%qy     )
+    if (allocated(this%qlx    )) deallocate(this%qlx    )
+    if (allocated(this%qly    )) deallocate(this%qly    )
+    if (allocated(this%dqx    )) deallocate(this%dqx    )
+    if (allocated(this%dqy    )) deallocate(this%dqy    )
+    if (allocated(this%q6x    )) deallocate(this%q6x    )
+    if (allocated(this%q6y    )) deallocate(this%q6y    )
 
   end subroutine adv_batch_clear
 
@@ -490,15 +488,15 @@ contains
 
   end subroutine adv_batch_accum_mf_vtx
 
-  subroutine adv_batch_accum_we_lev(this, we, m_lev, dt)
+  subroutine adv_batch_accum_we_lev(this, we, m, dt)
 
     class(adv_batch_type), intent(inout) :: this
-    real(r8), intent(in) :: we   (this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
-                                  this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
-                                  this%mesh%half_lev_lb:this%mesh%half_lev_ub)
-    real(r8), intent(in) :: m_lev(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
-                                  this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
-                                  this%mesh%half_lev_lb:this%mesh%half_lev_ub)
+    real(r8), intent(in) :: we(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
+                               this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
+                               this%mesh%half_lev_lb:this%mesh%half_lev_ub)
+    real(r8), intent(in) :: m (this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
+                               this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
+                               this%mesh%half_lev_lb:this%mesh%half_lev_ub)
 
     real(8), intent(in), optional :: dt
 
@@ -510,16 +508,16 @@ contains
 
     associate (mesh => this%mesh)
     if (this%we_step == 0) then
-      this%we    = we
-      this%m_lev = m_lev
+      this%we = we
+      this%m  = m
       if (.not. this%dynamic) this%we_step = this%we_step + 1
     else if (this%we_step == this%nstep) then
-      this%we    = (this%we    + we   ) / (this%nstep + 1)
-      this%m_lev = (this%m_lev + m_lev) / (this%nstep + 1)
+      this%we = (this%we + we) / (this%nstep + 1)
+      this%m  = (this%m  + m ) / (this%nstep + 1)
       this%we_step = 0
     else
-      this%we    = this%we    + we
-      this%m_lev = this%m_lev + m_lev
+      this%we = this%we + we
+      this%m  = this%m  + m
       this%we_step = this%we_step + 1
     end if
     if (this%we_step == 0) then
@@ -528,7 +526,7 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             z0 = mesh%half_lev(k)
             ! Stage 1
-            w1 = this%we(i,j,k) / this%m_lev(i,j,k) * mesh%half_dlev(k)
+            w1 = this%we(i,j,k) / this%m(i,j,k) * mesh%half_dlev(k)
             z1 = z0 + dt_ / 2 * w1
             ! Stage 2
             if (w1 > 0) then
@@ -550,9 +548,9 @@ contains
                                                    ', k=' // to_str(k) // '!', __FILE__, __LINE__)
               end if
             end if
-            w2 = (                                                                                       &
-              (mesh%half_lev(l+1) - z1) * this%we(i,j,l  ) / this%m_lev(i,j,l  ) * mesh%half_dlev(l  ) + &
-              (z1 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m_lev(i,j,l+1) * mesh%half_dlev(l+1)   &
+            w2 = (                                                                                   &
+              (mesh%half_lev(l+1) - z1) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
+              (z1 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
             ) / mesh%full_dlev(l)
             z2 = z0 + dt_ / 2 * w2
             ! Stage 3
@@ -575,9 +573,9 @@ contains
                                                    ', k=' // to_str(k) // '!', __FILE__, __LINE__)
               end if
             end if
-            w3 = (                                                                                       &
-              (mesh%half_lev(l+1) - z2) * this%we(i,j,l  ) / this%m_lev(i,j,l  ) * mesh%half_dlev(l  ) + &
-              (z2 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m_lev(i,j,l+1) * mesh%half_dlev(l+1)   &
+            w3 = (                                                                                   &
+              (mesh%half_lev(l+1) - z2) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
+              (z2 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
             ) / mesh%full_dlev(l)
             z3 = z0 + dt_ * w3
             ! Stage 4
@@ -600,9 +598,9 @@ contains
                                                    ', k=' // to_str(k) // '!', __FILE__, __LINE__)
               end if
             end if
-            w4 = (                                                                                       &
-              (mesh%half_lev(l+1) - z3) * this%we(i,j,l  ) / this%m_lev(i,j,l  ) * mesh%half_dlev(l  ) + &
-              (z3 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m_lev(i,j,l+1) * mesh%half_dlev(l+1)   &
+            w4 = (                                                                                   &
+              (mesh%half_lev(l+1) - z3) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
+              (z3 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
             ) / mesh%full_dlev(l)
             ! Final stage
             deta = (w1 + 2 * w2 + 2 * w3 + w4) / 6 * dt_

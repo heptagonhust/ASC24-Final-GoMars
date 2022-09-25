@@ -125,7 +125,7 @@ contains
           call block%adv_batches(m)%copy_old_m(state%m)
         end do
       end if
-      call block%adv_batch_mass%copy_old_m(state%m)
+      call block%adv_batch_pt%copy_old_m(state%m)
       call adv_accum_wind(block, old)
       end associate
     end do
