@@ -62,8 +62,6 @@ contains
       interp_pv => interp_pv_upwind
     case ('tvd')
       interp_pv => interp_pv_tvd
-    case ('ffsl')
-      interp_pv => interp_pv_ffsl
     case default
       call log_error('Invalid pv_scheme ' // trim(pv_scheme) // '!', pid=proc%id)
     end select
@@ -494,6 +492,7 @@ contains
               do l = mesh%half_lev_ibeg, mesh%half_lev_iend
                 print *, l, ph_lev(i,j,l)
               end do
+              print *, 'phs(i,j) =', state%phs(i,j)
               print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
               print *, 'The pressure levels are not monotonic!'
               call process_stop(1)
@@ -828,18 +827,6 @@ contains
 
   end subroutine interp_pv_tvd
 
-  subroutine interp_pv_ffsl(block, state, dt)
-
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    real(8), intent(in) :: dt
-
-    call adv_calc_tracer_hval_vtx(block, block%adv_batch_pv, state%pv, state%pv_lat, state%pv_lon, dt)
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
-
-  end subroutine interp_pv_ffsl
-
   subroutine calc_coriolis(block, state, tend, dt)
 
     type(block_type), intent(inout) :: block
@@ -1023,7 +1010,7 @@ contains
                dptfdlon => tend%dptfdlon, & ! out
                dptfdlat => tend%dptfdlat, & ! out
                dptfdlev => tend%dptfdlev)   ! out
-    call adv_calc_tracer_hflx_cell(block, block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
+    call adv_calc_tracer_hflx(block, block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
@@ -1085,7 +1072,7 @@ contains
     do k = mesh%full_lev_iend + 1, mesh%full_lev_iend + 2
       pt(:,:,k) = 2 * pt(:,:,k-1) - pt(:,:,k-2)
     end do
-    call adv_calc_tracer_vflx_cell(block, block%adv_batch_pt, pt, ptf_lev, dt)
+    call adv_calc_tracer_vflx(block, block%adv_batch_pt, pt, ptf_lev, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend

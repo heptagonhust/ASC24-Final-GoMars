@@ -23,13 +23,11 @@ module adv_mod
   public adv_add_tracer
   public adv_allocate_tracers
   public adv_accum_wind
-  public adv_calc_mass_hflx_cell
-  public adv_calc_mass_vflx_cell
-  public adv_calc_mass_hflx_vtx
-  public adv_calc_tracer_hflx_cell
-  public adv_calc_tracer_vflx_cell
-  public adv_calc_tracer_hflx_vtx
-  public adv_calc_tracer_hval_vtx
+  public adv_calc_mass_hflx
+  public adv_calc_mass_vflx
+  public adv_calc_tracer_hflx
+  public adv_calc_tracer_vflx
+  public adv_calc_tracer_vflx_lev
   public adv_batch_type
 
   public upwind1
@@ -39,7 +37,7 @@ module adv_mod
   public tvd
 
   interface
-    subroutine calc_hflx_cell_interface(block, batch, m, mfx, mfy, dt)
+    subroutine calc_hflx_interface(block, batch, m, mfx, mfy, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -53,38 +51,8 @@ module adv_mod
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
       real(8), intent(in), optional :: dt
-    end subroutine calc_hflx_cell_interface
-    subroutine calc_hflx_vtx_interface(block, batch, m, mfx, mfy, dt)
-      import block_type, adv_batch_type, r8
-      type(block_type    ), intent(in   ) :: block
-      type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: mfx(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: mfy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(8), intent(in), optional :: dt
-    end subroutine calc_hflx_vtx_interface
-    subroutine calc_hval_vtx_interface(block, batch, m, mvx, mvy, dt)
-      import block_type, adv_batch_type, r8
-      type(block_type    ), intent(in   ) :: block
-      type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: mvx(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: mvy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(8), intent(in), optional :: dt
-    end subroutine calc_hval_vtx_interface
-    subroutine calc_vflx_cell_interface(block, batch, m, mfz, dt)
+    end subroutine calc_hflx_interface
+    subroutine calc_vflx_interface(block, batch, m, mfz, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -95,7 +63,19 @@ module adv_mod
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%half_lev_lb:block%mesh%half_lev_ub)
       real(8), intent(in), optional :: dt
-    end subroutine calc_vflx_cell_interface
+    end subroutine calc_vflx_interface
+    subroutine calc_vflx_lev_interface(block, batch, m, mfz, dt)
+      import block_type, adv_batch_type, r8
+      type(block_type    ), intent(in   ) :: block
+      type(adv_batch_type), intent(inout) :: batch
+      real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+      real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(8), intent(in), optional :: dt
+    end subroutine calc_vflx_lev_interface
   end interface
 
   interface adv_allocate_tracers
@@ -103,13 +83,11 @@ module adv_mod
     module procedure adv_allocate_tracers_2
   end interface adv_allocate_tracers
 
-  procedure(calc_hflx_cell_interface), pointer :: adv_calc_mass_hflx_cell   => null()
-  procedure(calc_vflx_cell_interface), pointer :: adv_calc_mass_vflx_cell   => null()
-  procedure(calc_hflx_vtx_interface ), pointer :: adv_calc_mass_hflx_vtx    => null()
-  procedure(calc_hflx_cell_interface), pointer :: adv_calc_tracer_hflx_cell => null()
-  procedure(calc_vflx_cell_interface), pointer :: adv_calc_tracer_vflx_cell => null()
-  procedure(calc_hflx_vtx_interface ), pointer :: adv_calc_tracer_hflx_vtx  => null()
-  procedure(calc_hval_vtx_interface ), pointer :: adv_calc_tracer_hval_vtx  => null()
+  procedure(calc_hflx_interface    ), pointer :: adv_calc_mass_hflx       => null()
+  procedure(calc_vflx_interface    ), pointer :: adv_calc_mass_vflx       => null()
+  procedure(calc_hflx_interface    ), pointer :: adv_calc_tracer_hflx     => null()
+  procedure(calc_vflx_interface    ), pointer :: adv_calc_tracer_vflx     => null()
+  procedure(calc_vflx_lev_interface), pointer :: adv_calc_tracer_vflx_lev => null()
 
   integer ntracer
   character(30), allocatable :: batch_names(:)
@@ -127,13 +105,11 @@ contains
     select case (adv_scheme)
     case ('ffsl')
       call ffsl_init()
-      adv_calc_mass_hflx_cell   => ffsl_calc_mass_hflx_cell
-      adv_calc_mass_vflx_cell   => ffsl_calc_mass_vflx_cell
-      adv_calc_mass_hflx_vtx    => ffsl_calc_mass_hflx_vtx
-      adv_calc_tracer_hflx_cell => ffsl_calc_tracer_hflx_cell
-      adv_calc_tracer_vflx_cell => ffsl_calc_tracer_vflx_cell
-      adv_calc_tracer_hflx_vtx  => ffsl_calc_tracer_hflx_vtx
-      adv_calc_tracer_hval_vtx  => ffsl_calc_tracer_hval_vtx
+      adv_calc_mass_hflx       => ffsl_calc_mass_hflx
+      adv_calc_mass_vflx       => ffsl_calc_mass_vflx
+      adv_calc_tracer_hflx     => ffsl_calc_tracer_hflx
+      adv_calc_tracer_vflx     => ffsl_calc_tracer_vflx
+      adv_calc_tracer_vflx_lev => ffsl_calc_tracer_vflx_lev
     case default
       call log_error('Invalid adv_scheme ' // trim(adv_scheme) // '!', pid=proc%id)
     end select
@@ -174,7 +150,7 @@ contains
                      qmf_lat => block%adv_batches(m)%qmf_lat, & ! working array
                      qmf_lev => block%adv_batches(m)%qmf_lev)   ! working array
           ! Calculate tracer mass flux.
-          call adv_calc_tracer_hflx_cell(block, block%adv_batches(m), q(:,:,:,l,old), qmf_lon, qmf_lat)
+          call adv_calc_tracer_hflx(block, block%adv_batches(m), q(:,:,:,l,old), qmf_lon, qmf_lat)
           call fill_halo(block, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                          south_halo=.false., north_halo=.false., east_halo=.false.)
           call fill_halo(block, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
@@ -263,7 +239,7 @@ contains
           do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
             q(:,:,k,l,new) = q(:,:,mesh%full_lev_iend,l,new)
           end do
-          call adv_calc_tracer_vflx_cell(block, block%adv_batches(m), q(:,:,:,l,new), qmf_lev)
+          call adv_calc_tracer_vflx(block, block%adv_batches(m), q(:,:,:,l,new), qmf_lev)
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -342,7 +318,6 @@ contains
 
     if (.not. advection) then
       call block%adv_batch_pt%init(block%mesh, 'cell', 'pt', dt_dyn, dynamic=.true.)
-      ! call block%adv_batch_pv  %init(block%mesh, 'vtx' , 'pv'  , dt_dyn, dynamic=.true.)
     end if
 
     nbatch = 0
@@ -441,13 +416,6 @@ contains
               block%state(itime)%we_lev           , &
               block%state(itime)%m_lev            )
           end if
-        case ('vtx')
-          call block%adv_batches(l)%accum_uv_vtx ( &
-            block%state(itime)%u_f               , &
-            block%state(itime)%v_f               )
-          call block%adv_batches(l)%accum_mf_vtx ( &
-            block%state(itime)%mfx_lat           , &
-            block%state(itime)%mfy_lon           )
         end select
       end do
     end if
