@@ -61,6 +61,10 @@ if len(args.cases) > 0:
 		else:
 			run_case('gmcore_driver.exe', case)
 else:
+	run_case('gmcore_adv_driver.exe', 'adv_sr.360x180')
+	run_case('gmcore_adv_driver.exe', 'adv_mv.360x180')
+	run_case('gmcore_adv_driver.exe', 'adv_dc4.360x180')
+	run_case('gmcore_adv_driver.exe', 'adv_dcmip12.360x180')
 	run_case('gmcore_swm_driver.exe', 'swm_rh.180x90')
 	run_case('gmcore_swm_driver.exe', 'swm_rh.360x180')
 	run_case('gmcore_swm_driver.exe', 'swm_mz.180x90')

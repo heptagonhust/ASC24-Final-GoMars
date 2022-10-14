@@ -18,6 +18,7 @@ program gmcore_driver
   use ksp15_test_mod
   use dcmip31_test_mod
   use mars_cold_run_mod
+  use tropical_cyclone_test_mod
   use prepare_mod
 
   implicit none
@@ -82,6 +83,8 @@ program gmcore_driver
       set_ic => dcmip31_test_set_ic
     case ('mars_cold_run')
       set_ic => mars_cold_run_set_ic
+    case ('tropical_cyclone')
+      set_ic => tropical_cyclone_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
     end select

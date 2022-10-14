@@ -7,6 +7,7 @@ module block_mod
   use state_mod
   use static_mod
   use tend_mod
+  use physics_types_mod
   use adv_batch_mod
   use filter_types_mod
   use halo_mod
@@ -30,6 +31,8 @@ module block_mod
     type(state_type), allocatable :: state(:)
     type(static_type) static
     type(tend_type), allocatable :: tend(:)
+    type(pstate_type) pstate
+    type(ptend_type) ptend
     type(adv_batch_type) adv_batch_pt! For potential temperature
     type(adv_batch_type) adv_batch_pv
     type(adv_batch_type), allocatable :: adv_batches(:)
@@ -95,6 +98,8 @@ contains
         call this%tend(i)%init(this%mesh)
       end do
       call this%static%init(this%mesh)
+      call this%pstate%init(this%mesh)
+      call this%ptend %init(this%mesh)
     end if
 
   end subroutine block_init_stage_2
@@ -111,6 +116,8 @@ contains
     do i = 1, size(this%tend)
       call this%tend(i)%clear()
     end do
+    call this%pstate%clear()
+    call this%ptend %clear()
     call this%adv_batch_pt%clear()
     call this%adv_batch_pv%clear()
     if (allocated(this%adv_batches)) then

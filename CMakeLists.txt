@@ -172,8 +172,11 @@ set(gmcore_files
   src/prepare/openmars_reader_mod.F90
   src/prepare/bkg_mod.F90
   src/prepare/ref_mod.F90
+  src/physics/physics_types_mod.F90
+  src/physics/dp_coupling_mod.F90
+  src/physics/physics_mod.F90
   src/physics/test_forcing_mod.F90
-  src/physics/simple_physics_v6.F90
+  src/physics/simple_physics_v6.f90
   src/tests/adv/deform_test_mod.F90
   src/tests/adv/solid_rotation_test_mod.F90
   src/tests/adv/moving_vortices_test_mod.F90
@@ -194,6 +197,7 @@ set(gmcore_files
   src/tests/ksp15_test_mod.F90
   src/tests/dcmip31_test_mod.F90
   src/tests/mars_cold_run_mod.F90
+  src/tests/tropical_cyclone_test_mod.F90
   lib/quadpack.f90
 )
 

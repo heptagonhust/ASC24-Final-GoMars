@@ -88,7 +88,7 @@ contains
             (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * 2 * u0 * cos(etav)**1.5d0 + &
             (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega          &
           )
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k))
+          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
         end do
       end do
     end do

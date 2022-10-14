@@ -27,8 +27,6 @@ module namelist_mod
   character(256)  :: bkg_file             = 'N/A'
   character(30 )  :: bkg_type             = 'era5'
 
-  logical         :: restart              = .false.
-
   integer         :: num_lon
   integer         :: num_lat
   integer         :: num_lev              = 1
@@ -37,11 +35,13 @@ module namelist_mod
   logical         :: hydrostatic          = .true.
   logical         :: nonhydrostatic       = .false.
   logical         :: advection            = .false.
+  logical         :: restart              = .false.
+
+  character(30)   :: physics_suite        = 'none'
 
   integer         :: num_proc_lon(20)     = 0
   integer         :: num_proc_lat(20)     = 0
   integer         :: lon_halo_width       = 2
-
 
   character(30)   :: tangent_wgt_scheme   = 'classic'
 
@@ -191,6 +191,7 @@ module namelist_mod
     filter_coef_e             , &
     coarse_pole_mul           , &
     coarse_pole_decay         , &
+    physics_suite             , &
     use_topo_smooth           , &
     topo_smooth_cycles        , &
     use_div_damp              , &
@@ -258,6 +259,7 @@ contains
       write(*, *) 'coarse_pole_mul     = ', to_str(coarse_pole_mul, 3)
       write(*, *) 'coarse_pole_decay   = ', to_str(coarse_pole_decay, 3)
     end if
+      write(*, *) 'physics_suite       = ', trim(physics_suite)
       write(*, *) 'hydrostatic         = ', to_str(hydrostatic)
       write(*, *) 'nonhydrostatic      = ', to_str(nonhydrostatic)
       write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)

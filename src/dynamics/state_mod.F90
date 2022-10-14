@@ -4,6 +4,8 @@ module state_mod
   use namelist_mod
   use mesh_mod
   use allocator_mod
+  ! FIXME: Change block arg to halo in parallel_mod to break the cyclic dependencies.
+  ! use parallel_mod
 
   implicit none
 
@@ -19,12 +21,14 @@ module state_mod
     ! For nesting
     integer :: id = 0
     type(state_type), pointer :: parent => null()
-    real(r8), allocatable, dimension(:,:,:) :: u_lon             ! Zonal wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:,:) :: v_lon
-    real(r8), allocatable, dimension(:,:,:) :: u_lat
-    real(r8), allocatable, dimension(:,:,:) :: v_lat             ! Meridional wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:,:) :: u_f               ! Zonal wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:,:) :: v_f               ! Meridional wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u                 ! Zonal wind speed at cell center (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: v                 ! Meridional wind speed at cell center (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u_lon             ! Zonal wind speed at lon edge (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: v_lon             ! Meridional wind speed at lon edge (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u_lat             ! Zonal wind speed at lat edge (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: v_lat             ! Meridional wind speed at lat edge (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u_f               ! Filtered zonal wind speed at lon edge (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: v_f               ! Filtered meridional wind speed at lat edge (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: we_lev            ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
     real(r8), allocatable, dimension(:,:,:) :: we_lev_lon        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: we_lev_lat        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
@@ -66,8 +70,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lon        ! Geopotential
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lat        ! Geopotential
     real(r8), allocatable, dimension(:,:,:) :: rhod              ! Dry air density
-    real(r8), allocatable, dimension(:,:,:) :: rhod_lon          ! Dry air density
-    real(r8), allocatable, dimension(:,:,:) :: rhod_lat          ! Dry air density
     real(r8), pointer    , dimension(:,:,:) :: p                 ! Pressure on full levels
     real(r8), pointer    , dimension(:,:,:) :: p_lev             ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev_lon         ! Pressure on half levels
@@ -77,6 +79,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lon_n      ! Mass flux on zonal edge and half level
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lat_n      ! Mass flux on merdional edge and half level
     ! Moist variables
+    real(r8), pointer    , dimension(:,:,:) :: qv                ! Water vapor mixing ratio (1)
     real(r8), allocatable, dimension(:,:,:) :: qm                ! Total water mixing ratio (1)
     ! Smagorinsky damping variables
     real(r8), allocatable, dimension(:,:,:) :: smag_t            ! tension strain
@@ -93,6 +96,8 @@ module state_mod
     procedure :: init => state_init
     procedure :: clear => state_clear
     final :: state_final
+    procedure :: c2a => state_c2a
+    procedure :: a2c => state_a2c
     generic :: operator(+) => add
     generic :: operator(*) => multiply
     generic :: operator(/) => divide
@@ -111,6 +116,8 @@ contains
 
     this%mesh => mesh
 
+    call allocate_array(mesh, this%u                , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%v                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_f              , half_lon=.true., full_lat=.true., full_lev=.true.)
@@ -163,8 +170,6 @@ contains
       call allocate_array(mesh, this%gz_lev_lon     , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%gz_lev_lat     , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%rhod           , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%rhod_lon       , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%rhod_lat       , full_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%p              , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%p_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%p_lev_lon      , half_lon=.true., full_lat=.true., half_lev=.true.)
@@ -196,6 +201,8 @@ contains
 
     class(state_type), intent(inout) :: this
 
+    if (allocated(this%u                )) deallocate(this%u                )
+    if (allocated(this%v                )) deallocate(this%v                )
     if (allocated(this%u_lon            )) deallocate(this%u_lon            )
     if (allocated(this%v_lon            )) deallocate(this%v_lon            )
     if (allocated(this%u_lat            )) deallocate(this%u_lat            )
@@ -243,8 +250,6 @@ contains
     if (allocated(this%gz_lev_lon       )) deallocate(this%gz_lev_lon       )
     if (allocated(this%gz_lev_lat       )) deallocate(this%gz_lev_lat       )
     if (allocated(this%rhod             )) deallocate(this%rhod             )
-    if (allocated(this%rhod_lon         )) deallocate(this%rhod_lon         )
-    if (allocated(this%rhod_lat         )) deallocate(this%rhod_lat         )
     if (allocated(this%p_lev_lon        )) deallocate(this%p_lev_lon        )
     if (allocated(this%p_lev_lat        )) deallocate(this%p_lev_lat        )
     if (allocated(this%u_lev_lon        )) deallocate(this%u_lev_lon        )
@@ -274,6 +279,44 @@ contains
     call this%clear()
 
   end subroutine state_final
+
+  subroutine state_a2c(this)
+
+    class(state_type), intent(inout) :: this
+
+    integer i, j, k
+
+    do k = this%mesh%full_lev_ibeg, this%mesh%full_lev_iend
+      do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
+        do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
+          this%u_lon(i,j,k) = 0.5_r8 * (this%u(i,j,k) + this%u(i+1,j,k))
+        end do
+      end do
+      do j = this%mesh%half_lat_ibeg, this%mesh%half_lat_iend
+        do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
+          this%v_lat(i,j,k) = 0.5_r8 * (this%v(i,j,k) + this%v(i,j+1,k))
+        end do
+      end do
+    end do
+
+  end subroutine state_a2c
+
+  subroutine state_c2a(this)
+
+    class(state_type), intent(inout) :: this
+
+    integer i, j, k
+
+    do k = this%mesh%full_lev_ibeg, this%mesh%full_lev_iend
+      do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
+        do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
+          this%u(i,j,k) = 0.5_r8 * (this%u_lon(i,j,k) + this%u_lon(i-1,j,k))
+          this%v(i,j,k) = 0.5_r8 * (this%v_lat(i,j,k) + this%v_lat(i,j-1,k))
+        end do
+      end do
+    end do
+
+  end subroutine state_c2a
 
   function add(x, y) result(res)
 

@@ -213,15 +213,16 @@ contains
       ! ----------------------------------------------------------------------
       if (baroclinic) then
         call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_lon_edge(block%small_filter2, new_state%u_lon)
+        call filter_on_lon_edge(block%small_filter1, new_state%u_lon)
         call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
         call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_lat_edge(block%small_filter2, new_state%v_lat)
+        call filter_on_lat_edge(block%small_filter1, new_state%v_lat)
         call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       end if
       ! ----------------------------------------------------------------------
       call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      ! FIXME: Check if we still need this:
       wgt = 0.6_r8
       if (mesh%has_south_pole()) then
         j = mesh%half_lat_ibeg
@@ -232,6 +233,7 @@ contains
         new_state%v_lat(:,j,:) = (1 - wgt) * new_state%v_lat(:,j,:) + wgt * new_state%v_lat(:,j-1,:)
       end if
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false.)
+      ! FIXME: Should we put filter in operators_prepare?
       call filter_on_lon_edge(block%big_filter, new_state%u_lon, new_state%u_f)
       call filter_on_lat_edge(block%big_filter, new_state%v_lat, new_state%v_f)
       call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)

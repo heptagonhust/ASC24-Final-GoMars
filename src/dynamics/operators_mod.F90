@@ -33,7 +33,6 @@ module operators_mod
   public calc_wedudlev_wedvdlev
   public nh_prepare
   public nh_solve
-  public interp_gz
 
   interface operators_prepare
     module procedure operators_prepare_1
@@ -77,9 +76,9 @@ contains
     integer iblk
 
     do iblk = 1, size(blocks)
-      if (baroclinic) call calc_ph        (blocks(iblk), blocks(iblk)%state(itime))
+      if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%state(itime))
       call calc_m                         (blocks(iblk), blocks(iblk)%state(itime))
-      if (baroclinic) call calc_t         (blocks(iblk), blocks(iblk)%state(itime))
+      if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf                        (blocks(iblk), blocks(iblk)%state(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pv                        (blocks(iblk), blocks(iblk)%state(itime))
@@ -101,9 +100,9 @@ contains
     select case (pass)
     ! --------------------------------------------------------------------------
     case (all_pass)
-      if (baroclinic) call calc_ph        (block, state)
+      if (baroclinic ) call calc_ph       (block, state)
       call calc_m                         (block, state)
-      if (baroclinic) call calc_t         (block, state)
+      if (baroclinic ) call calc_t        (block, state)
       call calc_mf                        (block, state, dt)
       call calc_ke                        (block, state)
       call calc_div                       (block, state)
@@ -175,11 +174,12 @@ contains
     associate (mesh => block%mesh, &
                pt   => state%pt  , & ! in
                ph   => state%ph  , & ! in
+               qv   => state%qv  , & ! in
                t    => state%t   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k))
+          t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k), qv(i,j,k))
         end do
       end do
     end do

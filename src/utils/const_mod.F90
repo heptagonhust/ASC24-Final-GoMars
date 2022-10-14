@@ -25,6 +25,7 @@ module const_mod
   real(r8)            :: cpd        ! J kg-1 K-1
   real(r8)            :: cvd        ! J kg-1 K-1
   real(r8)            :: Rd_o_Rv
+  real(r8)            :: Rv_o_Rd
   real(r8)            :: Rd_o_cpd
   real(r8)            :: Rd_o_g
   real(r8)            :: cpd_o_cvd
@@ -63,6 +64,7 @@ contains
       cvd        = 717.0d0
       lapse_rate = 0.006d0
       Rd_o_Rv    = Rd / Rv
+      Rv_o_Rd    = Rv / Rd
       p0         = 1.0d5
     case ('mars')
       omega      = 2 * pi / 88642.663d0

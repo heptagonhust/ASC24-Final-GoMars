@@ -22,6 +22,7 @@ module gmcore_mod
   use damp_mod
   use diag_state_mod
   use test_forcing_mod
+  use physics_mod
   use filter_mod
 
   implicit none
@@ -98,6 +99,7 @@ contains
 
     integer m, iblk, itime
 
+    if (baroclinic) call moist_link_state(blocks)
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &
                  mesh  => blocks(iblk)%mesh, &
@@ -579,14 +581,22 @@ contains
     real(8), intent(in) :: dt
     type(block_type), intent(inout) :: blocks(:)
 
-    integer iblk
+    integer iblk, i, j, k
 
     do iblk = 1, size(blocks)
       call time_integrator(operators, blocks(iblk), old, new, dt)
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%static, blocks(iblk)%state(new))
       call damp_run(blocks(iblk), blocks(iblk)%state(new), blocks(iblk)%tend(new), dt)
       call adv_run(blocks(iblk), new)
+      ! Convert C-grid wind to A-grid wind for physics and output.
+      call blocks(iblk)%state(new)%c2a()
     end do
+    if (baroclinic) then
+      call moist_link_state(blocks)
+      do iblk = 1, size(blocks)
+        call physics_run_after_dynamics(blocks(iblk), new, dt)
+      end do
+    end if
 
   end subroutine time_integrate
 

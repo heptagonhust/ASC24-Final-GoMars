@@ -216,12 +216,14 @@ contains
     if (is_root_proc()) call log_notice('Regrid temperature and calculate potential temperature.')
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)             , &
-                 mesh  => blocks(iblk)%mesh        , &
-                 phs   => blocks(iblk)%state(1)%phs, &
-                 ph    => blocks(iblk)%state(1)%ph , &
-                 t     => blocks(iblk)%state(1)%t  , &
-                 pt    => blocks(iblk)%state(1)%pt)
+      associate (block => blocks(iblk)                   , &
+                 mesh  => blocks(iblk)%mesh              , &
+                 phs   => blocks(iblk)%state(1)%phs      , & ! in
+                 ph    => blocks(iblk)%state(1)%ph       , & ! in
+                 old   => blocks(iblk)%adv_batches(1)%old, & ! in
+                 q     => blocks(iblk)%adv_batches(1)%q  , & ! in
+                 t     => blocks(iblk)%state(1)%t        , & ! out
+                 pt    => blocks(iblk)%state(1)%pt       )   ! out
         select case (bkg_type)
         case ('era5')
           allocate(t1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
@@ -231,7 +233,7 @@ contains
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               call vert_interp_log_linear(era5_lev, t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
+              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,1,old))
             end do
           end do
           deallocate(t1)
@@ -244,7 +246,7 @@ contains
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               call vert_interp_log_linear(fnl_lev, t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
+              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,1,old))
             end do
           end do
           deallocate(t1)
@@ -272,7 +274,7 @@ contains
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
+              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
             end do
           end do
           deallocate(t1, p1)
@@ -286,7 +288,7 @@ contains
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
+              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
             end do
           end do
           deallocate(t1, p1)

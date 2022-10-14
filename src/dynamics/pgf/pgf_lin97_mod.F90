@@ -23,7 +23,7 @@ contains
     type(state_type), intent(in) :: state
     type(tend_type), intent(inout) :: tend
 
-    real(r8) dph1, dph2, dgz1, dgz2, dpp1, dpp2, dp1, dp2
+    real(r8) dph1, dph2, dgz1, dgz2, dpp1, dpp2, dp1, dp2, L
     integer i, j, k
 
     !                    o
@@ -44,6 +44,7 @@ contains
     !          |/
     !          o
     associate (mesh       => block%mesh      , & ! in
+               qm         => state%qm        , & ! in
                ph_exn_lev => state%ph_exn_lev, & ! in
                ph_lev     => state%ph_lev    , & ! in
                gz_lev     => state%gz_lev    , & ! in
@@ -67,11 +68,12 @@ contains
         !
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i+1,j,k))
             dph1 = ph_exn_lev(i+1,j,k+1) - ph_exn_lev(i  ,j,k  ) ! 2 - 4
             dph2 = ph_exn_lev(i  ,j,k+1) - ph_exn_lev(i+1,j,k  ) ! 1 - 3
             dgz1 = gz_lev    (i  ,j,k+1) - gz_lev    (i+1,j,k  ) ! 1 - 3
             dgz2 = gz_lev    (i  ,j,k  ) - gz_lev    (i+1,j,k+1) ! 4 - 2
-            pgf_lon(i,j,k) = -(dph1 * dgz1 + dph2 * dgz2) / mesh%de_lon(j) / (dph1 + dph2)
+            pgf_lon(i,j,k) = -(dph1 * dgz1 + dph2 * dgz2) / mesh%de_lon(j) / (dph1 + dph2) / L
           end do
         end do
         !
@@ -89,11 +91,12 @@ contains
         !
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i,j+1,k))
             dph1 = ph_exn_lev(i,j+1,k+1) - ph_exn_lev(i,j  ,k  ) ! 2 - 4
             dph2 = ph_exn_lev(i,j  ,k+1) - ph_exn_lev(i,j+1,k  ) ! 1 - 3
             dgz1 = gz_lev    (i,j  ,k+1) - gz_lev    (i,j+1,k  ) ! 1 - 3
             dgz2 = gz_lev    (i,j  ,k  ) - gz_lev    (i,j+1,k+1) ! 4 - 2
-            pgf_lat(i,j,k) = -(dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2)
+            pgf_lat(i,j,k) = -(dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2) / L
           end do
         end do
       end do

@@ -97,7 +97,7 @@ contains
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           t (i,j,k) = 288.d0
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k))
+          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
         end do
       end do
     end do

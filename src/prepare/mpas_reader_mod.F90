@@ -64,7 +64,7 @@ contains
     call fiona_input('mpas', 'ter', mpas_zs  )
     call fiona_end_input('mpas')
 
-    mpas_t = temperature(mpas_pt, mpas_p)
+    mpas_t = temperature(mpas_pt, mpas_p, 0.0_r8)
 
     deallocate(tmp)
 

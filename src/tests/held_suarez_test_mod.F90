@@ -53,7 +53,7 @@ contains
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           call random_number(random)
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k)) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
+          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
         end do
       end do
     end do

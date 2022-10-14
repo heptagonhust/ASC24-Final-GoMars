@@ -3,12 +3,14 @@ module moist_mod
   use namelist_mod
   use block_mod
   use adv_mod
+  use parallel_mod
 
   implicit none
 
   private
 
   public moist_init
+  public moist_link_state
   public calc_qm
 
 contains
@@ -25,6 +27,28 @@ contains
 
   end subroutine moist_init
 
+  subroutine moist_link_state(blocks)
+
+    type(block_type), intent(inout), target :: blocks(:)
+
+    integer iblk, itime
+
+    do iblk = 1, size(blocks)
+      associate (block     => blocks(iblk), &
+                 mesh      => blocks(iblk)%mesh, &
+                 adv_batch => blocks(iblk)%adv_batches(1))
+      do itime = 1, size(block%state)
+        block%state(itime)%qv(               &
+          mesh%full_lon_lb:mesh%full_lon_ub, &
+          mesh%full_lat_lb:mesh%full_lat_ub, &
+          mesh%full_lev_lb:mesh%full_lev_ub) => adv_batch%q(:,:,:,1,adv_batch%old)
+        call calc_qm(block, itime)
+      end do
+      end associate
+    end do
+
+  end subroutine moist_link_state
+
   subroutine calc_qm(block, itime)
 
     type(block_type), intent(inout), target :: block
@@ -34,8 +58,8 @@ contains
     integer i, j, k
 
     associate (mesh => block%mesh,            &
+               qv   => block%state(itime)%qv, & ! in
                qm   => block%state(itime)%qm)   ! out
-    qv => block%adv_batches(1)%q(:,:,:,1,block%adv_batches(1)%old)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -43,6 +67,7 @@ contains
         end do
       end do
     end do
+    call fill_halo(block, qm, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
     end associate
 
   end subroutine calc_qm

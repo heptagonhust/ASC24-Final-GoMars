@@ -18,6 +18,11 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
     real(r8), allocatable, dimension(:,:  ) :: dphs
+    ! Tendencies from physics
+    real(r8), allocatable, dimension(:,:,:) :: dudt_phys
+    real(r8), allocatable, dimension(:,:,:) :: dvdt_phys
+    real(r8), allocatable, dimension(:,:,:) :: dtdt_phys
+    real(r8), allocatable, dimension(:,:,:) :: dshdt_phys
     logical :: update_u   = .false.
     logical :: update_v   = .false.
     logical :: update_gz  = .false.
@@ -104,6 +109,11 @@ contains
     call allocate_array(mesh, this%adv_w_lat , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%adv_w_lev , full_lon=.true., full_lat=.true., half_lev=.true.)
 
+    call allocate_array(mesh, this%dudt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dvdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dtdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dshdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+
   end subroutine tend_init
 
   subroutine tend_reset_flags(this)
@@ -154,6 +164,11 @@ contains
     if (allocated(this%adv_w_lon )) deallocate(this%adv_w_lon )
     if (allocated(this%adv_w_lat )) deallocate(this%adv_w_lat )
     if (allocated(this%adv_w_lev )) deallocate(this%adv_w_lev )
+
+    if (allocated(this%dudt_phys )) deallocate(this%dudt_phys )
+    if (allocated(this%dvdt_phys )) deallocate(this%dvdt_phys )
+    if (allocated(this%dtdt_phys )) deallocate(this%dtdt_phys )
+    if (allocated(this%dshdt_phys)) deallocate(this%dshdt_phys)
 
   end subroutine tend_clear
 
