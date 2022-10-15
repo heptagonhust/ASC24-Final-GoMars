@@ -338,6 +338,13 @@ contains
       call fiona_add_var('h1', 'kmh_lat'    , long_name='Smagorinsky diffusion coefficient for v'       , units='', dim_names= lat_dims_3d)
     end if
 
+    if (physics_suite /= 'none') then
+      call fiona_add_var('h1', 'dudt_phys'  , long_name='physics tendency for u'                        , units='', dim_names=cell_dims_3d)
+      call fiona_add_var('h1', 'dvdt_phys'  , long_name='physics tendency for v'                        , units='', dim_names=cell_dims_3d)
+      call fiona_add_var('h1', 'dtdt_phys'  , long_name='physics tendency for t'                        , units='', dim_names=cell_dims_3d)
+      call fiona_add_var('h1', 'dshdt_phys' , long_name='physics tendency for sh'                       , units='', dim_names=cell_dims_3d)
+    end if
+
   end subroutine history_setup_h1_hydrostatic
 
   subroutine history_setup_h1_nonhydrostatic
@@ -804,6 +811,18 @@ contains
     start = [is,js,ks]
     count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
     call fiona_output('h1', 'we_lev', state%we_lev(is:ie,js:je,ks:ke), start=start, count=count)
+
+    if (physics_suite /= 'none') then
+      is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+      js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+      ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+      start = [is,js,ks]
+      count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
+      call fiona_output('h1', 'dudt_phys' , tend%dudt_phys (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'dvdt_phys' , tend%dvdt_phys (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'dtdt_phys' , tend%dtdt_phys (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'dshdt_phys', tend%dshdt_phys(is:ie,js:je,ks:ke), start=start, count=count)
+    end if
     end associate
     
     call fiona_end_output('h1')
