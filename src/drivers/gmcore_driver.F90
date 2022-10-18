@@ -45,10 +45,14 @@ program gmcore_driver
     select case (test_case)
     case ('pgf_test')
       call steady_state_pgf_test_set_params()
+    case ('mountain_wave')
+      init_diag_state => mountain_wave_test_set_diag
     case ('ksp15_01', 'ksp15_02')
       call ksp15_test_set_params()
     case ('dcmip31')
       call dcmip31_test_set_params()
+    case ('tropical_cyclone')
+      init_diag_state => tropical_cyclone_test_set_diag
     end select
   end if
 

@@ -43,6 +43,7 @@ MODULE tropical_cyclone_test_mod
 
   private
 
+  public tropical_cyclone_test_set_diag
   public tropical_cyclone_test_set_ic
 
 !=======================================================================
@@ -92,6 +93,22 @@ MODULE tropical_cyclone_test_mod
        ptrop = p00*(Ttrop/T0)**(1.d0/exponent)      ! Tropopause pressure
 
 CONTAINS 
+
+  subroutine tropical_cyclone_test_set_diag(blocks)
+
+    use const_mod, only: r8
+    use diag_state_mod
+    use block_mod, only: block_type
+
+    type(block_type), intent(in) :: blocks(:)
+
+    integer iblk
+
+    do iblk = 1, size(blocks)
+      call diag_state(iblk)%init_height_levels(blocks(iblk), [100.0_r8], instance)
+    end do
+
+  end subroutine tropical_cyclone_test_set_diag
 
   subroutine tropical_cyclone_test_set_ic(block)
 

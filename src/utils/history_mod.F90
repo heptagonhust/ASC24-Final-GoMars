@@ -227,6 +227,30 @@ contains
     call fiona_add_var('h0', 'landmask', long_name='land mask'                  , units=''      , dim_names=['lon', 'lat'])
     call fiona_add_var('h0', 'qv'     , long_name='water vapor mixing ratio'    , units='g g-1' , dim_names=cell_dims_3d  , dtype='r8')
 
+    select case (diag_state(1)%level_type)
+    case (height_levels)
+      do k = 1, size(diag_state(1)%levels)
+        call fiona_add_var('h0', 'u' // to_str(int(diag_state(1)%levels(k))) // 'm', &
+          long_name='zonal wind speed on ' // to_str(int(diag_state(1)%levels(k))) // 'm', &
+          units='m s-1', dim_names=cell_dims_2d)
+        call fiona_add_var('h0', 'v' // to_str(int(diag_state(1)%levels(k))) // 'm', &
+          long_name='meridional wind speed on ' // to_str(int(diag_state(1)%levels(k))) // 'm', &
+          units='m s-1', dim_names=cell_dims_2d)
+      end do
+    case (pressure_levels)
+      do k = 1, size(diag_state(1)%levels)
+        call fiona_add_var('h0', 'u' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
+          long_name='zonal wind speed on ' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
+          units='m s-1', dim_names=cell_dims_2d)
+        call fiona_add_var('h0', 'v' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
+          long_name='meridional wind speed on ' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
+          units='m s-1', dim_names=cell_dims_2d)
+        call fiona_add_var('h0', 't' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
+          long_name='temperature on ' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
+          units='K', dim_names=cell_dims_2d)
+      end do
+    end select
+
   end subroutine history_setup_h0_hydrostatic
 
   subroutine history_setup_h0_nonhydrostatic()
@@ -557,6 +581,30 @@ contains
       call fiona_output('h0', 'te_ke', state%te_ke)
       call fiona_output('h0', 'te_ie', state%te_ie)
       call fiona_output('h0', 'te_pe', state%te_pe)
+
+      is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+      js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+      ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+      start = [is,js,ks]
+      count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
+      select case (diag_state(1)%level_type)
+      case (height_levels)
+        do k = 1, size(diag_state(iblk)%levels)
+          call fiona_output('h0', 'u' // to_str(int(diag_state(iblk)%levels(k))) // 'm', &
+            diag_state(iblk)%u(is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'v' // to_str(int(diag_state(iblk)%levels(k))) // 'm', &
+            diag_state(iblk)%v(is:ie,js:je,ks:ke), start=start, count=count)
+        end do
+      case (pressure_levels)
+        do k = 1, size(diag_state(iblk)%levels)
+          call fiona_output('h0', 'u' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
+            diag_state(iblk)%u(is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'v' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
+            diag_state(iblk)%v(is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 't' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
+            diag_state(iblk)%t(is:ie,js:je,ks:ke), start=start, count=count)
+        end do
+      end select
       end associate
     end do
 
