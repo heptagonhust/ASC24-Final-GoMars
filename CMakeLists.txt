@@ -177,6 +177,8 @@ set(gmcore_files
   src/physics/physics_mod.F90
   src/physics/test_forcing_mod.F90
   src/physics/simple_physics_v6.f90
+  src/physics/pbl/pbl_ysu_mod.F90
+  src/physics/pbl/pbl_driver_mod.F90
   src/tests/adv/deform_test_mod.F90
   src/tests/adv/solid_rotation_test_mod.F90
   src/tests/adv/moving_vortices_test_mod.F90

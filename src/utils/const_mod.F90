@@ -16,6 +16,7 @@ module const_mod
   real(r8), parameter :: rad    = pi / 180.0_r8
   real(r8), parameter :: eps    = epsilon(1.0_r8)
   real(r8), parameter :: inf    = huge(1.0_r8)
+  real(r8), parameter :: karman = 0.4_r8             ! Karman constant
 
   real(r8)            :: omega      ! s-1
   real(r8)            :: radius     ! m
@@ -24,6 +25,7 @@ module const_mod
   real(r8)            :: Rv         ! J kg-1 K-1
   real(r8)            :: cpd        ! J kg-1 K-1
   real(r8)            :: cvd        ! J kg-1 K-1
+  real(r8)            :: Lv         !
   real(r8)            :: Rd_o_Rv
   real(r8)            :: Rv_o_Rd
   real(r8)            :: Rd_o_cpd

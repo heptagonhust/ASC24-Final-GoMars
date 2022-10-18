@@ -562,6 +562,7 @@ contains
                mfy_lon => state%mfy_lon, & ! out
                mfx_lat => state%mfx_lat)   ! out
     call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
+    ! call adv_calc_mass_hflx(block, block%adv_batch_pt, m, mfx_lon, mfy_lat, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend

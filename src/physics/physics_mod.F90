@@ -8,6 +8,7 @@ module physics_mod
   use dp_coupling_mod
   use parallel_mod
   use formula_mod
+  use pbl_driver_mod
 
   implicit none
 

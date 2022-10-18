@@ -43,7 +43,6 @@ contains
   subroutine history_init()
 
     character(10) time_value, time_units
-    character(4) diag_dims(4)
     real(8) seconds, months
 
     if (history_interval(1) == 'N/A') call log_error('Parameter history_interval is not set!')
@@ -193,7 +192,7 @@ contains
 
   subroutine history_setup_h0_hydrostatic()
 
-    integer i, j
+    integer k
 
     call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
     ! Dimensions
@@ -511,7 +510,7 @@ contains
     type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime 
 
-    integer iblk, is, ie, js, je, ks, ke, i, j
+    integer iblk, is, ie, js, je, ks, ke, k
     integer start(3), count(3)
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))

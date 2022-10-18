@@ -46,10 +46,13 @@ contains
           pstate%pt   (icol,k) = pt    (i,j,k)
           pstate%t    (icol,k) = temperature(pt(i,j,k), p(i,j,k), qv(i,j,k))
           pstate%sh   (icol,k) = specific_humidity(qv(i,j,k))
+          pstate%qv   (icol,k) = qv    (i,j,k)
           pstate%p    (icol,k) = p     (i,j,k)
+          pstate%p_exn(icol,k) = (p(i,j,k) / p0)**Rd_o_cpd
           pstate%dp   (icol,k) = dp    (i,j,k)
-          pstate%rdp  (icol,k) = 1.0_r8 / dp(i,j,k)
           pstate%z    (icol,k) = gz    (i,j,k) / g
+          pstate%rdp  (icol,k) = 1.0_r8 / dp(i,j,k)
+          pstate%dz   (icol,k) = (gz_lev(i,j,k+1) - gz_lev(i,j,k)) / g
           pstate%rho  (icol,k) = moist_air_density(t(i,j,k), p(i,j,k), qv(i,j,k))
         end do
       end do
