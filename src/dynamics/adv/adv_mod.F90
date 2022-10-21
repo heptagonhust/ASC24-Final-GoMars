@@ -139,7 +139,11 @@ contains
     if (.not. allocated(block%adv_batches)) return
 
     do m = 1, size(block%adv_batches)
-      if (time_is_alerted(block%adv_batches(m)%name) .and. time_step > 0) then
+      if (time_is_alerted(block%adv_batches(m)%name)) then
+        if (block%adv_batches(m)%uv_step /= 1) then
+          call log_error('Internal error: block%adv_batches(m)%uv_step is ' // &
+            to_str(block%adv_batches(m)%uv_step) // ', it should be 1!')
+        end if
         do l = 1, size(block%adv_batches(m)%tracer_names)
           associate (mesh    => block%mesh                  , &
                      old     => block%adv_batches(m)%old    , &
@@ -270,10 +274,6 @@ contains
                 end if
               end do
             end do
-          end do
-          call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-          do i = 1, 3
-            call lon_damp_on_cell(block, 2, q(:,:,:,l,new))
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
           end associate

@@ -66,6 +66,7 @@ contains
     call pgf_init()
     call interp_init()
     call operators_init()
+    call physics_init()
     call damp_init(blocks)
     if (baroclinic) call moist_init()
     call adv_allocate_tracers(blocks)
@@ -99,7 +100,6 @@ contains
 
     integer m, iblk, itime
 
-    if (baroclinic) call moist_link_state(blocks)
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &
                  mesh  => blocks(iblk)%mesh, &
@@ -129,6 +129,7 @@ contains
       end if
       call block%adv_batch_pt%copy_old_m(state%m)
       call adv_accum_wind(block, old)
+      if (baroclinic) call moist_link_state(block)
       end associate
     end do
 
@@ -140,7 +141,6 @@ contains
     do while (.not. time_is_finished())
       call time_integrate(dt_dyn, blocks)
       if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call time_advance(dt_dyn)
       call diagnose(blocks, old)
       call output(old)
     end do
@@ -196,7 +196,7 @@ contains
     real(8), save :: time1 = 0, time2
     integer i, j, k, iblk
 
-    if (time_is_alerted('history_write')) then
+    if (time_step == 0 .or. time_is_alerted('history_write')) then
       if (time_step == 0) call cpu_time(time1)
       call cpu_time(time2)
       if (time_step /= 0) then
@@ -587,14 +587,19 @@ contains
       call time_integrator(operators, blocks(iblk), old, new, dt)
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%static, blocks(iblk)%state(new))
       call damp_run(blocks(iblk), blocks(iblk)%state(new), blocks(iblk)%tend(new), dt)
-      call adv_run(blocks(iblk), new)
       ! Convert C-grid wind to A-grid wind for physics and output.
       call blocks(iblk)%state(new)%c2a()
     end do
+    ! Advance to n+1 time level.
+    ! NOTE: Time indices are swapped, e.g. new => old.
+    call time_advance(dt_dyn)
+    do iblk = 1, size(blocks)
+      call adv_run(blocks(iblk), old)
+    end do
     if (baroclinic) then
-      call moist_link_state(blocks)
       do iblk = 1, size(blocks)
-        call physics_run_after_dynamics(blocks(iblk), new, dt)
+        call moist_link_state(blocks(iblk))
+        call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
       end do
     end if
 

@@ -131,7 +131,7 @@ contains
     real(8), save :: time1 = 0, time2
     integer i, j, k, iblk
 
-    if (time_is_alerted('history_write')) then
+    if (time_step == 0 .or. time_is_alerted('history_write')) then
       if (time_step == 0) call cpu_time(time1)
       call cpu_time(time2)
       if (time_step /= 0) then

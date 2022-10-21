@@ -667,7 +667,7 @@ contains
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfz(i,j,k) = -m(i,j,k) * (sum(m(i,j,k+1:k-ci)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+            mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k+1:k-ci)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
           else
             mfz(i,j,k) = (m(i,j,k) + m(i,j,k+1)) * 0.5_r8
           end if

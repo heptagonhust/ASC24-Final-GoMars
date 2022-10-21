@@ -2,6 +2,7 @@ module physics_mod
 
   use const_mod
   use namelist_mod
+  use time_mod
   use block_mod
   use physics_types_mod
   use moist_mod
@@ -23,6 +24,8 @@ contains
 
   subroutine physics_init()
 
+    call time_add_alert('phys', seconds=dt_phys)
+
   end subroutine physics_init
 
   subroutine physics_run_before_dynamics(block, itime, dt)
@@ -40,6 +43,8 @@ contains
     real(8), intent(in) :: dt
 
     integer i, j, k
+
+    if (.not. time_is_alerted('phys')) return
 
     associate (mesh   => block%mesh        , &
                pstate => block%pstate      , &

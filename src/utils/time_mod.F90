@@ -250,7 +250,7 @@ contains
     end if
 
     call alert%period%init(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
-    alert%last_time = start_time - alert%period
+    alert%last_time = start_time
     call alerts%insert(trim(name), alert)
 
   end subroutine time_add_alert

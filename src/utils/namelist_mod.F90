@@ -10,8 +10,8 @@ module namelist_mod
   character(30)   :: planet               = 'earth'
 
   real(8)         :: dt_dyn               = 0
-  real(8)         :: dt_phys              = 0
   real(8)         :: dt_adv               = 0
+  real(8)         :: dt_phys              = 0
 
   character(256)  :: case_desc            = 'N/A'
   character(256)  :: case_name            = 'N/A'
@@ -99,14 +99,14 @@ module namelist_mod
   logical         :: use_topo_smooth      = .false.
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
-  integer         :: div_damp_order       = 2
+  integer         :: div_damp_order       = 4
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_imp_lat0    = 90
   real(r8)        :: div_damp_top         = 3.0_r8
   real(r8)        :: div_damp_pole        = 0.0_r8
   real(r8)        :: div_damp_lat0        = 90
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
-  real(r8)        :: div_damp_coef4       = 0.01_r8
+  real(r8)        :: div_damp_coef4       = 0.001_r8
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
@@ -139,8 +139,8 @@ module namelist_mod
     start_time                , &
     end_time                  , &
     dt_dyn                    , &
-    dt_phys                   , &
     dt_adv                    , &
+    dt_phys                   , &
     run_years                 , &
     run_hours                 , &
     run_days                  , &
@@ -245,8 +245,9 @@ contains
 
     call const_init(planet)
 
-    if (dt_dyn == 0) dt_dyn = dt_adv
-    if (dt_adv == 0) dt_adv = dt_dyn
+    if (dt_dyn  == 0) dt_dyn  = dt_adv
+    if (dt_adv  == 0) dt_adv  = dt_dyn
+    if (dt_phys == 0) dt_phys = dt_dyn
 
   end subroutine parse_namelist
 
@@ -269,8 +270,9 @@ contains
       write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
       write(*, *) 'ptop                = ', to_str(ptop, 4)
       write(*, *) 'hybrid_coord_p0     = ', hybrid_coord_p0
-      write(*, *) 'dt_dyn              = ', to_str(dt_dyn, 2)
-      write(*, *) 'dt_adv              = ', to_str(dt_adv, 2)
+      write(*, *) 'dt_dyn              = ', to_str(dt_dyn , 2)
+      write(*, *) 'dt_adv              = ', to_str(dt_adv , 2)
+      write(*, *) 'dt_phys             = ', to_str(dt_phys, 2)
       write(*, *) 'max_wave_speed      = ', max_wave_speed
       write(*, *) 'max_cfl             = ', max_cfl
       write(*, *) 'filter_coef_a       = ', filter_coef_a

@@ -399,16 +399,15 @@ contains
     if (this%mf_step == 0) then
       this%mfx = mfx
       this%mfy = mfy
-      if (.not. this%dynamic) this%mf_step = this%mf_step + 1
-    else if (this%mf_step == this%nstep) then
-      this%mfx = (this%mfx + mfx) / (this%nstep + 1)
-      this%mfy = (this%mfy + mfy) / (this%nstep + 1)
-      this%mf_step = 0
+    else if (this%mf_step == this%nstep - 1) then
+      this%mfx = (this%mfx + mfx) / this%nstep
+      this%mfy = (this%mfy + mfy) / this%nstep
     else
       this%mfx = this%mfx + mfx
       this%mfy = this%mfy + mfy
-      this%mf_step = this%mf_step + 1
     end if
+    this%mf_step = merge(0, this%mf_step + 1, this%dynamic)
+    if (.not. this%dynamic .and. this%mf_step == this%nstep) this%mf_step = 0
 
   end subroutine adv_batch_accum_mf_cell
 

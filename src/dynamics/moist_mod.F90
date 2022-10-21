@@ -27,25 +27,22 @@ contains
 
   end subroutine moist_init
 
-  subroutine moist_link_state(blocks)
+  subroutine moist_link_state(block)
 
-    type(block_type), intent(inout), target :: blocks(:)
+    type(block_type), intent(inout), target :: block
 
-    integer iblk, itime
+    integer itime
 
-    do iblk = 1, size(blocks)
-      associate (block     => blocks(iblk), &
-                 mesh      => blocks(iblk)%mesh, &
-                 adv_batch => blocks(iblk)%adv_batches(1))
-      do itime = 1, size(block%state)
-        block%state(itime)%qv(               &
-          mesh%full_lon_lb:mesh%full_lon_ub, &
-          mesh%full_lat_lb:mesh%full_lat_ub, &
-          mesh%full_lev_lb:mesh%full_lev_ub) => adv_batch%q(:,:,:,1,adv_batch%old)
-        call calc_qm(block, itime)
-      end do
-      end associate
+    associate (mesh      => block%mesh          , &
+               adv_batch => block%adv_batches(1))
+    do itime = 1, size(block%state)
+      block%state(itime)%qv(               &
+        mesh%full_lon_lb:mesh%full_lon_ub, &
+        mesh%full_lat_lb:mesh%full_lat_ub, &
+        mesh%full_lev_lb:mesh%full_lev_ub) => adv_batch%q(:,:,:,1,adv_batch%old)
+      call calc_qm(block, itime)
     end do
+    end associate
 
   end subroutine moist_link_state
 
