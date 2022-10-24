@@ -33,8 +33,7 @@ module block_mod
     type(tend_type), allocatable :: tend(:)
     type(pstate_type) pstate
     type(ptend_type) ptend
-    type(adv_batch_type) adv_batch_pt! For potential temperature
-    type(adv_batch_type) adv_batch_pv
+    type(adv_batch_type) adv_batch_pt
     type(adv_batch_type), allocatable :: adv_batches(:)
     type(filter_type) big_filter
     type(filter_type) small_filter1
@@ -119,7 +118,6 @@ contains
     call this%pstate%clear()
     call this%ptend %clear()
     call this%adv_batch_pt%clear()
-    call this%adv_batch_pv%clear()
     if (allocated(this%adv_batches)) then
       do i = 1, size(this%adv_batches)
         call this%adv_batches(i)%clear()

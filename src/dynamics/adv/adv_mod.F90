@@ -140,9 +140,9 @@ contains
 
     do m = 1, size(block%adv_batches)
       if (time_is_alerted(block%adv_batches(m)%name)) then
-        if (block%adv_batches(m)%uv_step /= 1) then
+        if (block%adv_batches(m)%uv_step /= -1) then
           call log_error('Internal error: block%adv_batches(m)%uv_step is ' // &
-            to_str(block%adv_batches(m)%uv_step) // ', it should be 1!')
+            to_str(block%adv_batches(m)%uv_step) // ', it should be -1!')
         end if
         do l = 1, size(block%adv_batches(m)%tracer_names)
           associate (mesh    => block%mesh                  , &
@@ -346,7 +346,7 @@ contains
       end do
     end if
 
-    ! Initialize advection batches in block objects and allocate tracer arrays in state objects.
+    ! Initialize advection batches in block objects.
     allocate(block%adv_batches(nbatch))
     do i = 1, nbatch
       call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i), dynamic=.false.)

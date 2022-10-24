@@ -62,8 +62,6 @@ module adv_batch_mod
     procedure :: copy_old_m       => adv_batch_copy_old_m
     procedure :: accum_uv_cell    => adv_batch_accum_uv_cell
     procedure :: accum_mf_cell    => adv_batch_accum_mf_cell
-    procedure :: accum_uv_vtx     => adv_batch_accum_uv_vtx
-    procedure :: accum_mf_vtx     => adv_batch_accum_mf_vtx
     procedure :: accum_we_lev     => adv_batch_accum_we_lev
     final :: adv_batch_final
   end type adv_batch_type
@@ -120,26 +118,6 @@ contains
           call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
           call allocate_array(mesh, this%q6x, full_lon=.true., full_lat=.true., full_lev=.true.)
           call allocate_array(mesh, this%q6y, full_lon=.true., full_lat=.true., full_lev=.true.)
-        end if
-      end select
-    case ('vtx')
-      call allocate_array(mesh, this%mfx    , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%mfy    , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%u      , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%v      , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%cflx   , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%cfly   , half_lon=.true., full_lat=.true., full_lev=.true.)
-      select case (adv_scheme)
-      case ('ffsl')
-        call allocate_array(mesh, this%qx   , half_lon=.true., half_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qy   , half_lon=.true., half_lat=.true., full_lev=.true.)
-        if (ffsl_flux_type == 'ppm') then
-          call allocate_array(mesh, this%qlx, half_lon=.true., half_lat=.true., full_lev=.true.)
-          call allocate_array(mesh, this%qly, half_lon=.true., half_lat=.true., full_lev=.true.)
-          call allocate_array(mesh, this%dqx, half_lon=.true., half_lat=.true., full_lev=.true.)
-          call allocate_array(mesh, this%dqy, half_lon=.true., half_lat=.true., full_lev=.true.)
-          call allocate_array(mesh, this%q6x, half_lon=.true., half_lat=.true., full_lev=.true.)
-          call allocate_array(mesh, this%q6y, half_lon=.true., half_lat=.true., full_lev=.true.)
         end if
       end select
     case default
@@ -238,17 +216,16 @@ contains
     dt_ = merge(dt, this%dt, present(dt))
 
     associate (mesh => this%mesh)
+
+    if (this%uv_step == -1) then
+      this%u = this%u0
+      this%v = this%v0
+      this%uv_step = 1
+    end if
     if (this%uv_step == 0) then
-      ! Initial step only at start or for dynamic advection.
-      ! FIXME: Should we consider restart case?
       this%u = u
       this%v = v
-    else if (this%uv_step == 1) then
-      ! Begin new non-dynamic advection step.
-      this%u = this%u0 + u
-      this%v = this%v0 + v
     else if (this%uv_step == this%nstep) then
-      ! End non-dynamic advection step.
       this%u = (this%u + u) / (this%nstep + 1)
       this%v = (this%v + v) / (this%nstep + 1)
       this%u0 = u
@@ -258,8 +235,8 @@ contains
       this%v = this%v + v
     end if
     this%uv_step = merge(0, this%uv_step + 1, this%dynamic)
-    if (this%uv_step == 0 .or. this%uv_step > this%nstep) then
-      if (.not. this%dynamic) this%uv_step = 1
+    if (this%dynamic .or. this%uv_step > this%nstep) then
+      if (.not. this%dynamic) this%uv_step = -1
       ! Calculate CFL numbers and divergence along each axis.
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -411,94 +388,6 @@ contains
 
   end subroutine adv_batch_accum_mf_cell
 
-  subroutine adv_batch_accum_uv_vtx(this, u, v, dt)
-
-    class(adv_batch_type), intent(inout) :: this
-    real(r8), intent(in) :: u(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
-                              this%mesh%half_lat_lb:this%mesh%half_lat_ub, &
-                              this%mesh%full_lev_lb:this%mesh%full_lev_ub)
-    real(r8), intent(in) :: v(this%mesh%half_lon_lb:this%mesh%half_lon_ub, &
-                              this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
-                              this%mesh%full_lev_lb:this%mesh%full_lev_ub)
-    real(8), intent(in), optional :: dt
-
-    real(8) dt_
-    integer i, j, k
-
-    dt_ = merge(dt, this%dt, present(dt))
-
-    associate (mesh => this%mesh)
-    if (this%uv_step == 0) then
-      this%u = u
-      this%v = v
-      if (this%nstep > 1) this%uv_step = this%uv_step + 1
-    else if (this%uv_step == this%nstep) then
-      this%u = (this%u + u) / (this%nstep + 1)
-      this%v = (this%v + v) / (this%nstep + 1)
-      this%uv_step = 0
-    else
-      this%u = this%u + u
-      this%v = this%v + v
-      this%uv_step = this%uv_step + 1
-    end if
-    if (this%uv_step == 0) then
-      ! Calculate CFL numbers and divergence along each axis.
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            this%cflx(i,j,k) = dt_ * this%u(i,j,k) / mesh%le_lat(j)
-            if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
-              call log_error('cflx exceeds mesh%lon_halo_width ' // to_str(mesh%lon_halo_width) // '!', __FILE__, __LINE__)
-            end if
-          end do
-        end do
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            this%cfly(i,j,k) = dt_ * this%v(i,j,k) / mesh%le_lon(j)
-            if (abs(this%cfly(i,j,k)) > 1) then
-              call log_error('cfly exceeds 1 at j=' // to_str(j) // '!', __FILE__, __LINE__)
-            end if
-          end do
-        end do
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            this%divx(i,j,k) = (this%u(i+1,j,k) - this%u(i,j,k)) * mesh%de_lat(j) / mesh%area_vtx(j)
-            this%divy(i,j,k) = (this%v(i,j+1,k) * mesh%de_lon(j+1) - &
-                                this%v(i,j  ,k) * mesh%de_lon(j  )) / mesh%area_vtx(j)
-          end do
-        end do
-      end do
-    end if
-    end associate
-
-  end subroutine adv_batch_accum_uv_vtx
-
-  subroutine adv_batch_accum_mf_vtx(this, mfx, mfy)
-
-    class(adv_batch_type), intent(inout) :: this
-    real(r8), intent(in) :: mfx(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
-                                this%mesh%half_lat_lb:this%mesh%half_lat_ub, &
-                                this%mesh%full_lev_lb:this%mesh%full_lev_ub)
-    real(r8), intent(in) :: mfy(this%mesh%half_lon_lb:this%mesh%half_lon_ub, &
-                                this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
-                                this%mesh%full_lev_lb:this%mesh%full_lev_ub)
-
-    if (this%mf_step == 0) then
-      this%mfx = mfx
-      this%mfy = mfy
-      if (this%nstep > 1) this%mf_step = this%mf_step + 1
-    else if (this%mf_step == this%nstep) then
-      this%mfx = this%mfx + mfx
-      this%mfy = this%mfy + mfy
-      this%mf_step = 0
-    else
-      this%mfx = this%mfx + mfx
-      this%mfy = this%mfy + mfy
-      this%mf_step = this%mf_step + 1
-    end if
-
-  end subroutine adv_batch_accum_mf_vtx
-
   subroutine adv_batch_accum_we_lev(this, we, m, dt)
 
     class(adv_batch_type), intent(inout) :: this
@@ -518,12 +407,14 @@ contains
     dt_ = merge(dt, this%dt, present(dt))
 
     associate (mesh => this%mesh)
+    if (this%we_step == -1) then
+      this%we = this%we0
+      this%m  = this%m0
+      this%we_step = 1
+    end if
     if (this%we_step == 0) then
       this%we = we
       this%m  = m
-    else if (this%we_step == 1) then
-      this%we = this%we0 + we
-      this%m  = this%m0  + m
     else if (this%we_step == this%nstep) then
       this%we = (this%we + we) / (this%nstep + 1)
       this%m  = (this%m  + m ) / (this%nstep + 1)
@@ -534,8 +425,8 @@ contains
       this%m  = this%m  + m
     end if
     this%we_step = merge(0, this%we_step + 1, this%dynamic)
-    if (this%we_step == 0 .or. this%we_step > this%nstep) then
-      if (.not. this%dynamic) this%we_step = 1
+    if (this%dynamic .or. this%we_step > this%nstep) then
+      if (.not. this%dynamic) this%we_step = -1
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend

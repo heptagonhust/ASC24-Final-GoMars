@@ -38,9 +38,9 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: dkedlat
     real(r8), allocatable, dimension(:,:,:) :: dmfdlon
     real(r8), allocatable, dimension(:,:,:) :: dmfdlat
-    real(r8), allocatable, dimension(:,:,:) :: dptfdlon ! Zonal potential temperature flux
-    real(r8), allocatable, dimension(:,:,:) :: dptfdlat ! Meridional potential temperature flux
-    real(r8), allocatable, dimension(:,:,:) :: dptfdlev ! Vertical potential temperature flux
+    real(r8), allocatable, dimension(:,:,:) :: dptfdlon   ! Zonal potential temperature flux
+    real(r8), allocatable, dimension(:,:,:) :: dptfdlat   ! Meridional potential temperature flux
+    real(r8), allocatable, dimension(:,:,:) :: dptfdlev   ! Vertical potential temperature flux
     real(r8), allocatable, dimension(:,:,:) :: pgf_lon
     real(r8), allocatable, dimension(:,:,:) :: pgf_lat
     real(r8), allocatable, dimension(:,:,:) :: wedudlev
