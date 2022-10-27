@@ -18,6 +18,7 @@ module adv_mod
   private
 
   public adv_init
+  public adv_prepare
   public adv_run
   public adv_final
   public adv_add_tracer
@@ -125,6 +126,27 @@ contains
 
   end subroutine adv_init
 
+  subroutine adv_prepare(itime)
+
+    integer, intent(in) :: itime
+
+    integer iblk, m
+
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)     , &
+                 state => blocks(iblk)%state(itime))
+      if (allocated(block%adv_batches)) then
+        do m = 1, size(block%adv_batches)
+          call block%adv_batches(m)%copy_old_m(state%m)
+        end do
+      end if
+      call block%adv_batch_pt%copy_old_m(state%m)
+      call adv_accum_wind(block, itime)
+      end associate
+    end do
+
+  end subroutine adv_prepare
+
   subroutine adv_run(block, itime)
 
     type(block_type), intent(inout) :: block
@@ -140,10 +162,6 @@ contains
 
     do m = 1, size(block%adv_batches)
       if (time_is_alerted(block%adv_batches(m)%name)) then
-        if (block%adv_batches(m)%uv_step /= -1) then
-          call log_error('Internal error: block%adv_batches(m)%uv_step is ' // &
-            to_str(block%adv_batches(m)%uv_step) // ', it should be -1!')
-        end if
         do l = 1, size(block%adv_batches(m)%tracer_names)
           associate (mesh    => block%mesh                  , &
                      old     => block%adv_batches(m)%old    , &
@@ -346,7 +364,7 @@ contains
       end do
     end if
 
-    ! Initialize advection batches in block objects.
+    ! Initialize advection batches in block objects and allocate tracer arrays in state objects.
     allocate(block%adv_batches(nbatch))
     do i = 1, nbatch
       call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i), dynamic=.false.)
@@ -397,9 +415,7 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
-    real(r8) pole(block%mesh%num_full_lev)
-    integer i, j, k, l
+    integer l
 
     if (allocated(block%adv_batches)) then
       do l = 1, size(block%adv_batches)

@@ -122,24 +122,41 @@ contains
         call filter_on_cell(block%big_filter, state%gz, state%gz_f)
         call fill_halo(block, state%gz_f, full_lon=.true., full_lat=.true.)
       end if
-      if (allocated(block%adv_batches)) then
-        do m = 1, size(block%adv_batches)
-          call block%adv_batches(m)%copy_old_m(state%m)
-        end do
-      end if
-      call block%adv_batch_pt%copy_old_m(state%m)
-      call adv_accum_wind(block, old)
       if (baroclinic) call moist_link_state(block)
       end associate
     end do
 
     call operators_prepare(blocks, old, dt_dyn)
+    call adv_prepare(old)
     if (nonhydrostatic) call nh_prepare(blocks)
     call diagnose(blocks, old)
     call output(old)
 
     do while (.not. time_is_finished())
-      call time_integrate(dt_dyn, blocks)
+      ! ------------------------------------------------------------------------
+      !                              Dynamical Core
+      do iblk = 1, size(blocks)
+        call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
+        call damp_run(blocks(iblk), blocks(iblk)%state(new), blocks(iblk)%tend(new), dt_dyn)
+        call blocks(iblk)%state(new)%c2a()
+      end do
+      ! Advance to n+1 time level.
+      ! NOTE: Time indices are swapped, e.g. new <=> old.
+      call time_advance(dt_dyn)
+      ! ------------------------------------------------------------------------
+      !                            Tracer Advection
+      do iblk = 1, size(blocks)
+        call adv_run(blocks(iblk), old)
+      end do
+      ! ------------------------------------------------------------------------
+      !                                Physics
+      if (baroclinic) then
+        do iblk = 1, size(blocks)
+          call moist_link_state(blocks(iblk))
+          call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
+        end do
+      end if
+      ! ------------------------------------------------------------------------
       if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call diagnose(blocks, old)
       call output(old)
@@ -575,34 +592,5 @@ contains
     end associate
 
   end subroutine space_operators
-
-  subroutine time_integrate(dt, blocks)
-
-    real(8), intent(in) :: dt
-    type(block_type), intent(inout) :: blocks(:)
-
-    integer iblk, i, j, k
-
-    do iblk = 1, size(blocks)
-      call time_integrator(operators, blocks(iblk), old, new, dt)
-      call test_forcing_run(blocks(iblk), dt, blocks(iblk)%static, blocks(iblk)%state(new))
-      call damp_run(blocks(iblk), blocks(iblk)%state(new), blocks(iblk)%tend(new), dt)
-      ! Convert C-grid wind to A-grid wind for physics and output.
-      call blocks(iblk)%state(new)%c2a()
-    end do
-    ! Advance to n+1 time level.
-    ! NOTE: Time indices are swapped, e.g. new => old.
-    call time_advance(dt_dyn)
-    do iblk = 1, size(blocks)
-      call adv_run(blocks(iblk), old)
-    end do
-    if (baroclinic) then
-      do iblk = 1, size(blocks)
-        call moist_link_state(blocks(iblk))
-        call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
-      end do
-    end if
-
-  end subroutine time_integrate
 
 end module gmcore_mod

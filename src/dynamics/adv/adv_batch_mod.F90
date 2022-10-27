@@ -216,7 +216,6 @@ contains
     dt_ = merge(dt, this%dt, present(dt))
 
     associate (mesh => this%mesh)
-
     if (this%uv_step == -1) then
       this%u = this%u0
       this%v = this%v0
@@ -373,10 +372,15 @@ contains
                                 this%mesh%half_lat_lb:this%mesh%half_lat_ub, &
                                 this%mesh%full_lev_lb:this%mesh%full_lev_ub)
 
+    if (this%mf_step == -1) then
+      this%mfx = 0
+      this%mfy = 0
+      this%mf_step = 1
+    end if
     if (this%mf_step == 0) then
       this%mfx = mfx
       this%mfy = mfy
-    else if (this%mf_step == this%nstep - 1) then
+    else if (this%mf_step == this%nstep) then
       this%mfx = (this%mfx + mfx) / this%nstep
       this%mfy = (this%mfy + mfy) / this%nstep
     else
@@ -384,7 +388,7 @@ contains
       this%mfy = this%mfy + mfy
     end if
     this%mf_step = merge(0, this%mf_step + 1, this%dynamic)
-    if (.not. this%dynamic .and. this%mf_step == this%nstep) this%mf_step = 0
+    if (.not. this%dynamic .and. this%mf_step > this%nstep) this%mf_step = -1
 
   end subroutine adv_batch_accum_mf_cell
 

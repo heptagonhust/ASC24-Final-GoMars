@@ -122,7 +122,15 @@ contains
     call calc_m(block, state)
     call calc_gz_lev(block, state)
     call interp_lev_edge_to_cell(mesh, gz_lev, gz)
-    m = 1; m_lon = 1; m_lat = 1; m_lev = 1
+    ! Set invariant pressure thickness.
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      m    (:,:,k) = p0 * mesh%full_dlev(k)
+      m_lon(:,:,k) = p0 * mesh%full_dlev(k)
+      m_lat(:,:,k) = p0 * mesh%full_dlev(k)
+    end do
+    do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+      m_lev(:,:,k) = p0 * mesh%half_dlev(k)
+    end do
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         lat = mesh%full_lat(j)
