@@ -66,6 +66,7 @@ module namelist_mod
   integer         :: coriolis_scheme      = 1
 
   character(8)    :: adv_scheme           = 'ffsl'
+  character(8)    :: depart_point_scheme  = 'eul'
   character(8)    :: limiter_type         = 'mono'
   character(8)    :: ffsl_flux_type       = 'ppm'
   character(8)    :: tvd_limiter_type     = 'van_leer'
@@ -171,6 +172,7 @@ module namelist_mod
     pgf_scheme                , &
     coriolis_scheme           , &
     adv_scheme                , &
+    depart_point_scheme       , &
     limiter_type              , &
     ffsl_flux_type            , &
     tvd_limiter_type          , &
@@ -282,6 +284,7 @@ contains
       write(*, *) 'filter_coef_e       = ', filter_coef_e
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'adv_scheme          = ', trim(adv_scheme)
+      write(*, *) 'depart_point_scheme = ', trim(depart_point_scheme)
       write(*, *) 'limiter_type        = ', trim(limiter_type)
     if (adv_scheme == 'ffsl') then
       write(*, *) 'ffsl_flux_type      = ', trim(ffsl_flux_type)

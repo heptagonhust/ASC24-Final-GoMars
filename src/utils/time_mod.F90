@@ -164,6 +164,7 @@ contains
     character(*), intent(in) :: time_units
 
     type(timedelta_type) skipped_time
+    type(hash_table_iterator_type) iter
     character(30) tmp1, tmp2
 
     tmp1 = split_string(time_units, ' ', 1)
@@ -186,6 +187,19 @@ contains
     skipped_time = curr_time - start_time
     elapsed_seconds = skipped_time%total_seconds()
     curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
+
+    ! Update alerts.
+    iter = hash_table_iterator(alerts)
+    do while (.not. iter%ended())
+      select type (alert => iter%value)
+      type is (alert_type)
+        if (alert%last_time <= curr_time) then
+          alert%last_time = curr_time
+          alert%ring = .true.
+        end if
+      end select
+      call iter%next()
+    end do
 
   end subroutine time_fast_forward
 

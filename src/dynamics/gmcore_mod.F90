@@ -130,9 +130,14 @@ contains
     call adv_prepare(old)
     if (nonhydrostatic) call nh_prepare(blocks)
     call diagnose(blocks, old)
-    call output(old)
+    if (is_root_proc()) call log_print_diag(curr_time%isoformat())
 
-    do while (.not. time_is_finished())
+    model_main_loop: do
+      ! ------------------------------------------------------------------------
+      call diagnose(blocks, old)
+      call output(old)
+      if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+      if (time_is_finished()) exit
       ! ------------------------------------------------------------------------
       !                              Dynamical Core
       do iblk = 1, size(blocks)
@@ -156,14 +161,11 @@ contains
           call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
         end do
       end if
-      ! ------------------------------------------------------------------------
-      if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call diagnose(blocks, old)
-      call output(old)
     end do
+    end do model_main_loop
 
     ! Write a restart file at last.
-    call restart_write(old)
+    ! call restart_write(old)
 
   end subroutine gmcore_run
 

@@ -236,89 +236,111 @@ contains
     this%uv_step = merge(0, this%uv_step + 1, this%dynamic)
     if (this%dynamic .or. this%uv_step > this%nstep) then
       if (.not. this%dynamic) this%uv_step = -1
-      ! Calculate CFL numbers and divergence along each axis.
+      select case (depart_point_scheme)
+      case ('eul')
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            dx = mesh%de_lon(j)
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              this%cflx(i,j,k) = this%u(i,j,k) * dt_ / dx
+            end do
+          end do
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+            dy = mesh%de_lat(j)
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              this%cfly(i,j,k) = this%v(i,j,k) * dt_ / dy
+            end do
+          end do
+        end do
+      case ('rk4')
+        ! Calculate CFL numbers and divergence along each axis.
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            dx = mesh%de_lon(j)
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              x0 = radius * mesh%half_lon(i) * mesh%full_cos_lat(j)
+              ! Stage 1
+              u1 = this%u(i,j,k)
+              x1 = x0 + dt_ / 2 * u1
+              ! Stage 2
+              l = floor(i + (x1 - x0) / dx)
+              u2 = (                                                                          &
+                (radius * mesh%half_lon(l+1) * mesh%full_cos_lat(j) - x1) * this%u(l  ,j,k) + &
+                (x1 - radius * mesh%half_lon(l  ) * mesh%full_cos_lat(j)) * this%u(l+1,j,k)   &
+              ) / dx
+              x2 = x0 + dt_ / 2 * u2
+              ! Stage 3
+              l = floor(i + (x2 - x0) / dx)
+              u3 = (                                                                          &
+                (radius * mesh%half_lon(l+1) * mesh%full_cos_lat(j) - x2) * this%u(l  ,j,k) + &
+                (x2 - radius * mesh%half_lon(l  ) * mesh%full_cos_lat(j)) * this%u(l+1,j,k)   &
+              ) / dx
+              x3 = x0 + dt_ * u3
+              ! Stage 4
+              l = floor(i + (x3 - x0) / dx)
+              u4 = (                                                                          &
+                (radius * mesh%half_lon(l+1) * mesh%full_cos_lat(j) - x3) * this%u(l  ,j,k) + &
+                (x3 - radius * mesh%half_lon(l  ) * mesh%full_cos_lat(j)) * this%u(l+1,j,k)   &
+              ) / dx
+              ! Final stage
+              this%cflx(i,j,k) = (u1 + 2 * u2 + 2 * u3 + u4) / 6 * dt_ / dx
+              if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
+                call log_error('cflx exceeds mesh%lon_halo_width ' // &
+                               to_str(mesh%lon_halo_width) // ' at j=' // to_str(j) // '!', __FILE__, __LINE__)
+              end if
+            end do
+          end do
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+            dy = mesh%de_lat(j)
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              y0 = radius * mesh%half_lat(j)
+              ! Stage 1
+              v1 = this%v(i,j,k)
+              y1 = y0 + dt_ / 2 * v1
+              ! Stage 2
+              l = floor(j + (y1 - y0) / dy)
+              if (l < 1 .or. l > global_mesh%num_half_lat - 1) then
+                v2 = v1
+              else
+                v2 = (                                                   &
+                  (radius * mesh%half_lat(l+1) - y1) * this%v(i,l  ,k) + &
+                  (y1 - radius * mesh%half_lat(l  )) * this%v(i,l+1,k)   &
+                ) / dy
+              end if
+              y2 = y0 + dt_ / 2 * v2
+              ! Stage 3
+              l = floor(j + (y2 - y0) / dy)
+              if (l < 1 .or. l > global_mesh%num_half_lat - 1) then
+                v3 = v1
+              else
+                v3 = (                                                   &
+                  (radius * mesh%half_lat(l+1) - y2) * this%v(i,l  ,k) + &
+                  (y2 - radius * mesh%half_lat(l  )) * this%v(i,l+1,k)   &
+                ) / dy
+              end if
+              y3 = y0 + dt_ * v3
+              ! Stage 4
+              l = floor(j + (y3 - y0) / dy)
+              if (l < 1 .or. l > global_mesh%num_half_lat - 1) then
+                v4 = v1
+              else
+                v4 = (                                                   &
+                  (radius * mesh%half_lat(l+1) - y3) * this%v(i,l  ,k) + &
+                  (y3 - radius * mesh%half_lat(l  )) * this%v(i,l+1,k)   &
+                ) / dy
+              end if
+              ! Final stage
+              this%cfly(i,j,k) = (v1 + 2 * v2 + 2 * v3 + v4) / 6 * dt_ / dy
+              if (abs(this%cfly(i,j,k)) > 1) then
+                call log_error('cfly exceeds 1 at j=' // to_str(j) // ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+              end if
+            end do
+          end do
+        end do
+      case default
+        call log_error('Unknown depart_point_scheme "' // trim(depart_point_scheme) // '"!', pid=proc%id)
+      end select
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          dx = mesh%de_lon(j)
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            x0 = radius * mesh%half_lon(i) * mesh%full_cos_lat(j)
-            ! Stage 1
-            u1 = this%u(i,j,k)
-            x1 = x0 + dt_ / 2 * u1
-            ! Stage 2
-            l = floor(i + (x1 - x0) / dx)
-            u2 = (                                                                          &
-              (radius * mesh%half_lon(l+1) * mesh%full_cos_lat(j) - x1) * this%u(l  ,j,k) + &
-              (x1 - radius * mesh%half_lon(l  ) * mesh%full_cos_lat(j)) * this%u(l+1,j,k)   &
-            ) / dx
-            x2 = x0 + dt_ / 2 * u2
-            ! Stage 3
-            l = floor(i + (x2 - x0) / dx)
-            u3 = (                                                                          &
-              (radius * mesh%half_lon(l+1) * mesh%full_cos_lat(j) - x2) * this%u(l  ,j,k) + &
-              (x2 - radius * mesh%half_lon(l  ) * mesh%full_cos_lat(j)) * this%u(l+1,j,k)   &
-            ) / dx
-            x3 = x0 + dt_ * u3
-            ! Stage 4
-            l = floor(i + (x3 - x0) / dx)
-            u4 = (                                                                          &
-              (radius * mesh%half_lon(l+1) * mesh%full_cos_lat(j) - x3) * this%u(l  ,j,k) + &
-              (x3 - radius * mesh%half_lon(l  ) * mesh%full_cos_lat(j)) * this%u(l+1,j,k)   &
-            ) / dx
-            ! Final stage
-            this%cflx(i,j,k) = (u1 + 2 * u2 + 2 * u3 + u4) / 6 * dt_ / dx
-            if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
-              call log_error('cflx exceeds mesh%lon_halo_width ' // &
-                             to_str(mesh%lon_halo_width) // ' at j=' // to_str(j) // '!', __FILE__, __LINE__)
-            end if
-          end do
-        end do
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          dy = mesh%de_lat(j)
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            y0 = radius * mesh%half_lat(j)
-            ! Stage 1
-            v1 = this%v(i,j,k)
-            y1 = y0 + dt_ / 2 * v1
-            ! Stage 2
-            l = floor(j + (y1 - y0) / dy)
-            if (l < 1 .or. l > global_mesh%num_half_lat - 1) then
-              v2 = v1
-            else
-              v2 = (                                                   &
-                (radius * mesh%half_lat(l+1) - y1) * this%v(i,l  ,k) + &
-                (y1 - radius * mesh%half_lat(l  )) * this%v(i,l+1,k)   &
-              ) / dy
-            end if
-            y2 = y0 + dt_ / 2 * v2
-            ! Stage 3
-            l = floor(j + (y2 - y0) / dy)
-            if (l < 1 .or. l > global_mesh%num_half_lat - 1) then
-              v3 = v1
-            else
-              v3 = (                                                   &
-                (radius * mesh%half_lat(l+1) - y2) * this%v(i,l  ,k) + &
-                (y2 - radius * mesh%half_lat(l  )) * this%v(i,l+1,k)   &
-              ) / dy
-            end if
-            y3 = y0 + dt_ * v3
-            ! Stage 4
-            l = floor(j + (y3 - y0) / dy)
-            if (l < 1 .or. l > global_mesh%num_half_lat - 1) then
-              v4 = v1
-            else
-              v4 = (                                                   &
-                (radius * mesh%half_lat(l+1) - y3) * this%v(i,l  ,k) + &
-                (y3 - radius * mesh%half_lat(l  )) * this%v(i,l+1,k)   &
-              ) / dy
-            end if
-            ! Final stage
-            this%cfly(i,j,k) = (v1 + 2 * v2 + 2 * v3 + v4) / 6 * dt_ / dy
-            if (abs(this%cfly(i,j,k)) > 1) then
-              call log_error('cfly exceeds 1 at j=' // to_str(j) // ', k=' // to_str(k) // '!', __FILE__, __LINE__)
-            end if
-          end do
-        end do
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             this%divx(i,j,k) = (this%u(i,j,k) - this%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
@@ -431,109 +453,120 @@ contains
     this%we_step = merge(0, this%we_step + 1, this%dynamic)
     if (this%dynamic .or. this%we_step > this%nstep) then
       if (.not. this%dynamic) this%we_step = -1
-      do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            z0 = mesh%half_lev(k)
-            ! Stage 1
-            w1 = this%we(i,j,k) / this%m(i,j,k) * mesh%half_dlev(k)
-            z1 = z0 + dt_ / 2 * w1
-            ! Stage 2
-            if (w1 > 0) then
-              do l = k, mesh%full_lev_iend
-                if (mesh%half_lev(l) <= z1 .and. z1 <= mesh%half_lev(l+1)) exit
-              end do
-              if (l == mesh%full_lev_iend + 1) then
-                call log_error('cflz exceeds range at i=' // to_str(i) // &
-                                                   ', j=' // to_str(j) // &
-                                                   ', k=' // to_str(k) // '!', __FILE__, __LINE__)
-              end if
-            else
-              do l = k - 1, mesh%full_lev_ibeg, -1
-                if (mesh%half_lev(l) <= z1 .and. z1 <= mesh%half_lev(l+1)) exit
-              end do
-              if (l == mesh%full_lev_ibeg - 1) then
-                call log_error('cflz exceeds range at i=' // to_str(i) // &
-                                                   ', j=' // to_str(j) // &
-                                                   ', k=' // to_str(k) // '!', __FILE__, __LINE__)
-              end if
-            end if
-            w2 = (                                                                                   &
-              (mesh%half_lev(l+1) - z1) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
-              (z1 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
-            ) / mesh%full_dlev(l)
-            z2 = z0 + dt_ / 2 * w2
-            ! Stage 3
-            if (w2 > 0) then
-              do l = k, mesh%full_lev_iend
-                if (mesh%half_lev(l) <= z2 .and. z2 <= mesh%half_lev(l+1)) exit
-              end do
-              if (l == mesh%full_lev_iend + 1) then
-                call log_error('cflz exceeds range at i=' // to_str(i) // &
-                                                   ', j=' // to_str(j) // &
-                                                   ', k=' // to_str(k) // '!', __FILE__, __LINE__)
-              end if
-            else
-              do l = k - 1, mesh%full_lev_ibeg, -1
-                if (mesh%half_lev(l) <= z2 .and. z2 <= mesh%half_lev(l+1)) exit
-              end do
-              if (l == mesh%full_lev_ibeg - 1) then
-                call log_error('cflz exceeds range at i=' // to_str(i) // &
-                                                   ', j=' // to_str(j) // &
-                                                   ', k=' // to_str(k) // '!', __FILE__, __LINE__)
-              end if
-            end if
-            w3 = (                                                                                   &
-              (mesh%half_lev(l+1) - z2) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
-              (z2 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
-            ) / mesh%full_dlev(l)
-            z3 = z0 + dt_ * w3
-            ! Stage 4
-            if (w3 > 0) then
-              do l = k, mesh%full_lev_iend
-                if (mesh%half_lev(l) <= z3 .and. z3 <= mesh%half_lev(l+1)) exit
-              end do
-              if (l == mesh%full_lev_iend + 1) then
-                call log_error('cflz exceeds range at i=' // to_str(i) // &
-                                                   ', j=' // to_str(j) // &
-                                                   ', k=' // to_str(k) // '!', __FILE__, __LINE__)
-              end if
-            else
-              do l = k - 1, mesh%full_lev_ibeg, -1
-                if (mesh%half_lev(l) <= z3 .and. z3 <= mesh%half_lev(l+1)) exit
-              end do
-              if (l == mesh%full_lev_ibeg - 1) then
-                call log_error('cflz exceeds range at i=' // to_str(i) // &
-                                                   ', j=' // to_str(j) // &
-                                                   ', k=' // to_str(k) // '!', __FILE__, __LINE__)
-              end if
-            end if
-            w4 = (                                                                                   &
-              (mesh%half_lev(l+1) - z3) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
-              (z3 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
-            ) / mesh%full_dlev(l)
-            ! Final stage
-            deta = (w1 + 2 * w2 + 2 * w3 + w4) / 6 * dt_
-            if (deta < 0) then
-              ks = k - 1
-              ke = mesh%full_lev_ibeg
-              s = -1
-            else
-              ks = k
-              ke = mesh%full_lev_iend
-              s = 1
-            end if
-            deta = abs(deta)
-            do l = ks, ke, s
-              deta = deta - mesh%full_dlev(l)
-              if (deta < 0) then
-                this%cflz(i,j,k) = s * ((1 + deta / mesh%full_dlev(l)) + abs(l - ks))
-                exit
-              end if
+      select case (depart_point_scheme)
+      case ('eul')
+        do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              this%cflz(i,j,k) = this%we(i,j,k) / this%m(i,j,k) * dt_
             end do
           end do
         end do
-      end do
+      case ('rk4')
+        do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              z0 = mesh%half_lev(k)
+              ! Stage 1
+              w1 = this%we(i,j,k) / this%m(i,j,k) * mesh%half_dlev(k)
+              z1 = z0 + dt_ / 2 * w1
+              ! Stage 2
+              if (w1 > 0) then
+                do l = k, mesh%full_lev_iend
+                  if (mesh%half_lev(l) <= z1 .and. z1 <= mesh%half_lev(l+1)) exit
+                end do
+                if (l == mesh%full_lev_iend + 1) then
+                  call log_error('cflz exceeds range at i=' // to_str(i) // &
+                                                     ', j=' // to_str(j) // &
+                                                     ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+                end if
+              else
+                do l = k - 1, mesh%full_lev_ibeg, -1
+                  if (mesh%half_lev(l) <= z1 .and. z1 <= mesh%half_lev(l+1)) exit
+                end do
+                if (l == mesh%full_lev_ibeg - 1) then
+                  call log_error('cflz exceeds range at i=' // to_str(i) // &
+                                                     ', j=' // to_str(j) // &
+                                                     ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+                end if
+              end if
+              w2 = (                                                                                   &
+                (mesh%half_lev(l+1) - z1) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
+                (z1 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
+              ) / mesh%full_dlev(l)
+              z2 = z0 + dt_ / 2 * w2
+              ! Stage 3
+              if (w2 > 0) then
+                do l = k, mesh%full_lev_iend
+                  if (mesh%half_lev(l) <= z2 .and. z2 <= mesh%half_lev(l+1)) exit
+                end do
+                if (l == mesh%full_lev_iend + 1) then
+                  call log_error('cflz exceeds range at i=' // to_str(i) // &
+                                                     ', j=' // to_str(j) // &
+                                                     ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+                end if
+              else
+                do l = k - 1, mesh%full_lev_ibeg, -1
+                  if (mesh%half_lev(l) <= z2 .and. z2 <= mesh%half_lev(l+1)) exit
+                end do
+                if (l == mesh%full_lev_ibeg - 1) then
+                  call log_error('cflz exceeds range at i=' // to_str(i) // &
+                                                     ', j=' // to_str(j) // &
+                                                     ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+                end if
+              end if
+              w3 = (                                                                                   &
+                (mesh%half_lev(l+1) - z2) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
+                (z2 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
+              ) / mesh%full_dlev(l)
+              z3 = z0 + dt_ * w3
+              ! Stage 4
+              if (w3 > 0) then
+                do l = k, mesh%full_lev_iend
+                  if (mesh%half_lev(l) <= z3 .and. z3 <= mesh%half_lev(l+1)) exit
+                end do
+                if (l == mesh%full_lev_iend + 1) then
+                  call log_error('cflz exceeds range at i=' // to_str(i) // &
+                                                     ', j=' // to_str(j) // &
+                                                     ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+                end if
+              else
+                do l = k - 1, mesh%full_lev_ibeg, -1
+                  if (mesh%half_lev(l) <= z3 .and. z3 <= mesh%half_lev(l+1)) exit
+                end do
+                if (l == mesh%full_lev_ibeg - 1) then
+                  call log_error('cflz exceeds range at i=' // to_str(i) // &
+                                                     ', j=' // to_str(j) // &
+                                                     ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+                end if
+              end if
+              w4 = (                                                                                   &
+                (mesh%half_lev(l+1) - z3) * this%we(i,j,l  ) / this%m(i,j,l  ) * mesh%half_dlev(l  ) + &
+                (z3 - mesh%half_lev(l  )) * this%we(i,j,l+1) / this%m(i,j,l+1) * mesh%half_dlev(l+1)   &
+              ) / mesh%full_dlev(l)
+              ! Final stage
+              deta = (w1 + 2 * w2 + 2 * w3 + w4) / 6 * dt_
+              if (deta < 0) then
+                ks = k - 1
+                ke = mesh%full_lev_ibeg
+                s = -1
+              else
+                ks = k
+                ke = mesh%full_lev_iend
+                s = 1
+              end if
+              deta = abs(deta)
+              do l = ks, ke, s
+                deta = deta - mesh%full_dlev(l)
+                if (deta < 0) then
+                  this%cflz(i,j,k) = s * ((1 + deta / mesh%full_dlev(l)) + abs(l - ks))
+                  exit
+                end if
+              end do
+            end do
+          end do
+        end do
+      end select
     end if
     end associate
 
