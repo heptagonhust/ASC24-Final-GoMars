@@ -161,7 +161,6 @@ contains
           call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
         end do
       end if
-    end do
     end do model_main_loop
 
     ! Write a restart file at last.
