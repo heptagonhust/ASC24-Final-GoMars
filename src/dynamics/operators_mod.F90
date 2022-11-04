@@ -120,11 +120,9 @@ contains
     ! --------------------------------------------------------------------------
     case (backward_pass)
       if (hydrostatic) then
-        call calc_ph                      (block, state)
         call calc_t                       (block, state)
         call calc_gz_lev                  (block, state)
       end if
-      call calc_m                         (block, state)
       call pgf_prepare                    (block, state)
     end select
 
@@ -583,7 +581,7 @@ contains
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           mfx_lat(i,j,k) = mesh%half_tangent_wgt(1,j) * (mfx_lon(i-1,j  ,k) + mfx_lon(i,j  ,k)) + &
-                            mesh%half_tangent_wgt(2,j) * (mfx_lon(i-1,j+1,k) + mfx_lon(i,j+1,k))
+                           mesh%half_tangent_wgt(2,j) * (mfx_lon(i-1,j+1,k) + mfx_lon(i,j+1,k))
           u_lat(i,j,k) = mfx_lat(i,j,k) / m_lat(i,j,k)
         end do
       end do
@@ -594,14 +592,12 @@ contains
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           mfy_lon(i,j,k) = mesh%full_tangent_wgt(1,j) * (mfy_lat(i,j-1,k) + mfy_lat(i+1,j-1,k)) + &
-                            mesh%full_tangent_wgt(2,j) * (mfy_lat(i,j  ,k) + mfy_lat(i+1,j  ,k))
+                           mesh%full_tangent_wgt(2,j) * (mfy_lat(i,j  ,k) + mfy_lat(i+1,j  ,k))
           v_lon(i,j,k) = mfy_lon(i,j,k) / m_lon(i,j,k)
         end do
       end do
     end do
     call fill_halo(block, v_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-
-    ! call block%adv_batch_pv%accum_uv_vtx(u_lat, v_lon, dt)
     end associate
 
   end subroutine calc_mf

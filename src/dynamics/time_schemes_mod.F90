@@ -190,6 +190,7 @@ contains
         call filter_on_cell(block%small_filter1, new_state%gz)
         ! ----------------------------------------------------------------------
         call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
+        call calc_m(block, new_state)
       else if (tend%copy_gz) then
         new_state%gz = old_state%gz
       end if

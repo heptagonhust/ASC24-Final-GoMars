@@ -141,7 +141,7 @@ contains
         end do
       end if
       call block%adv_batch_pt%copy_old_m(state%m)
-      call adv_accum_wind(block, itime)
+      if (.not. restart) call adv_accum_wind(block, itime)
       end associate
     end do
 

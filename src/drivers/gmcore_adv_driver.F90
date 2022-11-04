@@ -81,6 +81,8 @@ program gmcore_adv_driver
 
   call history_setup_h0_adv(blocks)
   call output(old)
+  call diagnose(blocks)
+  if (is_root_proc()) call log_print_diag(curr_time%isoformat())
 
   do while (.not. time_is_finished())
     do iblk = 1, size(blocks)

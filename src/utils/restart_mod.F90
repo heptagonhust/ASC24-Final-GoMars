@@ -94,6 +94,14 @@ contains
   end if
     call fiona_add_var('r0', 'gzs' , long_name='surface geopotential height' , units='m2 s-2', dim_names=cell_dims_2d, dtype='r8')
 
+  if (associated(blocks(1)%state(itime)%qv)) then
+    call fiona_add_var('r0', 'qv'  , long_name='water vapor mixing ratio'    , units='kg kg-1', dim_names=cell_dims_3d, dtype='r8')
+    call fiona_add_var('r0', 'moist_u0' , long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
+    call fiona_add_var('r0', 'moist_v0' , long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
+    call fiona_add_var('r0', 'moist_we0', long_name='', units='', dim_names= lev_dims_3d, dtype='r8')
+    call fiona_add_var('r0', 'moist_m0' , long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
+  end if
+
     call fiona_start_output('r0', elapsed_seconds, new_file=.true.)
     call fiona_output('r0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('r0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
@@ -116,6 +124,35 @@ contains
         call fiona_output('r0', 'pt'    , state%pt    (is:ie,js:je,ks:ke), start=start, count=count)
       else
         call fiona_output('r0', 'gz'    , state%gz    (is:ie,js:je,ks:ke), start=start, count=count)
+      end if
+      if (associated(state%qv)) then
+        call fiona_output('r0', 'qv'    , state%qv    (is:ie,js:je,ks:ke), start=start, count=count)
+        associate (adv_batch => blocks(iblk)%adv_batches(1))
+        is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
+        js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+        ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+        start = [is,js,ks]
+        count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
+        call fiona_output('r0', 'moist_u0', adv_batch%u0(is:ie,js:je,ks:ke), start=start, count=count)
+        is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+        js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
+        ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+        start = [is,js,ks]
+        count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
+        call fiona_output('r0', 'moist_v0', adv_batch%v0(is:ie,js:je,ks:ke), start=start, count=count)
+        is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+        js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+        ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
+        start = [is,js,ks]
+        count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
+        call fiona_output('r0', 'moist_we0', adv_batch%we0(is:ie,js:je,ks:ke), start=start, count=count)
+        is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+        js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+        ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+        start = [is,js,ks]
+        count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
+        call fiona_output('r0', 'moist_m0', adv_batch%m0(is:ie,js:je,ks:ke), start=start, count=count)
+        end associate
       end if
 
         is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
@@ -194,6 +231,44 @@ contains
         else
           call fiona_input('r0', 'gz' , state%gz (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
           call fill_halo(block, state%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+        end if
+
+        if (associated(state%qv)) then
+          call fiona_input('r0', 'qv' , state%qv (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block, state%qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+          associate (adv_batch => block%adv_batches(1))
+          is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
+          js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+          ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+          start = [is,js,ks]
+          count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
+          call fiona_input('r0', 'moist_u0', adv_batch%u0(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block, adv_batch%u0, full_lon=.false., full_lat=.true., full_lev=.true.)
+          is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+          js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
+          ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+          start = [is,js,ks]
+          count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
+          call fiona_input('r0', 'moist_v0', adv_batch%v0(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block, adv_batch%v0, full_lon=.true., full_lat=.false., full_lev=.true.)
+          is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+          js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+          ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
+          start = [is,js,ks]
+          count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
+          call fiona_input('r0', 'moist_we0', adv_batch%we0(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block, adv_batch%we0, full_lon=.true., full_lat=.true., full_lev=.false.)
+          is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+          js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+          ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+          start = [is,js,ks]
+          count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
+          call fiona_input('r0', 'moist_m0', adv_batch%m0(is:ie,js:je,ks:ke), start=start, count=count)
+          call fill_halo(block, adv_batch%m0, full_lon=.true., full_lat=.true., full_lev=.true.)
+          adv_batch%uv_step = -1
+          adv_batch%mf_step = -1
+          adv_batch%we_step = -1
+          end associate
         end if
 
         is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend

@@ -49,6 +49,7 @@ contains
     integer, intent(in), optional :: comm
 
     character(10) time_value, time_units
+    integer iblk
     real(8) seconds
 
     call log_init()
@@ -94,6 +95,10 @@ contains
 
     if (is_root_proc()) call print_namelist()
 
+    do iblk = 1, size(blocks)
+      if (baroclinic) call moist_link_state(blocks(iblk))
+    end do
+
   end subroutine gmcore_init
 
   subroutine gmcore_run()
@@ -130,14 +135,10 @@ contains
     call adv_prepare(old)
     if (nonhydrostatic) call nh_prepare(blocks)
     call diagnose(blocks, old)
+    call output(old)
     if (is_root_proc()) call log_print_diag(curr_time%isoformat())
 
-    model_main_loop: do
-      ! ------------------------------------------------------------------------
-      call diagnose(blocks, old)
-      call output(old)
-      if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      if (time_is_finished()) exit
+    model_main_loop: do while (.not. time_is_finished())
       ! ------------------------------------------------------------------------
       !                              Dynamical Core
       do iblk = 1, size(blocks)
@@ -161,6 +162,10 @@ contains
           call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
         end do
       end if
+      ! ------------------------------------------------------------------------
+      call diagnose(blocks, old)
+      if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+      call output(old)
     end do model_main_loop
 
     ! Write a restart file at last.
