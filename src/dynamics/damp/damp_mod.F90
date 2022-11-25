@@ -9,10 +9,8 @@ module damp_mod
   use filter_mod
   use div_damp_mod
   use smag_damp_mod
+  use pole_damp_mod
   use laplace_damp_mod
-  use lon_damp_mod
-  use lat_damp_mod
-  use operators_mod
 
   implicit none
 
@@ -31,8 +29,6 @@ contains
     call div_damp_init(blocks)
     call smag_damp_init()
     call laplace_damp_init()
-    call lon_damp_init()
-    call lat_damp_init()
 
   end subroutine damp_init
 
@@ -41,8 +37,6 @@ contains
     call div_damp_final()
     call smag_damp_final()
     call laplace_damp_final()
-    call lon_damp_final()
-    call lat_damp_final()
 
   end subroutine damp_final
 
@@ -59,6 +53,7 @@ contains
     if (use_smag_damp) then
       call smag_damp_run(block, dt, tend, state)
     end if
+    call pole_damp_run(block, state)
 
   end subroutine damp_run
 

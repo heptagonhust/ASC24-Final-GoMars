@@ -136,7 +136,7 @@ contains
     integer i, j, k
 
     associate (mesh       => block%mesh      , &
-               phs        => state%phs_f     , & ! in
+               phs        => state%phs       , & ! in
                ph_lev     => state%ph_lev    , & ! out
                ph_exn_lev => state%ph_exn_lev, & ! out
                ph         => state%ph        )   ! out
@@ -238,8 +238,8 @@ contains
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh => block%mesh , &
-               u    => state%u_f  , & ! in
-               v    => state%v_f  , & ! in
+               u    => state%u_lon, & ! in
+               v    => state%v_lat, & ! in
                ke   => state%ke   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
@@ -357,8 +357,8 @@ contains
     integer i, j, k
 
     associate (mesh => block%mesh , &
-               u    => state%u_f  , & ! in
-               v    => state%v_f  , & ! in
+               u    => state%u_lon, & ! in
+               v    => state%v_lat, & ! in
                div  => state%div  , & ! out
                div2 => state%div2 )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -551,8 +551,8 @@ contains
                m       => state%m      , & ! in
                m_lon   => state%m_lon  , & ! in
                m_lat   => state%m_lat  , & ! in
-               u_lon   => state%u_f    , & ! in
-               v_lat   => state%v_f    , & ! in
+               u_lon   => state%u_lon  , & ! in
+               v_lat   => state%v_lat  , & ! in
                u_lat   => state%u_lat  , & ! out
                v_lon   => state%v_lon  , & ! out
                mfx_lon => state%mfx_lon, & ! out
@@ -561,6 +561,8 @@ contains
                mfx_lat => state%mfx_lat)   ! out
     call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
     ! call adv_calc_mass_hflx(block, block%adv_batch_pt, m, mfx_lon, mfy_lat, dt)
+    ! call fill_halo(block, mfx_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+    ! call fill_halo(block, mfy_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
@@ -678,8 +680,8 @@ contains
 
     associate (mesh  => block%mesh , &
                m_vtx => state%m_vtx, & ! in
-               u_lon => state%u_f  , & ! in
-               v_lat => state%v_f  , & ! in
+               u_lon => state%u_lon, & ! in
+               v_lat => state%v_lat, & ! in
                vor   => state%vor  , & ! in
                pv    => state%pv)      ! out
     call calc_vor(block, state, u_lon, v_lat)
@@ -738,8 +740,8 @@ contains
     integer i, j, k
 
     associate (mesh     => block%mesh    , &
-               un       => state%u_f     , & ! in
-               vn       => state%v_f     , & ! in
+               un       => state%u_lon   , & ! in
+               vn       => state%v_lat   , & ! in
                ut       => state%u_lat   , & ! in
                vt       => state%v_lon   , & ! in
                pv       => state%pv      , & ! in
@@ -1135,8 +1137,8 @@ contains
     ! Follow SB81 vertical advection discretization.
 
     associate (mesh       => block%mesh      , &
-               u          => state%u_f       , & ! in
-               v          => state%v_f       , & ! in
+               u          => state%u_lon     , & ! in
+               v          => state%v_lat     , & ! in
                m_lon      => state%m_lon     , & ! in
                m_lat      => state%m_lat     , & ! in
                we_lev_lon => state%we_lev_lon, & ! in

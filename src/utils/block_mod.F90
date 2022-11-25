@@ -36,8 +36,9 @@ module block_mod
     type(adv_batch_type) adv_batch_pt
     type(adv_batch_type), allocatable :: adv_batches(:)
     type(filter_type) big_filter
-    type(filter_type) small_filter1
-    type(filter_type) small_filter2
+    type(filter_type) small_filter_phs
+    type(filter_type) small_filter_pt
+    type(filter_type) small_filter_uv
     type(halo_type), allocatable :: halo(:)
   contains
     procedure :: init_stage_1 => block_init_stage_1
@@ -65,8 +66,9 @@ contains
 
     call this%mesh%init_from_parent(global_mesh, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
     call this%big_filter%init(this%mesh, 'big_filter')
-    call this%small_filter1%init(this%mesh, 'small_filter1')
-    call this%small_filter2%init(this%mesh, 'small_filter2')
+    call this%small_filter_phs%init(this%mesh, 'small_filter_phs')
+    call this%small_filter_pt %init(this%mesh, 'small_filter_pt')
+    call this%small_filter_uv %init(this%mesh, 'small_filter_uv')
 
   end subroutine block_init_stage_1
 
@@ -109,6 +111,10 @@ contains
 
     integer i
 
+    call this%big_filter%clear()
+    call this%small_filter_phs%clear()
+    call this%small_filter_pt %clear()
+    call this%small_filter_uv %clear()
     do i = 1, size(this%state)
       call this%state(i)%clear()
     end do

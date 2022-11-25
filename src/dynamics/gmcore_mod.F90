@@ -21,9 +21,9 @@ module gmcore_mod
   use pgf_mod
   use damp_mod
   use diag_state_mod
-  use test_forcing_mod
   use physics_mod
   use filter_mod
+  use test_forcing_mod
 
   implicit none
 
@@ -116,17 +116,7 @@ contains
           block%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = block%static%gzs
         end do
       end if
-      call filter_on_lon_edge(block%big_filter, state%u_lon, state%u_f)
-      call fill_halo(block, state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call filter_on_lat_edge(block%big_filter, state%v_lat, state%v_f)
-      call fill_halo(block, state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
-      if (baroclinic) then
-        call filter_on_cell(block%big_filter, state%phs, state%phs_f)
-        call fill_halo(block, state%phs_f, full_lon=.true., full_lat=.true.)
-      else
-        call filter_on_cell(block%big_filter, state%gz, state%gz_f)
-        call fill_halo(block, state%gz_f, full_lon=.true., full_lat=.true.)
-      end if
+      call blocks(iblk)%state(old)%c2a()
       if (baroclinic) call moist_link_state(block)
       end associate
     end do
@@ -158,6 +148,7 @@ contains
       !                                Physics
       if (baroclinic) then
         do iblk = 1, size(blocks)
+          call test_forcing_run(blocks(iblk), dt_dyn, blocks(iblk)%static, blocks(iblk)%state(old))
           call moist_link_state(blocks(iblk))
           call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
         end do

@@ -93,7 +93,6 @@ contains
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             state%u_lon(i,j,k) = state%u_lon(i,j,k) + dt * 0.5_r8 * (tend%dudt_phys(i,j,k) + tend%dudt_phys(i+1,j,k))
-            state%u_f  (i,j,k) = state%u_f  (i,j,k) + dt * 0.5_r8 * (tend%dudt_phys(i,j,k) + tend%dudt_phys(i+1,j,k))
           end do
         end do
       end do
@@ -102,7 +101,6 @@ contains
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             state%v_lat(i,j,k) = state%v_lat(i,j,k) + dt * 0.5_r8 * (tend%dvdt_phys(i,j,k) + tend%dvdt_phys(i,j+1,k))
-            state%v_f  (i,j,k) = state%v_f  (i,j,k) + dt * 0.5_r8 * (tend%dvdt_phys(i,j,k) + tend%dvdt_phys(i,j+1,k))
           end do
         end do
       end do

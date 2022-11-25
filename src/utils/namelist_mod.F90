@@ -93,14 +93,22 @@ module namelist_mod
   real(r8)        :: filter_coef_a        = 1.0
   real(r8)        :: filter_coef_b        = 0.4
   real(r8)        :: filter_coef_c        = 0.2
-  real(r8)        :: filter_coef_d        = 0.375
-  real(r8)        :: filter_coef_e        = 0.16
+
+  real(r8)        :: filter_coef1_phs     = 0.375_r8
+  real(r8)        :: filter_coef2_phs     = 0
+  real(r8)        :: filter_lat0_phs      = 60.0_r8
+  real(r8)        :: filter_coef1_pt      = 0.375_r8
+  real(r8)        :: filter_coef2_pt      = 0
+  real(r8)        :: filter_lat0_pt       = 60.0_r8
+  real(r8)        :: filter_coef1_uv      = 0.375_r8
+  real(r8)        :: filter_coef2_uv      = 0
+  real(r8)        :: filter_lat0_uv       = 60.0_r8
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
-  integer         :: div_damp_order       = 4
+  integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_imp_lat0    = 90
   real(r8)        :: div_damp_top         = 3.0_r8
@@ -190,8 +198,15 @@ module namelist_mod
     filter_coef_a             , &
     filter_coef_b             , &
     filter_coef_c             , &
-    filter_coef_d             , &
-    filter_coef_e             , &
+    filter_coef1_phs          , &
+    filter_coef2_phs          , &
+    filter_lat0_phs           , &
+    filter_coef1_pt           , &
+    filter_coef2_pt           , &
+    filter_lat0_pt            , &
+    filter_coef1_uv           , &
+    filter_coef2_uv           , &
+    filter_lat0_uv            , &
     coarse_pole_mul           , &
     coarse_pole_decay         , &
     physics_suite             , &
@@ -280,8 +295,15 @@ contains
       write(*, *) 'filter_coef_a       = ', filter_coef_a
       write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
-      write(*, *) 'filter_coef_d       = ', filter_coef_d
-      write(*, *) 'filter_coef_e       = ', filter_coef_e
+      write(*, *) 'filter_coef1_phs    = ', filter_coef1_phs
+      write(*, *) 'filter_coef2_phs    = ', filter_coef2_phs
+      write(*, *) 'filter_lat0_phs     = ', filter_lat0_phs
+      write(*, *) 'filter_coef1_pt     = ', filter_coef1_pt
+      write(*, *) 'filter_coef2_pt     = ', filter_coef2_pt
+      write(*, *) 'filter_lat0_pt      = ', filter_lat0_pt
+      write(*, *) 'filter_coef1_uv     = ', filter_coef1_uv
+      write(*, *) 'filter_coef2_uvs    = ', filter_coef2_uv
+      write(*, *) 'filter_lat0_uv      = ', filter_lat0_uv
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'adv_scheme          = ', trim(adv_scheme)
       write(*, *) 'depart_point_scheme = ', trim(depart_point_scheme)

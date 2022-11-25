@@ -11,7 +11,7 @@ module adv_mod
   use upwind_mod
   use weno_mod
   use tvd_mod
-  use lon_damp_mod
+  use filter_mod
 
   implicit none
 
@@ -223,34 +223,34 @@ contains
               end do
             end do
           end if
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                q(i,j,k,l,new) = q(i,j,k,l,new) / block%state(itime)%m(i,j,k)
-              end do
-            end do
-          end do
           ! Fill possible negative values.
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
                 if (q(i,j,k,l,new) < 0) then
-                  qm0 = q(i  ,j,k,l,new) * block%state(itime)%m(i  ,j,k)
-                  qm1 = q(i-1,j,k,l,new) * block%state(itime)%m(i-1,j,k)
-                  qm2 = q(i+1,j,k,l,new) * block%state(itime)%m(i+1,j,k)
+                  qm0 = q(i  ,j,k,l,new)
+                  qm1 = q(i-1,j,k,l,new)
+                  qm2 = q(i+1,j,k,l,new)
                   qm0_half = 0.5_r8 * qm0
                   if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
-                    q(i-1,j,k,l,new) = (qm1 - qm0_half) / block%state(itime)%m(i-1,j,k)
-                    q(i+1,j,k,l,new) = (qm2 - qm0_half) / block%state(itime)%m(i+1,j,k)
+                    q(i-1,j,k,l,new) = qm1 - qm0_half
+                    q(i+1,j,k,l,new) = qm2 - qm0_half
                   else if (qm1 > qm0) then
-                    q(i-1,j,k,l,new) = (qm1 - qm0) / block%state(itime)%m(i-1,j,k)
+                    q(i-1,j,k,l,new) = qm1 - qm0
                   else if (qm2 > qm0) then
-                    q(i+1,j,k,l,new) = (qm2 - qm0) / block%state(itime)%m(i+1,j,k)
+                    q(i+1,j,k,l,new) = qm2 - qm0
                   else
                     call log_error('Negative tracer!')
                   end if
                   q(i,j,k,l,new) = 0
                 end if
+              end do
+            end do
+          end do
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                q(i,j,k,l,new) = q(i,j,k,l,new) / block%state(itime)%m(i,j,k)
               end do
             end do
           end do
@@ -265,7 +265,7 @@ contains
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                q(i,j,k,l,new) = q(i,j,k,l,new) - ((qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv) / block%state(itime)%m(i,j,k)
+                q(i,j,k,l,new) = q(i,j,k,l,new) * block%state(itime)%m(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
               end do
             end do
           end do
@@ -274,22 +274,31 @@ contains
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
                 if (q(i,j,k,l,new) < 0) then
-                  qm0 = q(i,j,k  ,l,new) * block%state(itime)%m(i  ,j,k)
-                  qm1 = merge(q(i,j,k-1,l,new) * block%state(itime)%m(i,j,k-1), 0.0_r8, k > mesh%full_lev_ibeg)
-                  qm2 = merge(q(i,j,k+1,l,new) * block%state(itime)%m(i,j,k+1), 0.0_r8, k < mesh%full_lev_iend)
+                  qm0 = q(i,j,k  ,l,new)
+                  qm1 = merge(q(i,j,k-1,l,new), 0.0_r8, k > mesh%full_lev_ibeg)
+                  qm2 = merge(q(i,j,k+1,l,new), 0.0_r8, k < mesh%full_lev_iend)
                   qm0_half = 0.5_r8 * qm0
                   if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
-                    if (qm1 > 0) q(i,j,k-1,l,new) = (qm1 - qm0_half) / block%state(itime)%m(i,j,k-1)
-                    if (qm2 > 0) q(i,j,k+1,l,new) = (qm2 - qm0_half) / block%state(itime)%m(i,j,k+1)
+                    if (qm1 > 0) q(i,j,k-1,l,new) = qm1 - qm0_half
+                    if (qm2 > 0) q(i,j,k+1,l,new) = qm2 - qm0_half
                   else if (qm1 > qm0) then
-                    if (qm1 > 0) q(i,j,k-1,l,new) = (qm1 - qm0) / block%state(itime)%m(i,j,k-1)
+                    if (qm1 > 0) q(i,j,k-1,l,new) = qm1 - qm0
                   else if (qm2 > qm0) then
-                    if (qm2 > 0) q(i,j,k+1,l,new) = (qm2 - qm0) / block%state(itime)%m(i,j,k+1)
+                    if (qm2 > 0) q(i,j,k+1,l,new) = qm2 - qm0
                   else
                     call log_error('Negative tracer!')
                   end if
                   q(i,j,k,l,new) = 0
                 end if
+              end do
+            end do
+          end do
+          call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+          call filter_on_cell(block%small_filter_phs, q(:,:,:,l,new))
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                q(i,j,k,l,new) = q(i,j,k,l,new) / block%state(itime)%m(i,j,k)
               end do
             end do
           end do
@@ -422,8 +431,8 @@ contains
         select case (block%adv_batches(l)%loc)
         case ('cell')
           call block%adv_batches(l)%accum_uv_cell( &
-            block%state(itime)%u_f               , &
-            block%state(itime)%v_f               )
+            block%state(itime)%u_lon             , &
+            block%state(itime)%v_lat             )
           call block%adv_batches(l)%accum_mf_cell( &
             block%state(itime)%mfx_lon           , &
             block%state(itime)%mfy_lat           )

@@ -27,13 +27,10 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: v_lon             ! Meridional wind speed at lon edge (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: u_lat             ! Zonal wind speed at lat edge (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: v_lat             ! Meridional wind speed at lat edge (m s-1)
-    real(r8), allocatable, dimension(:,:,:) :: u_f               ! Filtered zonal wind speed at lon edge (m s-1)
-    real(r8), allocatable, dimension(:,:,:) :: v_f               ! Filtered meridional wind speed at lat edge (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: we_lev            ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
     real(r8), allocatable, dimension(:,:,:) :: we_lev_lon        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: we_lev_lat        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: gz                ! Geopotential (m2 s-2)
-    real(r8), allocatable, dimension(:,:,:) :: gz_f              ! Geopotential (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: gz_lev            ! Geopotential height on half levels (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: m                 ! Mass
     real(r8), allocatable, dimension(:,:,:) :: m_vtx             ! Mass on vertex
@@ -57,7 +54,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: ph_exn_lev        ! Exner pressure on half levels
     real(r8), allocatable, dimension(:,:  ) :: phs               ! Surface hydrostatic pressure
-    real(r8), allocatable, dimension(:,:  ) :: phs_f             ! Surface hydrostatic pressure
     real(r8), allocatable, dimension(:,:,:) :: div               ! Divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: vor               ! Vorticity (s-1)
@@ -120,10 +116,8 @@ contains
     call allocate_array(mesh, this%v                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%u_f              , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%v_f              , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%we_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%we_lev_lon       , half_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%we_lev_lat       , full_lon=.true., half_lat=.true., half_lev=.true.)
@@ -151,13 +145,10 @@ contains
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%ph_exn_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%phs              , full_lon=.true., full_lat=.true.                 )
-    call allocate_array(mesh, this%phs_f            , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%div              , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor              , half_lon=.true., half_lat=.true., full_lev=.true.)
 
-    if (.not. baroclinic) then
-      call allocate_array(mesh, this%gz_f           , full_lon=.true., full_lat=.true., full_lev=.true.)
-    else
+    if (baroclinic) then
       call allocate_array(mesh, this%qm             , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
@@ -207,13 +198,10 @@ contains
     if (allocated(this%v_lon            )) deallocate(this%v_lon            )
     if (allocated(this%u_lat            )) deallocate(this%u_lat            )
     if (allocated(this%v_lat            )) deallocate(this%v_lat            )
-    if (allocated(this%u_f              )) deallocate(this%u_f              )
-    if (allocated(this%v_f              )) deallocate(this%v_f              )
     if (allocated(this%we_lev           )) deallocate(this%we_lev           )
     if (allocated(this%we_lev_lon       )) deallocate(this%we_lev_lon       )
     if (allocated(this%we_lev_lat       )) deallocate(this%we_lev_lat       )
     if (allocated(this%gz               )) deallocate(this%gz               )
-    if (allocated(this%gz_f             )) deallocate(this%gz_f             )
     if (allocated(this%gz_lev           )) deallocate(this%gz_lev           )
     if (allocated(this%m                )) deallocate(this%m                )
     if (allocated(this%m_vtx            )) deallocate(this%m_vtx            )
@@ -236,7 +224,6 @@ contains
     if (allocated(this%ph_lev           )) deallocate(this%ph_lev           )
     if (allocated(this%ph_exn_lev       )) deallocate(this%ph_exn_lev       )
     if (allocated(this%phs              )) deallocate(this%phs              )
-    if (allocated(this%phs_f            )) deallocate(this%phs_f            )
     if (allocated(this%div              )) deallocate(this%div              )
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%vor              )) deallocate(this%vor              )
