@@ -66,9 +66,9 @@ contains
 
     if (nonhydrostatic) then
       do iblk = 1, size(blocks)
-        call calc_ph    (blocks(iblk), blocks(iblk)%state(1))
-        call calc_t     (blocks(iblk), blocks(iblk)%state(1))
-        call calc_gz_lev(blocks(iblk), blocks(iblk)%state(1))
+        call calc_ph    (blocks(iblk), blocks(iblk)%dstate(1))
+        call calc_t     (blocks(iblk), blocks(iblk)%dstate(1))
+        call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(1))
       end do
     end if
 

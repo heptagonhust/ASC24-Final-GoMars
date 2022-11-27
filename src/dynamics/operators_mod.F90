@@ -40,10 +40,10 @@ module operators_mod
   end interface operators_prepare
 
   interface
-    subroutine interp_pv_interface(block, state, dt)
-      import block_type, state_type
+    subroutine interp_pv_interface(block, dstate, dt)
+      import block_type, dstate_type
       type(block_type), intent(inout) :: block
-      type(state_type), intent(inout) :: state
+      type(dstate_type), intent(inout) :: dstate
       real(8), intent(in) :: dt
     end subroutine interp_pv_interface
   end interface
@@ -76,70 +76,70 @@ contains
     integer iblk
 
     do iblk = 1, size(blocks)
-      if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%state(itime))
-      call calc_m                         (blocks(iblk), blocks(iblk)%state(itime))
-      if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%state(itime))
-      call calc_mf                        (blocks(iblk), blocks(iblk)%state(itime), dt)
-      call calc_ke                        (blocks(iblk), blocks(iblk)%state(itime))
-      call calc_pv                        (blocks(iblk), blocks(iblk)%state(itime))
-      call interp_pv                      (blocks(iblk), blocks(iblk)%state(itime), dt)
-      call calc_div                       (blocks(iblk), blocks(iblk)%state(itime))
-      if (hydrostatic) call calc_gz_lev   (blocks(iblk), blocks(iblk)%state(itime))
-      call pgf_prepare                    (blocks(iblk), blocks(iblk)%state(itime))
+      if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%dstate(itime))
+      call calc_m                         (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%dstate(itime))
+      call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
+      call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
+      call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
+      call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt)
+      call calc_div                       (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (hydrostatic) call calc_gz_lev   (blocks(iblk), blocks(iblk)%dstate(itime))
+      call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
     end do
 
   end subroutine operators_prepare_1
 
-  subroutine operators_prepare_2(block, state, dt, pass)
+  subroutine operators_prepare_2(block, dstate, dt, pass)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
     select case (pass)
     ! --------------------------------------------------------------------------
     case (all_pass)
-      if (baroclinic ) call calc_ph       (block, state)
-      call calc_m                         (block, state)
-      if (baroclinic ) call calc_t        (block, state)
-      call calc_mf                        (block, state, dt)
-      call calc_ke                        (block, state)
-      call calc_div                       (block, state)
-      call calc_pv                        (block, state)
-      call interp_pv                      (block, state, dt)
-      if (hydrostatic) call calc_gz_lev   (block, state)
-      call pgf_prepare                    (block, state)
+      if (baroclinic ) call calc_ph       (block, dstate)
+      call calc_m                         (block, dstate)
+      if (baroclinic ) call calc_t        (block, dstate)
+      call calc_mf                        (block, dstate, dt)
+      call calc_ke                        (block, dstate)
+      call calc_div                       (block, dstate)
+      call calc_pv                        (block, dstate)
+      call interp_pv                      (block, dstate, dt)
+      if (hydrostatic) call calc_gz_lev   (block, dstate)
+      call pgf_prepare                    (block, dstate)
     ! --------------------------------------------------------------------------
     case (forward_pass)
-      call calc_mf                        (block, state, dt)
-      call calc_ke                        (block, state)
-      call calc_div                       (block, state)
-      call calc_pv                        (block, state)
-      call interp_pv                      (block, state, dt)
+      call calc_mf                        (block, dstate, dt)
+      call calc_ke                        (block, dstate)
+      call calc_div                       (block, dstate)
+      call calc_pv                        (block, dstate)
+      call interp_pv                      (block, dstate, dt)
     ! --------------------------------------------------------------------------
     case (backward_pass)
       if (hydrostatic) then
-        call calc_t                       (block, state)
-        call calc_gz_lev                  (block, state)
+        call calc_t                       (block, dstate)
+        call calc_gz_lev                  (block, dstate)
       end if
-      call pgf_prepare                    (block, state)
+      call pgf_prepare                    (block, dstate)
     end select
 
   end subroutine operators_prepare_2
 
-  subroutine calc_ph(block, state)
+  subroutine calc_ph(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
 
-    associate (mesh       => block%mesh      , &
-               phs        => state%phs       , & ! in
-               ph_lev     => state%ph_lev    , & ! out
-               ph_exn_lev => state%ph_exn_lev, & ! out
-               ph         => state%ph        )   ! out
+    associate (mesh       => block%mesh       , &
+               phs        => dstate%phs       , & ! in
+               ph_lev     => dstate%ph_lev    , & ! out
+               ph_exn_lev => dstate%ph_exn_lev, & ! out
+               ph         => dstate%ph        )   ! out
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -162,18 +162,18 @@ contains
 
   end subroutine calc_ph
 
-  subroutine calc_t(block, state)
+  subroutine calc_t(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
 
     associate (mesh => block%mesh, &
-               pt   => state%pt  , & ! in
-               ph   => state%ph  , & ! in
-               qv   => state%qv  , & ! in
-               t    => state%t   )   ! out
+               pt   => dstate%pt , & ! in
+               ph   => dstate%ph , & ! in
+               qv   => dstate%qv , & ! in
+               t    => dstate%t  )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -185,24 +185,24 @@ contains
 
   end subroutine calc_t
 
-  subroutine calc_we_lev(block, state, tend, dt)
+  subroutine calc_we_lev(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    type(tend_type), intent(in) :: tend
+    type(dstate_type), intent(inout) :: dstate
+    type(dtend_type), intent(in) :: dtend
     real(8), intent(in) :: dt
 
     integer i, j, k, l
     real(r8) mf
 
-    associate (mesh       => block%mesh      , &
-               dmfdlon    => tend%dmfdlon    , & ! in
-               dmfdlat    => tend%dmfdlat    , & ! in
-               dphs       => tend%dphs       , & ! in
-               m_lev      => state%m_lev     , & ! in
-               we_lev     => state%we_lev    , & ! out
-               we_lev_lon => state%we_lev_lon, & ! out
-               we_lev_lat => state%we_lev_lat)   ! out
+    associate (mesh       => block%mesh       , &
+               dmfdlon    => dtend%dmfdlon    , & ! in
+               dmfdlat    => dtend%dmfdlat    , & ! in
+               dphs       => dtend%dphs       , & ! in
+               m_lev      => dstate%m_lev     , & ! in
+               we_lev     => dstate%we_lev    , & ! out
+               we_lev_lon => dstate%we_lev_lon, & ! out
+               we_lev_lat => dstate%we_lev_lat)   ! out
     do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -227,20 +227,20 @@ contains
 
   end subroutine calc_we_lev
 
-  subroutine calc_ke(block, state)
+  subroutine calc_ke(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
     real(r8) ke_vtx(4)
-    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
-    real(r8) pole(state%mesh%num_full_lev)
+    real(r8) work(dstate%mesh%full_lon_ibeg:dstate%mesh%full_lon_iend,dstate%mesh%num_full_lev)
+    real(r8) pole(dstate%mesh%num_full_lev)
 
-    associate (mesh => block%mesh , &
-               u    => state%u_lon, & ! in
-               v    => state%v_lat, & ! in
-               ke   => state%ke   )   ! out
+    associate (mesh => block%mesh  , &
+               u    => dstate%u_lon, & ! in
+               v    => dstate%v_lat, & ! in
+               ke   => dstate%ke   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
@@ -347,20 +347,20 @@ contains
 
   end subroutine calc_ke
 
-  subroutine calc_div(block, state)
+  subroutine calc_div(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
-    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
-    real(r8) pole(state%mesh%num_full_lev)
+    real(r8) work(dstate%mesh%full_lon_ibeg:dstate%mesh%full_lon_iend,dstate%mesh%num_full_lev)
+    real(r8) pole(dstate%mesh%num_full_lev)
     integer i, j, k
 
-    associate (mesh => block%mesh , &
-               u    => state%u_lon, & ! in
-               v    => state%v_lat, & ! in
-               div  => state%div  , & ! out
-               div2 => state%div2 )   ! out
+    associate (mesh => block%mesh  , &
+               u    => dstate%u_lon, & ! in
+               v    => dstate%v_lat, & ! in
+               div  => dstate%div  , & ! out
+               div2 => dstate%div2 )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -426,20 +426,20 @@ contains
 
   end subroutine calc_div
 
-  subroutine calc_gz_lev(block, state)
+  subroutine calc_gz_lev(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, l
     real(r8) dgz
 
     associate (mesh   => block%mesh      , &
                gzs    => block%static%gzs, & ! in
-               t      => state%t         , & ! in
-               ph_lev => state%ph_lev    , & ! in
-               gz_lev => state%gz_lev    , & ! out
-               gz     => state%gz        )   ! out
+               t      => dstate%t        , & ! in
+               ph_lev => dstate%ph_lev   , & ! in
+               gz_lev => dstate%gz_lev   , & ! out
+               gz     => dstate%gz       )   ! out
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -464,23 +464,23 @@ contains
 
   end subroutine calc_gz_lev
 
-  subroutine calc_m(block, state)
+  subroutine calc_m(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, l
 
     associate (mesh   => block%mesh      , &
-               ph     => state%ph        , & ! in
-               ph_lev => state%ph_lev    , & ! in
-               gz     => state%gz        , & ! in
+               ph     => dstate%ph       , & ! in
+               ph_lev => dstate%ph_lev   , & ! in
+               gz     => dstate%gz       , & ! in
                gzs    => block%static%gzs, & ! in
-               m      => state%m         , & ! out
-               m_lon  => state%m_lon     , & ! out
-               m_lat  => state%m_lat     , & ! out
-               m_lev  => state%m_lev     , & ! out
-               m_vtx  => state%m_vtx     )   ! out
+               m      => dstate%m        , & ! out
+               m_lon  => dstate%m_lon    , & ! out
+               m_lat  => dstate%m_lat    , & ! out
+               m_lev  => dstate%m_lev    , & ! out
+               m_vtx  => dstate%m_vtx    )   ! out
     if (baroclinic .or. advection) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -490,7 +490,7 @@ contains
               do l = mesh%half_lev_ibeg, mesh%half_lev_iend
                 print *, l, ph_lev(i,j,l)
               end do
-              print *, 'phs(i,j) =', state%phs(i,j)
+              print *, 'phs(i,j) =', dstate%phs(i,j)
               print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
               print *, 'The pressure levels are not monotonic!'
               call process_stop(1)
@@ -539,26 +539,26 @@ contains
 
   end subroutine calc_m
 
-  subroutine calc_mf(block, state, dt)
+  subroutine calc_mf(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: dt
 
     integer i, j, k
 
-    associate (mesh    => block%mesh   , &
-               m       => state%m      , & ! in
-               m_lon   => state%m_lon  , & ! in
-               m_lat   => state%m_lat  , & ! in
-               u_lon   => state%u_lon  , & ! in
-               v_lat   => state%v_lat  , & ! in
-               u_lat   => state%u_lat  , & ! out
-               v_lon   => state%v_lon  , & ! out
-               mfx_lon => state%mfx_lon, & ! out
-               mfy_lat => state%mfy_lat, & ! out
-               mfy_lon => state%mfy_lon, & ! out
-               mfx_lat => state%mfx_lat)   ! out
+    associate (mesh    => block%mesh    , &
+               m       => dstate%m      , & ! in
+               m_lon   => dstate%m_lon  , & ! in
+               m_lat   => dstate%m_lat  , & ! in
+               u_lon   => dstate%u_lon  , & ! in
+               v_lat   => dstate%v_lat  , & ! in
+               u_lat   => dstate%u_lat  , & ! out
+               v_lon   => dstate%v_lon  , & ! out
+               mfx_lon => dstate%mfx_lon, & ! out
+               mfy_lat => dstate%mfy_lat, & ! out
+               mfy_lon => dstate%mfy_lon, & ! out
+               mfx_lat => dstate%mfx_lat)   ! out
     call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
     ! call adv_calc_mass_hflx(block, block%adv_batch_pt, m, mfx_lon, mfy_lat, dt)
     ! call fill_halo(block, mfx_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
@@ -604,10 +604,10 @@ contains
 
   end subroutine calc_mf
 
-  subroutine calc_vor(block, state, u, v)
+  subroutine calc_vor(block, dstate, u, v)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: u(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                               block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                               block%mesh%full_lev_lb:block%mesh%full_lev_ub)
@@ -616,12 +616,11 @@ contains
                               block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
     integer i, j, k
-    real(r8) work(state%mesh%half_lon_ibeg:state%mesh%half_lon_iend,state%mesh%num_full_lev)
-    real(r8) pole(state%mesh%num_full_lev)
+    real(r8) work(dstate%mesh%half_lon_ibeg:dstate%mesh%half_lon_iend,dstate%mesh%num_full_lev)
+    real(r8) pole(dstate%mesh%num_full_lev)
 
-    associate (mesh  => block%mesh , &
-               u_lat => state%u_lat, & ! in
-               vor   => state%vor  )   ! out
+    associate (mesh  => block%mesh  , &
+               vor   => dstate%vor  )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
@@ -638,7 +637,7 @@ contains
         j = mesh%half_lat_ibeg
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = -u_lat(i,j,k) * mesh%le_lat(j)
+            work(i,k) = -u(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
@@ -654,7 +653,7 @@ contains
         j = mesh%half_lat_iend
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = u_lat(i,j,k) * mesh%le_lat(j)
+            work(i,k) = u(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
@@ -671,20 +670,20 @@ contains
 
   end subroutine calc_vor
 
-  subroutine calc_pv(block, state)
+  subroutine calc_pv(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
 
-    associate (mesh  => block%mesh , &
-               m_vtx => state%m_vtx, & ! in
-               u_lon => state%u_lon, & ! in
-               v_lat => state%v_lat, & ! in
-               vor   => state%vor  , & ! in
-               pv    => state%pv)      ! out
-    call calc_vor(block, state, u_lon, v_lat)
+    associate (mesh  => block%mesh  , &
+               m_vtx => dstate%m_vtx, & ! in
+               u_lon => dstate%u_lon, & ! in
+               v_lat => dstate%v_lat, & ! in
+               vor   => dstate%vor  , & ! in
+               pv    => dstate%pv)      ! out
+    call calc_vor(block, dstate, u_lon, v_lat)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -697,18 +696,18 @@ contains
 
   end subroutine calc_pv
 
-  subroutine interp_pv_midpoint(block, state, dt)
+  subroutine interp_pv_midpoint(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: dt
 
     integer i, j, k
 
-    associate (mesh   => block%mesh  , &
-               pv     => state%pv    , & ! in
-               pv_lon => state%pv_lon, & ! out
-               pv_lat => state%pv_lat)   ! out
+    associate (mesh   => block%mesh   , &
+               pv     => dstate%pv    , & ! in
+               pv_lon => dstate%pv_lon, & ! out
+               pv_lat => dstate%pv_lat)   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -730,23 +729,23 @@ contains
 
   end subroutine interp_pv_midpoint
 
-  subroutine interp_pv_upwind(block, state, dt)
+  subroutine interp_pv_upwind(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: dt
 
     real(r8) b
     integer i, j, k
 
-    associate (mesh     => block%mesh    , &
-               un       => state%u_lon   , & ! in
-               vn       => state%v_lat   , & ! in
-               ut       => state%u_lat   , & ! in
-               vt       => state%v_lon   , & ! in
-               pv       => state%pv      , & ! in
-               pv_lon   => state%pv_lon  , & ! out
-               pv_lat   => state%pv_lat)     ! out
+    associate (mesh     => block%mesh   , &
+               un       => dstate%u_lon , & ! in
+               vn       => dstate%v_lat , & ! in
+               ut       => dstate%u_lat , & ! in
+               vt       => dstate%v_lon , & ! in
+               pv       => dstate%pv    , & ! in
+               pv_lon   => dstate%pv_lon, & ! out
+               pv_lat   => dstate%pv_lat)   ! out
     select case (upwind_order_pv)
     case (1)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -789,23 +788,23 @@ contains
 
   end subroutine interp_pv_upwind
 
-  subroutine interp_pv_tvd(block, state, dt)
+  subroutine interp_pv_tvd(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: dt
 
     real(r8) cfl
     integer i, j, k
 
-    associate (mesh     => block%mesh    , &
-               un       => state%u_lon   , & ! in
-               vn       => state%v_lat   , & ! in
-               ut       => state%u_lat   , & ! in
-               vt       => state%v_lon   , & ! in
-               pv       => state%pv      , & ! in
-               pv_lon   => state%pv_lon  , & ! out
-               pv_lat   => state%pv_lat)     ! out
+    associate (mesh     => block%mesh   , &
+               un       => dstate%u_lon , & ! in
+               vn       => dstate%v_lat , & ! in
+               ut       => dstate%u_lat , & ! in
+               vt       => dstate%v_lon , & ! in
+               pv       => dstate%pv    , & ! in
+               pv_lon   => dstate%pv_lon, & ! out
+               pv_lat   => dstate%pv_lat)   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -826,24 +825,24 @@ contains
 
   end subroutine interp_pv_tvd
 
-  subroutine calc_coriolis(block, state, tend, dt)
+  subroutine calc_coriolis(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(inout) :: dstate
+    type(dtend_type), intent(inout) :: dtend
     real(8), intent(in) :: dt
 
     integer i, j, k
 
-    associate (mesh    => block%mesh   , &
-               mfx_lon => state%mfx_lon, & ! in
-               mfy_lat => state%mfy_lat, & ! in
-               mfy_lon => state%mfy_lon, & ! in
-               mfx_lat => state%mfx_lat, & ! in
-               pv_lon  => state%pv_lon , & ! in
-               pv_lat  => state%pv_lat , & ! in
-               qhu     => tend%qhu     , & ! out
-               qhv     => tend%qhv)        ! out
+    associate (mesh    => block%mesh    , &
+               mfx_lon => dstate%mfx_lon, & ! in
+               mfy_lat => dstate%mfy_lat, & ! in
+               mfy_lon => dstate%mfy_lon, & ! in
+               mfx_lat => dstate%mfx_lat, & ! in
+               pv_lon  => dstate%pv_lon , & ! in
+               pv_lat  => dstate%pv_lat , & ! in
+               qhu     => dtend%qhu     , & ! out
+               qhv     => dtend%qhv     )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -888,19 +887,19 @@ contains
 
   end subroutine calc_coriolis
 
-  subroutine calc_grad_ke(block, state, tend, dt)
+  subroutine calc_grad_ke(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(inout) :: dstate
+    type(dtend_type), intent(inout) :: dtend
     real(8), intent(in) :: dt
 
     integer i, j, k
 
-    associate (mesh    => block%mesh  , &
-               ke      => state%ke    , & ! in
-               dkedlon => tend%dkedlon, & ! out
-               dkedlat => tend%dkedlat)   ! out
+    associate (mesh    => block%mesh   , &
+               ke      => dstate%ke    , & ! in
+               dkedlon => dtend%dkedlon, & ! out
+               dkedlat => dtend%dkedlat)   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -919,22 +918,22 @@ contains
 
   end subroutine calc_grad_ke
 
-  subroutine calc_grad_mf(block, state, tend, dt)
+  subroutine calc_grad_mf(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(in) :: dstate
+    type(dtend_type), intent(inout) :: dtend
     real(8), intent(in) :: dt
 
     integer i, j, k
-    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
-    real(r8) pole(state%mesh%num_full_lev)
+    real(r8) work(dstate%mesh%full_lon_ibeg:dstate%mesh%full_lon_iend,dstate%mesh%num_full_lev)
+    real(r8) pole(dstate%mesh%num_full_lev)
 
-    associate (mesh    => block%mesh   , &
-               mfx_lon => state%mfx_lon, & ! in
-               mfy_lat => state%mfy_lat, & ! in
-               dmfdlon => tend%dmfdlon , & ! out
-               dmfdlat => tend%dmfdlat)    ! out
+    associate (mesh    => block%mesh    , &
+               mfx_lon => dstate%mfx_lon, & ! in
+               mfy_lat => dstate%mfy_lat, & ! in
+               dmfdlon => dtend%dmfdlon , & ! out
+               dmfdlat => dtend%dmfdlat )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -988,27 +987,27 @@ contains
 
   end subroutine calc_grad_mf
 
-  subroutine calc_grad_ptf(block, state, tend, dt)
+  subroutine calc_grad_ptf(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    type(tend_type ), intent(inout) :: tend
+    type(dstate_type), intent(inout) :: dstate
+    type(dtend_type ), intent(inout) :: dtend
     real(8), intent(in) :: dt
 
     integer i, j, k
-    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
-    real(r8) pole(state%mesh%num_full_lev)
+    real(r8) work(dstate%mesh%full_lon_ibeg:dstate%mesh%full_lon_iend,dstate%mesh%num_full_lev)
+    real(r8) pole(dstate%mesh%num_full_lev)
 
-    associate (mesh     => block%mesh   , &
-               gz_lev   => state%gz_lev , & ! in
-               ph       => state%ph     , & ! in
-               pt       => state%pt     , & ! in
-               ptf_lon  => state%ptf_lon, & ! out
-               ptf_lat  => state%ptf_lat, & ! out
-               ptf_lev  => state%ptf_lev, & ! out
-               dptfdlon => tend%dptfdlon, & ! out
-               dptfdlat => tend%dptfdlat, & ! out
-               dptfdlev => tend%dptfdlev)   ! out
+    associate (mesh     => block%mesh    , &
+               gz_lev   => dstate%gz_lev , & ! in
+               ph       => dstate%ph     , & ! in
+               pt       => dstate%pt     , & ! in
+               ptf_lon  => dstate%ptf_lon, & ! out
+               ptf_lat  => dstate%ptf_lat, & ! out
+               ptf_lev  => dstate%ptf_lev, & ! out
+               dptfdlon => dtend%dptfdlon, & ! out
+               dptfdlat => dtend%dptfdlat, & ! out
+               dptfdlev => dtend%dptfdlev)   ! out
     call adv_calc_tracer_hflx(block, block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
@@ -1091,8 +1090,8 @@ contains
     ! do k = mesh%full_lev_ibeg, mesh%full_lev_iend
     !   do j = mesh%full_lat_ibeg, mesh%full_lat_iend
     !     do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-    !       dptfdlev(i,j,k) = state%we_lev(i,j,k+1) * ptf_lev(i,j,k+1) - &
-    !                         state%we_lev(i,j,k  ) * ptf_lev(i,j,k  )
+    !       dptfdlev(i,j,k) = dstate%we_lev(i,j,k+1) * ptf_lev(i,j,k+1) - &
+    !                         dstate%we_lev(i,j,k  ) * ptf_lev(i,j,k  )
     !     end do
     !   end do
     ! end do
@@ -1100,20 +1099,20 @@ contains
 
   end subroutine calc_grad_ptf
 
-  subroutine calc_dphsdt(block, state, tend, dt)
+  subroutine calc_dphsdt(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(in) :: dstate
+    type(dtend_type), intent(inout) :: dtend
     real(8), intent(in) :: dt
 
     integer i, j, k
 
-    associate (mesh    => block%mesh  , &
-               dmfdlon => tend%dmfdlon, & ! in
-               dmfdlat => tend%dmfdlat, & ! in
-               dphs    => tend%dphs)      ! out
-    tend%dphs = 0
+    associate (mesh    => block%mesh   , &
+               dmfdlon => dtend%dmfdlon, & ! in
+               dmfdlat => dtend%dmfdlat, & ! in
+               dphs    => dtend%dphs   )   ! out
+    dtend%dphs = 0
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -1125,26 +1124,26 @@ contains
 
   end subroutine calc_dphsdt
 
-  subroutine calc_wedudlev_wedvdlev(block, state, tend, dt)
+  subroutine calc_wedudlev_wedvdlev(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(in) :: dstate
+    type(dtend_type), intent(inout) :: dtend
     real(8), intent(in) :: dt
 
     integer i, j, k
 
     ! Follow SB81 vertical advection discretization.
 
-    associate (mesh       => block%mesh      , &
-               u          => state%u_lon     , & ! in
-               v          => state%v_lat     , & ! in
-               m_lon      => state%m_lon     , & ! in
-               m_lat      => state%m_lat     , & ! in
-               we_lev_lon => state%we_lev_lon, & ! in
-               we_lev_lat => state%we_lev_lat, & ! in
-               wedudlev   => tend%wedudlev   , & ! out
-               wedvdlev   => tend%wedvdlev   )   ! out
+    associate (mesh       => block%mesh       , &
+               u          => dstate%u_lon     , & ! in
+               v          => dstate%v_lat     , & ! in
+               m_lon      => dstate%m_lon     , & ! in
+               m_lat      => dstate%m_lat     , & ! in
+               we_lev_lon => dstate%we_lev_lon, & ! in
+               we_lev_lat => dstate%we_lev_lat, & ! in
+               wedudlev   => dtend%wedudlev   , & ! out
+               wedvdlev   => dtend%wedvdlev   )   ! out
     do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend

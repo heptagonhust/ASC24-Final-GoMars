@@ -124,20 +124,20 @@ CONTAINS
     real(r8), pointer :: q(:,:,:)
     real(r8) rho, thetav
 
-    associate (mesh  => block%mesh,           &
-               lon   => block%mesh%full_lon , &
-               lat   => block%mesh%full_lat , &
-               ps    => block%state(1)%phs  , &
-               p     => block%state(1)%ph   , &
-               z     => block%state(1)%gz   , &
-               gz    => block%state(1)%gz   , &
-               u     => block%state(1)%u    , &
-               u_lon => block%state(1)%u_lon, &
-               v     => block%state(1)%v    , &
-               v_lat => block%state(1)%v_lat, &
-               t     => block%state(1)%t    , &
-               pt    => block%state(1)%pt   , &
-               gzs   => block%static%gzs    )
+    associate (mesh  => block%mesh,            &
+               lon   => block%mesh%full_lon  , &
+               lat   => block%mesh%full_lat  , &
+               ps    => block%dstate(1)%phs  , &
+               p     => block%dstate(1)%ph   , &
+               z     => block%dstate(1)%gz   , &
+               gz    => block%dstate(1)%gz   , &
+               u     => block%dstate(1)%u    , &
+               u_lon => block%dstate(1)%u_lon, &
+               v     => block%dstate(1)%v    , &
+               v_lat => block%dstate(1)%v_lat, &
+               t     => block%dstate(1)%t    , &
+               pt    => block%dstate(1)%pt   , &
+               gzs   => block%static%gzs     )
     q(mesh%full_lon_lb:mesh%full_lon_ub, &
       mesh%full_lat_lb:mesh%full_lat_ub, &
       mesh%full_lev_lb:mesh%full_lev_ub) => block%adv_batches(1)%q(:,:,:,1,block%adv_batches(1)%old)

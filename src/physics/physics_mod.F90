@@ -46,11 +46,11 @@ contains
 
     if (.not. time_is_alerted('phys')) return
 
-    associate (mesh   => block%mesh        , &
-               pstate => block%pstate      , &
-               ptend  => block%ptend       , &
-               state  => block%state(itime), &
-               tend   => block%tend(itime))
+    associate (mesh   => block%mesh         , &
+               pstate => block%pstate       , &
+               ptend  => block%ptend        , &
+               dstate => block%dstate(itime), &
+               dtend   => block%dtend(itime))
     call dp_coupling_d2p(block, itime)
 
     call ptend%reset()
@@ -92,30 +92,30 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            state%u_lon(i,j,k) = state%u_lon(i,j,k) + dt * 0.5_r8 * (tend%dudt_phys(i,j,k) + tend%dudt_phys(i+1,j,k))
+            dstate%u_lon(i,j,k) = dstate%u_lon(i,j,k) + dt * 0.5_r8 * (dtend%dudt_phys(i,j,k) + dtend%dudt_phys(i+1,j,k))
           end do
         end do
       end do
-      call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
+      call fill_halo(block, dstate%u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            state%v_lat(i,j,k) = state%v_lat(i,j,k) + dt * 0.5_r8 * (tend%dvdt_phys(i,j,k) + tend%dvdt_phys(i,j+1,k))
+            dstate%v_lat(i,j,k) = dstate%v_lat(i,j,k) + dt * 0.5_r8 * (dtend%dvdt_phys(i,j,k) + dtend%dvdt_phys(i,j+1,k))
           end do
         end do
       end do
-      call fill_halo(block, state%v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
+      call fill_halo(block, dstate%v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
     end if
 
     if (ptend%updated_sh) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            state%qv(i,j,k) = mixing_ratio(specific_humidity(state%qv(i,j,k)) + dt * tend%dshdt_phys(i,j,k))
+            dstate%qv(i,j,k) = mixing_ratio(specific_humidity(dstate%qv(i,j,k)) + dt * dtend%dshdt_phys(i,j,k))
           end do
         end do
       end do
-      call fill_halo(block, state%qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block, dstate%qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
       call calc_qm(block, itime)
     end if
 
@@ -123,12 +123,12 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            state%t (i,j,k) = state%t(i,j,k) + dt * tend%dtdt_phys(i,j,k)
-            state%pt(i,j,k) = potential_temperature(state%t(i,j,k), state%p(i,j,k), state%qv(i,j,k))
+            dstate%t (i,j,k) = dstate%t(i,j,k) + dt * dtend%dtdt_phys(i,j,k)
+            dstate%pt(i,j,k) = potential_temperature(dstate%t(i,j,k), dstate%p(i,j,k), dstate%qv(i,j,k))
           end do
         end do
       end do
-      call fill_halo(block, state%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     end if
     end associate
 

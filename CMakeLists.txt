@@ -139,9 +139,7 @@ set(gmcore_files
   src/dynamics/vert_coord/hybrid_coord_mars_mod.F90
   src/dynamics/vert_coord/hybrid_coord_mod.F90
   src/dynamics/vert_coord/vert_coord_mod.F90
-  src/dynamics/state_mod.F90
-  src/dynamics/static_mod.F90
-  src/dynamics/tend_mod.F90
+  src/dynamics/dynamics_types_mod.F90
   src/dynamics/nh_mod.F90
   src/dynamics/interp_mod.F90
   src/dynamics/operators_mod.F90

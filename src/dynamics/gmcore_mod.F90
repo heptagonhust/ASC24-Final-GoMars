@@ -9,7 +9,6 @@ module gmcore_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use history_mod
   use restart_mod
-  use tend_mod
   use block_mod
   use vert_coord_mod
   use time_schemes_mod
@@ -35,8 +34,8 @@ module gmcore_mod
 
   public adv_accum_wind
   public block_type
-  public state_type
-  public tend_type
+  public dstate_type
+  public dtend_type
   public proc
 
   procedure(space_operators_interface), pointer :: operators
@@ -108,15 +107,15 @@ contains
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &
                  mesh  => blocks(iblk)%mesh, &
-                 state => blocks(iblk)%state(old))
+                 dstate => blocks(iblk)%dstate(old))
       if (baroclinic) then 
         call prepare_static(block)
         ! Ensure bottom gz_lev is the same as gzs.
-        do itime = lbound(block%state, 1), ubound(block%state, 1)
-          block%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = block%static%gzs
+        do itime = lbound(block%dstate, 1), ubound(block%dstate, 1)
+          block%dstate(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = block%static%gzs
         end do
       end if
-      call blocks(iblk)%state(old)%c2a()
+      call blocks(iblk)%dstate(old)%c2a()
       if (baroclinic) call moist_link_state(block)
       end associate
     end do
@@ -133,8 +132,8 @@ contains
       !                              Dynamical Core
       do iblk = 1, size(blocks)
         call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
-        call damp_run(blocks(iblk), blocks(iblk)%state(new), blocks(iblk)%tend(new), dt_dyn)
-        call blocks(iblk)%state(new)%c2a()
+        call damp_run(blocks(iblk), blocks(iblk)%dstate(new), blocks(iblk)%dtend(new), dt_dyn)
+        call blocks(iblk)%dstate(new)%c2a()
       end do
       ! Advance to n+1 time level.
       ! NOTE: Time indices are swapped, e.g. new <=> old.
@@ -148,7 +147,7 @@ contains
       !                                Physics
       if (baroclinic) then
         do iblk = 1, size(blocks)
-          call test_forcing_run(blocks(iblk), dt_dyn, blocks(iblk)%static, blocks(iblk)%state(old))
+          call test_forcing_run(blocks(iblk), dt_dyn, blocks(iblk)%static, blocks(iblk)%dstate(old))
           call moist_link_state(blocks(iblk))
           call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
         end do
@@ -245,12 +244,12 @@ contains
     te_pe = 0
     do iblk = 1, size(blocks)
       associate (mesh   => blocks(iblk)%mesh, &
-                 state  => blocks(iblk)%state(itime), &
+                 dstate  => blocks(iblk)%dstate(itime), &
                  static => blocks(iblk)%static)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            tm = tm + state%m(i,j,k) * mesh%area_cell(j)
+            tm = tm + dstate%m(i,j,k) * mesh%area_cell(j)
           end do
         end do
       end do
@@ -258,12 +257,12 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            te_ke = te_ke + state%mfx_lon(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
+            te_ke = te_ke + dstate%mfx_lon(i,j,k) * 0.5_r8 * dstate%u_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_ke = te_ke + state%mfy_lat(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
+            te_ke = te_ke + dstate%mfy_lat(i,j,k) * 0.5_r8 * dstate%v_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do
@@ -271,19 +270,19 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              te_ie = te_ie + state%m(i,j,k) * cpd * state%t(i,j,k) * mesh%area_cell(j)
+              te_ie = te_ie + dstate%m(i,j,k) * cpd * dstate%t(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_pe = te_pe + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
+            te_pe = te_pe + static%gzs(i,j) * dstate%phs(i,j) * mesh%area_cell(j)
           end do
         end do
       else
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_pe = te_pe + (state%m(i,j,1)**2 * g * 0.5_r8 + state%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
+            te_pe = te_pe + (dstate%m(i,j,1)**2 * g * 0.5_r8 + dstate%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
           end do
         end do
       end if
@@ -291,7 +290,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tav = tav + state%pv(i,j,k) * mesh%area_vtx(j)
+            tav = tav + dstate%pv(i,j,k) * mesh%area_vtx(j)
           end do
         end do
       end do
@@ -299,12 +298,12 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tpe = tpe + state%m_lon(i,j,k) * state%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
+            tpe = tpe + dstate%m_lon(i,j,k) * dstate%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
           end do
         end do
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            tpe = tpe + state%m_lat(i,j,k) * state%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
+            tpe = tpe + dstate%m_lat(i,j,k) * dstate%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
           end do
         end do
       end do
@@ -313,7 +312,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tpt = tpt + state%m(i,j,k) * state%pt(i,j,k) * mesh%area_cell(j)
+              tpt = tpt + dstate%m(i,j,k) * dstate%pt(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
@@ -330,14 +329,14 @@ contains
     te = te_ke + te_ie + te_pe
 
     do iblk = 1, size(blocks)
-      blocks(iblk)%state(itime)%tm  = tm
-      blocks(iblk)%state(itime)%te  = te
-      blocks(iblk)%state(itime)%tav = tav
-      blocks(iblk)%state(itime)%tpe = tpe
-      blocks(iblk)%state(itime)%te_ke = te_ke
-      blocks(iblk)%state(itime)%te_ie = te_ie
-      blocks(iblk)%state(itime)%te_pe = te_pe
-      if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(blocks(iblk)%state(itime))
+      blocks(iblk)%dstate(itime)%tm  = tm
+      blocks(iblk)%dstate(itime)%te  = te
+      blocks(iblk)%dstate(itime)%tav = tav
+      blocks(iblk)%dstate(itime)%tpe = tpe
+      blocks(iblk)%dstate(itime)%te_ke = te_ke
+      blocks(iblk)%dstate(itime)%te_ie = te_ie
+      blocks(iblk)%dstate(itime)%te_pe = te_pe
+      if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(blocks(iblk)%dstate(itime))
     end do
 
     call log_add_diag('tm' , tm )
@@ -348,7 +347,7 @@ contains
     if (nonhydrostatic) then
       max_w = 0
       do iblk = 1, size(blocks)
-        max_w = max(max_w, maxval(abs(blocks(iblk)%state(itime)%w)))
+        max_w = max(max_w, maxval(abs(blocks(iblk)%dstate(itime)%w)))
       end do
       call global_max(proc%comm, max_w)
       call log_add_diag('w', max_w)
@@ -359,11 +358,11 @@ contains
   subroutine space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in   ) :: old_state
-    type(state_type), intent(inout) :: star_state
-    type(state_type), intent(inout) :: new_state
-    type(tend_type ), intent(inout) :: tend1
-    type(tend_type ), intent(in   ) :: tend2
+    type(dstate_type), intent(in) :: old_state
+    type(dstate_type), intent(inout) :: star_state
+    type(dstate_type), intent(inout) :: new_state
+    type(dtend_type), intent(inout) :: tend1
+    type(dtend_type), intent(in) :: tend2
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 

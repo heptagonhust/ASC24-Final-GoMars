@@ -42,28 +42,28 @@ contains
 
   end subroutine smag_damp_final
 
-  subroutine smag_damp_run(block, dt, tend, state)
+  subroutine smag_damp_run(block, dt, dtend, dstate)
 
     type(block_type), intent(in) :: block
     real(8), intent(in) :: dt
-    type(tend_type), intent(inout) :: tend
-    type(state_type), intent(inout) :: state
+    type(dtend_type), intent(inout) :: dtend
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
     real(r8) ls2
 
-    associate (mesh      => block%mesh     , &
-               smag_t    => state%smag_t   , & ! working array
-               smag_s    => state%smag_s   , & ! working array
-               kmh_lon   => state%kmh_lon  , & ! working array
-               kmh_lat   => state%kmh_lat  , & ! working array
-               kmh       => state%kmh      , & ! working array
-               dudt      => tend%smag_dudt , & ! working array
-               dvdt      => tend%smag_dvdt , & ! working array
-               dptdt     => tend%smag_dptdt, & ! working array
-               u         => state%u_lon    , & ! inout
-               v         => state%v_lat    , & ! inout
-               pt        => state%pt       )   ! inout
+    associate (mesh      => block%mesh      , &
+               smag_t    => dstate%smag_t   , & ! working array
+               smag_s    => dstate%smag_s   , & ! working array
+               kmh_lon   => dstate%kmh_lon  , & ! working array
+               kmh_lat   => dstate%kmh_lat  , & ! working array
+               kmh       => dstate%kmh      , & ! working array
+               dudt      => dtend%smag_dudt , & ! working array
+               dvdt      => dtend%smag_dvdt , & ! working array
+               dptdt     => dtend%smag_dptdt, & ! working array
+               u         => dstate%u_lon    , & ! inout
+               v         => dstate%v_lat    , & ! inout
+               pt        => dstate%pt       )   ! inout
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend

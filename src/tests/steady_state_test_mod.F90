@@ -29,16 +29,16 @@ contains
     real(r8) etav, eta, tbar, gzbar, sin_lat, cos_lat
     integer i, j, k
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               phs    => block%state(1)%phs   , &
-               ph_lev => block%state(1)%ph_lev, &
-               ph     => block%state(1)%ph    , &
-               gz_lev => block%state(1)%gz_lev, &
-               gz     => block%state(1)%gz    , &
-               t      => block%state(1)%t     , &
-               pt     => block%state(1)%pt    , &
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               phs    => block%dstate(1)%phs   , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               ph     => block%dstate(1)%ph    , &
+               gz_lev => block%dstate(1)%gz_lev, &
+               gz     => block%dstate(1)%gz    , &
+               t      => block%dstate(1)%t     , &
+               pt     => block%dstate(1)%pt    , &
                gzs    => block%static%gzs)
     phs = 1.0e5_r8
     v   = 0

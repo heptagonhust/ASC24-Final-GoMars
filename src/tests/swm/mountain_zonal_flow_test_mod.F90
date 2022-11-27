@@ -34,10 +34,10 @@ contains
     cos_alpha = cos(alpha)
     sin_alpha = sin(alpha)
 
-    associate (mesh   => block%mesh          , &
-               u      => block%state(1)%u_lon, &
-               v      => block%state(1)%v_lat, &
-               gz     => block%state(1)%gz   , &
+    associate (mesh   => block%mesh           , &
+               u      => block%dstate(1)%u_lon, &
+               v      => block%dstate(1)%v_lat, &
+               gz     => block%dstate(1)%gz   , &
                gzs    => block%static%gzs)
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend

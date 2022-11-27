@@ -48,17 +48,17 @@ contains
     integer i, j, k
     real(r8) ts, cos_2lat, r, local_z, local_ztop
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               w      => block%state(1)%w_lev , &
-               phs    => block%state(1)%phs   , &
-               ph_lev => block%state(1)%ph_lev, &
-               ph     => block%state(1)%ph    , &
-               pt     => block%state(1)%pt    , &
-               t      => block%state(1)%t     , &
-               gz_lev => block%state(1)%gz_lev, &
-               gz     => block%state(1)%gz    , &
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               w      => block%dstate(1)%w_lev , &
+               phs    => block%dstate(1)%phs   , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               ph     => block%dstate(1)%ph    , &
+               pt     => block%dstate(1)%pt    , &
+               t      => block%dstate(1)%t     , &
+               gz_lev => block%dstate(1)%gz_lev, &
+               gz     => block%dstate(1)%gz    , &
                gzs    => block%static%gzs)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend

@@ -5,9 +5,6 @@ module debug_mod
   use const_mod
   use namelist_mod
   use mesh_mod
-  use static_mod
-  use state_mod
-  use tend_mod
   use block_mod
   use parallel_mod
 
@@ -110,11 +107,11 @@ contains
 
   end subroutine debug_check_areas
 
-  subroutine debug_check_space_operators(block, state, tend)
+  subroutine debug_check_space_operators(block, dstate, dtend)
 
     type(block_type), intent(inout) :: block
-    type(state_type ), intent(in) :: state
-    type(tend_type  ), intent(in) :: tend
+    type(dstate_type), intent(in) :: dstate
+    type(dtend_type), intent(in) :: dtend
 
     integer i, j, k
     type(mesh_type), pointer :: mesh
@@ -124,7 +121,7 @@ contains
     real(r8) ip_mf
     real(r8) ip_ptf
 
-    mesh => state%mesh
+    mesh => dstate%mesh
     ip_cf  = 0.0_r8
     ip_ke  = 0.0_r8; ip_ke_h = 0.0_r8; ip_ke_v = 0.0_r8
     ip_pe  = 0.0_r8
@@ -135,11 +132,11 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            ip_cf   = ip_cf   + tend%qhv     (i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j)
-            ip_ke_h = ip_ke_h + tend%dkedlon (i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
+            ip_cf   = ip_cf   + dtend%qhv     (i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j)
+            ip_ke_h = ip_ke_h + dtend%dkedlon (i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
             ip_ke_v = ip_ke_v + ( &
-              tend%wedudlev(i,j,k) * state%mfx_lon(i,j,k) + &
-              0.5_r8 * state%u_lon(i,j,k)**2 * (state%we_lev_lon(i,j,k+1) - state%we_lev_lon(i,j,k)) &
+              dtend%wedudlev(i,j,k) * dstate%mfx_lon(i,j,k) + &
+              0.5_r8 * dstate%u_lon(i,j,k)**2 * (dstate%we_lev_lon(i,j,k+1) - dstate%we_lev_lon(i,j,k)) &
             ) * mesh%area_lon(j)
           end do
         end do
@@ -148,11 +145,11 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            ip_cf   = ip_cf   - tend%qhu     (i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j)
-            ip_ke_h = ip_ke_h + tend%dkedlat (i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
+            ip_cf   = ip_cf   - dtend%qhu     (i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j)
+            ip_ke_h = ip_ke_h + dtend%dkedlat (i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
             ip_ke_v = ip_ke_v + ( &
-              tend%wedvdlev(i,j,k) * state%mfy_lat(i,j,k) + &
-              0.5_r8 * state%v_lat(i,j,k)**2 * (state%we_lev_lat(i,j,k+1) - state%we_lev_lat(i,j,k)) &
+              dtend%wedvdlev(i,j,k) * dstate%mfy_lat(i,j,k) + &
+              0.5_r8 * dstate%v_lat(i,j,k)**2 * (dstate%we_lev_lat(i,j,k+1) - dstate%we_lev_lat(i,j,k)) &
             ) * mesh%area_lat(j)
           end do
         end do
@@ -161,8 +158,8 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            ip_ke_h = ip_ke_h + (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * state%ke(i,j,k) * mesh%area_cell(j)
-            ip_ptf  = ip_ptf + (tend%dptfdlon(i,j,k) + tend%dptfdlat(i,j,k) + tend%dptfdlev(i,j,k)) * mesh%area_cell(j)
+            ip_ke_h = ip_ke_h + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * dstate%ke(i,j,k) * mesh%area_cell(j)
+            ip_ptf  = ip_ptf + (dtend%dptfdlon(i,j,k) + dtend%dptfdlat(i,j,k) + dtend%dptfdlev(i,j,k)) * mesh%area_cell(j)
           end do
         end do
       end do
@@ -183,9 +180,9 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            ip_cf = ip_cf  + tend%qhv    (i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j)
-            ip_ke = ip_ke + tend%dkedlon(i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
-            ip_pe = ip_pe + tend%pgf_lon(i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
+            ip_cf = ip_cf  + dtend%qhv    (i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j)
+            ip_ke = ip_ke + dtend%dkedlon(i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
+            ip_pe = ip_pe + dtend%pgf_lon(i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
       end do
@@ -193,9 +190,9 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            ip_cf = ip_cf - tend%qhu    (i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j)
-            ip_ke = ip_ke + tend%dkedlat(i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
-            ip_pe = ip_pe + tend%pgf_lat(i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
+            ip_cf = ip_cf - dtend%qhu    (i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j)
+            ip_ke = ip_ke + dtend%dkedlat(i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
+            ip_pe = ip_pe + dtend%pgf_lat(i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do
@@ -203,9 +200,9 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            ip_ke = ip_ke + (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * state%ke(i,j,k) * mesh%area_cell(j)
-            ip_pe = ip_pe + (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * state%gz(i,j,k) * mesh%area_cell(j)
-            ip_mf = ip_mf + (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * mesh%area_cell(j)
+            ip_ke = ip_ke + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * dstate%ke(i,j,k) * mesh%area_cell(j)
+            ip_pe = ip_pe + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * dstate%gz(i,j,k) * mesh%area_cell(j)
+            ip_mf = ip_mf + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * mesh%area_cell(j)
           end do
         end do
       end do

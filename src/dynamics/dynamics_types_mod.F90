@@ -1,26 +1,26 @@
-module state_mod
+module dynamics_types_mod
 
   use const_mod
   use namelist_mod
   use mesh_mod
   use allocator_mod
-  ! FIXME: Change block arg to halo in parallel_mod to break the cyclic dependencies.
-  ! use parallel_mod
 
   implicit none
 
   private
 
-  public state_type
+  public dstate_type
+  public dtend_type
+  public static_type
 
   ! NOTE:
   !   Variables with '_lon', '_lat' and '_lev' are on the half grids on the corresponding direction,
   !   and '_p' indicates that the variable is perturbed.
-  type state_type
+  type dstate_type
     type(mesh_type), pointer :: mesh => null()
     ! For nesting
     integer :: id = 0
-    type(state_type), pointer :: parent => null()
+    type(dstate_type), pointer :: parent => null()
     real(r8), allocatable, dimension(:,:,:) :: u                 ! Zonal wind speed at cell center (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: v                 ! Meridional wind speed at cell center (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: u_lon             ! Zonal wind speed at lon edge (m s-1)
@@ -89,24 +89,94 @@ module state_mod
     real(r8) tpe
     real(r8) tav
   contains
-    procedure :: init => state_init
-    procedure :: clear => state_clear
-    final :: state_final
-    procedure :: c2a => state_c2a
-    procedure :: a2c => state_a2c
-    generic :: operator(+) => add
-    generic :: operator(*) => multiply
-    generic :: operator(/) => divide
-    generic :: assignment(=) => assign
-    procedure, pass(x) :: add, multiply, divide, assign
-  end type state_type
+    procedure :: init         => dstate_init
+    procedure :: clear        => dstate_clear
+    procedure :: c2a          => dstate_c2a
+    procedure :: a2c          => dstate_a2c
+    generic :: operator(+)    => dstate_add
+    generic :: operator(*)    => dstate_mul
+    generic :: operator(/)    => dstate_div
+    generic :: assignment(=)  => dstate_assign
+    procedure, pass(x) :: dstate_add, dstate_mul, dstate_div, dstate_assign
+    final :: dstate_final
+  end type dstate_type
+
+  type dtend_type
+    type(mesh_type), pointer :: mesh => null()
+    real(r8), allocatable, dimension(:,:,:) :: du
+    real(r8), allocatable, dimension(:,:,:) :: dv
+    real(r8), allocatable, dimension(:,:,:) :: dgz
+    real(r8), allocatable, dimension(:,:,:) :: dpt
+    real(r8), allocatable, dimension(:,:  ) :: dphs
+    ! Tendencies from physics
+    real(r8), allocatable, dimension(:,:,:) :: dudt_phys
+    real(r8), allocatable, dimension(:,:,:) :: dvdt_phys
+    real(r8), allocatable, dimension(:,:,:) :: dtdt_phys
+    real(r8), allocatable, dimension(:,:,:) :: dshdt_phys
+    logical :: update_u   = .false.
+    logical :: update_v   = .false.
+    logical :: update_gz  = .false.
+    logical :: update_pt  = .false.
+    logical :: update_phs = .false.
+    logical :: copy_gz    = .false.
+    logical :: copy_pt    = .false.
+    logical :: copy_phs   = .false.
+    ! Individual tendencies
+    real(r8), allocatable, dimension(:,:,:) :: qhv
+    real(r8), allocatable, dimension(:,:,:) :: qhu
+    real(r8), allocatable, dimension(:,:,:) :: dkedlon
+    real(r8), allocatable, dimension(:,:,:) :: dkedlat
+    real(r8), allocatable, dimension(:,:,:) :: dmfdlon
+    real(r8), allocatable, dimension(:,:,:) :: dmfdlat
+    real(r8), allocatable, dimension(:,:,:) :: dptfdlon ! Zonal potential temperature flux
+    real(r8), allocatable, dimension(:,:,:) :: dptfdlat ! Meridional potential temperature flux
+    real(r8), allocatable, dimension(:,:,:) :: dptfdlev ! Vertical potential temperature flux
+    real(r8), allocatable, dimension(:,:,:) :: pgf_lon
+    real(r8), allocatable, dimension(:,:,:) :: pgf_lat
+    real(r8), allocatable, dimension(:,:,:) :: wedudlev
+    real(r8), allocatable, dimension(:,:,:) :: wedvdlev
+    real(r8), allocatable, dimension(:,:,:) :: smag_dptdt ! Smagorinsky damping potential temperature tendency
+    real(r8), allocatable, dimension(:,:,:) :: smag_dudt
+    real(r8), allocatable, dimension(:,:,:) :: smag_dvdt
+    ! Nonhydrostatic tendencies
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lon ! Advection terms of geopotential
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lat ! Advection terms of geopotential
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lev ! Advection terms of geopotential
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lon  ! Advection terms of vertical speed
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lat  ! Advection terms of vertical speed
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lev  ! Advection terms of vertical speed
+  contains
+    procedure :: init         => dtend_init
+    procedure :: reset_flags  => dtend_reset_flags
+    procedure :: clear        => dtend_clear
+    generic :: operator(+)    => dtend_add
+    generic :: operator(*)    => dtend_mul
+    generic :: operator(/)    => dtend_div
+    generic :: assignment(=)  => dtend_assign
+    procedure, pass(x) :: dtend_add, dtend_mul, dtend_div, dtend_assign
+    final :: dtend_final
+  end type dtend_type
+
+  type static_type
+    type(mesh_type), pointer :: mesh => null()
+    real(r8), allocatable, dimension(:,:) :: landmask
+    real(r8), allocatable, dimension(:,:) :: gzs
+    real(r8), allocatable, dimension(:,:) :: zs_std
+    real(r8), allocatable, dimension(:,:) :: dzsdlon
+    real(r8), allocatable, dimension(:,:) :: dzsdlat
+    real(r8), allocatable, dimension(:,:) :: ref_ps
+  contains
+    procedure :: init       => static_init
+    procedure :: clear      => static_clear
+    final :: static_final
+  end type static_type
 
 contains
 
-  subroutine state_init(this, mesh)
+  subroutine dstate_init(this, mesh)
 
-    class(state_type), intent(inout), target :: this
-    type(mesh_type  ), intent(in   ), target :: mesh
+    class(dstate_type), intent(inout), target :: this
+    type(mesh_type), intent(in), target :: mesh
 
     call this%clear()
 
@@ -186,11 +256,11 @@ contains
       call allocate_array(mesh, this%kmh_lat      , full_lon=.true., half_lat=.true., full_lev=.true.)
     end if
 
-  end subroutine state_init
+  end subroutine dstate_init
 
-  subroutine state_clear(this)
+  subroutine dstate_clear(this)
 
-    class(state_type), intent(inout) :: this
+    class(dstate_type), intent(inout) :: this
 
     if (allocated(this%u                )) deallocate(this%u                )
     if (allocated(this%v                )) deallocate(this%v                )
@@ -257,19 +327,19 @@ contains
     if (allocated(this%kmh_lon          )) deallocate(this%kmh_lon          )
     if (allocated(this%kmh_lat          )) deallocate(this%kmh_lat          )
 
-  end subroutine state_clear
+  end subroutine dstate_clear
 
-  subroutine state_final(this)
+  subroutine dstate_final(this)
 
-    type(state_type), intent(inout) :: this
+    type(dstate_type), intent(inout) :: this
 
     call this%clear()
 
-  end subroutine state_final
+  end subroutine dstate_final
 
-  subroutine state_a2c(this)
+  subroutine dstate_a2c(this)
 
-    class(state_type), intent(inout) :: this
+    class(dstate_type), intent(inout) :: this
 
     integer i, j, k
 
@@ -286,11 +356,11 @@ contains
       end do
     end do
 
-  end subroutine state_a2c
+  end subroutine dstate_a2c
 
-  subroutine state_c2a(this)
+  subroutine dstate_c2a(this)
 
-    class(state_type), intent(inout) :: this
+    class(dstate_type), intent(inout) :: this
 
     integer i, j, k
 
@@ -303,14 +373,14 @@ contains
       end do
     end do
 
-  end subroutine state_c2a
+  end subroutine dstate_c2a
 
-  function add(x, y) result(res)
+  function dstate_add(x, y) result(res)
 
-    class(state_type), intent(in) :: x
-    class(state_type), intent(in) :: y
+    class(dstate_type), intent(in) :: x
+    class(dstate_type), intent(in) :: y
 
-    type(state_type) res
+    type(dstate_type) res
 
     if (hydrostatic) then
       res%u_lon = x%u_lon + y%u_lon
@@ -324,14 +394,14 @@ contains
       res%gz    = x%gz    + y%gz
     end if
 
-  end function add
+  end function dstate_add
 
-  function multiply(s, x) result(res)
+  function dstate_mul(s, x) result(res)
 
     real(r8), intent(in) :: s
-    class(state_type), intent(in) :: x
+    class(dstate_type), intent(in) :: x
 
-    type(state_type) res
+    type(dstate_type) res
 
     if (hydrostatic) then
       res%u_lon = s * x%u_lon
@@ -345,14 +415,14 @@ contains
       res%gz    = s * x%gz
     end if
 
-  end function multiply
+  end function dstate_mul
 
-  function divide(x, s) result(res)
+  function dstate_div(x, s) result(res)
 
-    class(state_type), intent(in) :: x
+    class(dstate_type), intent(in) :: x
     real(r8), intent(in) :: s
 
-    type(state_type) res
+    type(dstate_type) res
 
     if (hydrostatic) then
       res%u_lon = x%u_lon / s
@@ -366,12 +436,12 @@ contains
       res%gz    = x%gz / s
     end if
 
-  end function divide
+  end function dstate_div
 
-  subroutine assign(x, y)
+  subroutine dstate_assign(x, y)
 
-    class(state_type), intent(inout) :: x
-    class(state_type), intent(in) :: y
+    class(dstate_type), intent(inout) :: x
+    class(dstate_type), intent(in) :: y
 
     if (hydrostatic) then
       x%u_lon = y%u_lon
@@ -385,6 +455,318 @@ contains
       x%gz    = y%gz
     end if
 
-  end subroutine assign
+  end subroutine dstate_assign
 
-end module state_mod
+  subroutine dtend_init(this, mesh)
+
+    class(dtend_type), intent(inout) :: this
+    type(mesh_type), intent(in), target :: mesh
+
+    call this%clear()
+
+    this%mesh => mesh
+
+    call allocate_array(mesh, this%du      , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dv      , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dgz     , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dpt     , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dphs    , full_lon=.true., full_lat=.true.                 )
+    call allocate_array(mesh, this%qhv     , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%qhu     , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dkedlon , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dkedlat , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmfdlon , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmfdlat , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dptfdlon, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dptfdlat, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dptfdlev, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%pgf_lon , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%pgf_lat , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%wedudlev, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%wedvdlev, full_lon=.true., half_lat=.true., full_lev=.true.)
+    if (use_smag_damp) then
+      call allocate_array(mesh, this%smag_dptdt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%smag_dudt , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%smag_dvdt , full_lon=.true., half_lat=.true., full_lev=.true.)
+    end if
+
+    call allocate_array(mesh, this%adv_gz_lon, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_gz_lat, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_gz_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lon , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lat , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lev , full_lon=.true., full_lat=.true., half_lev=.true.)
+
+    call allocate_array(mesh, this%dudt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dvdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dtdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dshdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+
+  end subroutine dtend_init
+
+  subroutine dtend_reset_flags(this)
+
+    class(dtend_type), intent(inout) :: this
+
+    this%update_u   = .false.
+    this%update_v   = .false.
+    this%update_gz  = .false.
+    this%update_pt  = .false.
+    this%update_phs = .false.
+    this%copy_gz    = .false.
+    this%copy_pt    = .false.
+    this%copy_phs   = .false.
+
+  end subroutine dtend_reset_flags
+
+  subroutine dtend_clear(this)
+
+    class(dtend_type), intent(inout) :: this
+
+    if (allocated(this%du      )) deallocate(this%du      )
+    if (allocated(this%dv      )) deallocate(this%dv      )
+    if (allocated(this%dgz     )) deallocate(this%dgz     )
+    if (allocated(this%dpt     )) deallocate(this%dpt     )
+    if (allocated(this%dphs    )) deallocate(this%dphs    )
+    if (allocated(this%qhv     )) deallocate(this%qhv     )
+    if (allocated(this%qhu     )) deallocate(this%qhu     )
+    if (allocated(this%dkedlon )) deallocate(this%dkedlon )
+    if (allocated(this%dkedlat )) deallocate(this%dkedlat )
+    if (allocated(this%dmfdlon )) deallocate(this%dmfdlon )
+    if (allocated(this%dmfdlat )) deallocate(this%dmfdlat )
+    if (allocated(this%dptfdlon)) deallocate(this%dptfdlon)
+    if (allocated(this%dptfdlat)) deallocate(this%dptfdlat)
+    if (allocated(this%dptfdlev)) deallocate(this%dptfdlev)
+    if (allocated(this%pgf_lon )) deallocate(this%pgf_lon )
+    if (allocated(this%pgf_lat )) deallocate(this%pgf_lat )
+    if (allocated(this%wedudlev)) deallocate(this%wedudlev)
+    if (allocated(this%wedvdlev)) deallocate(this%wedvdlev)
+
+    if (allocated(this%smag_dptdt)) deallocate(this%smag_dptdt)
+    if (allocated(this%smag_dudt )) deallocate(this%smag_dudt )
+    if (allocated(this%smag_dvdt )) deallocate(this%smag_dvdt )
+
+    if (allocated(this%adv_gz_lon)) deallocate(this%adv_gz_lon)
+    if (allocated(this%adv_gz_lat)) deallocate(this%adv_gz_lat)
+    if (allocated(this%adv_gz_lev)) deallocate(this%adv_gz_lev)
+    if (allocated(this%adv_w_lon )) deallocate(this%adv_w_lon )
+    if (allocated(this%adv_w_lat )) deallocate(this%adv_w_lat )
+    if (allocated(this%adv_w_lev )) deallocate(this%adv_w_lev )
+
+    if (allocated(this%dudt_phys )) deallocate(this%dudt_phys )
+    if (allocated(this%dvdt_phys )) deallocate(this%dvdt_phys )
+    if (allocated(this%dtdt_phys )) deallocate(this%dtdt_phys )
+    if (allocated(this%dshdt_phys)) deallocate(this%dshdt_phys)
+
+  end subroutine dtend_clear
+
+  subroutine dtend_final(this)
+
+    type(dtend_type), intent(inout) :: this
+
+    call this%clear()
+
+  end subroutine dtend_final
+
+  function dtend_add(x, y) result(res)
+
+    class(dtend_type), intent(in) :: x
+    class(dtend_type), intent(in) :: y
+
+    type(dtend_type) res
+
+    if (x%update_u .and. y%update_u) then
+      res%du = x%du + y%du
+      res%update_u = .true.
+    else
+      res%update_u = .false.
+    end if
+    if (x%update_v .and. y%update_v) then
+      res%dv = x%dv + y%dv
+      res%update_v = .true.
+    else
+      res%update_v = .false.
+    end if
+    if (baroclinic) then
+      if (x%update_phs .and. y%update_phs) then
+        res%dphs = x%dphs + y%dphs
+        res%update_phs = .true.
+      else
+        res%update_phs = .false.
+      end if
+      if (x%update_pt .and. y%update_pt) then
+        res%dpt = x%dpt + y%dpt
+        res%update_pt = .true.
+      else
+        res%update_pt = .false.
+      end if
+    else if (x%update_gz .and. y%update_gz) then
+      res%dgz = x%dgz + y%dgz
+      res%update_gz = .true.
+    else
+      res%update_gz = .false.
+    end if
+
+  end function dtend_add
+
+  function dtend_mul(s, x) result(res)
+
+    real(r8), intent(in) :: s
+    class(dtend_type), intent(in) :: x
+
+    type(dtend_type) res
+
+    if (x%update_u) then
+      res%du = s * x%du
+      res%update_u = .true.
+    else
+      res%update_u = .false.
+    end if
+    if (x%update_v) then
+      res%dv = s * x%dv
+      res%update_v = .true.
+    else
+      res%update_v = .false.
+    end if
+    if (baroclinic) then
+      if (x%update_phs) then
+        res%dphs = s * x%dphs
+        res%update_phs = .true.
+      else
+        res%update_phs = .false.
+      end if
+      if (x%update_pt) then
+        res%dpt = s * x%dpt
+        res%update_pt = .true.
+      else
+        res%update_pt = .false.
+      end if
+    else if (x%update_gz) then
+      res%dgz = s * x%dgz
+      res%update_gz = .true.
+    else
+      res%update_gz = .false.
+    end if
+
+  end function dtend_mul
+
+  function dtend_div(x, s) result(res)
+
+    class(dtend_type), intent(in) :: x
+    real(r8), intent(in) :: s
+
+    type(dtend_type) res
+
+    if (x%update_u) then
+      res%du = x%du / s
+      res%update_u = .true.
+    else
+      res%update_u = .false.
+    end if
+    if (x%update_v) then
+      res%dv = x%dv / s
+      res%update_v = .true.
+    else
+      res%update_v = .false.
+    end if
+    if (baroclinic) then
+      if (x%update_phs) then
+        res%dphs = x%dphs / s
+        res%update_phs = .true.
+      else
+        res%update_phs = .false.
+      end if
+      if (x%update_pt) then
+        res%dpt = x%dpt / s
+        res%update_pt = .true.
+      else
+        res%update_pt = .false.
+      end if
+    else if (x%update_gz) then
+      res%dgz = x%dgz / s
+      res%update_gz = .true.
+    else
+      res%update_gz = .false.
+    end if
+
+  end function dtend_div
+
+  subroutine dtend_assign(x, y)
+
+    class(dtend_type), intent(inout) :: x
+    class(dtend_type), intent(in) :: y
+
+    if (y%update_u) then
+      x%du = y%du
+      x%update_u = .true.
+    else
+      x%update_u = .false.
+    end if
+    if (y%update_v) then
+      x%dv = y%dv
+      x%update_v = .true.
+    else
+      x%update_v = .false.
+    end if
+    if (baroclinic) then
+      if (y%update_phs) then
+        x%dphs = y%dphs
+        x%update_phs = .true.
+      else
+        x%update_phs = .false.
+      end if
+      if (y%update_pt) then
+        x%dpt = y%dpt
+        x%update_pt = .true.
+      else
+        x%update_pt = .false.
+      end if
+    else if (y%update_gz) then
+      x%dgz = y%dgz
+      x%update_gz = .true.
+    else
+      x%update_gz = .false.
+    end if
+
+  end subroutine dtend_assign
+
+  subroutine static_init(this, mesh)
+
+    class(static_type), intent(inout) :: this
+    type(mesh_type), intent(in), target :: mesh
+
+    call this%clear()
+
+    this%mesh => mesh
+
+    call allocate_array(mesh, this%landmask, full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%gzs     , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%zs_std  , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dzsdlon , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dzsdlat , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%ref_ps  , full_lon=.true., full_lat=.true.)
+
+  end subroutine static_init
+
+  subroutine static_clear(this)
+
+    class(static_type), intent(inout) :: this
+
+    if (allocated(this%landmask)) deallocate(this%landmask)
+    if (allocated(this%gzs     )) deallocate(this%gzs     )
+    if (allocated(this%zs_std  )) deallocate(this%zs_std  )
+    if (allocated(this%dzsdlon )) deallocate(this%dzsdlon )
+    if (allocated(this%dzsdlat )) deallocate(this%dzsdlat )
+    if (allocated(this%ref_ps  )) deallocate(this%ref_ps  )
+
+  end subroutine static_clear
+
+  subroutine static_final(this)
+
+    type(static_type), intent(inout) :: this
+
+    call this%clear()
+
+  end subroutine static_final
+
+end module dynamics_types_mod

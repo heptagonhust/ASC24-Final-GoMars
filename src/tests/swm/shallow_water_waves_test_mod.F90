@@ -98,10 +98,10 @@ contains
     real(dp) C
     integer i, j
 
-    associate (mesh => block%mesh          , &
-               u    => block%state(1)%u_lon, &
-               v    => block%state(1)%v_lat, &
-               gz   => block%state(1)%gz   )
+    associate (mesh => block%mesh           , &
+               u    => block%dstate(1)%u_lon, &
+               v    => block%dstate(1)%v_lat, &
+               gz   => block%dstate(1)%gz   )
     call getFields(mesh%full_lat(mesh%full_lat_lb:mesh%full_lat_ub), &
                    mesh%full_lon(mesh%full_lon_lb:mesh%full_lon_ub), &
                    mesh%half_lat(mesh%half_lat_lb:mesh%half_lat_ub), &

@@ -36,11 +36,11 @@ contains
 
     call random_seed()
 
-    associate (mesh  => block%mesh, &
-               phs   => block%state(1)%phs, &
-               ph    => block%state(1)%ph , &
-               t     => block%state(1)%t  , &
-               pt    => block%state(1)%pt)
+    associate (mesh  => block%mesh         , &
+               phs   => block%dstate(1)%phs, &
+               ph    => block%dstate(1)%ph , &
+               t     => block%dstate(1)%t  , &
+               pt    => block%dstate(1)%pt )
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         call random_number(random)
@@ -62,21 +62,21 @@ contains
 
   end subroutine held_suarez_test_set_ic
 
-  subroutine held_suarez_test_apply_forcing(block, dt, state)
+  subroutine held_suarez_test_apply_forcing(block, dt, dstate)
 
     type(block_type), intent(in) :: block
     real(8), intent(in) :: dt
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     real(r8) kv, kt, teq, p_p0
     integer i, j, k
 
-    associate (mesh  => block%mesh , &
-               u     => state%u_lon, &
-               v     => state%v_lat, &
-               ph    => state%ph   , &
-               t     => state%t    , &
-               pt    => state%pt   )
+    associate (mesh  => block%mesh  , &
+               u     => dstate%u_lon, &
+               v     => dstate%v_lat, &
+               ph    => dstate%ph   , &
+               t     => dstate%t    , &
+               pt    => dstate%pt   )
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       kv = kf * max(0.0_r8, (mesh%full_lev(k) - sig_b) / (1.0_r8 - sig_b))
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

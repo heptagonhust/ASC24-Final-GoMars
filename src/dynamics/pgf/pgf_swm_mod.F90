@@ -8,25 +8,25 @@ module pgf_swm_mod
 
 contains
 
-  subroutine pgf_swm_prepare(block, state)
+  subroutine pgf_swm_prepare(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
   end subroutine pgf_swm_prepare
 
-  subroutine pgf_swm_run(block, state, tend)
+  subroutine pgf_swm_run(block, dstate, dtend)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(in) :: dstate
+    type(dtend_type), intent(inout) :: dtend
 
     integer i, j, k
 
-    associate (mesh    => block%mesh  , &
-               gz      => state%gz    , & ! in
-               pgf_lon => tend%pgf_lon, & ! out
-               pgf_lat => tend%pgf_lat)   ! out
+    associate (mesh    => block%mesh   , &
+               gz      => dstate%gz    , & ! in
+               pgf_lon => dtend%pgf_lon, & ! out
+               pgf_lat => dtend%pgf_lat)   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend

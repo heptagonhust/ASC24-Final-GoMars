@@ -43,16 +43,16 @@ contains
 
     h0 = 25.0_r8
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               t      => block%state(1)%t     , &
-               pt     => block%state(1)%pt    , &
-               gzs    => block%static  %gzs   , &
-               phs    => block%state(1)%phs   , &
-               ph     => block%state(1)%ph    , &
-               ph_lev => block%state(1)%ph_lev, &
-               gz_lev => block%state(1)%gz_lev)
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               t      => block%dstate(1)%t     , &
+               pt     => block%dstate(1)%pt    , &
+               gzs    => block%static   %gzs   , &
+               phs    => block%dstate(1)%phs   , &
+               ph     => block%dstate(1)%ph    , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               gz_lev => block%dstate(1)%gz_lev)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -129,16 +129,16 @@ contains
 
     h0 = 250.0_r8
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               t      => block%state(1)%t     , &
-               pt     => block%state(1)%pt    , &
-               gzs    => block%static  %gzs   , &
-               phs    => block%state(1)%phs   , &
-               ph     => block%state(1)%ph    , &
-               ph_lev => block%state(1)%ph_lev, &
-               gz_lev => block%state(1)%gz_lev)
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               t      => block%dstate(1)%t     , &
+               pt     => block%dstate(1)%pt    , &
+               gzs    => block%static   %gzs   , &
+               phs    => block%dstate(1)%phs   , &
+               ph     => block%dstate(1)%ph    , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               gz_lev => block%dstate(1)%gz_lev)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend

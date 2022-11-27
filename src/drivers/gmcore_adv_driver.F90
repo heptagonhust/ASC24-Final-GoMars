@@ -21,10 +21,10 @@ program gmcore_adv_driver
       import block_type
       type(block_type), intent(inout) :: block
     end subroutine set_ic_interface
-    subroutine set_uv_interface(block, state, time_in_seconds)
-      import block_type, state_type
-      type(block_type), intent(in   ) :: block
-      type(state_type), intent(inout) :: state
+    subroutine set_uv_interface(block, dstate, time_in_seconds)
+      import block_type, dstate_type
+      type(block_type), intent(in) :: block
+      type(dstate_type), intent(inout) :: dstate
       real(8), intent(in) :: time_in_seconds
     end subroutine set_uv_interface
   end interface
@@ -74,7 +74,7 @@ program gmcore_adv_driver
   end select
 
   do iblk = 1, size(blocks)
-    call set_uv(blocks(iblk), blocks(iblk)%state(old), elapsed_seconds)
+    call set_uv(blocks(iblk), blocks(iblk)%dstate(old), elapsed_seconds)
     call set_ic(blocks(iblk))
     call adv_accum_wind(blocks(iblk), old)
   end do
@@ -86,7 +86,7 @@ program gmcore_adv_driver
 
   do while (.not. time_is_finished())
     do iblk = 1, size(blocks)
-      call set_uv(blocks(iblk), blocks(iblk)%state(new), elapsed_seconds + dt_adv)
+      call set_uv(blocks(iblk), blocks(iblk)%dstate(new), elapsed_seconds + dt_adv)
       call adv_run(blocks(iblk), new)
     end do
     call diagnose(blocks)

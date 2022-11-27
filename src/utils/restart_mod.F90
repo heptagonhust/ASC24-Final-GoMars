@@ -94,7 +94,7 @@ contains
   end if
     call fiona_add_var('r0', 'gzs' , long_name='surface geopotential height' , units='m2 s-2', dim_names=cell_dims_2d, dtype='r8')
 
-  if (associated(blocks(1)%state(itime)%qv)) then
+  if (associated(blocks(1)%dstate(itime)%qv)) then
     call fiona_add_var('r0', 'qv'  , long_name='water vapor mixing ratio'    , units='kg kg-1', dim_names=cell_dims_3d, dtype='r8')
     call fiona_add_var('r0', 'moist_u0' , long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
     call fiona_add_var('r0', 'moist_v0' , long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
@@ -109,7 +109,7 @@ contains
     call fiona_output('r0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
     do iblk = 1, size(blocks)
       associate (mesh   => blocks(iblk)%mesh        , &
-                 state  => blocks(iblk)%state(itime), &
+                 dstate  => blocks(iblk)%dstate(itime), &
                  static => blocks(iblk)%static)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
@@ -120,13 +120,13 @@ contains
 
         call fiona_output('r0', 'gzs'   , static%gzs  (is:ie,js:je      ), start=start, count=count)
       if (baroclinic) then
-        call fiona_output('r0', 'phs'   , state%phs   (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('r0', 'pt'    , state%pt    (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'phs'   , dstate%phs   (is:ie,js:je      ), start=start, count=count)
+        call fiona_output('r0', 'pt'    , dstate%pt    (is:ie,js:je,ks:ke), start=start, count=count)
       else
-        call fiona_output('r0', 'gz'    , state%gz    (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'gz'    , dstate%gz    (is:ie,js:je,ks:ke), start=start, count=count)
       end if
-      if (associated(state%qv)) then
-        call fiona_output('r0', 'qv'    , state%qv    (is:ie,js:je,ks:ke), start=start, count=count)
+      if (associated(dstate%qv)) then
+        call fiona_output('r0', 'qv'    , dstate%qv    (is:ie,js:je,ks:ke), start=start, count=count)
         associate (adv_batch => blocks(iblk)%adv_batches(1))
         is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -161,7 +161,7 @@ contains
         start = [is,js,ks]
         count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-        call fiona_output('r0', 'u'     , state%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'u'     , dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -169,7 +169,7 @@ contains
         start = [is,js,ks]
         count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
-        call fiona_output('r0', 'v'     , state%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'v'     , dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -178,8 +178,8 @@ contains
         count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
 
       if (nonhydrostatic) then
-        call fiona_output('r0', 'gz_lev', state%gz_lev(is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('r0', 'w_lev' , state%w_lev (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'gz_lev', dstate%gz_lev(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'w_lev' , dstate%w_lev (is:ie,js:je,ks:ke), start=start, count=count)
       end if
       end associate
     end do
@@ -191,7 +191,7 @@ contains
 
     type(block_type), pointer :: block
     type(mesh_type), pointer :: mesh
-    type(state_type), pointer :: state
+    type(dstate_type), pointer :: dstate
     type(static_type), pointer :: static
     type(datetime_type) time
     integer iblk, time_step, is, ie, js, je, ks, ke
@@ -211,9 +211,9 @@ contains
     call fiona_input('r0', 'time', time_value, time_step=time_step)
     call fiona_get_att('r0', 'time', 'units', time_units)
     do iblk = 1, size(blocks)
-      associate (block  => blocks(iblk)                    , &
-                 mesh   => blocks(iblk)%mesh               , &
-                 state  => blocks(iblk)%state(old_time_idx), &
+      associate (block  => blocks(iblk)                     , &
+                 mesh   => blocks(iblk)%mesh                , &
+                 dstate => blocks(iblk)%dstate(old_time_idx), &
                  static => blocks(iblk)%static)
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -224,18 +224,18 @@ contains
         call fiona_input('r0', 'gzs', static%gzs(is:ie,js:je), start=start, count=count, time_step=time_step)
         call fill_halo(block, static%gzs, full_lon=.true., full_lat=.true.)
         if (baroclinic) then
-          call fiona_input('r0', 'phs', state%phs(is:ie,js:je      ), start=start, count=count, time_step=time_step)
-          call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
-          call fiona_input('r0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-          call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fiona_input('r0', 'phs', dstate%phs(is:ie,js:je      ), start=start, count=count, time_step=time_step)
+          call fill_halo(block, dstate%phs, full_lon=.true., full_lat=.true.)
+          call fiona_input('r0', 'pt' , dstate%pt (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
         else
-          call fiona_input('r0', 'gz' , state%gz (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-          call fill_halo(block, state%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fiona_input('r0', 'gz' , dstate%gz (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block, dstate%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
         end if
 
-        if (associated(state%qv)) then
-          call fiona_input('r0', 'qv' , state%qv (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-          call fill_halo(block, state%qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+        if (associated(dstate%qv)) then
+          call fiona_input('r0', 'qv' , dstate%qv (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block, dstate%qv, full_lon=.true., full_lat=.true., full_lev=.true.)
           associate (adv_batch => block%adv_batches(1))
           is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
           js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -277,8 +277,8 @@ contains
         start = [is,js,ks]
         count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-        call fiona_input('r0', 'u'  , state%u_lon(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-        call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fiona_input('r0', 'u'  , dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+        call fill_halo(block, dstate%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -286,8 +286,8 @@ contains
         start = [is,js,ks]
         count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
-        call fiona_input('r0', 'v'  , state%v_lat(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-        call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+        call fiona_input('r0', 'v'  , dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+        call fill_halo(block, dstate%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -296,11 +296,11 @@ contains
         count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
 
       if (nonhydrostatic) then
-        call fiona_input('r0', 'gz_lev', state%gz_lev(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-        call fill_halo(block, state%gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+        call fiona_input('r0', 'gz_lev', dstate%gz_lev(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+        call fill_halo(block, dstate%gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-        call fiona_input('r0', 'w_lev' , state%w_lev (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-        call fill_halo(block, state%w_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+        call fiona_input('r0', 'w_lev' , dstate%w_lev (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+        call fill_halo(block, dstate%w_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
       end if
       end associate
     end do

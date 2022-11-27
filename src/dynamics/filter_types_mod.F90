@@ -4,7 +4,6 @@ module filter_types_mod
   use namelist_mod
   use math_mod
   use mesh_mod
-  use state_mod
 
   implicit none
 

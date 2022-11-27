@@ -421,9 +421,9 @@ contains
     real(r8) wgt
     integer i, j, cyc
 
-    associate (mesh     => block%mesh        , &
-               gzs      => block%static%gzs  , &
-               gzs_f    => block%state(1)%phs, & ! Borrow the array.
+    associate (mesh     => block%mesh         , &
+               gzs      => block%static%gzs   , &
+               gzs_f    => block%dstate(1)%phs, & ! Borrow the array.
                landmask => block%static%landmask)
     do cyc = 1, topo_smooth_cycles
       call filter_on_cell(block%big_filter, gzs, gzs_f)

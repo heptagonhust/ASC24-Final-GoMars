@@ -47,14 +47,14 @@ contains
     real(r8) cos_lat, sin_lat, full_lon, r
     integer i, j, k
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               phs    => block%state(1)%phs   , &
-               ph_lev => block%state(1)%ph_lev, &
-               ph     => block%state(1)%ph    , &
-               t      => block%state(1)%t     , &
-               pt     => block%state(1)%pt    , &
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               phs    => block%dstate(1)%phs   , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               ph     => block%dstate(1)%ph    , &
+               t      => block%dstate(1)%t     , &
+               pt     => block%dstate(1)%pt    , &
                gzs    => block%static%gzs)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -119,7 +119,7 @@ contains
     call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
-      call calc_gz_lev(block, block%state(1))
+      call calc_gz_lev(block, block%dstate(1))
     end if
     end associate
   

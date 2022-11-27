@@ -38,16 +38,16 @@ contains
 
     a = radius
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               phs    => block%state(1)%phs   , &
-               pt     => block%state(1)%pt    , &
-               t      => block%state(1)%t     , &
-               ph_lev => block%state(1)%ph_lev, &
-               ph     => block%state(1)%ph    , &
-               gz_lev => block%state(1)%gz_lev, &
-               gz     => block%state(1)%gz)
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               phs    => block%dstate(1)%phs   , &
+               pt     => block%dstate(1)%pt    , &
+               t      => block%dstate(1)%t     , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               ph     => block%dstate(1)%ph    , &
+               gz_lev => block%dstate(1)%gz_lev, &
+               gz     => block%dstate(1)%gz)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         cos_lat = mesh%full_cos_lat(j)

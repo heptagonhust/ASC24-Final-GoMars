@@ -25,36 +25,36 @@ contains
     integer iblk
 
     do iblk = 1, size(blocks)
-      call calc_rhod (blocks(iblk), blocks(iblk)%state(1))
-      call calc_p    (blocks(iblk), blocks(iblk)%state(1))
-      call interp_p  (blocks(iblk), blocks(iblk)%state(1))
+      call calc_rhod (blocks(iblk), blocks(iblk)%dstate(1))
+      call calc_p    (blocks(iblk), blocks(iblk)%dstate(1))
+      call interp_p  (blocks(iblk), blocks(iblk)%dstate(1))
     end do
 
   end subroutine nh_prepare
 
-  subroutine nh_solve(block, tend, old_state, star_state, new_state, dt)
+  subroutine nh_solve(block, dtend, old_state, star_state, new_state, dt)
 
     type(block_type), intent(inout) :: block
-    type(tend_type ), intent(inout) :: tend
-    type(state_type), intent(in) :: old_state
-    type(state_type), intent(inout) :: star_state
-    type(state_type), intent(inout) :: new_state
+    type(dtend_type), intent(inout) :: dtend
+    type(dstate_type), intent(in) :: old_state
+    type(dstate_type), intent(inout) :: star_state
+    type(dstate_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
   end subroutine nh_solve
 
-  subroutine calc_rhod(block, state)
+  subroutine calc_rhod(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
 
     ! Diagnose dry air density from hydrostatic equation.
     associate (mesh   => block%mesh  , &
-               gz_lev => state%gz_lev, & ! in
-               m      => state%m     , & ! in
-               rhod   => state%rhod  )   ! out
+               gz_lev => dstate%gz_lev, & ! in
+               m      => dstate%m     , & ! in
+               rhod   => dstate%rhod  )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -71,18 +71,18 @@ contains
 
   end subroutine calc_rhod
 
-  subroutine calc_p(block, state)
+  subroutine calc_p(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     real(r8), parameter :: p0 = 1.0e5_r8
     integer i, j, k
 
     associate (mesh => block%mesh, & ! in
-               rhod => state%rhod, & ! in
-               pt   => state%pt  , & ! in
-               p    => state%p)      ! out
+               rhod => dstate%rhod, & ! in
+               pt   => dstate%pt  , & ! in
+               p    => dstate%p)      ! out
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -101,8 +101,8 @@ contains
   subroutine calc_linearized_p(block, old_state, new_state)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(in) :: old_state
-    type(state_type), intent(inout) :: new_state
+    type(dstate_type), intent(in) :: old_state
+    type(dstate_type), intent(inout) :: new_state
 
     integer i, j, k
 
@@ -131,16 +131,16 @@ contains
 
   end subroutine calc_linearized_p
 
-  subroutine interp_p(block, state)
+  subroutine interp_p(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     associate (mesh       => block%mesh      , &
-               p          => state%p         , & ! in
-               p_lev      => state%p_lev     , & ! out
-               p_lev_lon  => state%p_lev_lon , & ! out
-               p_lev_lat  => state%p_lev_lat)    ! out
+               p          => dstate%p        , & ! in
+               p_lev      => dstate%p_lev    , & ! out
+               p_lev_lon  => dstate%p_lev_lon, & ! out
+               p_lev_lat  => dstate%p_lev_lat)    ! out
       call interp_cell_to_lev_edge(mesh, p, p_lev)
       call fill_halo(block, p_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
       call interp_lev_edge_to_lev_lon_edge(mesh, p_lev, p_lev_lon)
@@ -153,8 +153,8 @@ contains
   subroutine apply_bc_w_lev(block, star_state, new_state)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: star_state
-    type(state_type), intent(inout) :: new_state
+    type(dstate_type), intent(in) :: star_state
+    type(dstate_type), intent(inout) :: new_state
 
     real(r8) us_dzsdlon, vs_dzsdlat
     integer i, j, k
@@ -179,13 +179,13 @@ contains
 
   end subroutine apply_bc_w_lev
 
-  subroutine implicit_w_solver(block, tend, old_state, star_state, new_state, dt)
+  subroutine implicit_w_solver(block, dtend, old_state, star_state, new_state, dt)
 
     type(block_type), intent(inout) :: block
-    type(tend_type ), intent(in   ) :: tend
-    type(state_type), intent(in   ) :: old_state
-    type(state_type), intent(in   ) :: star_state
-    type(state_type), intent(inout) :: new_state
+    type(dtend_type), intent(in) :: dtend
+    type(dstate_type), intent(in) :: old_state
+    type(dstate_type), intent(in) :: star_state
+    type(dstate_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
     real(r8) w1 (block%mesh%half_lev_lb:block%mesh%half_lev_ub)
@@ -206,7 +206,7 @@ contains
     !                                                   
     ! w¹ = wⁿ - Δt adv_w* - g Δt + g Δt (1 - β) (∂p/∂π)*
     !                                                   
-    ! Linearized state of ideal gas
+    ! Linearized dstate of ideal gas
     !
     ! 𝜹pⁿ⁺¹ ≈ 𝜹pⁿ + 𝜹(𝜸 pⁿ (𝜹𝜋 θ)ⁿ⁺¹ / (𝜹𝜋 θ)ⁿ) - 𝜹(𝜸 pⁿ 𝜹ϕ¹ / 𝜹ϕⁿ) - 𝜹(𝜸 pⁿ g Δt β 𝜹wⁿ⁺¹ / 𝜹φⁿ)
     !         -----------------------------------------------------
@@ -214,12 +214,12 @@ contains
     !
     associate (mesh        => block%mesh       , &
                beta        => implicit_w_wgt   , &
-               adv_gz_lon  => tend%adv_gz_lon  , & ! FIXME: After test success, merge advection tends togethor.
-               adv_gz_lat  => tend%adv_gz_lat  , & !
-               adv_gz_lev  => tend%adv_gz_lev  , & !
-               adv_w_lon   => tend%adv_w_lon   , & !
-               adv_w_lat   => tend%adv_w_lat   , & !
-               adv_w_lev   => tend%adv_w_lev   , & !
+               adv_gz_lon  => dtend%adv_gz_lon , & ! FIXME: After test success, merge advection tends togethor.
+               adv_gz_lat  => dtend%adv_gz_lat , & !
+               adv_gz_lev  => dtend%adv_gz_lev , & !
+               adv_w_lon   => dtend%adv_w_lon  , & !
+               adv_w_lat   => dtend%adv_w_lat  , & !
+               adv_w_lev   => dtend%adv_w_lev  , & !
                old_p       => old_state%p      , &
                star_p      => star_state%p     , &
                star_p_lev  => star_state%p_lev , &
@@ -256,7 +256,7 @@ contains
           ! Bottom boundary
           k = mesh%half_lev_iend
           w1(k) = w1(k) + gdt1mbeta * (star_p_lev(i,j,k) - star_p(i,j,k-1)) / star_m_lev(i,j,k)
-          ! Use linearized state of ideal gas to calculate the first part of ∂pⁿ⁺¹ (i.e. dp1).
+          ! Use linearized dstate of ideal gas to calculate the first part of ∂pⁿ⁺¹ (i.e. dp1).
           do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
             dp1 = (old_p(i,j,k) - old_p(i,j,k-1)) + cpd_o_cvd * ((                                   &
               old_p(i,j,k  ) * new_m(i,j,k  ) * new_pt(i,j,k  ) / old_m(i,j,k  ) / old_pt(i,j,k  ) - &

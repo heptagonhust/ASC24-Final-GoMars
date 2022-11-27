@@ -14,28 +14,28 @@ module pole_damp_mod
 
 contains
 
-  subroutine pole_damp_run(block, state)
+  subroutine pole_damp_run(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     if (baroclinic) then
-      state%pt = state%pt * state%m
-      call filter_on_cell(block%small_filter_phs, state%phs)
-      call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
-      call calc_ph(block, state)
-      call calc_m (block, state)
-      call filter_on_cell(block%small_filter_pt, state%pt)
-      state%pt = state%pt / state%m
-      call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call filter_on_lon_edge(block%small_filter_uv, state%u_lon)
-      call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call filter_on_lat_edge(block%small_filter_uv, state%v_lat)
-      call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      dstate%pt = dstate%pt * dstate%m
+      call filter_on_cell(block%small_filter_phs, dstate%phs)
+      call fill_halo(block, dstate%phs, full_lon=.true., full_lat=.true.)
+      call calc_ph(block, dstate)
+      call calc_m (block, dstate)
+      call filter_on_cell(block%small_filter_pt, dstate%pt)
+      dstate%pt = dstate%pt / dstate%m
+      call fill_halo(block, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call filter_on_lon_edge(block%small_filter_uv, dstate%u_lon)
+      call fill_halo(block, dstate%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call filter_on_lat_edge(block%small_filter_uv, dstate%v_lat)
+      call fill_halo(block, dstate%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
     else
-      ! call filter_on_cell(block%small_filter_phs, state%gz)
-      ! call fill_halo(block, state%gz, full_lon=.true., full_lat=.true.)
-      ! call calc_m (block, state)
+      ! call filter_on_cell(block%small_filter_phs, dstate%gz)
+      ! call fill_halo(block, dstate%gz, full_lon=.true., full_lat=.true.)
+      ! call calc_m (block, dstate)
     end if
 
   end subroutine pole_damp_run

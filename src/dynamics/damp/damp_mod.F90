@@ -40,20 +40,20 @@ contains
 
   end subroutine damp_final
 
-  subroutine damp_run(block, state, tend, dt)
+  subroutine damp_run(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(inout) :: dstate
+    type(dtend_type), intent(inout) :: dtend
     real(8), intent(in) :: dt
 
     if (use_div_damp) then
-      call div_damp_run(block, state)
+      call div_damp_run(block, dstate)
     end if
     if (use_smag_damp) then
-      call smag_damp_run(block, dt, tend, state)
+      call smag_damp_run(block, dt, dtend, dstate)
     end if
-    call pole_damp_run(block, state)
+    call pole_damp_run(block, dstate)
 
   end subroutine damp_run
 

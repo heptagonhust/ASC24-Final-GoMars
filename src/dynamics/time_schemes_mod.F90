@@ -3,7 +3,6 @@ module time_schemes_mod
   use flogger
   use const_mod
   use namelist_mod
-  use tend_mod
   use block_mod
   use operators_mod
   use parallel_mod
@@ -22,31 +21,31 @@ module time_schemes_mod
 
   interface
     subroutine space_operators_interface(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
-      import block_type, state_type, tend_type
-      type(block_type), intent(inout) :: block
-      type(state_type), intent(in   ) :: old_state
-      type(state_type), intent(inout) :: star_state
-      type(state_type), intent(inout) :: new_state
-      type(tend_type ), intent(inout) :: tend1
-      type(tend_type ), intent(in   ) :: tend2
+      import block_type, dstate_type, dtend_type
+      type(block_type ), intent(inout) :: block
+      type(dstate_type), intent(in   ) :: old_state
+      type(dstate_type), intent(inout) :: star_state
+      type(dstate_type), intent(inout) :: new_state
+      type(dtend_type ), intent(inout) :: tend1
+      type(dtend_type ), intent(in   ) :: tend2
       real(8), intent(in) :: dt
       integer, intent(in) :: pass
     end subroutine space_operators_interface
 
     subroutine step_interface(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
-      import space_operators_interface, block_type, state_type, tend_type
+      import space_operators_interface, block_type, dstate_type, dtend_type
       procedure(space_operators_interface) space_operators
-      type(block_type), intent(inout) :: block
-      type(state_type), intent(in   ) :: old_state
-      type(state_type), intent(inout) :: star_state
-      type(state_type), intent(inout) :: new_state
-      type(tend_type ), intent(inout) :: tend1
-      type(tend_type ), intent(inout) :: tend2
+      type(block_type ), intent(inout) :: block
+      type(dstate_type), intent(in   ) :: old_state
+      type(dstate_type), intent(inout) :: star_state
+      type(dstate_type), intent(inout) :: new_state
+      type(dtend_type ), intent(inout) :: tend1
+      type(dtend_type ), intent(inout) :: tend2
       real(8), intent(in) :: dt
     end subroutine step_interface
 
     subroutine time_integrator_interface(space_operators, block, old, new, dt)
-      import block_type, tend_type, state_type, space_operators_interface
+      import block_type, dtend_type, dstate_type, space_operators_interface
       procedure(space_operators_interface) space_operators
       type(block_type), intent(inout) :: block
       integer, intent(in) :: old
@@ -86,12 +85,12 @@ contains
   subroutine step_all(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
 
     procedure(space_operators_interface) space_operators
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(in   ) :: old_state
-    type(state_type), intent(inout) :: star_state
-    type(state_type), intent(inout) :: new_state
-    type(tend_type ), intent(inout) :: tend1
-    type(tend_type ), intent(inout) :: tend2
+    type(block_type ), intent(inout) :: block
+    type(dstate_type), intent(in   ) :: old_state
+    type(dstate_type), intent(inout) :: star_state
+    type(dstate_type), intent(inout) :: new_state
+    type(dtend_type ), intent(inout) :: tend1
+    type(dtend_type ), intent(inout) :: tend2
     real(8), intent(in) :: dt
 
     call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, all_pass)
@@ -102,12 +101,12 @@ contains
   subroutine step_forward_backward(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
 
     procedure(space_operators_interface) space_operators
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(in   ) :: old_state
-    type(state_type), intent(inout) :: star_state
-    type(state_type), intent(inout) :: new_state
-    type(tend_type ), intent(inout) :: tend1
-    type(tend_type ), intent(inout) :: tend2
+    type(block_type ), intent(inout) :: block
+    type(dstate_type), intent(in   ) :: old_state
+    type(dstate_type), intent(inout) :: star_state
+    type(dstate_type), intent(inout) :: new_state
+    type(dtend_type ), intent(inout) :: tend1
+    type(dtend_type ), intent(inout) :: tend2
     real(8), intent(in) :: dt
 
     call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, forward_pass)
@@ -117,12 +116,12 @@ contains
 
   end subroutine step_forward_backward
 
-  subroutine update_state(block, tend, old_state, new_state, dt)
+  subroutine update_state(block, dtend, old_state, new_state, dt)
 
-    type(block_type), intent(inout) :: block
-    type(tend_type ), intent(inout) :: tend
-    type(state_type), intent(in   ) :: old_state
-    type(state_type), intent(inout) :: new_state
+    type(block_type ), intent(inout) :: block
+    type(dtend_type ), intent(inout) :: dtend
+    type(dstate_type), intent(in   ) :: old_state
+    type(dstate_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
     integer i, j, k
@@ -131,97 +130,86 @@ contains
 
     associate (mesh => block%mesh)
     if (baroclinic) then
-      if (tend%update_phs) then
+      if (dtend%update_phs) then
         ! ----------------------------------------------------------------------
-        call fill_halo(block, tend%dphs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, tend%dphs)
+        call fill_halo(block, dtend%dphs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dtend%dphs)
         ! ----------------------------------------------------------------------
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            new_state%phs(i,j) = old_state%phs(i,j) + dt * tend%dphs(i,j)
+            new_state%phs(i,j) = old_state%phs(i,j) + dt * dtend%dphs(i,j)
           end do
         end do
         call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
         call calc_ph(block, new_state)
         call calc_m (block, new_state)
-      else if (tend%copy_phs) then
+      else if (dtend%copy_phs) then
         new_state%phs    = old_state%phs
         new_state%ph_lev = old_state%ph_lev
         new_state%ph     = old_state%ph
         new_state%m      = old_state%m
       end if
 
-      if (tend%update_pt) then
-        if (.not. tend%update_phs .and. .not. tend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
+      if (dtend%update_pt) then
+        if (.not. dtend%update_phs .and. .not. dtend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
         ! ----------------------------------------------------------------------
-        call fill_halo(block, tend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, tend%dpt)
+        call fill_halo(block, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dtend%dpt)
         ! ----------------------------------------------------------------------
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%m(i,j,k) + dt * tend%dpt(i,j,k)) / new_state%m(i,j,k)
+              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%m(i,j,k) + dt * dtend%dpt(i,j,k)) / new_state%m(i,j,k)
             end do
           end do
         end do
         call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-      else if (tend%copy_pt) then
+      else if (dtend%copy_pt) then
         new_state%pt = old_state%pt
       end if
     else
-      if (tend%update_gz) then
+      if (dtend%update_gz) then
         ! ----------------------------------------------------------------------
-        call fill_halo(block, tend%dgz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, tend%dgz)
+        call fill_halo(block, dtend%dgz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dtend%dgz)
         ! ----------------------------------------------------------------------
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * tend%dgz(i,j,k)
+              new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * dtend%dgz(i,j,k)
             end do
           end do
         end do
         call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
         call calc_m(block, new_state)
-      else if (tend%copy_gz) then
+      else if (dtend%copy_gz) then
         new_state%gz = old_state%gz
       end if
     end if
 
-    if (tend%update_u .and. tend%update_v) then
+    if (dtend%update_u .and. dtend%update_v) then
       ! ----------------------------------------------------------------------
-      call fill_halo(block, tend%du, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-      call filter_on_lon_edge(block%big_filter, tend%du)
-      call fill_halo(block, tend%dv, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
-      call filter_on_lat_edge(block%big_filter, tend%dv)
+      call fill_halo(block, dtend%du, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call filter_on_lon_edge(block%big_filter, dtend%du)
+      call fill_halo(block, dtend%dv, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call filter_on_lat_edge(block%big_filter, dtend%dv)
       ! ----------------------------------------------------------------------
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * tend%du(i,j,k)
+            new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * dtend%du(i,j,k)
           end do
         end do
       end do
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * tend%dv(i,j,k)
+            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * dtend%dv(i,j,k)
           end do
         end do
       end do
       call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-      ! ! FIXME: Check if we still need this:
-      ! wgt = 0.6_r8
-      ! if (mesh%has_south_pole()) then
-      !   j = mesh%half_lat_ibeg
-      !   new_state%v_lat(:,j,:) = (1 - wgt) * new_state%v_lat(:,j,:) + wgt * new_state%v_lat(:,j+1,:)
-      ! end if
-      ! if (mesh%has_north_pole()) then
-      !   j = mesh%half_lat_iend
-      !   new_state%v_lat(:,j,:) = (1 - wgt) * new_state%v_lat(:,j,:) + wgt * new_state%v_lat(:,j-1,:)
-      ! end if
-      ! call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false.)
     end if
     end associate
 
@@ -235,10 +223,10 @@ contains
     integer, intent(in) :: new
     real(8), intent(in) :: dt
 
-    associate (state => block%state, tend => block%tend)
-    call step(space_operators, block, state(old), state(old), state(new), tend(old), tend(new), dt / 2.0_r8)
-    call step(space_operators, block, state(old), state(new), state(3  ), tend(old), tend(new), dt / 2.0_r8)
-    call step(space_operators, block, state(old), state(3  ), state(new), tend(old), tend(new), dt         )
+    associate (dstate => block%dstate, dtend => block%dtend)
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 2.0_r8)
+    call step(space_operators, block, dstate(old), dstate(new), dstate(3  ), dtend(old), dtend(new), dt / 2.0_r8)
+    call step(space_operators, block, dstate(old), dstate(3  ), dstate(new), dtend(old), dtend(new), dt         )
     end associate
 
   end subroutine pc2
@@ -251,10 +239,10 @@ contains
     integer, intent(in) :: new
     real(8), intent(in) :: dt
 
-    associate (state => block%state, tend => block%tend)
-    call step(space_operators, block, state(old), state(old), state(new), tend(old), tend(new), dt / 3.0_r8)
-    call step(space_operators, block, state(old), state(new), state(3  ), tend(old), tend(new), dt / 2.0_r8)
-    call step(space_operators, block, state(old), state(3  ), state(new), tend(old), tend(new), dt         )
+    associate (dstate => block%dstate, dtend => block%dtend)
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 3.0_r8)
+    call step(space_operators, block, dstate(old), dstate(new), dstate(3  ), dtend(old), dtend(new), dt / 2.0_r8)
+    call step(space_operators, block, dstate(old), dstate(3  ), dstate(new), dtend(old), dtend(new), dt         )
     end associate
 
   end subroutine wrfrk3
@@ -267,8 +255,8 @@ contains
     integer, intent(in) :: new
     real(8), intent(in) :: dt
 
-    associate (state => block%state, tend => block%tend)
-    call step(space_operators, block, state(old), state(old), state(new), tend(old), tend(new), dt)
+    associate (dstate => block%dstate, dtend => block%dtend)
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt)
     end associate
 
   end subroutine euler

@@ -86,20 +86,20 @@ contains
 
   end subroutine div_damp_final
 
-  subroutine div_damp_run(block, state)
+  subroutine div_damp_run(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
 
-    call calc_div(block, state)
+    call calc_div(block, dstate)
 
-    associate (mesh => block%mesh , &
-               div  => state%div  , &
-               div2 => state%div2 , &
-               u    => state%u_lon, &
-               v    => state%v_lat)
+    associate (mesh => block%mesh  , &
+               div  => dstate%div  , &
+               div2 => dstate%div2 , &
+               u    => dstate%u_lon, &
+               v    => dstate%v_lat)
     select case (div_damp_order)
     case (2)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend

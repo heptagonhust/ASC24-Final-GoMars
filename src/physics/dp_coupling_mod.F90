@@ -22,19 +22,19 @@ contains
 
     integer i, j, k, icol
 
-    associate (mesh     => block%mesh               , &
-               pstate   => block%pstate             , & ! out
-               u        => block%state(itime)%u     , & ! in
-               v        => block%state(itime)%v     , & ! in
-               pt       => block%state(itime)%pt    , & ! in
-               t        => block%state(itime)%t     , & ! in
-               p        => block%state(itime)%p     , & ! in
-               dp       => block%state(itime)%m     , & ! in
-               p_lev    => block%state(itime)%p_lev , & ! in
-               gz       => block%state(itime)%gz    , & ! in
-               gz_lev   => block%state(itime)%gz_lev, & ! in
-               ps       => block%state(itime)%phs   , & ! in
-               qv       => block%state(itime)%qv    )   ! in
+    associate (mesh     => block%mesh                , &
+               pstate   => block%pstate              , & ! out
+               u        => block%dstate(itime)%u     , & ! in
+               v        => block%dstate(itime)%v     , & ! in
+               pt       => block%dstate(itime)%pt    , & ! in
+               t        => block%dstate(itime)%t     , & ! in
+               p        => block%dstate(itime)%p     , & ! in
+               dp       => block%dstate(itime)%m     , & ! in
+               p_lev    => block%dstate(itime)%p_lev , & ! in
+               gz       => block%dstate(itime)%gz    , & ! in
+               gz_lev   => block%dstate(itime)%gz_lev, & ! in
+               ps       => block%dstate(itime)%phs   , & ! in
+               qv       => block%dstate(itime)%qv    )   ! in
     ! Full levels
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       icol = 0
@@ -87,12 +87,12 @@ contains
 
     integer i, j, k, icol
 
-    associate (mesh  => block%mesh                  , &
-               ptend => block%ptend                 , & ! in
-               dudt  => block%tend(itime)%dudt_phys , & ! out
-               dvdt  => block%tend(itime)%dvdt_phys , & ! out
-               dtdt  => block%tend(itime)%dtdt_phys , & ! out
-               dshdt => block%tend(itime)%dshdt_phys)   ! out
+    associate (mesh  => block%mesh                   , &
+               ptend => block%ptend                  , & ! in
+               dudt  => block%dtend(itime)%dudt_phys , & ! out
+               dvdt  => block%dtend(itime)%dvdt_phys , & ! out
+               dtdt  => block%dtend(itime)%dtdt_phys , & ! out
+               dshdt => block%dtend(itime)%dshdt_phys)   ! out
     if (ptend%updated_u .and. ptend%updated_v) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         icol = 0

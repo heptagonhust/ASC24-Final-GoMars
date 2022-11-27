@@ -195,10 +195,10 @@ contains
 
   end subroutine finalize_diag_state
 
-  subroutine diag_state_run(this, state)
+  subroutine diag_state_run(this, dstate)
 
     class(diag_state_type), intent(inout) :: this
-    type(state_type), intent(in) :: state
+    type(dstate_type), intent(in) :: dstate
 
     type(timedelta_type) dt
     integer, parameter :: calendar = datetime_noleap_calendar
@@ -221,39 +221,39 @@ contains
 
     select case (this%level_type)
     case (height_levels)
-      this%zm = state%gz / g
-      this%zm_lev = state%gz_lev / g
+      this%zm = dstate%gz / g
+      this%zm_lev = dstate%gz_lev / g
       do k = 1, size(this%levels)
-        call interp_lon_edge_to_height_level(state%mesh, this%zm, state%u_lon, this%levels(k), this%buf)
+        call interp_lon_edge_to_height_level(dstate%mesh, this%zm, dstate%u_lon, this%levels(k), this%buf)
         this%u(:,:,k) = this%u(:,:,k) + this%buf
-        call interp_lat_edge_to_height_level(state%mesh, this%zm, state%v_lat, this%levels(k), this%buf)
+        call interp_lat_edge_to_height_level(dstate%mesh, this%zm, dstate%v_lat, this%levels(k), this%buf)
         this%v(:,:,k) = this%v(:,:,k) + this%buf
-        call interp_cell_to_height_level(state%mesh, this%zm, state%pt, this%levels(k), this%buf)
+        call interp_cell_to_height_level(dstate%mesh, this%zm, dstate%pt, this%levels(k), this%buf)
         this%pt(:,:,k) = this%pt(:,:,k) + this%buf
-        call interp_cell_to_height_level(state%mesh, this%zm, state%t, this%levels(k), this%buf)
+        call interp_cell_to_height_level(dstate%mesh, this%zm, dstate%t, this%levels(k), this%buf)
         this%t(:,:,k) = this%t(:,:,k) + this%buf
-        call interp_lev_edge_to_height_level(state%mesh, this%zm_lev, state%p_lev, this%levels(k), this%buf)
+        call interp_lev_edge_to_height_level(dstate%mesh, this%zm_lev, dstate%p_lev, this%levels(k), this%buf)
         this%p(:,:,k) = this%p(:,:,k) + this%buf
         if (nonhydrostatic) then
-          call interp_lev_edge_to_height_level(state%mesh, this%zm_lev, state%w, this%levels(k), this%buf)
+          call interp_lev_edge_to_height_level(dstate%mesh, this%zm_lev, dstate%w, this%levels(k), this%buf)
           this%w(:,:,k) = this%w(:,:,k) + this%buf
         end if
       end do
     case (pressure_levels)
-      this%zm_lev = state%gz_lev / g
+      this%zm_lev = dstate%gz_lev / g
       do k = 1, size(this%levels)
-        call interp_lon_edge_to_pressure_level(state%mesh, state%p, state%u_lon, this%levels(k), this%buf)
+        call interp_lon_edge_to_pressure_level(dstate%mesh, dstate%p, dstate%u_lon, this%levels(k), this%buf)
         this%u(:,:,k) = this%u(:,:,k) + this%buf
-        call interp_lat_edge_to_pressure_level(state%mesh, state%p, state%v_lat, this%levels(k), this%buf)
+        call interp_lat_edge_to_pressure_level(dstate%mesh, dstate%p, dstate%v_lat, this%levels(k), this%buf)
         this%v(:,:,k) = this%v(:,:,k) + this%buf
-        call interp_cell_to_pressure_level(state%mesh, state%p, state%pt, this%levels(k), this%buf)
+        call interp_cell_to_pressure_level(dstate%mesh, dstate%p, dstate%pt, this%levels(k), this%buf)
         this%pt(:,:,k) = this%pt(:,:,k) + this%buf
-        call interp_cell_to_pressure_level(state%mesh, state%p, state%t, this%levels(k), this%buf)
+        call interp_cell_to_pressure_level(dstate%mesh, dstate%p, dstate%t, this%levels(k), this%buf)
         this%t(:,:,k) = this%t(:,:,k) + this%buf
-        call interp_lev_edge_to_pressure_level(state%mesh, state%p, this%zm_lev, this%levels(k), this%buf)
+        call interp_lev_edge_to_pressure_level(dstate%mesh, dstate%p, this%zm_lev, this%levels(k), this%buf)
         this%z(:,:,k) = this%z(:,:,k) + this%buf
         if (nonhydrostatic) then
-          call interp_lev_edge_to_pressure_level(state%mesh, state%p_lev, state%w, this%levels(k), this%buf)
+          call interp_lev_edge_to_pressure_level(dstate%mesh, dstate%p_lev, dstate%w, this%levels(k), this%buf)
           this%w(:,:,k) = this%w(:,:,k) + this%buf
         end if
       end do

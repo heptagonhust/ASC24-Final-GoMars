@@ -133,14 +133,14 @@ contains
     integer iblk, m
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)     , &
-                 state => blocks(iblk)%state(itime))
+      associate (block  => blocks(iblk)              , &
+                 dstate => blocks(iblk)%dstate(itime))
       if (allocated(block%adv_batches)) then
         do m = 1, size(block%adv_batches)
-          call block%adv_batches(m)%copy_old_m(state%m)
+          call block%adv_batches(m)%copy_old_m(dstate%m)
         end do
       end if
-      call block%adv_batch_pt%copy_old_m(state%m)
+      call block%adv_batch_pt%copy_old_m(dstate%m)
       if (.not. restart) call adv_accum_wind(block, itime)
       end associate
     end do
@@ -223,34 +223,10 @@ contains
               end do
             end do
           end if
-          ! Fill possible negative values.
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                if (q(i,j,k,l,new) < 0) then
-                  qm0 = q(i  ,j,k,l,new)
-                  qm1 = q(i-1,j,k,l,new)
-                  qm2 = q(i+1,j,k,l,new)
-                  qm0_half = 0.5_r8 * qm0
-                  if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
-                    q(i-1,j,k,l,new) = qm1 - qm0_half
-                    q(i+1,j,k,l,new) = qm2 - qm0_half
-                  else if (qm1 > qm0) then
-                    q(i-1,j,k,l,new) = qm1 - qm0
-                  else if (qm2 > qm0) then
-                    q(i+1,j,k,l,new) = qm2 - qm0
-                  else
-                    call log_error('Negative tracer!')
-                  end if
-                  q(i,j,k,l,new) = 0
-                end if
-              end do
-            end do
-          end do
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                q(i,j,k,l,new) = q(i,j,k,l,new) / block%state(itime)%m(i,j,k)
+                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%m(i,j,k)
               end do
             end do
           end do
@@ -265,7 +241,7 @@ contains
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                q(i,j,k,l,new) = q(i,j,k,l,new) * block%state(itime)%m(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
+                q(i,j,k,l,new) = q(i,j,k,l,new) * block%dstate(itime)%m(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
               end do
             end do
           end do
@@ -298,7 +274,7 @@ contains
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                q(i,j,k,l,new) = q(i,j,k,l,new) / block%state(itime)%m(i,j,k)
+                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%m(i,j,k)
               end do
             end do
           end do
@@ -309,7 +285,7 @@ contains
         block%adv_batches(m)%old = block%adv_batches(m)%new
         block%adv_batches(m)%new = i
       end if
-      call block%adv_batches(m)%copy_old_m(block%state(itime)%m)
+      call block%adv_batches(m)%copy_old_m(block%dstate(itime)%m)
     end do
 
   end subroutine adv_run
@@ -373,7 +349,7 @@ contains
       end do
     end if
 
-    ! Initialize advection batches in block objects and allocate tracer arrays in state objects.
+    ! Initialize advection batches in block objects and allocate tracer arrays in dstate objects.
     allocate(block%adv_batches(nbatch))
     do i = 1, nbatch
       call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i), dynamic=.false.)
@@ -431,15 +407,15 @@ contains
         select case (block%adv_batches(l)%loc)
         case ('cell')
           call block%adv_batches(l)%accum_uv_cell( &
-            block%state(itime)%u_lon             , &
-            block%state(itime)%v_lat             )
+            block%dstate(itime)%u_lon            , &
+            block%dstate(itime)%v_lat            )
           call block%adv_batches(l)%accum_mf_cell( &
-            block%state(itime)%mfx_lon           , &
-            block%state(itime)%mfy_lat           )
+            block%dstate(itime)%mfx_lon          , &
+            block%dstate(itime)%mfy_lat          )
           if (global_mesh%num_full_lev > 1) then
             call block%adv_batches(l)%accum_we_lev( &
-              block%state(itime)%we_lev           , &
-              block%state(itime)%m_lev            )
+              block%dstate(itime)%we_lev          , &
+              block%dstate(itime)%m_lev           )
           end if
         end select
       end do

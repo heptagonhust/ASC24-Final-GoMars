@@ -13,17 +13,17 @@ module pgf_mod
   public pgf_run
 
   interface
-    subroutine pgf_prepare_interface(block, state)
-      import block_type, state_type
+    subroutine pgf_prepare_interface(block, dstate)
+      import block_type, dstate_type
       type(block_type), intent(in) :: block
-      type(state_type), intent(inout) :: state
+      type(dstate_type), intent(inout) :: dstate
     end subroutine pgf_prepare_interface
 
-    subroutine pgf_run_interface(block, state, tend)
-      import block_type, state_type, tend_type
+    subroutine pgf_run_interface(block, dstate, dtend)
+      import block_type, dstate_type, dtend_type
       type(block_type), intent(inout) :: block
-      type(state_type), intent(in) :: state
-      type(tend_type), intent(inout) :: tend
+      type(dstate_type), intent(in) :: dstate
+      type(dtend_type), intent(inout) :: dtend
     end subroutine pgf_run_interface
   end interface
 

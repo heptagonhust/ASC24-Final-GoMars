@@ -23,10 +23,10 @@ contains
     real(r8) cos_lat, sin_lat, cos_lon, sin_lon
     integer i, j
 
-    associate (mesh   => block%mesh          , &
-               u      => block%state(1)%u_lon, &
-               v      => block%state(1)%v_lat, &
-               gz     => block%state(1)%gz   , &
+    associate (mesh   => block%mesh           , &
+               u      => block%dstate(1)%u_lon, &
+               v      => block%dstate(1)%v_lat, &
+               gz     => block%dstate(1)%gz   , &
                gzs    => block%static%gzs)
     gzs(:,:) = 0.0
 

@@ -54,7 +54,7 @@ contains
 
     associate (mesh => block%mesh              , &
                old  => block%adv_batches(1)%old, &
-               gz   => block%state(1)%gz       , &
+               gz   => block%dstate(1)%gz      , &
                q    => block%adv_batches(1)%q  )
     ! Background
     q(:,:,:,1,old) = 1
@@ -76,10 +76,10 @@ contains
 
   end subroutine dcmip12_test_set_ic
 
-  subroutine dcmip12_test_set_uv(block, state, time_in_seconds)
+  subroutine dcmip12_test_set_uv(block, dstate, time_in_seconds)
 
-    type(block_type), intent(in   ) :: block
-    type(state_type), intent(inout) :: state
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: time_in_seconds
 
     integer i, j, k
@@ -87,22 +87,22 @@ contains
 
     cos_t = cos(pi * time_in_seconds / tau)
 
-    associate (mesh    => block%mesh   , &
-               phs     => state%phs    , &
-               ph_lev  => state%ph_lev , &
-               ph      => state%ph     , &
-               m       => state%m      , &
-               m_lon   => state%m_lon  , &
-               m_lat   => state%m_lat  , &
-               m_lev   => state%m_lev  , &
-               t       => state%t      , &
-               gz_lev  => state%gz_lev , &
-               gz      => state%gz     , &
-               u       => state%u_lon  , &
-               v       => state%v_lat  , &
-               mfx_lon => state%mfx_lon, &
-               mfy_lat => state%mfy_lat, &
-               we      => state%we_lev)
+    associate (mesh    => block%mesh    , &
+               phs     => dstate%phs    , &
+               ph_lev  => dstate%ph_lev , &
+               ph      => dstate%ph     , &
+               m       => dstate%m      , &
+               m_lon   => dstate%m_lon  , &
+               m_lat   => dstate%m_lat  , &
+               m_lev   => dstate%m_lev  , &
+               t       => dstate%t      , &
+               gz_lev  => dstate%gz_lev , &
+               gz      => dstate%gz     , &
+               u       => dstate%u_lon  , &
+               v       => dstate%v_lat  , &
+               mfx_lon => dstate%mfx_lon, &
+               mfy_lat => dstate%mfy_lat, &
+               we      => dstate%we_lev)
     phs = p0
     t   = T0
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
@@ -119,8 +119,8 @@ contains
         end do
       end do
     end do
-    call calc_m(block, state)
-    call calc_gz_lev(block, state)
+    call calc_m(block, dstate)
+    call calc_gz_lev(block, dstate)
     call interp_lev_edge_to_cell(mesh, gz_lev, gz)
     ! Set invariant pressure thickness.
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend

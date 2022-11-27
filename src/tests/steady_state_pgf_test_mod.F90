@@ -37,14 +37,14 @@ contains
     real(r8) cos_lat, sin_lat, full_lon, r, height
     integer i, j, k
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               phs    => block%state(1)%phs   , &
-               ph_lev => block%state(1)%ph_lev, &
-               ph     => block%state(1)%ph    , &
-               t      => block%state(1)%t     , &
-               pt     => block%state(1)%pt    , &
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               phs    => block%dstate(1)%phs   , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               ph     => block%dstate(1)%ph    , &
+               t      => block%dstate(1)%t     , &
+               pt     => block%dstate(1)%pt    , &
                gzs    => block%static%gzs)
     u = 0.0
     v = 0.0

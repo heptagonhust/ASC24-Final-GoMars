@@ -32,14 +32,14 @@ contains
       call topo_smooth(block)
     end if
 
-    associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u_lon , &
-               v      => block%state(1)%v_lat , &
-               t      => block%state(1)%t     , &
-               pt     => block%state(1)%pt    , &
-               ph     => block%state(1)%ph    , &
-               ph_lev => block%state(1)%ph_lev, &
-               phs    => block%state(1)%phs   , &
+    associate (mesh   => block%mesh            , &
+               u      => block%dstate(1)%u_lon , &
+               v      => block%dstate(1)%v_lat , &
+               t      => block%dstate(1)%t     , &
+               pt     => block%dstate(1)%pt    , &
+               ph     => block%dstate(1)%ph    , &
+               ph_lev => block%dstate(1)%ph_lev, &
+               phs    => block%dstate(1)%phs   , &
                gzs    => block%static%gzs)
     u = 0
     v = 0

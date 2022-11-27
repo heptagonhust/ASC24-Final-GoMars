@@ -126,21 +126,21 @@ contains
 
   end subroutine deform_test_set_ic
 
-  subroutine deform_case1_test_set_uv(block, state, time_in_seconds)
+  subroutine deform_case1_test_set_uv(block, dstate, time_in_seconds)
 
-    type(block_type), intent(in   ) :: block
-    type(state_type), intent(inout) :: state
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh   , &
-               u    => state%u_lon  , &
-               v    => state%v_lat  , &
-               m    => state%m      , &
-               mfx  => state%mfx_lon, &
-               mfy  => state%mfy_lat)
+    associate (mesh => block%mesh    , &
+               u    => dstate%u_lon  , &
+               v    => dstate%v_lat  , &
+               m    => dstate%m      , &
+               mfx  => dstate%mfx_lon, &
+               mfy  => dstate%mfy_lat)
     m = 1
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
@@ -166,21 +166,21 @@ contains
 
   end subroutine deform_case1_test_set_uv
 
-  subroutine deform_case2_test_set_uv(block, state, time_in_seconds)
+  subroutine deform_case2_test_set_uv(block, dstate, time_in_seconds)
 
-    type(block_type), intent(in   ) :: block
-    type(state_type), intent(inout) :: state
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh   , &
-               m    => state%m      , &
-               u    => state%u_lon  , &
-               v    => state%v_lat  , &
-               mfx  => state%mfx_lon, &
-               mfy  => state%mfy_lat)
+    associate (mesh => block%mesh    , &
+               m    => dstate%m      , &
+               u    => dstate%u_lon  , &
+               v    => dstate%v_lat  , &
+               mfx  => dstate%mfx_lon, &
+               mfy  => dstate%mfy_lat)
     m = 1
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
@@ -206,21 +206,21 @@ contains
 
   end subroutine deform_case2_test_set_uv
 
-  subroutine deform_case3_test_set_uv(block, state, time_in_seconds)
+  subroutine deform_case3_test_set_uv(block, dstate, time_in_seconds)
 
-    type(block_type), intent(in   ) :: block
-    type(state_type), intent(inout) :: state
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh   , &
-               m    => state%m      , &
-               u    => state%u_lon  , &
-               v    => state%v_lat  , &
-               mfx  => state%mfx_lon, &
-               mfy  => state%mfy_lat)
+    associate (mesh => block%mesh    , &
+               m    => dstate%m      , &
+               u    => dstate%u_lon  , &
+               v    => dstate%v_lat  , &
+               mfx  => dstate%mfx_lon, &
+               mfy  => dstate%mfy_lat)
     m = 1
     k = 5.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
@@ -246,21 +246,21 @@ contains
 
   end subroutine deform_case3_test_set_uv
 
-  subroutine deform_case4_test_set_uv(block, state, time_in_seconds)
+  subroutine deform_case4_test_set_uv(block, dstate, time_in_seconds)
 
-    type(block_type), intent(in   ) :: block
-    type(state_type), intent(inout) :: state
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, c1, c2, cos_t
 
-    associate (mesh => block%mesh   , &
-               m    => state%m      , &
-               u    => state%u_lon  , &
-               v    => state%v_lat  , &
-               mfx  => state%mfx_lon, &
-               mfy  => state%mfy_lat)
+    associate (mesh => block%mesh    , &
+               m    => dstate%m      , &
+               u    => dstate%u_lon  , &
+               v    => dstate%v_lat  , &
+               mfx  => dstate%mfx_lon, &
+               mfy  => dstate%mfy_lat)
     m = 1
     k = 10.0_r8 * radius / period
     c1 = pi2 * time_in_seconds / period

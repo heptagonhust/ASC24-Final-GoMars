@@ -4,9 +4,7 @@ module block_mod
   use flogger
   use namelist_mod
   use mesh_mod
-  use state_mod
-  use static_mod
-  use tend_mod
+  use dynamics_types_mod
   use physics_types_mod
   use adv_batch_mod
   use filter_types_mod
@@ -21,17 +19,19 @@ module block_mod
   public blocks
   public global_mesh
   public mesh_type
-  public state_type
   public static_type
-  public tend_type
+  public dstate_type
+  public pstate_type
+  public dtend_type
+  public ptend_type
 
   type block_type
     integer id
     type(mesh_type) mesh
-    type(state_type), allocatable :: state(:)
     type(static_type) static
-    type(tend_type), allocatable :: tend(:)
+    type(dstate_type), allocatable :: dstate(:)
     type(pstate_type) pstate
+    type(dtend_type), allocatable :: dtend(:)
     type(ptend_type) ptend
     type(adv_batch_type) adv_batch_pt
     type(adv_batch_type), allocatable :: adv_batches(:)
@@ -81,22 +81,22 @@ contains
 
     call this%mesh%reinit(lon_halo_width)
 
-    if (.not. allocated(this%state)) then
+    if (.not. allocated(this%dstate)) then
       select case (trim(time_scheme))
       case ('euler')
-        allocate(this%state(2))
-        allocate(this%tend (2))
+        allocate(this%dstate(2))
+        allocate(this%dtend (2))
       case ('pc2', 'wrfrk3')
-        allocate(this%state(3))
-        allocate(this%tend (3))
+        allocate(this%dstate(3))
+        allocate(this%dtend (3))
       case default
         if (this%id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
-      do i = 1, size(this%state)
-        call this%state(i)%init(this%mesh)
+      do i = 1, size(this%dstate)
+        call this%dstate(i)%init(this%mesh)
       end do
-      do i = 1, size(this%tend)
-        call this%tend(i)%init(this%mesh)
+      do i = 1, size(this%dtend)
+        call this%dtend(i)%init(this%mesh)
       end do
       call this%static%init(this%mesh)
       call this%pstate%init(this%mesh)
@@ -115,11 +115,11 @@ contains
     call this%small_filter_phs%clear()
     call this%small_filter_pt %clear()
     call this%small_filter_uv %clear()
-    do i = 1, size(this%state)
-      call this%state(i)%clear()
+    do i = 1, size(this%dstate)
+      call this%dstate(i)%clear()
     end do
-    do i = 1, size(this%tend)
-      call this%tend(i)%clear()
+    do i = 1, size(this%dtend)
+      call this%dtend(i)%clear()
     end do
     call this%pstate%clear()
     call this%ptend %clear()
@@ -133,10 +133,10 @@ contains
       call this%halo(i)%clear()
     end do
 
-    if (allocated(this%state)) deallocate(this%state)
-    if (allocated(this%tend )) deallocate(this%tend )
+    if (allocated(this%dstate)) deallocate(this%dstate)
+    if (allocated(this%dtend)) deallocate(this%dtend)
     if (allocated(this%adv_batches)) deallocate(this%adv_batches)
-    if (allocated(this%halo )) deallocate(this%halo )
+    if (allocated(this%halo)) deallocate(this%halo)
 
   end subroutine block_clear
 

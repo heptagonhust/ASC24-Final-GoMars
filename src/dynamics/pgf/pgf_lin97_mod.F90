@@ -10,18 +10,18 @@ module pgf_lin97_mod
 
 contains
 
-  subroutine pgf_lin97_prepare(block, state)
+  subroutine pgf_lin97_prepare(block, dstate)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(dstate_type), intent(inout) :: dstate
 
   end subroutine pgf_lin97_prepare
 
-  subroutine pgf_lin97_run(block, state, tend)
+  subroutine pgf_lin97_run(block, dstate, dtend)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: state
-    type(tend_type), intent(inout) :: tend
+    type(dstate_type), intent(in) :: dstate
+    type(dtend_type), intent(inout) :: dtend
 
     real(r8) dph1, dph2, dgz1, dgz2, dpp1, dpp2, dp1, dp2, L
     integer i, j, k
@@ -43,14 +43,14 @@ contains
     !          | /
     !          |/
     !          o
-    associate (mesh       => block%mesh      , & ! in
-               qm         => state%qm        , & ! in
-               ph_exn_lev => state%ph_exn_lev, & ! in
-               ph_lev     => state%ph_lev    , & ! in
-               gz_lev     => state%gz_lev    , & ! in
-               p_lev      => state%p_lev     , & ! in
-               pgf_lon    => tend%pgf_lon    , & ! out
-               pgf_lat    => tend%pgf_lat)       ! out
+    associate (mesh       => block%mesh       , & ! in
+               qm         => dstate%qm        , & ! in
+               ph_exn_lev => dstate%ph_exn_lev, & ! in
+               ph_lev     => dstate%ph_lev    , & ! in
+               gz_lev     => dstate%gz_lev    , & ! in
+               p_lev      => dstate%p_lev     , & ! in
+               pgf_lon    => dtend%pgf_lon    , & ! out
+               pgf_lat    => dtend%pgf_lat)       ! out
     if (hydrostatic) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         !
