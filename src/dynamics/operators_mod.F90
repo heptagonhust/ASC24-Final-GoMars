@@ -620,6 +620,7 @@ contains
     real(r8) pole(dstate%mesh%num_full_lev)
 
     associate (mesh  => block%mesh  , &
+               u_lat => dstate%u_lat, & ! in
                vor   => dstate%vor  )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
@@ -637,7 +638,7 @@ contains
         j = mesh%half_lat_ibeg
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = -u(i,j,k) * mesh%le_lat(j)
+            work(i,k) = -u_lat(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
@@ -653,7 +654,7 @@ contains
         j = mesh%half_lat_iend
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = u(i,j,k) * mesh%le_lat(j)
+            work(i,k) = u_lat(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
