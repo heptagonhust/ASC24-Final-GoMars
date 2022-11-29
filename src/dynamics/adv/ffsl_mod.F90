@@ -5,6 +5,8 @@ module ffsl_mod
   use block_mod
   use parallel_mod
   use adv_batch_mod
+  use ppm_mod
+  use limiter_mod
 
   implicit none
 
@@ -69,16 +71,11 @@ module ffsl_mod
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
     end subroutine vflx_lev_interface
-    pure real(r8) function slope_interface(fm1, f, fp1)
-      import r8
-      real(r8), intent(in) :: fm1, f, fp1
-    end function slope_interface
   end interface
 
   procedure(hflx_interface    ), pointer :: hflx     => null()
   procedure(vflx_interface    ), pointer :: vflx     => null()
   procedure(vflx_lev_interface), pointer :: vflx_lev => null()
-  procedure(slope_interface   ), pointer :: slope    => null()
 
 contains
 
@@ -96,16 +93,7 @@ contains
       call log_error('Invalid ffsl_flux_type ' // trim(ffsl_flux_type) // '!', pid=proc%id)
     end select
 
-    select case (limiter_type)
-    case ('none')
-      slope => slope_simple
-    case ('mono')
-      slope => slope_mono
-    case ('pd')
-      slope => slope_pd
-    case default
-      call log_error('Invalid limiter_type ' // trim(limiter_type) // '!', pid=proc%id)
-    end select
+    call limiter_init()
 
   end subroutine ffsl_init
 
@@ -677,65 +665,5 @@ contains
     end associate
 
   end subroutine vflx_ppm_lev
-
-  subroutine ppm(fm2, fm1, f, fp1, fp2, fl, df, f6)
-
-    real(r8), intent(in ) :: fm2
-    real(r8), intent(in ) :: fm1
-    real(r8), intent(in ) :: f
-    real(r8), intent(in ) :: fp1
-    real(r8), intent(in ) :: fp2
-    real(r8), intent(out) :: fl
-    real(r8), intent(out) :: df
-    real(r8), intent(out) :: f6
-
-    real(r8) dfl, dfr, fr
-
-    ! Calculate values at left and right cell interfaces.
-    dfl = slope(fm2, fm1, f  )
-    df  = slope(fm1, f  , fp1)
-    dfr = slope(f  , fp1, fp2)
-    ! Why (B2) in Lin (2004) divide (dfl - df) and (df - dfr) by 3?
-    fl = 0.5_r8 * (fm1 + f) + (dfl - df) / 6.0_r8
-    fr = 0.5_r8 * (fp1 + f) + (df - dfr) / 6.0_r8
-    ! Why (B3) and (B4) in Lin (2004) multiply df by 2?
-    fl = f - sign(min(abs(df), abs(fl - f)), df)
-    fr = f + sign(min(abs(df), abs(fr - f)), df)
-    f6 = 6 * f - 3 * (fl + fr)
-    df = fr - fl
-
-  end subroutine ppm
-
-  pure real(r8) function slope_simple(fm1, f, fp1) result(res)
-
-    real(r8), intent(in) :: fm1, f, fp1
-
-    res = (fp1 - fm1) * 0.5_r8
-
-  end function slope_simple
-
-  pure real(r8) function slope_mono(fm1, f, fp1) result(res)
-
-    real(r8), intent(in) :: fm1, f, fp1
-
-    real(r8) df, df_min, df_max
-
-    df = (fp1 - fm1) * 0.5_r8 ! Initial guess
-    df_min = 2 * (f - min(fm1, f, fp1))
-    df_max = 2 * (max(fm1, f, fp1) - f)
-    res = sign(min(abs(df), df_min, df_max), df)
-
-  end function slope_mono
-
-  pure real(r8) function slope_pd(fm1, f, fp1) result(res)
-
-    real(r8), intent(in) :: fm1, f, fp1
-
-    real(r8) df
-
-    df = (fp1 - fm1) * 0.5_r8 ! Initial guess
-    res = sign(min(abs(df), 2 * f), df)
-
-  end function slope_pd
 
 end module ffsl_mod

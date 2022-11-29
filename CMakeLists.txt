@@ -153,6 +153,8 @@ set(gmcore_files
   src/dynamics/damp/damp_mod.F90
   src/dynamics/adv/adv_batch_mod.F90
   src/dynamics/adv/adv_mod.F90
+  src/dynamics/adv/limiter_mod.F90
+  src/dynamics/adv/ppm_mod.F90
   src/dynamics/adv/ffsl_mod.F90
   src/dynamics/adv/tvd_mod.F90
   src/dynamics/adv/weno_mod.F90
