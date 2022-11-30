@@ -60,7 +60,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -70,14 +70,14 @@ contains
           gzs(i,j) = g * h0 * exp(-r0**2 / d0**2) * cos(pi * r0 / xi0)**2 * mesh%full_cos_lat(j)
         end do
       end do
-      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           phs(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs(i,j) / Rd / teq)
         end do
       end do
-      call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -86,7 +86,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -95,7 +95,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -105,8 +105,8 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -115,7 +115,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     end associate
 
   end subroutine ksp15_01_test_set_ic
@@ -146,7 +146,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -154,14 +154,14 @@ contains
           gzs(i,j) = g * h0 * exp(-r**2 / d0**2) * cos(pi * r / xi0)**2
         end do
       end do
-      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           phs(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs(i,j) / Rd / teq)
         end do
       end do
-      call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -170,7 +170,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -179,7 +179,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -189,8 +189,8 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -199,7 +199,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     end associate
 
   end subroutine ksp15_02_test_set_ic

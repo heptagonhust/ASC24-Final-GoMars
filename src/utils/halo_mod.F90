@@ -17,13 +17,15 @@ module halo_mod
   integer, parameter :: nest_halo = 4
 
   type halo_type
-    integer :: comm = MPI_COMM_NULL
-    integer :: host_id = MPI_PROC_NULL
-    integer :: proc_id = MPI_PROC_NULL
-    integer :: iblk = 0
-    integer :: orient = 0
-    integer :: dtype = 0
-    integer :: type = 0
+    integer :: comm           = MPI_COMM_NULL
+    integer :: host_id        = MPI_PROC_NULL
+    integer :: proc_id        = MPI_PROC_NULL
+    integer :: iblk           = 0
+    integer :: orient         = 0
+    integer :: dtype          = 0
+    integer :: type           = 0
+    integer :: lon_halo_width = 0
+    integer :: lat_halo_width = 0
     ! (1,1): full_lon,full_lat (1,2): full_lon,half_lat
     ! (2,1): half_lon,full_lat (2,2): half_lon,half_lat
     integer :: send_type_2d(2,2) = MPI_DATATYPE_NULL
@@ -43,7 +45,9 @@ module halo_mod
 
 contains
 
-  subroutine halo_init(this, mesh, orient, dtype, host_id, ngb_proc_id, iblk, lon_ibeg, lon_iend, lat_ibeg, lat_iend, at_south_pole, at_north_pole)
+  subroutine halo_init(this, mesh, orient, dtype, host_id, ngb_proc_id, iblk, &
+                       lon_halo_width, lon_ibeg, lon_iend, &
+                       lat_halo_width, lat_ibeg, lat_iend, at_south_pole, at_north_pole)
 
     class(halo_type), intent(out) :: this
     type(mesh_type), intent(in) :: mesh
@@ -52,8 +56,10 @@ contains
     integer, intent(in) :: host_id
     integer, intent(in), optional :: ngb_proc_id
     integer, intent(in), optional :: iblk
+    integer, intent(in), optional :: lon_halo_width
     integer, intent(in), optional :: lon_ibeg
     integer, intent(in), optional :: lon_iend
+    integer, intent(in), optional :: lat_halo_width
     integer, intent(in), optional :: lat_ibeg
     integer, intent(in), optional :: lat_iend
     logical, intent(in), optional :: at_south_pole
@@ -80,27 +86,29 @@ contains
     this%host_id = host_id
     this%dtype = dtype
 
+    this%lon_halo_width = merge(lon_halo_width, mesh%lon_halo_width, present(lon_halo_width))
+    this%lat_halo_width = merge(lat_halo_width, mesh%lat_halo_width, present(lat_halo_width))
     if (present(lon_ibeg) .and. present(lon_iend)) then
-      full_lon_ibeg = lon_ibeg - mesh%full_lon_lb
-      full_lon_iend = lon_iend - mesh%full_lon_lb
+      full_lon_ibeg = lon_ibeg - (mesh%full_lon_ibeg - this%lon_halo_width)
+      full_lon_iend = lon_iend - (mesh%full_lon_ibeg - this%lon_halo_width)
     else if (orient == west) then
       full_lon_ibeg = 0
-      full_lon_iend = mesh%lon_halo_width - 1
+      full_lon_iend = this%lon_halo_width - 1
     else if (orient == east) then
-      full_lon_ibeg = mesh%num_full_lon + mesh%lon_halo_width
-      full_lon_iend = full_lon_ibeg + mesh%lon_halo_width - 1
+      full_lon_ibeg = mesh%num_full_lon + this%lon_halo_width
+      full_lon_iend = full_lon_ibeg + this%lon_halo_width - 1
     end if
     half_lon_ibeg = full_lon_ibeg
     half_lon_iend = full_lon_iend
     if (present(lat_ibeg) .and. present(lat_iend)) then
-      full_lat_ibeg = lat_ibeg - mesh%full_lat_lb
-      full_lat_iend = lat_iend - mesh%full_lat_lb
+      full_lat_ibeg = lat_ibeg - (mesh%full_lat_ibeg - this%lat_halo_width)
+      full_lat_iend = lat_iend - (mesh%full_lat_ibeg - this%lat_halo_width)
     else if (orient == south) then
       full_lat_ibeg = 0
-      full_lat_iend = mesh%lat_halo_width - 1
+      full_lat_iend = this%lat_halo_width - 1
     else if (orient == north) then
-      full_lat_ibeg = mesh%num_full_lat + mesh%lat_halo_width
-      full_lat_iend = full_lat_ibeg + mesh%lat_halo_width - 1
+      full_lat_ibeg = mesh%num_full_lat + this%lat_halo_width
+      full_lat_iend = full_lat_ibeg + this%lat_halo_width - 1
     end if
     half_lat_ibeg = merge(full_lat_ibeg - 1, full_lat_ibeg, mesh%has_north_pole() .and. orient == north)
     half_lat_iend = merge(full_lat_iend - 1, full_lat_iend, mesh%has_north_pole() .and. orient == north)
@@ -141,10 +149,10 @@ contains
     num_lev = [mesh%full_lev_ub-mesh%full_lev_lb+1,mesh%half_lev_ub-mesh%half_lev_lb+1]
 
     do k = 1, 2
-      array_size(:,1,1) = [mesh%num_full_lon+2*mesh%lon_halo_width,mesh%num_full_lat+2*mesh%lat_halo_width,num_lev(k)]
-      array_size(:,2,1) = [mesh%num_half_lon+2*mesh%lon_halo_width,mesh%num_full_lat+2*mesh%lat_halo_width,num_lev(k)]
-      array_size(:,1,2) = [mesh%num_full_lon+2*mesh%lon_halo_width,mesh%num_half_lat+2*mesh%lat_halo_width,num_lev(k)]
-      array_size(:,2,2) = [mesh%num_half_lon+2*mesh%lon_halo_width,mesh%num_half_lat+2*mesh%lat_halo_width,num_lev(k)]
+      array_size(:,1,1) = [mesh%num_full_lon+2*this%lon_halo_width,mesh%num_full_lat+2*this%lat_halo_width,num_lev(k)]
+      array_size(:,2,1) = [mesh%num_half_lon+2*this%lon_halo_width,mesh%num_full_lat+2*this%lat_halo_width,num_lev(k)]
+      array_size(:,1,2) = [mesh%num_full_lon+2*this%lon_halo_width,mesh%num_half_lat+2*this%lat_halo_width,num_lev(k)]
+      array_size(:,2,2) = [mesh%num_half_lon+2*this%lon_halo_width,mesh%num_half_lat+2*this%lat_halo_width,num_lev(k)]
       send_subarray_size(:,1,1) = [full_lon_iend-full_lon_ibeg+1,full_lat_iend-full_lat_ibeg+1,num_lev(k)]
       recv_subarray_size(:,1,1) = send_subarray_size(:,1,1)
       send_subarray_size(:,2,1) = [half_lon_iend-half_lon_ibeg+1,full_lat_iend-full_lat_ibeg+1,num_lev(k)]
@@ -169,16 +177,16 @@ contains
         recv_subarray_start(:,2,2) = [half_lon_ibeg  ,half_lat_ibeg,0]
       case (east)
         ! full_lon + full_lat
-        send_subarray_start(:,1,1) = [full_lon_ibeg-mesh%lon_halo_width,full_lat_ibeg,0]
+        send_subarray_start(:,1,1) = [full_lon_ibeg-this%lon_halo_width,full_lat_ibeg,0]
         recv_subarray_start(:,1,1) = [full_lon_ibeg                    ,full_lat_ibeg,0]
         ! half_lon + full_lat
-        send_subarray_start(:,2,1) = [half_lon_ibeg-mesh%lon_halo_width,full_lat_ibeg,0]
+        send_subarray_start(:,2,1) = [half_lon_ibeg-this%lon_halo_width,full_lat_ibeg,0]
         recv_subarray_start(:,2,1) = [half_lon_ibeg                    ,full_lat_ibeg,0]
         ! full_lon + half_lat
-        send_subarray_start(:,1,2) = [full_lon_ibeg-mesh%lon_halo_width,half_lat_ibeg,0]
+        send_subarray_start(:,1,2) = [full_lon_ibeg-this%lon_halo_width,half_lat_ibeg,0]
         recv_subarray_start(:,1,2) = [full_lon_ibeg                    ,half_lat_ibeg,0]
         ! half_lon + half_lat
-        send_subarray_start(:,2,2) = [half_lon_ibeg-mesh%lon_halo_width,half_lat_ibeg,0]
+        send_subarray_start(:,2,2) = [half_lon_ibeg-this%lon_halo_width,half_lat_ibeg,0]
         recv_subarray_start(:,2,2) = [half_lon_ibeg                    ,half_lat_ibeg,0]
       case (south)
         if (merge(at_south_pole, .false., present(at_south_pole))) then
@@ -211,29 +219,29 @@ contains
       case (north)
         if (merge(at_north_pole, .false., present(at_north_pole))) then
           ! full_lon + full_lat
-          send_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg-mesh%lat_halo_width-1,0]
+          send_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg-this%lat_halo_width-1,0]
           recv_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg                      ,0]
           ! half_lon + full_lat
-          send_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg-mesh%lat_halo_width-1,0]
+          send_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg-this%lat_halo_width-1,0]
           recv_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg                      ,0]
           ! full_lon + half_lat
-          send_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg-mesh%lat_halo_width  ,0]
+          send_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg-this%lat_halo_width  ,0]
           recv_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg                      ,0]
           ! half_lon + half_lat
-          send_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg-mesh%lat_halo_width  ,0]
+          send_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg-this%lat_halo_width  ,0]
           recv_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg                      ,0]
         else
           ! full_lon + full_lat
-          send_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg-mesh%lat_halo_width  ,0]
+          send_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg-this%lat_halo_width  ,0]
           recv_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg                      ,0]
           ! half_lon + full_lat
-          send_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg-mesh%lat_halo_width  ,0]
+          send_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg-this%lat_halo_width  ,0]
           recv_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg                      ,0]
           ! full_lon + half_lat
-          send_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg-mesh%lat_halo_width  ,0]
+          send_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg-this%lat_halo_width  ,0]
           recv_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg                      ,0]
           ! half_lon + half_lat
-          send_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg-mesh%lat_halo_width  ,0]
+          send_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg-this%lat_halo_width  ,0]
           recv_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg                      ,0]
         end if
       end select

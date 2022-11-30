@@ -49,7 +49,7 @@ contains
         phs(i,j) = ps0 * exp(gzs(i,j) / (g * Rd * t0)) - ptop
       end do
     end do
-    call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -58,7 +58,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -67,7 +67,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -76,7 +76,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine mars_cold_run_set_ic

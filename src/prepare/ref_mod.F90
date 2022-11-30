@@ -33,7 +33,7 @@ contains
             ref_ps(i,j) = p0 * exp(-T0 / A + sqrt((T0 / A)**2 - 2 * gzs(i,j) / A / Rd))
           end do
         end do
-        call fill_halo(block, ref_ps, full_lon=.true., full_lat=.true.)
+        call fill_halo(block%halo, ref_ps, full_lon=.true., full_lat=.true.)
         end associate
       end do
     end select

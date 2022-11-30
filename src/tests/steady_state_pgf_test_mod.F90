@@ -58,14 +58,14 @@ contains
         if (r < Rm) gzs(i,j) = g * h0 / 2.d0 * (1.d0 + cos(pi * r / Rm)) * cos(pi * r / osm)**2
       end do
     end do
-    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         phs(i,j) = p0 * (1.d0 - gamma / T0 * gzs(i,j) / g)**(g / Rd / gamma) 
       end do
     end do
-    call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -74,7 +74,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -83,7 +83,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -93,8 +93,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
   
   end subroutine steady_state_pgf_test_set_ic

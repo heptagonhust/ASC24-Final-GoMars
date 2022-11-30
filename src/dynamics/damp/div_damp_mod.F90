@@ -132,8 +132,8 @@ contains
         end do
       end do
     end select
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine div_damp_run

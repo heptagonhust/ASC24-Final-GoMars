@@ -64,7 +64,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     v = 0.0
 
@@ -77,7 +77,7 @@ contains
         gzs(i,j) = g * h0 * exp(-(r / d)**2)
       end do
     end do
-    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       sin_lat = mesh%full_sin_lat(j)
@@ -87,7 +87,7 @@ contains
                    (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * gzs(i,j))
       end do
     end do
-    call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -96,7 +96,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -105,7 +105,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -115,8 +115,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
       call calc_gz_lev(block, block%dstate(1))

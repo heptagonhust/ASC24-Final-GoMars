@@ -47,7 +47,7 @@ contains
         gzs(i,j) = gzs0 * (1.0 - d / R)
       end do
     end do
-    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -57,7 +57,7 @@ contains
         u(i,j,1) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -65,7 +65,7 @@ contains
         v(i,j,1) = - u0 * sin_lon * sin_alpha
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -75,7 +75,7 @@ contains
         gz(i,j,1) = gz0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2
       end do
     end do
-    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine mountain_zonal_flow_test_set_ic

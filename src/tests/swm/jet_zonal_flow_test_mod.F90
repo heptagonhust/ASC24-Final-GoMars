@@ -46,7 +46,7 @@ contains
         u(i,j,1) = u_function(mesh%full_lat(j))
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
 
     v = 0
 
@@ -70,7 +70,7 @@ contains
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)
       end do
     end do
-    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine jet_zonal_flow_test_set_ic

@@ -56,7 +56,7 @@ contains
         u(i,j,1) = radius * omg * (a + b - c)
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       cos_lat = mesh%half_cos_lat(j)
@@ -67,7 +67,7 @@ contains
         v(i,j,1) = - radius * omg * a
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -81,7 +81,7 @@ contains
         gz(i,j,1) = gz0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
       end do
     end do
-    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine rossby_haurwitz_wave_test_set_ic

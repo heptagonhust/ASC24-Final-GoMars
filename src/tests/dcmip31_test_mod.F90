@@ -67,7 +67,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
       v = 0.0_r8
       gzs = 0.0_r8
@@ -80,7 +80,7 @@ contains
                      (ts / teq)**(1 / Rd_o_cpd)
         end do
       end do
-      call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -89,7 +89,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -98,7 +98,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
       if (nonhydrostatic) then
         w = 0.0_r8
@@ -111,7 +111,7 @@ contains
             end do
           end do
         end do
-        call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+        call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
       end if
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -135,7 +135,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
   
   end subroutine dcmip31_test_set_ic

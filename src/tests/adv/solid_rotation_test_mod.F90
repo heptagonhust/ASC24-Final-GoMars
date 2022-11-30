@@ -60,7 +60,7 @@ contains
         end if
       end do
     end do
-    call fill_halo(block, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine solid_rotation_test_set_ic
@@ -88,7 +88,7 @@ contains
         u(i,j,1) = u0 * (cos(lat) * cos(alpha) + sin(lat) * cos(lon) * sin(alpha))
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     mfx = u
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       lat = mesh%half_lat(j)
@@ -97,7 +97,7 @@ contains
         v(i,j,1) = -u0 * sin(lon) * sin(alpha)
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     mfy = v
     end associate
 

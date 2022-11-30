@@ -407,9 +407,9 @@ contains
           lnd(mesh%full_lon_ibeg:mesh%full_lon_iend,j) = pole_lnd / pole_n
         end if
       end do
-      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
-      call fill_halo(block, std, full_lon=.true., full_lat=.true.)
-      call fill_halo(block, lnd, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, std, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, lnd, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine topo_regrid
@@ -433,7 +433,7 @@ contains
           gzs(:,j) = wgt * gzs_f(:,j) + (1 - wgt) * gzs(:,j)
         end if
       end do
-      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
       ! do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       !   do i = mesh%full_lon_ibeg, mesh%full_lon_iend
       !     if (landmask(i,j) == 0) gzs(i,j) = 0

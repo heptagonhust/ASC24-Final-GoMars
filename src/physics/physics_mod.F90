@@ -96,7 +96,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, dstate%u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
+      call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -104,7 +104,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, dstate%v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
+      call fill_halo(block%halo, dstate%v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
     end if
 
     if (ptend%updated_sh) then
@@ -115,7 +115,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, dstate%qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block%halo, dstate%qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
       call calc_qm(block, itime)
     end if
 
@@ -128,7 +128,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block%halo, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     end if
     end associate
 

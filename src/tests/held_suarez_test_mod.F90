@@ -47,7 +47,7 @@ contains
         phs(i,j) = phs(i,j) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
       end do
     end do
-    call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -57,7 +57,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine held_suarez_test_set_ic
@@ -85,7 +85,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       kv = kf * max(0.0_r8, (mesh%full_lev(k) - sig_b) / (1.0_r8 - sig_b))
@@ -95,7 +95,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -107,7 +107,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine held_suarez_test_apply_forcing

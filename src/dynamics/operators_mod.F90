@@ -148,7 +148,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph_exn_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, ph_exn_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -157,7 +157,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine calc_ph
@@ -217,7 +217,7 @@ contains
     ! Set vertical boundary conditions.
     we_lev(:,:,mesh%half_lev_ibeg) = 0.0_r8
     we_lev(:,:,mesh%half_lev_iend) = 0.0_r8
-    call fill_halo(block, we_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, we_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     call block%adv_batch_pt%accum_we_lev(we_lev, m_lev, dt)
 
@@ -402,9 +402,9 @@ contains
       end do
     end if
     if (div_damp_order == 4) then
-      call fill_halo(block, div, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
     else
-      call fill_halo(block, div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+      call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
     end if
 
     if (div_damp_order == 4) then
@@ -420,7 +420,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, div2, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+      call fill_halo(block%halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
     end if
     end associate
 
@@ -451,7 +451,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     ! For output
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -520,7 +520,7 @@ contains
           m_lev(i,j,k) = ph_lev(i,j,k) - ph(i,j,k-1)
         end do
       end do
-      call fill_halo(block, m_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block%halo, m_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     else
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -529,11 +529,11 @@ contains
       end do
     end if
 
-    call fill_halo(block, m, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, m, full_lon=.true., full_lat=.true., full_lev=.true.)
     call average_cell_to_lon_edge(mesh, m, m_lon)
-    call fill_halo(block, m_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, m_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
     call average_cell_to_lat_edge(mesh, m, m_lat)
-    call fill_halo(block, m_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, m_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
     call interp_cell_to_vtx(mesh, m, m_vtx)
     end associate
 
@@ -561,8 +561,8 @@ contains
                mfx_lat => dstate%mfx_lat)   ! out
     call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
     ! call adv_calc_mass_hflx(block, block%adv_batch_pt, m, mfx_lon, mfy_lat, dt)
-    ! call fill_halo(block, mfx_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
-    ! call fill_halo(block, mfy_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
+    ! call fill_halo(block%halo, mfx_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+    ! call fill_halo(block%halo, mfy_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
@@ -588,7 +588,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, u_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, u_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -599,7 +599,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, v_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, v_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine calc_mf
@@ -692,7 +692,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, pv, full_lon=.false., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, pv, full_lon=.false., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine calc_pv
@@ -716,7 +716,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -725,7 +725,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
     end associate
 
   end subroutine interp_pv_midpoint
@@ -783,8 +783,8 @@ contains
         end do
       end do
     end select
-    call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-    call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
     end associate
 
   end subroutine interp_pv_upwind
@@ -820,8 +820,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-    call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
     end associate
 
   end subroutine interp_pv_tvd
@@ -1010,9 +1010,9 @@ contains
                dptfdlat => dtend%dptfdlat, & ! out
                dptfdlev => dtend%dptfdlev)   ! out
     call adv_calc_tracer_hflx(block, block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
-    call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
+    call fill_halo(block%halo, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
-    call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
+    call fill_halo(block%halo, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
                    north_halo=.false.,  west_halo=.false., east_halo=.false.)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

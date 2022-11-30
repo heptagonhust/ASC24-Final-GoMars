@@ -135,7 +135,7 @@ contains
           call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_psd, mesh, phs)
         end if
 
-        call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
+        call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
         deallocate(p0, t0, z0, t0_p)
       end associate
     end do
@@ -293,7 +293,7 @@ contains
           end do
           deallocate(t1, p1)
         end select
-        call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
       end associate
     end do
 
@@ -376,7 +376,7 @@ contains
           end do
           deallocate(u1, p1)
         end select
-        call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
       end associate
     end do
 
@@ -459,7 +459,7 @@ contains
           end do
           deallocate(v1, p1)
         end select
-        call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+        call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
       end associate
     end do
 
@@ -491,7 +491,7 @@ contains
         end do
         deallocate(q1)
       end select
-      call fill_halo(block, q(:,:,:,1,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, q(:,:,:,1,old), full_lon=.true., full_lat=.true., full_lev=.true.)
       end associate
     end do
 

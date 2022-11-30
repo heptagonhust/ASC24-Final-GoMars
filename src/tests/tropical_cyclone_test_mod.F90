@@ -157,13 +157,13 @@ CONTAINS
         end do
       end do
     end do
-    call fill_halo(block,  ps, full_lon=.true. , full_lat=.true.)
-    call fill_halo(block,   u, full_lon=.false., full_lat=.true. , full_lev=.true.)
-    call fill_halo(block,   v, full_lon=.true. , full_lat=.false., full_lev=.true.)
-    call fill_halo(block,   t, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block,  pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block,  gz, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block,   q, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%halo,  ps, full_lon=.true. , full_lat=.true.)
+    call fill_halo(block%halo,   u, full_lon=.false., full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%halo,   v, full_lon=.true. , full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo,   t, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%halo,  pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%halo,  gz, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%halo,   q, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -171,7 +171,7 @@ CONTAINS
         end do
       end do
     end do
-    call fill_halo(block, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -179,7 +179,7 @@ CONTAINS
         end do
       end do
     end do
-    call fill_halo(block, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine tropical_cyclone_test_set_ic

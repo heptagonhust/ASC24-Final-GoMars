@@ -34,8 +34,8 @@ contains
           dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
         end do
       end do
-      call fill_halo(block, dzsdlon, full_lon=.false., full_lat=.true.)
-      call fill_halo(block, dzsdlat, full_lon=.true., full_lat=.false.)
+      call fill_halo(block%halo, dzsdlon, full_lon=.false., full_lat=.true.)
+      call fill_halo(block%halo, dzsdlat, full_lon=.true., full_lat=.false.)
     end associate
 
   end subroutine prepare_static

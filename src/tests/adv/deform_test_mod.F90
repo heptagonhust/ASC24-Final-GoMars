@@ -88,7 +88,7 @@ contains
         end if
       end do
     end do
-    call fill_halo(block, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Slotted cylinders
     qmax = 1.0_r8; qmin = 0.1_r8; r = radius * 0.5_r8
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -109,7 +109,7 @@ contains
         end if
       end do
     end do
-    call fill_halo(block, q(:,:,:,3,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, q(:,:,:,3,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Gaussian hills
     qmax = 0.95_r8; c = 5.0_r8
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -121,7 +121,7 @@ contains
         q(i,j,1,4,old) = qmax * (exp(-c * dot_product(x - x1, x - x1)) + exp(-c * dot_product(x - x2, x - x2)))
       end do
     end do
-    call fill_halo(block, q(:,:,:,4,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, q(:,:,:,4,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine deform_test_set_ic
@@ -152,7 +152,7 @@ contains
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       lat = mesh%half_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -161,7 +161,7 @@ contains
         mfy(i,j,1) = v(i,j,1)
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine deform_case1_test_set_uv
@@ -192,7 +192,7 @@ contains
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       lat = mesh%half_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -201,7 +201,7 @@ contains
         mfy(i,j,1) = v(i,j,1)
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine deform_case2_test_set_uv
@@ -232,7 +232,7 @@ contains
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       lat = mesh%half_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -241,7 +241,7 @@ contains
         mfy(i,j,1) = v(i,j,1)
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine deform_case3_test_set_uv
@@ -274,7 +274,7 @@ contains
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       lat = mesh%half_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -283,7 +283,7 @@ contains
         mfy(i,j,1) = v(i,j,1)
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine deform_case4_test_set_uv

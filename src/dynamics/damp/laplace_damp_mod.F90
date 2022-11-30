@@ -123,8 +123,8 @@ contains
           gy2(i,j) = gy1(i,j-1) - 2 * gy1(i,j) + gy1(i,j+1)
         end do
       end do
-      call fill_halo(block, gx2, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-      call fill_halo(block, gy2, full_lon=.true., full_lat=.true., west_halo=.false., east_halo=.false.)
+      call fill_halo(block%halo, gx2, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%halo, gy2, full_lon=.true., full_lat=.true., west_halo=.false., east_halo=.false.)
       gx1 = gx2
       gy1 = gy2
     end do
@@ -160,7 +160,7 @@ contains
       end do
     end do
     end associate
-    if (merge(fill, .true., present(fill))) call fill_halo(block, f, full_lon=.true., full_lat=.true.)
+    if (merge(fill, .true., present(fill))) call fill_halo(block%halo, f, full_lon=.true., full_lat=.true.)
 
   end subroutine laplace_damp_on_cell_2d
 
@@ -189,7 +189,7 @@ contains
       end if
       call laplace_damp_on_cell_2d(block, order, f(:,:,k), coef=ck, lat_coef=lat_coef, fill=.false.)
     end do
-    call fill_halo(block, f, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, f, full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine laplace_damp_on_cell_3d
 
@@ -270,7 +270,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, f, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, f, full_lon=.false., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine laplace_damp_on_lon_edge
@@ -353,7 +353,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, f, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, f, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine laplace_damp_on_lat_edge

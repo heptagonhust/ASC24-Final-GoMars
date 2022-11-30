@@ -104,9 +104,9 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, dudt, full_lon=.true., full_lat=.true., full_lev=.true., &
+      call fill_halo(block%halo, dudt, full_lon=.true., full_lat=.true., full_lev=.true., &
                      west_halo=.false., south_halo=.false., north_halo=.false.)
-      call fill_halo(block, dvdt, full_lon=.true., full_lat=.true., full_lev=.true., &
+      call fill_halo(block%halo, dvdt, full_lon=.true., full_lat=.true., full_lev=.true., &
                      west_halo=.false.,  east_halo=.false., south_halo=.false.)
     end if
     if (ptend%updated_t) then

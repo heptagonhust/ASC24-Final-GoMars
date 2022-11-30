@@ -173,9 +173,9 @@ contains
                      qmf_lev => block%adv_batches(m)%qmf_lev)   ! working array
           ! Calculate tracer mass flux.
           call adv_calc_tracer_hflx(block, block%adv_batches(m), q(:,:,:,l,old), qmf_lon, qmf_lat)
-          call fill_halo(block, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
+          call fill_halo(block%halo, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                          south_halo=.false., north_halo=.false., east_halo=.false.)
-          call fill_halo(block, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
+          call fill_halo(block%halo, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
                          north_halo=.false.,  west_halo=.false., east_halo=.false.)
           ! Update tracer mixing ratio.
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -269,7 +269,7 @@ contains
               end do
             end do
           end do
-          call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+          call fill_halo(block%halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
           call filter_on_cell(block%small_filter_phs, q(:,:,:,l,new))
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -278,7 +278,7 @@ contains
               end do
             end do
           end do
-          call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fill_halo(block%halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
           end associate
         end do
         i = block%adv_batches(m)%old

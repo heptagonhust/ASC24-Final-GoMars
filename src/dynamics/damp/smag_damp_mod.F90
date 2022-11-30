@@ -76,7 +76,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, smag_t, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, smag_t, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -90,7 +90,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, smag_s, full_lon=.false., full_lat=.false., full_lev=.true., east_halo=.false., north_halo=.false.)
+    call fill_halo(block%halo, smag_s, full_lon=.false., full_lat=.false., full_lev=.true., east_halo=.false., north_halo=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -149,7 +149,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -178,7 +178,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
 
     ! do k = mesh%full_lev_ibeg, mesh%full_lev_iend
     !   do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -199,7 +199,7 @@ contains
     !     end do
     !   end do
     ! end do
-    ! call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    ! call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine smag_damp_run

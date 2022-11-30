@@ -71,7 +71,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine dcmip12_test_set_ic
@@ -141,7 +141,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         lat = mesh%half_lat(j)
@@ -154,7 +154,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         lat = mesh%full_lat(j)

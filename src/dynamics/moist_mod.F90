@@ -64,7 +64,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, qm, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, qm, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
     end associate
 
   end subroutine calc_qm

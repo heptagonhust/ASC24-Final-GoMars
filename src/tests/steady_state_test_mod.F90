@@ -50,7 +50,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -59,7 +59,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
@@ -70,7 +70,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
@@ -92,8 +92,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       eta = mesh%half_lev(k)
@@ -118,7 +118,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
@@ -143,7 +143,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     etav = (1 - eta0) * pi / 2
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -156,7 +156,7 @@ contains
         )
       end do
     end do
-    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine steady_state_test_set_ic

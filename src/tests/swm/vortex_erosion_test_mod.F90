@@ -37,7 +37,7 @@ contains
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       u(:,j,1) = u_function(mesh%full_lat(j))
     end do
-    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
     
     v = 0.0_r8 
 
@@ -57,7 +57,7 @@ contains
       end do 
     end do 
 
-    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine vortex_erosion_test_set_ic
@@ -94,7 +94,7 @@ contains
         end do
       end if
     end do
-    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine vortex_erosion_test_apply_forcing

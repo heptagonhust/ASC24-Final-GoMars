@@ -114,10 +114,10 @@ contains
         gz(i,j,1) = g * gz(i,j,1) + 5.0d4
       end do
     end do
-    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
 
-    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
-    call fill_halo(block, v, full_lon=.true., full_lat=.false.)
+    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
     end associate
 
   end subroutine shallow_water_waves_test_set_ic
