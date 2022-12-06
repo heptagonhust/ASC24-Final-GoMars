@@ -129,9 +129,11 @@ contains
         call this%adv_batches(i)%clear()
       end do
     end if
-    do i = 1, size(this%halo)
-      call this%halo(i)%clear()
-    end do
+    if (allocated(this%halo)) then
+      do i = 1, size(this%halo)
+        call this%halo(i)%clear()
+      end do
+    end if
 
     if (allocated(this%dstate)) deallocate(this%dstate)
     if (allocated(this%dtend)) deallocate(this%dtend)
