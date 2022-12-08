@@ -8,7 +8,6 @@ module sphere_geometry_mod
 
   private
 
-  public euler_formula
   public cartesian_transform
   public inverse_cartesian_transform
   public rotation_transform
@@ -19,83 +18,82 @@ module sphere_geometry_mod
   public norm_vector
   public calc_sphere_angle
   public calc_arc_length
-  public intersect
-  public point_type
 
   integer, parameter :: ORIENT_LEFT  = 1
   integer, parameter :: ORIENT_RIGHT = 2
   integer, parameter :: ORIENT_ON    = 3
 
-  type point_type
-    real(16) lon, lat
-    real(16) x, y, z
-  contains
-    procedure :: copy_coord => point_copy_coord
-  end type point_type
-
   interface cartesian_transform
+    module procedure cartesian_transform_1_r4
+    module procedure cartesian_transform_2_r4
     module procedure cartesian_transform_1_r8
-    module procedure cartesian_transform_1_r16
-    module procedure cartesian_transform_2
+    module procedure cartesian_transform_2_r8
   end interface cartesian_transform
 
   interface inverse_cartesian_transform
-    module procedure inverse_cartesian_transform_1
-    module procedure inverse_cartesian_transform_2
+    module procedure inverse_cartesian_transform_1_r8
+    module procedure inverse_cartesian_transform_1_r16
   end interface inverse_cartesian_transform
 
   interface rotation_transform
+    module procedure rotation_transform_r4
     module procedure rotation_transform_r8
     module procedure rotation_transform_r16
   end interface rotation_transform
 
   interface inverse_rotation_transform
+    module procedure inverse_rotation_transform_r4
     module procedure inverse_rotation_transform_r8
     module procedure inverse_rotation_transform_r16
   end interface inverse_rotation_transform
 
   interface calc_distance
+    module procedure calc_distance_r4
     module procedure calc_distance_r8
     module procedure calc_distance_r16
   end interface
 
   interface calc_sphere_angle
     module procedure calc_sphere_angle_1
-    module procedure calc_sphere_angle_2
   end interface calc_sphere_angle
 
   interface calc_arc_length
     module procedure calc_arc_length_1
-    module procedure calc_arc_length_2
-    module procedure calc_arc_length_3
   end interface calc_arc_length
-
-  interface orient
-    module procedure orient1
-    module procedure orient2
-  end interface orient
 
 contains
 
-  integer function euler_formula(num_cell, num_vertex, num_edge) result(res)
+  subroutine cartesian_transform_1_r4(lon, lat, x, y, z)
 
-    integer, intent(in), optional :: num_cell
-    integer, intent(in), optional :: num_vertex
-    integer, intent(in), optional :: num_edge
+    real(4), intent(in) :: lon, lat
+    real(4), intent(out) :: x, y, z
 
-    if (present(num_cell) .and. present(num_vertex)) then
-      res = num_cell + num_vertex - 2
-    else if (present(num_cell) .and. present(num_edge)) then
-      res = num_edge - num_cell + 2
-    else if (present(num_vertex) .and. present(num_edge)) then
-      res = num_edge - num_vertex + 2
-    end if
+    real(4) cos_lat
 
-  end function euler_formula
+    cos_lat = cos(lat)
+    x = radius * cos_lat * cos(lon)
+    y = radius * cos_lat * sin(lon)
+    z = radius * sin(lat)
+
+  end subroutine cartesian_transform_1_r4
+
+  subroutine cartesian_transform_2_r4(lon, lat, x, y, z)
+
+    real(4), intent(in) :: lon, lat
+    real(16), intent(out) :: x, y, z
+
+    real(16) cos_lat
+
+    cos_lat = cos(lat)
+    x = radius * cos_lat * cos(lon)
+    y = radius * cos_lat * sin(lon)
+    z = radius * sin(lat)
+
+  end subroutine cartesian_transform_2_r4
 
   subroutine cartesian_transform_1_r8(lon, lat, x, y, z)
 
-    real(8), intent(in ) :: lon, lat
+    real(8), intent(in) :: lon, lat
     real(8), intent(out) :: x, y, z
 
     real(8) cos_lat
@@ -107,9 +105,9 @@ contains
 
   end subroutine cartesian_transform_1_r8
 
-  subroutine cartesian_transform_1_r16(lon, lat, x, y, z)
+  subroutine cartesian_transform_2_r8(lon, lat, x, y, z)
 
-    real(8 ), intent(in)  :: lon, lat
+    real(8), intent(in) :: lon, lat
     real(16), intent(out) :: x, y, z
 
     real(16) cos_lat
@@ -119,22 +117,21 @@ contains
     y = radius * cos_lat * sin(lon)
     z = radius * sin(lat)
 
-  end subroutine cartesian_transform_1_r16
+  end subroutine cartesian_transform_2_r8
 
-  subroutine cartesian_transform_2(point)
+  subroutine inverse_cartesian_transform_1_r8(lon, lat, x, y, z)
 
-    class(point_type), intent(inout) :: point
+    real(8), intent(out) :: lon, lat
+    real(16), intent(in)  :: x, y, z
 
-    real(16) cos_lat
+    lon = atan2(y, x)
+    lat = asin(z / radius)
 
-    cos_lat = cos(point%lat)
-    point%x = radius * cos_lat * cos(point%lon)
-    point%y = radius * cos_lat * sin(point%lon)
-    point%z = radius * sin(point%lat)
+    if (lon < 0.0d0) lon = lon + pi2
 
-  end subroutine cartesian_transform_2
+  end subroutine inverse_cartesian_transform_1_r8
 
-  subroutine inverse_cartesian_transform_1(lon, lat, x, y, z)
+  subroutine inverse_cartesian_transform_1_r16(lon, lat, x, y, z)
 
     real(16), intent(out) :: lon, lat
     real(16), intent(in)  :: x, y, z
@@ -144,18 +141,7 @@ contains
 
     if (lon < 0.0d0) lon = lon + pi2
 
-  end subroutine inverse_cartesian_transform_1
-
-  subroutine inverse_cartesian_transform_2(point)
-
-    class(point_type), intent(inout) :: point
-
-    point%lon = atan2(point%y, point%x)
-    point%lat = asin(point%z / radius)
-
-    if (point%lon < 0.0d0) point%lon = point%lon + pi2
-
-  end subroutine inverse_cartesian_transform_2
+  end subroutine inverse_cartesian_transform_1_r16
 
   ! ************************************************************************** !
   ! Rotation transform                                                         !
@@ -164,6 +150,31 @@ contains
   !   coordinate system (lon_o,lat_o) to the rotated one (lon_r, lat_r) with   !
   !   the north pole (lon_p,lat_p) defined at the original coordinate system.  !
   ! ************************************************************************** !
+
+  subroutine rotation_transform_r4(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+
+    real(4), intent(in) :: lon_p, lat_p ! Rotated pole coordinate
+    real(4), intent(in) :: lon_o, lat_o ! Original coordinate
+    real(4), intent(out), optional :: lon_r, lat_r ! Rotated coordinate
+
+    real(4) tmp1, tmp2, tmp3, dlon
+
+    dlon = lon_o - lon_p
+    if (present(lon_r)) then
+        tmp1 = cos(lat_o) * sin(dlon)
+        tmp2 = cos(lat_o) * sin(lat_p) * cos(dlon) - cos(lat_p) * sin(lat_o)
+        lon_r = atan2(tmp1, tmp2)
+        if (lon_r < 0.0d0) lon_r = pi2 + lon_r
+    end if
+    if (present(lat_r)) then
+        tmp1 = sin(lat_o) * sin(lat_p)
+        tmp2 = cos(lat_o) * cos(lat_p) * cos(dlon)
+        tmp3 = tmp1 + tmp2
+        tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
+        lat_r = asin(tmp3)
+    end if
+
+  end subroutine rotation_transform_r4
 
   subroutine rotation_transform_r8(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
@@ -215,6 +226,37 @@ contains
 
   end subroutine rotation_transform_r16
 
+  subroutine inverse_rotation_transform_r4(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+
+    real(4), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
+    real(4), intent(out) :: lon_o, lat_o ! Original coordinate
+    real(4), intent(in)  :: lon_r, lat_r ! Rotated coordinate
+
+    real(4) sin_lon_r, cos_lon_r, sin_lat_r, cos_lat_r, sin_lat_p, cos_lat_p
+    real(4) tmp1, tmp2, tmp3
+
+    sin_lon_r = sin(lon_r)
+    cos_lon_r = cos(lon_r)
+    sin_lat_r = sin(lat_r)
+    cos_lat_r = cos(lat_r)
+    sin_lat_p = sin(lat_p)
+    cos_lat_p = cos(lat_p)
+
+    tmp1 = cos_lat_r * sin_lon_r
+    tmp2 = sin_lat_r * cos_lat_p + cos_lat_r * cos_lon_r * sin_lat_p
+    ! This trick is due to the inaccuracy of trigonometry calculation.
+    if (abs(tmp2) < eps) tmp2 = 0.0d0
+    lon_o = atan2(tmp1, tmp2)
+    lon_o = lon_p + lon_o
+    if (lon_o > pi2) lon_o = lon_o - pi2
+    tmp1 = sin_lat_r * sin_lat_p
+    tmp2 = cos_lat_r * cos_lat_p * cos_lon_r
+    tmp3 = tmp1 - tmp2
+    tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
+    lat_o = asin(tmp3)
+
+  end subroutine inverse_rotation_transform_r4
+
   subroutine inverse_rotation_transform_r8(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
     real(8), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
@@ -244,7 +286,7 @@ contains
     tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
     lat_o = asin(tmp3)
 
-end subroutine inverse_rotation_transform_r8
+  end subroutine inverse_rotation_transform_r8
 
   subroutine inverse_rotation_transform_r16(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
@@ -276,6 +318,17 @@ end subroutine inverse_rotation_transform_r8
       lat_o = asin(tmp3)
 
   end subroutine inverse_rotation_transform_r16
+
+  pure real(4) function calc_distance_r4(lon1, lat1, lon2, lat2) result(res)
+
+    real(4), intent(in) :: lon1
+    real(4), intent(in) :: lat1
+    real(4), intent(in) :: lon2
+    real(4), intent(in) :: lat2
+
+    res = radius * acos(min(1.0d0, max(-1.0d0, sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2))))
+
+  end function calc_distance_r4
 
   pure real(8) function calc_distance_r8(lon1, lat1, lon2, lat2) result(res)
 
@@ -425,28 +478,6 @@ end subroutine inverse_rotation_transform_r8
 
   end function calc_sphere_angle_1
 
-  real(16) function calc_sphere_angle_2(a, b, c) result(res)
-
-    class(point_type), intent(in) :: a
-    class(point_type), intent(in) :: b
-    class(point_type), intent(in) :: c
-
-    real(16) xa(3), xb(3), xc(3)
-    real(16) nab(3) ! Normal vector of plane AB
-    real(16) nbc(3) ! Normal vector of plane BC
-
-    xa = [a%x,a%y,a%z]
-    xb = [b%x,b%y,b%z]
-    xc = [c%x,c%y,c%z]
-    nab = norm_vector(cross_product(xa, xb))
-    nbc = norm_vector(cross_product(xb, xc))
-    res = acos(-max(min(dot_product(nab, nbc), 1.0d0), -1.0d0))
-
-    ! Judge the cyclic direction with respect to point A to handle obtuse angle.
-    if (dot_product(cross_product(nab, nbc), xa) < 0.0) res = pi2 - res
-
-  end function calc_sphere_angle_2
-
   ! Calculate the great circle arc length from A to B by assuming A and B are on the unit sphere surface.
 
   real(16) function calc_arc_length_1(a, b) result(res)
@@ -457,111 +488,5 @@ end subroutine inverse_rotation_transform_r8
     res = acos(max(min(dot_product(a, b), 1.0d0), -1.0d0))
 
   end function calc_arc_length_1
-
-  real(16) function calc_arc_length_2(a, b) result(res)
-
-    class(point_type), intent(in) :: a
-    class(point_type), intent(in) :: b
-
-    res = acos(max(min(dot_product([a%x,a%y,a%z], [b%x,b%y,b%z]), 1.0d0), -1.0d0))
-
-  end function calc_arc_length_2
-
-  real(16) function calc_arc_length_3(a, b) result(res)
-
-    class(point_type), intent(in) :: a
-    real(16), intent(in) :: b(3)
-
-    res = acos(max(min(dot_product([a%x,a%y,a%z], b), 1.0d0), -1.0d0))
-
-  end function calc_arc_length_3
-
-  logical function intersect(a, b, c, d, e) result(res)
-
-    class(point_type), intent(in) :: a
-    class(point_type), intent(in) :: b
-    class(point_type), intent(in) :: c
-    class(point_type), intent(in) :: d
-    class(point_type), intent(inout) :: e
-
-    real(16) n1(3), n2(3), v(3), r
-    real(16) lon1, lon2, lat1, lat2
-
-    n1 = cross_product([a%x,a%y,a%z], [b%x,b%y,b%z])
-    n2 = cross_product([c%x,c%y,c%z], [d%x,d%y,d%z])
-    v  = cross_product(n1, n2)
-
-    r = sqrt(sum(v * v))
-
-    if (r > eps) then
-      v = v / r
-    else
-      res = .false.
-      return
-    end if
-    res = .true.
-
-    lat1 = asin(v(3))
-    lat2 = -lat1
-    lon1 = atan2(v(2), v(1))
-    lon2 = lon1 - pi
-
-    if (lon1 < 0.0) lon1 = lon1 + pi2
-    if (lon1 > pi2) lon1 = lon1 - pi2
-    if (lon2 < 0.0) lon2 = lon2 + pi2
-    if (lon2 > pi2) lon2 = lon2 - pi2
-
-    e%lon = lon1
-    e%lat = lat1
-    call cartesian_transform(e)
-
-    ! Check if e is the real intersection. If not use the other one.
-    if (dot_product(cross_product([a%x,a%y,a%z], [e%x,e%y,e%z]), cross_product([b%x,b%y,b%z], [e%x,e%y,e%z])) >= 0 .or. &
-        dot_product(cross_product([c%x,c%y,c%z], [e%x,e%y,e%z]), cross_product([d%x,d%y,d%z], [e%x,e%y,e%z])) >= 0) then
-      e%lon = lon2
-      e%lat = lat2
-      call cartesian_transform(e)
-    end if
-
-  end function intersect
-
-  integer function orient1(x1, y1, z1, x2, y2, z2, x0, y0, z0) result(res)
-
-    real(16), intent(in) :: x1, y1, z1, x2, y2, z2, x0, y0, z0
-
-    real(16) det
-
-    det = x0 * (y1 * z2 - y2 * z1) - y0 * (x1 * z2 - x2 * z1) + z0 * (x1 * y2 - x2 * y1)
-
-    if (det > eps) then
-      res = ORIENT_LEFT
-    else if (-det > eps) then
-      res = ORIENT_RIGHT
-    else
-      res = ORIENT_ON
-    end if
-
-  end function orient1
-
-  integer function orient2(p1, p2, p0) result(res)
-
-    class(point_type), intent(in) :: p1, p2, p0
-
-    res = orient1(p1%x, p1%y, p1%z, p2%x, p2%y, p2%z, p0%x, p0%y, p0%z)
-
-  end function orient2
-
-  subroutine point_copy_coord(a, b)
-
-    class(point_type), intent(inout) :: a
-    class(point_type), intent(in)    :: b
-
-    a%lon = b%lon
-    a%lat = b%lat
-    a%x   = b%x
-    a%y   = b%y
-    a%z   = b%z
-
-  end subroutine point_copy_coord
 
 end module sphere_geometry_mod
