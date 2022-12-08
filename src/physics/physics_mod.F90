@@ -32,7 +32,7 @@ contains
 
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
   end subroutine physics_run_before_dynamics
 
@@ -40,7 +40,7 @@ contains
 
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 

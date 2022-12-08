@@ -10,6 +10,11 @@ module math_mod
   public tridiag_thomas
   public exp_two_values
 
+  interface exp_two_values
+    module procedure exp_two_values_r4
+    module procedure exp_two_values_r8
+  end interface exp_two_values
+
 contains
 
   function cross_product(x, y) result(res)
@@ -143,19 +148,34 @@ contains
 
   end subroutine tridiag_thomas
 
-  pure real(r8) function exp_two_values(val1, val2, x0, x1, x) result(res)
+  pure real(4) function exp_two_values_r4(val1, val2, x0, x1, x) result(res)
 
-    real(r8), intent(in) :: val1
-    real(r8), intent(in) :: val2
-    real(r8), intent(in) :: x0
-    real(r8), intent(in) :: x1
-    real(r8), intent(in) :: x
+    real(4), intent(in) :: val1
+    real(4), intent(in) :: val2
+    real(4), intent(in) :: x0
+    real(4), intent(in) :: x1
+    real(4), intent(in) :: x
 
-    real(r8) w
+    real(4) w
 
-    w = exp((x - x0)**2 * log(1.0e-3_r8) / (x1 - x0)**2)
+    w = exp((x - x0)**2 * log(1.0e-3) / (x1 - x0)**2)
     res = w * val1 + (1 - w) * val2
 
-  end function exp_two_values
+  end function exp_two_values_r4
+
+  pure real(8) function exp_two_values_r8(val1, val2, x0, x1, x) result(res)
+
+    real(8), intent(in) :: val1
+    real(8), intent(in) :: val2
+    real(8), intent(in) :: x0
+    real(8), intent(in) :: x1
+    real(8), intent(in) :: x
+
+    real(8) w
+
+    w = exp((x - x0)**2 * log(1.0d-3) / (x1 - x0)**2)
+    res = w * val1 + (1 - w) * val2
+
+  end function exp_two_values_r8
 
 end module math_mod

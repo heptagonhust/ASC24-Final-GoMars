@@ -24,33 +24,32 @@ contains
     type(block_type), intent(inout), target :: block
 
     integer i, j, neval, ierr
-    real(r8) abserr
-    real(r8) gh0
+    real(8) gh0, gz_, abserr
     
     associate(mesh => block%mesh           , &
               u    => block%dstate(1)%u_lon, &
               v    => block%dstate(1)%v_lat, &
               gz   => block%dstate(1)%gz   , &
               gzs  => block%static%gzs)
-    gh0 = g * 6.0e3_r8
+    gh0 = g * 6.0d3
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       u(:,j,1) = u_function(mesh%full_lat(j))
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
     
-    v = 0.0_r8 
+    v = 0
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       i = mesh%half_lon_ibeg
       if (j == mesh%full_lat_ibeg) then
         gz(i,j,1) = gh0
       else
-        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-12, 1.0e-3, gz(i,j,1), abserr, neval, ierr)
+        call qags(gh_integrand, -0.5d0*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz_, abserr, neval, ierr)
         if (ierr /= 0) then
-          call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // '!')
+          call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!', __FILE__, __LINE__)
         end if 
-        gz(i,j,1) = gh0 - gz(i,j,1)
+        gz(i,j,1) = gh0 - gz_
       end if
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         gz(i,j,1) = gz(mesh%half_lon_ibeg,j,1)
@@ -67,28 +66,28 @@ contains
     type(block_type), intent(in) :: block
     type(static_type), intent(inout) :: static
     integer i, j, k
-    real(r8) hs, elapsed_days, at, b_lat, y
+    real(8) hs, elapsed_days, at, b_lat, y
     
-    hs = 720.0_r8 ! m 
-    elapsed_days = elapsed_seconds / 86400._r8
-    elapsed_days = mod(elapsed_days, 20.0_r8)
+    hs = 720.0d0 ! m
+    elapsed_days = elapsed_seconds / 86400.0d0
+    elapsed_days = mod(elapsed_days, 20.0d0)
 
     associate (mesh => block%mesh, &
                gzs  => static%gzs)
-    if (elapsed_days < 4.0_r8) then
-      at = 0.5_r8 * (1.0_r8 - cos(pi * elapsed_days / 4.0_r8))
-    else if (elapsed_days < 16.0_r8) then
-      at = 1.0_r8
-    else if (elapsed_days < 20.0_r8) then
-      at = 0.5_r8 * (1.0_r8 + cos(pi * (elapsed_days - 16._r8) / 4.0_r8))
+    if (elapsed_days < 4) then
+      at = 0.5d0 * (1 - cos(pi * elapsed_days / 4.0d0))
+    else if (elapsed_days < 16) then
+      at = 1.0d0
+    else if (elapsed_days < 20) then
+      at = 0.5d0 * (1 + cos(pi * (elapsed_days - 16) / 4.0d0))
     end if
 
-    b_lat = 0.0_r8
-    gzs = 0.0_r8
+    b_lat = 0
+    gzs = 0
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      if (mesh%full_lat(j) > 0.0_r8) then
-        y = (tan(pi * 0.25_r8) / tan(mesh%full_lat(j)))**2
-        b_lat = y * exp(1.0_r8 - y)
+      if (mesh%full_lat(j) > 0) then
+        y = (tan(pi * 0.25d0) / tan(mesh%full_lat(j)))**2
+        b_lat = y * exp(1 - y)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           gzs(i,j) = hs * at * b_lat * mesh%full_sin_lon(i) * g
         end do
@@ -99,11 +98,11 @@ contains
 
   end subroutine vortex_erosion_test_apply_forcing
 
-  real(r8) function gh_integrand(lat) result(res)
+  real(8) function gh_integrand(lat) result(res)
 
-    real(r8), intent(in) :: lat
+    real(8), intent(in) :: lat
 
-    real(r8) u, f
+    real(8) u, f
 
     u = u_function(lat)
     f = 2 * omega * sin(lat)
@@ -111,19 +110,19 @@ contains
 
   end function gh_integrand
 
-  real(r8) function u_function(lat) result(res)
+  real(8) function u_function(lat) result(res)
 
-    real(r8), intent(in) :: lat
-    real(r8) lat_deg
+    real(8), intent(in) :: lat
+    real(8) lat_deg
 
     lat_deg = lat * deg
 
-    if (lat_deg <= 0.0_r8) then
-      res = -lat_deg / 9.0_r8 - 10.0_r8
-    else if (lat_deg < 60.0_r8) then
-      res = lat_deg - 10.0_r8
+    if (lat_deg <= 0) then
+      res = -lat_deg / 9.0d0 - 10
+    else if (lat_deg < 60) then
+      res = lat_deg - 10
     else
-      res = -5.0_r8 / 3.0_r8 * lat_deg + 150
+      res = -5.0d0 / 3.0d0 * lat_deg + 150
     end if 
 
   end function u_function

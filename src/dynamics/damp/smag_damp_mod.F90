@@ -45,7 +45,7 @@ contains
   subroutine smag_damp_run(block, dt, dtend, dstate)
 
     type(block_type), intent(in) :: block
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
     type(dtend_type), intent(inout) :: dtend
     type(dstate_type), intent(inout) :: dstate
 

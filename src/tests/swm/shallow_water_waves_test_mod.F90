@@ -102,10 +102,10 @@ contains
                u    => block%dstate(1)%u_lon, &
                v    => block%dstate(1)%v_lat, &
                gz   => block%dstate(1)%gz   )
-    call getFields(mesh%full_lat(mesh%full_lat_lb:mesh%full_lat_ub), &
-                   mesh%full_lon(mesh%full_lon_lb:mesh%full_lon_ub), &
-                   mesh%half_lat(mesh%half_lat_lb:mesh%half_lat_ub), &
-                   mesh%half_lon(mesh%half_lon_lb:mesh%half_lon_ub), [0.0_dp], u, v, gz, 0)
+    call getFields(real(mesh%full_lat(mesh%full_lat_lb:mesh%full_lat_ub), r8), &
+                   real(mesh%full_lon(mesh%full_lon_lb:mesh%full_lon_ub), r8), &
+                   real(mesh%half_lat(mesh%half_lat_lb:mesh%half_lat_ub), r8), &
+                   real(mesh%half_lon(mesh%half_lon_lb:mesh%half_lon_ub), r8), [0.0_dp], u, v, gz, 0)
     call getPhaseSpeed(C, 0)
     if (is_root_proc()) call log_notice('Phase speed is ' // trim(to_str(C, 20)))
 

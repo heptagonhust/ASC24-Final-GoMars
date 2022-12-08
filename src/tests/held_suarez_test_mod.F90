@@ -65,7 +65,7 @@ contains
   subroutine held_suarez_test_apply_forcing(block, dt, dstate)
 
     type(block_type), intent(in) :: block
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
     type(dstate_type), intent(inout) :: dstate
 
     real(r8) kv, kt, teq, p_p0

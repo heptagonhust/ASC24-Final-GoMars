@@ -39,6 +39,8 @@ MODULE tropical_cyclone_test_mod
 !
 !=======================================================================
 
+  use const_mod, only: r8
+
   IMPLICIT NONE
 
   private
@@ -50,7 +52,7 @@ MODULE tropical_cyclone_test_mod
 !    Physical constants
 !=======================================================================
 
-  REAL(8), PARAMETER ::               &
+  REAL(r8), PARAMETER ::               &
        a     = 6371220.0d0,           & ! Reference Earth's Radius (m)
        Rd    = 287.0d0,               & ! Ideal gas const dry air (J kg^-1 K^1)
        g     = 9.80616d0,             & ! Gravity (m s^2)
@@ -67,7 +69,7 @@ MODULE tropical_cyclone_test_mod
 !=======================================================================
 !    Test case parameters
 !=======================================================================
-  REAL(8), PARAMETER ::         &
+  REAL(r8), PARAMETER ::         &
        rp         = 282000.d0,  & ! Radius for calculation of PS
        dp         = 1115.d0,    & ! Delta P for calculation of PS
        zp         = 7000.d0,    & ! Height for calculation of P
@@ -145,11 +147,11 @@ CONTAINS
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         ! Get surface pressure.
         z(i,j,1) = 0
-        call tropical_cyclone_test(lon(i), lat(j), p(i,j,1), z(i,j,1), 1, &
+        call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,1), z(i,j,1), 1, &
           u(i,j,1), v(i,j,1), t(i,j,1), thetav, gzs(i,j), ps(i,j), rho, q(i,j,1))
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           p(i,j,k) = vert_coord_calc_ph(k, ps(i,j))
-          call tropical_cyclone_test(lon(i), lat(j), p(i,j,k), z(i,j,k), 0, &
+          call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,k), z(i,j,k), 0, &
             u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, q(i,j,k))
           q(i,j,k) = q(i,j,k) / (1 - q(i,j,k))
           pt(i,j,k) = potential_temperature(t(i,j,k), p(i,j,k), q(i,j,k))
@@ -196,18 +198,18 @@ CONTAINS
     !   Input / output parameters
     !------------------------------------------------
 
-    REAL(8), INTENT(IN) ::     &
+    REAL(r8), INTENT(IN) ::     &
               lon,             &     ! Longitude (radians)
               lat                    ! Latitude (radians)
 
-    REAL(8), INTENT(INOUT) ::  &
+    REAL(r8), INTENT(INOUT) ::  &
               p,               &     ! Pressure (Pa)
               z                      ! Height (m)
 
     INTEGER, INTENT(IN) :: zcoords     ! 1 if z coordinates are specified
                                      ! 0 if p coordinates are specified
 
-    REAL(8), INTENT(OUT) ::    &
+    REAL(r8), INTENT(OUT) ::    &
               u,               &     ! Zonal wind (m s^-1)
               v,               &     ! Meridional wind (m s^-1)
               t,               &     ! Temperature (K)
@@ -220,7 +222,7 @@ CONTAINS
     !------------------------------------------------
     !   Local variables
     !------------------------------------------------
-    real(8)  :: d1, d2, d, vfac, ufac, height, zhere, gr, f, zn
+    real(r8)  :: d1, d2, d, vfac, ufac, height, zhere, gr, f, zn
 
     integer  n
 
@@ -339,9 +341,9 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    First function for fixed point iterations
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION fpiF(phere, gr, zhere)
+  REAL(r8) FUNCTION fpiF(phere, gr, zhere)
     IMPLICIT NONE
-    REAL(8), INTENT(IN) :: phere, gr, zhere
+    REAL(r8), INTENT(IN) :: phere, gr, zhere
 
       fpiF = phere-(p00-dp*exp(-(gr/rp)**exppr)*exp(-(zhere/zp)**exppz)) &
              *((T0-gamma*zhere)/T0)**(g/(Rd*gamma))
@@ -351,9 +353,9 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Second function for fixed point iterations
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION fpidFdz(gr, zhere) 
+  REAL(r8) FUNCTION fpidFdz(gr, zhere) 
     IMPLICIT NONE
-    REAL(8), INTENT(IN) :: gr, zhere
+    REAL(r8), INTENT(IN) :: gr, zhere
 
       fpidFdz =-exppz*zhere*dp*exp(-(gr/rp)**exppr)*exp(-(zhere/zp)**exppz)/(zp*zp)*((T0-gamma*zhere)/T0)**(g/(Rd*gamma)) &
                +g/(Rd*T0)*(p00-dp*exp(-(gr/rp)**exppr)*exp(-(zhere/zp)**exppz))*((T0-gamma*zhere)/T0)**(g/(Rd*gamma)-1.d0)

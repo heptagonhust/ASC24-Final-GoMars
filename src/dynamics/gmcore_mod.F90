@@ -49,7 +49,7 @@ contains
 
     character(10) time_value, time_units
     integer iblk
-    real(8) seconds
+    real(r8) seconds
 
     call log_init()
     call global_mesh%init_global(num_lon, num_lat, num_lev, &
@@ -135,6 +135,7 @@ contains
         call damp_run(blocks(iblk), blocks(iblk)%dstate(new), blocks(iblk)%dtend(new), dt_dyn)
         call blocks(iblk)%dstate(new)%c2a()
       end do
+
       ! Advance to n+1 time level.
       ! NOTE: Time indices are swapped, e.g. new <=> old.
       call time_advance(dt_dyn)
@@ -206,7 +207,7 @@ contains
 
     integer, intent(in) :: itime
 
-    real(8), save :: time1 = 0, time2
+    real(r8), save :: time1 = 0, time2
     integer i, j, k, iblk
 
     if (time_step == 0 .or. time_is_alerted('history_write')) then
@@ -363,7 +364,7 @@ contains
     type(dstate_type), intent(inout) :: new_state
     type(dtend_type), intent(inout) :: tend1
     type(dtend_type), intent(in) :: tend2
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
     integer, intent(in) :: pass
 
     integer i, j, k

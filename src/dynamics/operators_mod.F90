@@ -41,10 +41,10 @@ module operators_mod
 
   interface
     subroutine interp_pv_interface(block, dstate, dt)
-      import block_type, dstate_type
+      import block_type, dstate_type, r8
       type(block_type), intent(inout) :: block
       type(dstate_type), intent(inout) :: dstate
-      real(8), intent(in) :: dt
+      real(r8), intent(in) :: dt
     end subroutine interp_pv_interface
   end interface
 
@@ -71,7 +71,7 @@ contains
 
     type(block_type), intent(inout) :: blocks(:)
     integer, intent(in) :: itime
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer iblk
 
@@ -94,7 +94,7 @@ contains
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
     integer, intent(in) :: pass
 
     select case (pass)
@@ -190,7 +190,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(in) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k, l
     real(r8) mf
@@ -543,7 +543,7 @@ contains
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 
@@ -701,7 +701,7 @@ contains
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 
@@ -734,7 +734,7 @@ contains
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     real(r8) b
     integer i, j, k
@@ -793,7 +793,7 @@ contains
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     real(r8) cfl
     integer i, j, k
@@ -831,7 +831,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(inout) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 
@@ -893,7 +893,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(inout) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 
@@ -924,7 +924,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(in) :: dstate
     type(dtend_type), intent(inout) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
     real(r8) work(dstate%mesh%full_lon_ibeg:dstate%mesh%full_lon_iend,dstate%mesh%num_full_lev)
@@ -993,7 +993,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type ), intent(inout) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
     real(r8) work(dstate%mesh%full_lon_ibeg:dstate%mesh%full_lon_iend,dstate%mesh%num_full_lev)
@@ -1105,7 +1105,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(in) :: dstate
     type(dtend_type), intent(inout) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 
@@ -1130,7 +1130,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(in) :: dstate
     type(dtend_type), intent(inout) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 

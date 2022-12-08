@@ -80,7 +80,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: time_in_seconds
+    real(r8), intent(in) :: time_in_seconds
 
     integer i, j, k
     real(r8) lon, lat, rho, cos_t, dphdlev

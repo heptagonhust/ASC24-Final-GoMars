@@ -45,7 +45,7 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(inout) :: dtend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     if (use_div_damp) then
       call div_damp_run(block, dstate)

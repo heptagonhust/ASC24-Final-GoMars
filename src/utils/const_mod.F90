@@ -88,12 +88,4 @@ contains
 
   end subroutine const_init
 
-  pure logical function is_inf(x) result(res)
-
-    real(r8), intent(in) :: x
-
-    res = x - 1 == x
-
-  end function is_inf
-
 end module const_mod

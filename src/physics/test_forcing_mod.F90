@@ -14,7 +14,7 @@ contains
   subroutine test_forcing_run(block, dt, static, dstate)
 
     type(block_type), intent(in) :: block
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
     type(static_type), intent(inout) :: static
     type(dstate_type), intent(inout) :: dstate
 

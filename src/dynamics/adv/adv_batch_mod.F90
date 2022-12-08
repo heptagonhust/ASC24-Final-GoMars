@@ -6,7 +6,6 @@ module adv_batch_mod
   use mesh_mod
   use time_mod
   use allocator_mod
-  use parallel_types_mod
   use parallel_zonal_mod
 
   implicit none
@@ -204,11 +203,11 @@ contains
     real(r8), intent(in) :: v(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
                               this%mesh%half_lat_lb:this%mesh%half_lat_ub, &
                               this%mesh%full_lev_lb:this%mesh%full_lev_ub)
-    real(8), intent(in), optional :: dt
+    real(r8), intent(in), optional :: dt
 
     real(r8) work(this%mesh%full_lon_ibeg:this%mesh%full_lon_iend,this%mesh%num_full_lev)
     real(r8) pole(this%mesh%num_full_lev)
-    real(8) dt_
+    real(r8) dt_
     real(r8) dx, x0, x1, x2, x3, u1, u2, u3, u4
     real(r8) dy, y0, y1, y2, y3, v1, v2, v3, v4
     integer i, j, k, l
@@ -423,10 +422,9 @@ contains
     real(r8), intent(in) :: m (this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
                                this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
                                this%mesh%half_lev_lb:this%mesh%half_lev_ub)
+    real(r8), intent(in), optional :: dt
 
-    real(8), intent(in), optional :: dt
-
-    real(8) dt_
+    real(r8) dt_
     real(r8) z0, z1, z2, z3, w1, w2, w3, w4, deta
     integer i, j, k, l, ks, ke, s
 

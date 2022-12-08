@@ -50,61 +50,61 @@ module mesh_mod
     integer full_lev_ub
     integer half_lev_lb
     integer half_lev_ub
-    real(r8) start_lon
-    real(r8) end_lon
-    real(r8) start_lat
-    real(r8) end_lat
-    real(r8) dlon
-    real(r8), allocatable, dimension(:  ) :: dlat
-    real(r8), allocatable, dimension(:  ) :: full_dlev
-    real(r8), allocatable, dimension(:  ) :: half_dlev
-    real(r8), allocatable, dimension(:  ) :: half_dlev_upper
-    real(r8), allocatable, dimension(:  ) :: half_dlev_lower
-    real(r8) total_area
-    real(r8), allocatable, dimension(:  ) :: full_lon
-    real(r8), allocatable, dimension(:  ) :: half_lon
-    real(r8), allocatable, dimension(:  ) :: full_lat
-    real(r8), allocatable, dimension(:  ) :: half_lat
-    real(r8), allocatable, dimension(:  ) :: full_lev
-    real(r8), allocatable, dimension(:  ) :: half_lev
-    real(r8), allocatable, dimension(:  ) :: full_cos_lon
-    real(r8), allocatable, dimension(:  ) :: half_cos_lon
-    real(r8), allocatable, dimension(:  ) :: full_sin_lon
-    real(r8), allocatable, dimension(:  ) :: half_sin_lon
-    real(r8), allocatable, dimension(:  ) :: full_cos_lat
-    real(r8), allocatable, dimension(:  ) :: half_cos_lat
-    real(r8), allocatable, dimension(:  ) :: full_sin_lat
-    real(r8), allocatable, dimension(:  ) :: half_sin_lat
+    real(8) start_lon
+    real(8) end_lon
+    real(8) start_lat
+    real(8) end_lat
+    real(8) dlon
+    real(8), allocatable, dimension(:  ) :: dlat
+    real(8), allocatable, dimension(:  ) :: full_dlev
+    real(8), allocatable, dimension(:  ) :: half_dlev
+    real(8), allocatable, dimension(:  ) :: half_dlev_upper
+    real(8), allocatable, dimension(:  ) :: half_dlev_lower
+    real(8) total_area
+    real(8), allocatable, dimension(:  ) :: full_lon
+    real(8), allocatable, dimension(:  ) :: half_lon
+    real(8), allocatable, dimension(:  ) :: full_lat
+    real(8), allocatable, dimension(:  ) :: half_lat
+    real(8), allocatable, dimension(:  ) :: full_lev
+    real(8), allocatable, dimension(:  ) :: half_lev
+    real(8), allocatable, dimension(:  ) :: full_cos_lon
+    real(8), allocatable, dimension(:  ) :: half_cos_lon
+    real(8), allocatable, dimension(:  ) :: full_sin_lon
+    real(8), allocatable, dimension(:  ) :: half_sin_lon
+    real(8), allocatable, dimension(:  ) :: full_cos_lat
+    real(8), allocatable, dimension(:  ) :: half_cos_lat
+    real(8), allocatable, dimension(:  ) :: full_sin_lat
+    real(8), allocatable, dimension(:  ) :: half_sin_lat
     ! For output
-    real(r8), allocatable, dimension(:  ) :: full_lon_deg
-    real(r8), allocatable, dimension(:  ) :: half_lon_deg
-    real(r8), allocatable, dimension(:  ) :: full_lat_deg
-    real(r8), allocatable, dimension(:  ) :: half_lat_deg
+    real(8), allocatable, dimension(:  ) :: full_lon_deg
+    real(8), allocatable, dimension(:  ) :: half_lon_deg
+    real(8), allocatable, dimension(:  ) :: full_lat_deg
+    real(8), allocatable, dimension(:  ) :: half_lat_deg
     ! Area for weighting
-    real(r8), allocatable, dimension(:  ) :: area_cell
-    real(r8), allocatable, dimension(:  ) :: area_lon
-    real(r8), allocatable, dimension(:  ) :: area_lon_west
-    real(r8), allocatable, dimension(:  ) :: area_lon_east
-    real(r8), allocatable, dimension(:  ) :: area_lon_north
-    real(r8), allocatable, dimension(:  ) :: area_lon_south
-    real(r8), allocatable, dimension(:  ) :: area_lat
-    real(r8), allocatable, dimension(:  ) :: area_lat_west
-    real(r8), allocatable, dimension(:  ) :: area_lat_east
-    real(r8), allocatable, dimension(:  ) :: area_lat_north
-    real(r8), allocatable, dimension(:  ) :: area_lat_south
-    real(r8), allocatable, dimension(:  ) :: area_vtx
-    real(r8), allocatable, dimension(:,:) :: area_subcell
+    real(8), allocatable, dimension(:  ) :: area_cell
+    real(8), allocatable, dimension(:  ) :: area_lon
+    real(8), allocatable, dimension(:  ) :: area_lon_west
+    real(8), allocatable, dimension(:  ) :: area_lon_east
+    real(8), allocatable, dimension(:  ) :: area_lon_north
+    real(8), allocatable, dimension(:  ) :: area_lon_south
+    real(8), allocatable, dimension(:  ) :: area_lat
+    real(8), allocatable, dimension(:  ) :: area_lat_west
+    real(8), allocatable, dimension(:  ) :: area_lat_east
+    real(8), allocatable, dimension(:  ) :: area_lat_north
+    real(8), allocatable, dimension(:  ) :: area_lat_south
+    real(8), allocatable, dimension(:  ) :: area_vtx
+    real(8), allocatable, dimension(:,:) :: area_subcell
     ! Edge length
-    real(r8), allocatable, dimension(:  ) :: de_lon
-    real(r8), allocatable, dimension(:  ) :: de_lat
-    real(r8), allocatable, dimension(:  ) :: le_lat
-    real(r8), allocatable, dimension(:  ) :: le_lon
+    real(8), allocatable, dimension(:  ) :: de_lon
+    real(8), allocatable, dimension(:  ) :: de_lat
+    real(8), allocatable, dimension(:  ) :: le_lat
+    real(8), allocatable, dimension(:  ) :: le_lon
     ! Coriolis parameters
-    real(r8), allocatable, dimension(:  ) :: full_f
-    real(r8), allocatable, dimension(:  ) :: half_f
+    real(8), allocatable, dimension(:  ) :: full_f
+    real(8), allocatable, dimension(:  ) :: half_f
     ! Weight for constructing tangential wind
-    real(r8), allocatable, dimension(:,:) :: full_tangent_wgt
-    real(r8), allocatable, dimension(:,:) :: half_tangent_wgt
+    real(8), allocatable, dimension(:,:) :: full_tangent_wgt
+    real(8), allocatable, dimension(:,:) :: half_tangent_wgt
   contains
     procedure :: init_global                  => mesh_init_global
     procedure :: init_from_parent             => mesh_init_from_parent
@@ -142,7 +142,7 @@ contains
     integer         , intent(in   ), optional :: lat_halo_width
     logical         , intent(in   ), optional :: keep_lev
 
-    real(r8) dlat0
+    real(8) dlat0
     real(16) x(3), y(3), z(3)
     integer i, j, j0, jj
 
@@ -216,7 +216,7 @@ contains
 
     ! Set latitudes of half merdional grids.
     do j = 1, this%num_half_lat
-      if (is_inf(this%full_lat(j)) .or. this%full_lat(j) == pi05) cycle
+      if (this%full_lat(j) == pi05) cycle
       this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat(j)
       if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg

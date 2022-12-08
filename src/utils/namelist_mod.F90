@@ -9,9 +9,9 @@ module namelist_mod
 
   character(30)   :: planet               = 'earth'
 
-  real(8)         :: dt_dyn               = 0
-  real(8)         :: dt_adv               = 0
-  real(8)         :: dt_phys              = 0
+  real(r8)        :: dt_dyn               = 0
+  real(r8)        :: dt_adv               = 0
+  real(r8)        :: dt_phys              = 0
 
   character(256)  :: case_desc            = 'N/A'
   character(256)  :: case_name            = 'N/A'
@@ -94,15 +94,15 @@ module namelist_mod
   real(r8)        :: filter_coef_b        = 0.4
   real(r8)        :: filter_coef_c        = 0.2
 
-  real(r8)        :: filter_coef1_phs     = 0.375_r8
-  real(r8)        :: filter_coef2_phs     = 0
-  real(r8)        :: filter_lat0_phs      = 60.0_r8
-  real(r8)        :: filter_coef1_pt      = 0.375_r8
-  real(r8)        :: filter_coef2_pt      = 0
-  real(r8)        :: filter_lat0_pt       = 60.0_r8
-  real(r8)        :: filter_coef1_uv      = 0.375_r8
-  real(r8)        :: filter_coef2_uv      = 0
-  real(r8)        :: filter_lat0_uv       = 60.0_r8
+  real(8)         :: filter_coef1_phs     = 0.375_r8
+  real(8)         :: filter_coef2_phs     = 0
+  real(8)         :: filter_lat0_phs      = 60.0_r8
+  real(8)         :: filter_coef1_pt      = 0.375_r8
+  real(8)         :: filter_coef2_pt      = 0
+  real(8)         :: filter_lat0_pt       = 60.0_r8
+  real(8)         :: filter_coef1_uv      = 0.375_r8
+  real(8)         :: filter_coef2_uv      = 0
+  real(8)         :: filter_lat0_uv       = 60.0_r8
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.

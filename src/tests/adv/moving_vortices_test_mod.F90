@@ -16,20 +16,20 @@ module moving_vortices_test_mod
   public moving_vortices_test_set_ic
   public moving_vortices_test_set_uv
 
-  real(r8), parameter :: period = 12 * 86400    ! Rotation period
-  real(r8), parameter :: rho0   = 3             ! 
-  real(r8), parameter :: gamma  = 5             ! Field stiffness parameter
-  real(r8), parameter :: alpha  = pi05          ! Angle between Rotation axis and the equator
-  real(r8), parameter :: lonp0  = pi            ! Rotation north pole longitude
-  real(r8), parameter :: latp0  = pi05 - alpha  ! Rotation north pole latitude
-  real(r8), parameter :: lonv0  = pi * 1.5_r8   ! Initial vortex longitude
-  real(r8), parameter :: latv0  = 0             ! Initial vortex latitude
-  real(r8) u0                                   ! Velocity amplitude
-  real(r8) lonvr0                               ! Initial vortex longitude in rotated coordinate
-  real(r8) lonvr                                ! Vortex longitude in rotated coordinate
-  real(r8) latvr                                ! Vortex latitude  in rotated coordinate
-  real(r8) lonv                                 ! Vortex longitude
-  real(r8) latv                                 ! Vortex latitude
+  real(8), parameter :: period = 12 * 86400    ! Rotation period
+  real(8), parameter :: rho0   = 3             ! 
+  real(8), parameter :: gamma  = 5             ! Field stiffness parameter
+  real(8), parameter :: alpha  = pi05          ! Angle between Rotation axis and the equator
+  real(8), parameter :: lonp0  = pi            ! Rotation north pole longitude
+  real(8), parameter :: latp0  = pi05 - alpha  ! Rotation north pole latitude
+  real(8), parameter :: lonv0  = pi * 1.5_r8   ! Initial vortex longitude
+  real(8), parameter :: latv0  = 0             ! Initial vortex latitude
+  real(8) u0                                   ! Velocity amplitude
+  real(8) lonvr0                               ! Initial vortex longitude in rotated coordinate
+  real(8) lonvr                                ! Vortex longitude in rotated coordinate
+  real(8) latvr                                ! Vortex latitude  in rotated coordinate
+  real(8) lonv                                 ! Vortex longitude
+  real(8) latv                                 ! Vortex latitude
 
 contains
 
@@ -49,7 +49,7 @@ contains
     type(block_type), intent(inout) :: block
 
     integer i, j
-    real(r8) lon, lat, lonr, latr
+    real(8) lon, lat, lonr, latr
 
     call adv_add_tracer('moving_vortices', dt, 'q0', 'background tracer')
     call adv_add_tracer('moving_vortices', dt, 'q1', 'vortex tracer')
@@ -79,10 +79,10 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: time_in_seconds
+    real(r8), intent(in) :: time_in_seconds
 
     integer i, j
-    real(r8) lon, lat, dlon, latr
+    real(8) lon, lat, dlon, latr
 
     lonvr = lonvr0 + u0 / radius * time_in_seconds
     if (lonvr > pi2) lonvr = lonvr - pi2
@@ -124,7 +124,7 @@ contains
 
   real(r8) function rho(lat) result(res)
 
-    real(r8), intent(in) :: lat
+    real(8), intent(in) :: lat
 
     res = rho0 * cos(lat)
 
@@ -132,7 +132,7 @@ contains
 
   real(r8) function a_omg(latr) result(res)
 
-    real(r8), intent(in) :: latr
+    real(8), intent(in) :: latr
 
     real(r8), parameter :: c = 1.5_r8 * sqrt(3.0_r8)
     real(r8) r

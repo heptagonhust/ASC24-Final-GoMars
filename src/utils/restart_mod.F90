@@ -23,7 +23,7 @@ contains
   subroutine restart_init()
 
     character(10) time_value, time_units
-    real(8) seconds
+    real(r8) seconds
 
     if (restart_interval == 'N/A') then
       if (is_root_proc()) call log_warning('Parameter restart_interval is not set, so no restart file outputted.')
@@ -102,7 +102,7 @@ contains
     call fiona_add_var('r0', 'moist_m0' , long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
   end if
 
-    call fiona_start_output('r0', elapsed_seconds, new_file=.true.)
+    call fiona_start_output('r0', dble(elapsed_seconds), new_file=.true.)
     call fiona_output('r0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('r0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('r0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
@@ -196,7 +196,7 @@ contains
     type(datetime_type) time
     integer iblk, time_step, is, ie, js, je, ks, ke
     integer start(3), count(3)
-    real(8) time_value
+    real(r8) time_value
     character(30) time_units
 
     if (restart_file == 'N/A') then

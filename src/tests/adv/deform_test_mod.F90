@@ -19,8 +19,8 @@ module deform_test_mod
   public deform_case3_test_set_uv
   public deform_case4_test_set_uv
 
-  real(r8), parameter :: period = 12 * 86400
-  real(r8) lon1, lat1, lon2, lat2
+  real(8), parameter :: period = 12 * 86400
+  real(8) lon1, lat1, lon2, lat2
 
 contains
 
@@ -53,8 +53,8 @@ contains
     type(block_type), intent(inout) :: block
 
     integer i, j
-    real(r8) lon, lat, r, r1, r2, qmax, qmin, c
-    real(r8) x(3), x1(3), x2(3)
+    real(8) lon, lat, r, r1, r2, qmax, qmin, c
+    real(8) x(3), x1(3), x2(3)
 
     call adv_add_tracer('deform_test', dt, 'q0', 'background tracer'       )
     call adv_add_tracer('deform_test', dt, 'q1', 'cosine hills tracer'     )
@@ -130,7 +130,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: time_in_seconds
+    real(r8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, cos_t
@@ -170,7 +170,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: time_in_seconds
+    real(r8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, cos_t
@@ -210,7 +210,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: time_in_seconds
+    real(r8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, cos_t
@@ -250,7 +250,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: time_in_seconds
+    real(r8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat, k, c1, c2, cos_t

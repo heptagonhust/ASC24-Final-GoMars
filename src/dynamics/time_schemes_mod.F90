@@ -21,19 +21,19 @@ module time_schemes_mod
 
   interface
     subroutine space_operators_interface(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
-      import block_type, dstate_type, dtend_type
+      import block_type, dstate_type, dtend_type, r8
       type(block_type ), intent(inout) :: block
       type(dstate_type), intent(in   ) :: old_state
       type(dstate_type), intent(inout) :: star_state
       type(dstate_type), intent(inout) :: new_state
       type(dtend_type ), intent(inout) :: tend1
       type(dtend_type ), intent(in   ) :: tend2
-      real(8), intent(in) :: dt
+      real(r8), intent(in) :: dt
       integer, intent(in) :: pass
     end subroutine space_operators_interface
 
     subroutine step_interface(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
-      import space_operators_interface, block_type, dstate_type, dtend_type
+      import space_operators_interface, block_type, dstate_type, dtend_type, r8
       procedure(space_operators_interface) space_operators
       type(block_type ), intent(inout) :: block
       type(dstate_type), intent(in   ) :: old_state
@@ -41,16 +41,16 @@ module time_schemes_mod
       type(dstate_type), intent(inout) :: new_state
       type(dtend_type ), intent(inout) :: tend1
       type(dtend_type ), intent(inout) :: tend2
-      real(8), intent(in) :: dt
+      real(r8), intent(in) :: dt
     end subroutine step_interface
 
     subroutine time_integrator_interface(space_operators, block, old, new, dt)
-      import block_type, dtend_type, dstate_type, space_operators_interface
+      import block_type, dtend_type, dstate_type, space_operators_interface, r8
       procedure(space_operators_interface) space_operators
       type(block_type), intent(inout) :: block
       integer, intent(in) :: old
       integer, intent(in) :: new
-      real(8), intent(in) :: dt
+      real(r8), intent(in) :: dt
     end subroutine time_integrator_interface
   end interface
 
@@ -91,7 +91,7 @@ contains
     type(dstate_type), intent(inout) :: new_state
     type(dtend_type ), intent(inout) :: tend1
     type(dtend_type ), intent(inout) :: tend2
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, all_pass)
     call update_state(block, tend1, old_state, new_state, dt)
@@ -107,7 +107,7 @@ contains
     type(dstate_type), intent(inout) :: new_state
     type(dtend_type ), intent(inout) :: tend1
     type(dtend_type ), intent(inout) :: tend2
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, forward_pass)
     call update_state(block, tend1, old_state, new_state, dt)
@@ -122,7 +122,7 @@ contains
     type(dtend_type ), intent(inout) :: dtend
     type(dstate_type), intent(in   ) :: old_state
     type(dstate_type), intent(inout) :: new_state
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     integer i, j, k
     real(r8) wgt
@@ -221,7 +221,7 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     associate (dstate => block%dstate, dtend => block%dtend)
     call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 2.0_r8)
@@ -237,7 +237,7 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     associate (dstate => block%dstate, dtend => block%dtend)
     call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 3.0_r8)
@@ -253,7 +253,7 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     associate (dstate => block%dstate, dtend => block%dtend)
     call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt)

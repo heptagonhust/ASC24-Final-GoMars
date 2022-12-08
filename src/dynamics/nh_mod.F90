@@ -39,7 +39,7 @@ contains
     type(dstate_type), intent(in) :: old_state
     type(dstate_type), intent(inout) :: star_state
     type(dstate_type), intent(inout) :: new_state
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
   end subroutine nh_solve
 
@@ -186,7 +186,7 @@ contains
     type(dstate_type), intent(in) :: old_state
     type(dstate_type), intent(in) :: star_state
     type(dstate_type), intent(inout) :: new_state
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     real(r8) w1 (block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(r8) gz1(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
@@ -300,7 +300,7 @@ contains
 
   subroutine rayleigh_damp_w(dt, gz, w)
 
-    real(8) , intent(in   ) :: dt
+    real(r8), intent(in   ) :: dt
     real(r8), intent(in   ) :: gz(:)
     real(r8), intent(inout) :: w (:)
 

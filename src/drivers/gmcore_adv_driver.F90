@@ -22,10 +22,10 @@ program gmcore_adv_driver
       type(block_type), intent(inout) :: block
     end subroutine set_ic_interface
     subroutine set_uv_interface(block, dstate, time_in_seconds)
-      import block_type, dstate_type
+      import block_type, dstate_type, r8
       type(block_type), intent(in) :: block
       type(dstate_type), intent(inout) :: dstate
-      real(8), intent(in) :: time_in_seconds
+      real(r8), intent(in) :: time_in_seconds
     end subroutine set_uv_interface
   end interface
   procedure(set_ic_interface), pointer :: set_ic
@@ -131,7 +131,7 @@ contains
 
     integer, intent(in) :: itime
 
-    real(8), save :: time1 = 0, time2
+    real(r8), save :: time1 = 0, time2
     integer i, j, k, iblk
 
     if (time_step == 0 .or. time_is_alerted('history_write')) then

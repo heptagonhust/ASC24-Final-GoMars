@@ -110,12 +110,12 @@ contains
     real(r8), intent(out) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(8), intent(in), optional :: dt
+    real(r8), intent(in), optional :: dt
 
     integer i, j, k
     real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
     real(r8) pole(block%mesh%num_full_lev)
-    real(8) dt_
+    real(r8) dt_
 
     dt_ = merge(dt, batch%dt, present(dt))
 
@@ -202,7 +202,7 @@ contains
     real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-    real(8), intent(in), optional :: dt
+    real(r8), intent(in), optional :: dt
 
     call vflx(block, batch, batch%we, m, mfz)
 
@@ -221,12 +221,12 @@ contains
     real(r8), intent(out) :: qmfy (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(8), intent(in), optional :: dt
+    real(r8), intent(in), optional :: dt
 
     integer i, j, k
     real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
     real(r8) pole(block%mesh%num_full_lev)
-    real(8) dt_
+    real(r8) dt_
 
     dt_ = merge(dt, batch%dt, present(dt))
 
@@ -315,7 +315,7 @@ contains
     real(r8), intent(out) :: qmfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                   block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-    real(8), intent(in), optional :: dt
+    real(r8), intent(in), optional :: dt
 
     call vflx(block, batch, batch%we, q, qmfz)
 
@@ -331,7 +331,7 @@ contains
     real(r8), intent(out) :: qmfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(8), intent(in), optional :: dt
+    real(r8), intent(in), optional :: dt
 
     call vflx_lev(block, batch, batch%we, q, qmfz)
 

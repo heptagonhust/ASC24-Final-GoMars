@@ -12,15 +12,15 @@ module jet_zonal_flow_test_mod
 
   public jet_zonal_flow_test_set_ic
 
-  real(r8), parameter :: u_max = 80.0_r8
-  real(r8), parameter :: lat0 = pi / 7.0_r8
-  real(r8), parameter :: lat1 = pi / 2.0_r8 - lat0
-  real(r8), parameter :: en = exp(-4.0_r8 / (lat1 - lat0)**2_r8)
-  real(r8)            :: gh0
-  real(r8)            :: ghd
-  real(r8), parameter :: lat2 = pi / 4.0_r8
-  real(r8), parameter :: alpha = 1.0_r8 / 3.0_r8
-  real(r8), parameter :: beta = 1.0_r8 / 15.0_r8
+  real(8), parameter :: u_max = 80.0d0
+  real(8), parameter :: lat0 = pi / 7.0d0
+  real(8), parameter :: lat1 = pi / 2.0d0 - lat0
+  real(8), parameter :: en = exp(-4.0d0 / (lat1 - lat0)**2)
+  real(8)            :: gh0
+  real(8)            :: ghd
+  real(8), parameter :: lat2 = pi / 4.0d0
+  real(8), parameter :: alpha = 1.0d0 / 3.0d0
+  real(8), parameter :: beta = 1.0d0 / 15.0d0
 
 contains
 
@@ -29,7 +29,7 @@ contains
     type(block_type), intent(inout), target :: block
 
     integer i, j, neval, ierr
-    real(r8) abserr
+    real(8) gz_, abserr
 
     associate (mesh   => block%mesh           , &
                u      => block%dstate(1)%u_lon, &
@@ -55,11 +55,11 @@ contains
       if (j == mesh%full_lat_ibeg) then
         gz(i,j,1) = gh0
       else
-        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz(i,j,1), abserr, neval, ierr)
+        call qags(gh_integrand, -0.5d0*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz_, abserr, neval, ierr)
         if (ierr /= 0) then
           call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!', __FILE__, __LINE__)
         end if
-        gz(i,j,1) = gh0 - gz(i,j,1)
+        gz(i,j,1) = gh0 - gz_
       end if
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         gz(i,j,1) = gz(mesh%half_lon_ibeg,j,1)
@@ -75,11 +75,11 @@ contains
 
   end subroutine jet_zonal_flow_test_set_ic
 
-  real(r8) function gh_integrand(lat) result(res)
+  real(8) function gh_integrand(lat) result(res)
 
-    real(r8), intent(in) :: lat
+    real(8), intent(in) :: lat
 
-    real(r8) u, f
+    real(8) u, f
 
     u = u_function(lat)
     f = 2 * omega * sin(lat)
@@ -87,9 +87,9 @@ contains
 
   end function gh_integrand
 
-  real(r8) function u_function(lat) result(res)
+  real(8) function u_function(lat) result(res)
 
-    real(r8), intent(in) :: lat
+    real(8), intent(in) :: lat
 
     if (lat <= lat0 .or. lat >= lat1) then
       res = 0.0

@@ -25,12 +25,17 @@ module debug_mod
     module procedure debug_print_min_max_3d
   end interface debug_print_min_max
 
+  interface debug_is_inf
+    module procedure debug_is_inf_r4
+    module procedure debug_is_inf_r8
+  end interface debug_is_inf
+
 contains
 
   subroutine debug_check_areas()
 
     type(mesh_type), pointer :: mesh
-    real(r8) total_area
+    real(8) total_area
     integer j
 
     mesh => global_mesh
@@ -316,12 +321,20 @@ contains
 
   end subroutine debug_print_min_max_lat_edge
 
-  logical function debug_is_inf(x) result(res)
+  logical function debug_is_inf_r4(x) result(res)
 
-    real(r8), intent(in) :: x
+    real(4), intent(in) :: x
 
     res = .not. ieee_is_finite(x)
 
-  end function debug_is_inf
+  end function debug_is_inf_r4
+
+  logical function debug_is_inf_r8(x) result(res)
+
+    real(8), intent(in) :: x
+
+    res = .not. ieee_is_finite(x)
+
+  end function debug_is_inf_r8
 
 end module debug_mod

@@ -23,7 +23,7 @@ contains
 
     type(pstate_type), intent(inout) :: pstate
     type(ptend_type ), intent(inout) :: ptend
-    real(8), intent(in) :: dt
+    real(r8), intent(in) :: dt
 
     logical flag_qi
     integer ysu_topdown_pblmix

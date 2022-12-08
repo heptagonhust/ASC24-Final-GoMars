@@ -13,12 +13,12 @@ module solid_rotation_test_mod
   public solid_rotation_test_set_ic
   public solid_rotation_test_set_uv
 
-  real(r8), parameter :: period = 12 * 86400
-  real(r8), parameter :: h0     = 1000 ! m
-  real(r8), parameter :: lon0   = 3 * pi / 2.0_r8
-  real(r8), parameter :: lat0   = 0
-  real(r8), parameter :: alpha  = 90.0_r8 * rad
-  real(r8) u0
+  real(8), parameter :: period = 12 * 86400
+  real(8), parameter :: h0     = 1000 ! m
+  real(8), parameter :: lon0   = 3 * pi / 2.0_r8
+  real(8), parameter :: lat0   = 0
+  real(8), parameter :: alpha  = 90.0_r8 * rad
+  real(8) u0
 
 contains
 
@@ -33,7 +33,7 @@ contains
     type(block_type), intent(inout) :: block
 
     integer i, j
-    real(r8) lon, lat, r, R0
+    real(8) lon, lat, r, R0
 
     call adv_add_tracer('solid_rotation', dt, 'q0', 'background tracer')
     call adv_add_tracer('solid_rotation', dt, 'q1', 'cosine bell tracer')
@@ -69,7 +69,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-    real(8), intent(in) :: time_in_seconds
+    real(r8), intent(in) :: time_in_seconds
 
     integer i, j
     real(r8) lon, lat

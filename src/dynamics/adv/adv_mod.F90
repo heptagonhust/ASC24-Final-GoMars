@@ -51,7 +51,7 @@ module adv_mod
       real(r8), intent(out) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(8), intent(in), optional :: dt
+      real(r8), intent(in), optional :: dt
     end subroutine calc_hflx_interface
     subroutine calc_vflx_interface(block, batch, m, mfz, dt)
       import block_type, adv_batch_type, r8
@@ -63,7 +63,7 @@ module adv_mod
       real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-      real(8), intent(in), optional :: dt
+      real(r8), intent(in), optional :: dt
     end subroutine calc_vflx_interface
     subroutine calc_vflx_lev_interface(block, batch, m, mfz, dt)
       import block_type, adv_batch_type, r8
@@ -75,7 +75,7 @@ module adv_mod
       real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(8), intent(in), optional :: dt
+      real(r8), intent(in), optional :: dt
     end subroutine calc_vflx_lev_interface
   end interface
 
@@ -95,7 +95,7 @@ module adv_mod
   character(30), allocatable :: tracer_names(:)
   character(30), allocatable :: tracer_long_names(:)
   character(30), allocatable :: tracer_units(:)
-  real(8), allocatable :: tracer_dt(:)
+  real(r8), allocatable :: tracer_dt(:)
 
 contains
 

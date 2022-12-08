@@ -13,12 +13,12 @@ module filter_types_mod
 
   type filter_type
     type(mesh_type), pointer :: mesh => null()
-    real(r8), allocatable :: width_lon(:)
-    integer , allocatable :: ngrid_lon(:)
-    real(r8), allocatable :: wgt_lon(:,:)
-    real(r8), allocatable :: width_lat(:)
-    integer , allocatable :: ngrid_lat(:)
-    real(r8), allocatable :: wgt_lat(:,:)
+    real(8), allocatable :: width_lon(:)
+    integer, allocatable :: ngrid_lon(:)
+    real(8), allocatable :: wgt_lon(:,:)
+    real(8), allocatable :: width_lat(:)
+    integer, allocatable :: ngrid_lat(:)
+    real(8), allocatable :: wgt_lat(:,:)
   contains
     procedure :: init  => filter_init
     procedure :: clear => filter_clear
@@ -29,14 +29,14 @@ contains
 
   subroutine gaussian_weight(width, ngrid, w)
 
-    real(r8), intent(in) :: width
+    real(8), intent(in) :: width
     integer, intent(in) :: ngrid
-    real(r8), intent(out) :: w(:)
+    real(8), intent(out) :: w(:)
 
-    real(r8) s
+    real(8) s
     integer i, x
 
-    s = filter_coef_b * width / 2.0_r8
+    s = filter_coef_b * width / 2.0d0
     do i = 1, ngrid
       x = i - (ngrid + 1) / 2
       w(i) = exp(-x**2 / (2 * s**2)) / (s * sqrt(pi2))
@@ -51,7 +51,7 @@ contains
     type(mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: type
 
-    real(r8) dx, dy, dt, cfl, w, lat0
+    real(8) dx, dy, dt, cfl, w, lat0
     integer j, n
 
     call this%clear()
