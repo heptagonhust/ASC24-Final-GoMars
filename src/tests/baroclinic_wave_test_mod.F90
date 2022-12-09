@@ -104,7 +104,7 @@ contains
     call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-      eta = merge(1.0e-12_r8, mesh%half_lev(k), mesh%half_lev(k) == 0)
+      eta = merge(1.0d-12, mesh%half_lev(k), mesh%half_lev(k) == 0)
       etav = (eta - eta0) * pi / 2d0
       if (etat <= eta .and. eta <= 1) then
         gzbar = t0 * g / gamma * (1 - eta**(Rd * gamma / g))
