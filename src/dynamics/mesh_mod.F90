@@ -170,7 +170,7 @@ contains
     this%id             = merge(id            , -1, present(id))
     this%lon_halo_width = merge(lon_halo_width,  1, present(lon_halo_width))
     this%lat_halo_width = merge(lat_halo_width,  1, present(lat_halo_width))
-    this%start_lon      = 0.0_r8
+    this%start_lon      = 0
     this%end_lon        =  pi2
     this%start_lat      = -pi05
     this%end_lat        =  pi05
@@ -180,7 +180,7 @@ contains
     this%dlon = (this%end_lon - this%start_lon) / this%num_full_lon
     do i = this%full_lon_lb, this%full_lon_ub
       this%full_lon(i) = this%start_lon + (i - 1) * this%dlon
-      this%half_lon(i) = this%full_lon(i) + 0.5_r8 * this%dlon
+      this%half_lon(i) = this%full_lon(i) + 0.5d0 * this%dlon
       this%full_lon_deg(i) = this%full_lon(i) * deg
       this%half_lon_deg(i) = this%half_lon(i) * deg
     end do
@@ -188,8 +188,8 @@ contains
     ! Set initial guess latitudes of full merdional grids.
     dlat0 = (this%end_lat - this%start_lat) / this%num_half_lat
     do j = 1, this%num_half_lat
-      this%half_lat(j) = this%start_lat + (j - 0.5_r8) * dlat0
-      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
+      this%half_lat(j) = this%start_lat + (j - 0.5d0) * dlat0
+      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0
     end do
 
     if (coarse_pole_mul /= 0) then
@@ -208,7 +208,7 @@ contains
     this%full_lat_deg(1) = this%start_lat * deg
     do j = 2, this%num_full_lat - 1
       this%full_lat(j) = this%full_lat(j-1) + this%dlat(j-1)
-      if (abs(this%full_lat(j)) < 1.0e-12) this%full_lat(j) = 0.0_r8
+      if (abs(this%full_lat(j)) < 1.0e-12) this%full_lat(j) = 0
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
     this%full_lat(this%num_full_lat) = this%end_lat
@@ -217,8 +217,8 @@ contains
     ! Set latitudes of half merdional grids.
     do j = 1, this%num_half_lat
       if (this%full_lat(j) == pi05) cycle
-      this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat(j)
-      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
+      this%half_lat(j) = this%full_lat(j) + 0.5d0 * this%dlat(j)
+      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
 
@@ -261,10 +261,10 @@ contains
     end do
 
     ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
-    this%full_cos_lat(this%full_lat_ibeg) =  0.0_r8
-    this%full_sin_lat(this%full_lat_ibeg) = -1.0_r8
-    this%full_cos_lat(this%full_lat_iend) =  0.0_r8
-    this%full_sin_lat(this%full_lat_iend) =  1.0_r8
+    this%full_cos_lat(this%full_lat_ibeg) =  0
+    this%full_sin_lat(this%full_lat_ibeg) = -1
+    this%full_cos_lat(this%full_lat_iend) =  0
+    this%full_sin_lat(this%full_lat_iend) =  1
 
     do j = this%full_lat_ibeg, this%full_lat_iend
       if (this%is_south_pole(j)) then
@@ -381,12 +381,12 @@ contains
       this%le_lon(j) = 2.0d0 * this%area_lon(j) / this%de_lon(j)
     end do
     if (this%has_south_pole()) then
-      this%le_lon(this%full_lat_ibeg) = 0.0_r8
-      this%de_lon(this%full_lat_ibeg) = 0.0_r8
+      this%le_lon(this%full_lat_ibeg) = 0
+      this%de_lon(this%full_lat_ibeg) = 0
     end if
     if (this%has_north_pole()) then
-      this%le_lon(this%full_lat_iend) = 0.0_r8
-      this%de_lon(this%full_lat_iend) = 0.0_r8
+      this%le_lon(this%full_lat_iend) = 0
+      this%de_lon(this%full_lat_iend) = 0
     end if
 
     do j = this%half_lat_ibeg, this%half_lat_iend
@@ -438,10 +438,10 @@ contains
     end select
 
     do j = this%full_lat_ibeg, this%full_lat_iend
-      this%full_f(j) = 2.0_r8 * omega * this%full_sin_lat(j)
+      this%full_f(j) = 2 * omega * this%full_sin_lat(j)
     end do
     do j = this%half_lat_ibeg, this%half_lat_iend
-      this%half_f(j) = 2.0_r8 * omega * this%half_sin_lat(j)
+      this%half_f(j) = 2 * omega * this%half_sin_lat(j)
     end do
 
   end subroutine mesh_init_global
@@ -609,15 +609,15 @@ contains
     this%half_lev_ub = this%half_lev_iend
 
     if (.not. allocated(this%full_lev)) then
-      allocate(this%full_dlev        (this%full_lev_lb:this%full_lev_ub)); this%full_dlev           = 0.0_r8
-      allocate(this%half_dlev        (this%half_lev_lb:this%half_lev_ub)); this%half_dlev           = 0.0_r8
-      allocate(this%half_dlev_upper  (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_upper     = 0.0_r8
-      allocate(this%half_dlev_lower  (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_lower     = 0.0_r8
+      allocate(this%full_dlev        (this%full_lev_lb:this%full_lev_ub)); this%full_dlev           = 0
+      allocate(this%half_dlev        (this%half_lev_lb:this%half_lev_ub)); this%half_dlev           = 0
+      allocate(this%half_dlev_upper  (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_upper     = 0
+      allocate(this%half_dlev_lower  (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_lower     = 0
       allocate(this%full_lev         (this%full_lev_lb:this%full_lev_ub)); this%full_lev            = inf
       allocate(this%half_lev         (this%half_lev_lb:this%half_lev_ub)); this%half_lev            = inf
     end if
 
-    allocate(this%dlat               (this%half_lat_lb:this%half_lat_ub)); this%dlat                = 0.0_r8
+    allocate(this%dlat               (this%half_lat_lb:this%half_lat_ub)); this%dlat                = 0
     allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
     allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf
@@ -634,23 +634,23 @@ contains
     allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub)); this%half_lon_deg        = inf
     allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub)); this%full_lat_deg        = inf
     allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub)); this%half_lat_deg        = inf
-    allocate(this%area_cell          (this%full_lat_lb:this%full_lat_ub)); this%area_cell           = 0.0_r8
-    allocate(this%area_lon           (this%full_lat_lb:this%full_lat_ub)); this%area_lon            = 0.0_r8
-    allocate(this%area_lon_west      (this%full_lat_lb:this%full_lat_ub)); this%area_lon_west       = 0.0_r8
-    allocate(this%area_lon_east      (this%full_lat_lb:this%full_lat_ub)); this%area_lon_east       = 0.0_r8
-    allocate(this%area_lon_north     (this%full_lat_lb:this%full_lat_ub)); this%area_lon_north      = 0.0_r8
-    allocate(this%area_lon_south     (this%full_lat_lb:this%full_lat_ub)); this%area_lon_south      = 0.0_r8
-    allocate(this%area_lat           (this%half_lat_lb:this%half_lat_ub)); this%area_lat            = 0.0_r8
-    allocate(this%area_lat_west      (this%half_lat_lb:this%half_lat_ub)); this%area_lat_west       = 0.0_r8
-    allocate(this%area_lat_east      (this%half_lat_lb:this%half_lat_ub)); this%area_lat_east       = 0.0_r8
-    allocate(this%area_lat_north     (this%half_lat_lb:this%half_lat_ub)); this%area_lat_north      = 0.0_r8
-    allocate(this%area_lat_south     (this%half_lat_lb:this%half_lat_ub)); this%area_lat_south      = 0.0_r8
-    allocate(this%area_vtx           (this%half_lat_lb:this%half_lat_ub)); this%area_vtx            = 0.0_r8
-    allocate(this%area_subcell     (2,this%full_lat_lb:this%full_lat_ub)); this%area_subcell        = 0.0_r8
-    allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = 0.0_r8
-    allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = 0.0_r8
-    allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = 0.0_r8
-    allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = 0.0_r8
+    allocate(this%area_cell          (this%full_lat_lb:this%full_lat_ub)); this%area_cell           = 0
+    allocate(this%area_lon           (this%full_lat_lb:this%full_lat_ub)); this%area_lon            = 0
+    allocate(this%area_lon_west      (this%full_lat_lb:this%full_lat_ub)); this%area_lon_west       = 0
+    allocate(this%area_lon_east      (this%full_lat_lb:this%full_lat_ub)); this%area_lon_east       = 0
+    allocate(this%area_lon_north     (this%full_lat_lb:this%full_lat_ub)); this%area_lon_north      = 0
+    allocate(this%area_lon_south     (this%full_lat_lb:this%full_lat_ub)); this%area_lon_south      = 0
+    allocate(this%area_lat           (this%half_lat_lb:this%half_lat_ub)); this%area_lat            = 0
+    allocate(this%area_lat_west      (this%half_lat_lb:this%half_lat_ub)); this%area_lat_west       = 0
+    allocate(this%area_lat_east      (this%half_lat_lb:this%half_lat_ub)); this%area_lat_east       = 0
+    allocate(this%area_lat_north     (this%half_lat_lb:this%half_lat_ub)); this%area_lat_north      = 0
+    allocate(this%area_lat_south     (this%half_lat_lb:this%half_lat_ub)); this%area_lat_south      = 0
+    allocate(this%area_vtx           (this%half_lat_lb:this%half_lat_ub)); this%area_vtx            = 0
+    allocate(this%area_subcell     (2,this%full_lat_lb:this%full_lat_ub)); this%area_subcell        = 0
+    allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = 0
+    allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = 0
+    allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = 0
+    allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = 0
     allocate(this%full_f             (this%full_lat_lb:this%full_lat_ub)); this%full_f              = inf
     allocate(this%half_f             (this%half_lat_lb:this%half_lat_ub)); this%half_f              = inf
     allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = inf

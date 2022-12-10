@@ -9,11 +9,11 @@ module const_mod
   integer, parameter :: r8 = 8
 #endif
 
-  real(r8), parameter :: pi     = atan(1.0_r8) * 4.0_r8
-  real(r8), parameter :: pi2    = pi * 2
-  real(r8), parameter :: pi05   = pi * 0.5_r8
-  real(r8), parameter :: deg    = 180.0_r8 / pi
-  real(r8), parameter :: rad    = pi / 180.0_r8
+  real( 8), parameter :: pi     = atan(1.0d0) * 4.0d0
+  real( 8), parameter :: pi2    = pi * 2
+  real( 8), parameter :: pi05   = pi * 0.5d0
+  real( 8), parameter :: deg    = 180.0d0 / pi
+  real( 8), parameter :: rad    = pi / 180.0d0
   real(r8), parameter :: eps    = epsilon(1.0_r8)
   real(r8), parameter :: inf    = huge(1.0_r8)
   real(r8), parameter :: karman = 0.4_r8             ! Karman constant
