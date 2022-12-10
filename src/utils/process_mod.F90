@@ -173,15 +173,15 @@ contains
       proc%at_north_pole = .true.
     end if
 
-    ! Set initial values for num_lon, num_lat, lon_ibeg, lat_ibeg.
-    proc%num_lon = global_mesh%num_full_lon
+    ! Set initial values for nlon, nlat, ids, jds.
+    proc%nlon = global_mesh%full_nlon
     select case (proc%decomp_loc)
     case (decomp_normal_region)
-      proc%num_lat = global_mesh%num_full_lat
+      proc%nlat = global_mesh%full_nlat
     end select
 
-    call round_robin(proc%cart_dims(1), proc%cart_coords(1), proc%num_lon, proc%lon_ibeg, proc%lon_iend)
-    call round_robin(proc%cart_dims(2), proc%cart_coords(2), proc%num_lat, proc%lat_ibeg, proc%lat_iend)
+    call round_robin(proc%cart_dims(1), proc%cart_coords(1), proc%nlon, proc%ids, proc%ide)
+    call round_robin(proc%cart_dims(2), proc%cart_coords(2), proc%nlat, proc%jds, proc%jde)
 
   end subroutine decompose_domains
 
@@ -196,47 +196,47 @@ contains
   subroutine process_create_blocks()
 
     integer hw, i, j, dtype
-    integer max_hw, lon_halo_width
+    integer max_hw, lon_hw
     integer ierr, status(MPI_STATUS_SIZE)
 
     if (.not. allocated(blocks)) allocate(blocks(1))
 
-    ! Use lon_halo_width in global_mesh.
-    call blocks(1)%init_stage_1(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
-                                proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
+    ! Use lon_hw in global_mesh.
+    call blocks(1)%init_stage_1(proc%id, global_mesh%lon_hw, global_mesh%lat_hw, &
+                                proc%ids, proc%ide, proc%jds, proc%jde)
 
-    ! Each process calculate lon_halo_width from its big_filter%ngrid_lat(:).
+    ! Each process calculate lon_hw from its big_filter%ngrid_lat(:).
     max_hw = 2
-    do j = blocks(1)%mesh%half_lat_ibeg, blocks(1)%mesh%half_lat_iend
+    do j = blocks(1)%mesh%half_jds, blocks(1)%mesh%half_jde
       max_hw = max(max_hw, (blocks(1)%big_filter%ngrid_lat(j) - 1) / 2)
     end do
-    lon_halo_width = max(max_hw, global_mesh%lon_halo_width)
+    lon_hw = max(max_hw, global_mesh%lon_hw)
 
-    ! Get lon_halo_width from southern and northern neighbors.
+    ! Get lon_hw from southern and northern neighbors.
     if (proc%ngb(south)%id /= MPI_PROC_NULL) then
-      call MPI_SENDRECV(lon_halo_width, 1, MPI_INT, proc%ngb(south)%id, 100, &
-                        proc%ngb(south)%lon_halo_width, 1, MPI_INT, proc%ngb(south)%id, 100, &
+      call MPI_SENDRECV(lon_hw, 1, MPI_INT, proc%ngb(south)%id, 100, &
+                        proc%ngb(south)%lon_hw, 1, MPI_INT, proc%ngb(south)%id, 100, &
                         proc%comm, status, ierr)
     else
-      proc%ngb(south)%lon_halo_width = 0
+      proc%ngb(south)%lon_hw = 0
     end if
     if (proc%ngb(north)%id /= MPI_PROC_NULL) then
-      call MPI_SENDRECV(lon_halo_width, 1, MPI_INT, proc%ngb(north)%id, 100, &
-                        proc%ngb(north)%lon_halo_width, 1, MPI_INT, proc%ngb(north)%id, 100, &
+      call MPI_SENDRECV(lon_hw, 1, MPI_INT, proc%ngb(north)%id, 100, &
+                        proc%ngb(north)%lon_hw, 1, MPI_INT, proc%ngb(north)%id, 100, &
                         proc%comm, status, ierr)
     else
-      proc%ngb(north)%lon_halo_width = 0
+      proc%ngb(north)%lon_hw = 0
     end if
 
-    call global_mesh%reinit(max(lon_halo_width, proc%ngb(south)%lon_halo_width, proc%ngb(north)%lon_halo_width))
-    call blocks(1)%init_stage_2(global_mesh%lon_halo_width)
+    call global_mesh%reinit(max(lon_hw, proc%ngb(south)%lon_hw, proc%ngb(north)%lon_hw))
+    call blocks(1)%init_stage_2(global_mesh%lon_hw)
 
-    call proc%ngb(west )%init(west , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
-    call proc%ngb(east )%init(east , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
-    hw = max(lon_halo_width, proc%ngb(south)%lon_halo_width)
-    call proc%ngb(south)%init(south, lon_ibeg=proc%lon_ibeg-hw, lon_iend=proc%lon_iend+hw)
-    hw = max(lon_halo_width, proc%ngb(north)%lon_halo_width)
-    call proc%ngb(north)%init(north, lon_ibeg=proc%lon_ibeg-hw, lon_iend=proc%lon_iend+hw)
+    call proc%ngb(west )%init(west , jds=proc%jds, jde=proc%jde)
+    call proc%ngb(east )%init(east , jds=proc%jds, jde=proc%jde)
+    hw = max(lon_hw, proc%ngb(south)%lon_hw)
+    call proc%ngb(south)%init(south, ids=proc%ids-hw, ide=proc%ide+hw)
+    hw = max(lon_hw, proc%ngb(north)%lon_hw)
+    call proc%ngb(north)%init(north, ids=proc%ids-hw, ide=proc%ide+hw)
 
     select case (r8)
     case (4)
@@ -254,14 +254,15 @@ contains
     do i = 1, size(proc%ngb)
       select case (proc%ngb(i)%orient)
       case (west, east)
-        call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,                    &
-                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id,                  &
-                                    lat_ibeg=proc%ngb(i)%lat_ibeg, lat_iend=proc%ngb(i)%lat_iend)
+        call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
+                                    jds=proc%ngb(i)%jds, jde=proc%ngb(i)%jde)
       case (south, north)
-        call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,                    &
-                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id,                  &
-                                    lon_ibeg=proc%ngb(i)%lon_ibeg, lon_iend=proc%ngb(i)%lon_iend, &
-                                    at_south_pole=proc%at_south_pole, at_north_pole=proc%at_north_pole)
+        call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
+                                    ids=proc%ngb(i)%ids, ide=proc%ngb(i)%ide,    &
+                                    at_south_pole=proc%at_south_pole,            &
+                                    at_north_pole=proc%at_north_pole)
       end select
     end do
 

@@ -36,10 +36,10 @@ contains
                ps       => block%dstate(itime)%phs   , & ! in
                qv       => block%dstate(itime)%qv    )   ! in
     ! Full levels
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+    do k = mesh%full_kds, mesh%full_kde
       icol = 0
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           icol = icol + 1
           pstate%u    (icol,k) = u     (i,j,k)
           pstate%v    (icol,k) = v     (i,j,k)
@@ -58,10 +58,10 @@ contains
       end do
     end do
     ! Half levels
-    do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+    do k = mesh%half_kds, mesh%half_kde
       icol = 0
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           icol = icol + 1
           pstate%p_lev(icol,k) =  p_lev(i,j,k)
           pstate%z_lev(icol,k) = gz_lev(i,j,k) / g
@@ -70,8 +70,8 @@ contains
     end do 
     ! Surface
     icol = 0
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
         icol = icol + 1
         pstate%ps(icol) = ps(i,j)
       end do
@@ -94,10 +94,10 @@ contains
                dtdt  => block%dtend(itime)%dtdt_phys , & ! out
                dshdt => block%dtend(itime)%dshdt_phys)   ! out
     if (ptend%updated_u .and. ptend%updated_v) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = mesh%full_kds, mesh%full_kde
         icol = 0
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
             dudt(i,j,k) = ptend%dudt(icol,k)
             dvdt(i,j,k) = ptend%dvdt(icol,k)
@@ -110,10 +110,10 @@ contains
                      west_halo=.false.,  east_halo=.false., south_halo=.false.)
     end if
     if (ptend%updated_t) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = mesh%full_kds, mesh%full_kde
         icol = 0
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
             dtdt(i,j,k) = ptend%dtdt(icol,k)
           end do
@@ -121,10 +121,10 @@ contains
       end do
     end if
     if (ptend%updated_sh) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = mesh%full_kds, mesh%full_kde
         icol = 0
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
             dshdt(i,j,k) = ptend%dshdt(icol,k)
           end do

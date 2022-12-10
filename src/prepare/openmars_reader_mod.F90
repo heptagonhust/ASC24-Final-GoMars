@@ -8,9 +8,9 @@ module openmars_reader_mod
 
   implicit none
 
-  integer nlon_openmars
-  integer nlat_openmars
-  integer nlev_openmars
+  integer openmars_nlon
+  integer openmars_nlat
+  integer openmars_nlev
 
   real(r8), allocatable, dimension(:    ) :: openmars_lon
   real(r8), allocatable, dimension(:    ) :: openmars_lat
@@ -35,18 +35,18 @@ contains
     if (is_root_proc()) call log_notice('Use OpenMARS ' // trim(bkg_file) // ' as background.')
 
     call fiona_open_dataset('openmars', file_path=bkg_file)
-    call fiona_get_dim('openmars', 'lon', size=nlon_openmars)
-    call fiona_get_dim('openmars', 'lat', size=nlat_openmars)
-    call fiona_get_dim('openmars', 'lev', size=nlev_openmars)
+    call fiona_get_dim('openmars', 'lon', size=openmars_nlon)
+    call fiona_get_dim('openmars', 'lat', size=openmars_nlat)
+    call fiona_get_dim('openmars', 'lev', size=openmars_nlev)
 
-    allocate(openmars_lon(nlon_openmars))
-    allocate(openmars_lat(nlat_openmars))
-    allocate(openmars_lev(nlev_openmars))
-    allocate(openmars_u  (nlon_openmars,nlat_openmars,nlev_openmars))
-    allocate(openmars_v  (nlon_openmars,nlat_openmars,nlev_openmars))
-    allocate(openmars_t  (nlon_openmars,nlat_openmars,nlev_openmars))
-    allocate(openmars_p  (nlon_openmars,nlat_openmars,nlev_openmars))
-    allocate(openmars_ps (nlon_openmars,nlat_openmars              ))
+    allocate(openmars_lon(openmars_nlon))
+    allocate(openmars_lat(openmars_nlat))
+    allocate(openmars_lev(openmars_nlev))
+    allocate(openmars_u  (openmars_nlon,openmars_nlat,openmars_nlev))
+    allocate(openmars_v  (openmars_nlon,openmars_nlat,openmars_nlev))
+    allocate(openmars_t  (openmars_nlon,openmars_nlat,openmars_nlev))
+    allocate(openmars_p  (openmars_nlon,openmars_nlat,openmars_nlev))
+    allocate(openmars_ps (openmars_nlon,openmars_nlat              ))
 
     call fiona_start_input('openmars')
     call fiona_input('openmars', 'lon' , openmars_lon)
@@ -58,42 +58,42 @@ contains
     call fiona_input('openmars', 'ps'  , openmars_ps )
     call fiona_end_input('openmars')
 
-    allocate(tmp(nlon_openmars,nlat_openmars,nlev_openmars))
+    allocate(tmp(openmars_nlon,openmars_nlat,openmars_nlev))
 
     ! Reverse latitude order (from South Pole to North Pole).
-    tmp(1,:,1) = openmars_lat(nlat_openmars:1:-1); openmars_lat = tmp(1,:,1)
-    tmp(:,:,:) = openmars_u (:,nlat_openmars:1:-1,:); openmars_u  = tmp(:,:,:)
-    tmp(:,:,:) = openmars_v (:,nlat_openmars:1:-1,:); openmars_v  = tmp(:,:,:)
-    tmp(:,:,:) = openmars_t (:,nlat_openmars:1:-1,:); openmars_t  = tmp(:,:,:)
-    tmp(:,:,1) = openmars_ps(:,nlat_openmars:1:-1  ); openmars_ps = tmp(:,:,1)
+    tmp(1,:,1) = openmars_lat(openmars_nlat:1:-1); openmars_lat = tmp(1,:,1)
+    tmp(:,:,:) = openmars_u (:,openmars_nlat:1:-1,:); openmars_u  = tmp(:,:,:)
+    tmp(:,:,:) = openmars_v (:,openmars_nlat:1:-1,:); openmars_v  = tmp(:,:,:)
+    tmp(:,:,:) = openmars_t (:,openmars_nlat:1:-1,:); openmars_t  = tmp(:,:,:)
+    tmp(:,:,1) = openmars_ps(:,openmars_nlat:1:-1  ); openmars_ps = tmp(:,:,1)
 
     ! Flip along the Meridian and change longitude to 0-360.
-    tmp(1:nlon_openmars/2,1,1) = openmars_lon(nlon_openmars/2+1:nlon_openmars)
-    tmp(nlon_openmars/2+1:nlon_openmars,1,1) = 360 + openmars_lon(1:nlon_openmars/2)
+    tmp(1:openmars_nlon/2,1,1) = openmars_lon(openmars_nlon/2+1:openmars_nlon)
+    tmp(openmars_nlon/2+1:openmars_nlon,1,1) = 360 + openmars_lon(1:openmars_nlon/2)
     openmars_lon = tmp(:,1,1)
-    tmp(1:nlon_openmars/2,:,:) = openmars_u(nlon_openmars/2+1:nlon_openmars,:,:)
-    tmp(nlon_openmars/2+1:nlon_openmars,:,:) = openmars_u(1:nlon_openmars/2,:,:)
+    tmp(1:openmars_nlon/2,:,:) = openmars_u(openmars_nlon/2+1:openmars_nlon,:,:)
+    tmp(openmars_nlon/2+1:openmars_nlon,:,:) = openmars_u(1:openmars_nlon/2,:,:)
     openmars_u = tmp
-    tmp(1:nlon_openmars/2,:,:) = openmars_v(nlon_openmars/2+1:nlon_openmars,:,:)
-    tmp(nlon_openmars/2+1:nlon_openmars,:,:) = openmars_v(1:nlon_openmars/2,:,:)
+    tmp(1:openmars_nlon/2,:,:) = openmars_v(openmars_nlon/2+1:openmars_nlon,:,:)
+    tmp(openmars_nlon/2+1:openmars_nlon,:,:) = openmars_v(1:openmars_nlon/2,:,:)
     openmars_v = tmp
-    tmp(1:nlon_openmars/2,:,:) = openmars_t(nlon_openmars/2+1:nlon_openmars,:,:)
-    tmp(nlon_openmars/2+1:nlon_openmars,:,:) = openmars_t(1:nlon_openmars/2,:,:)
+    tmp(1:openmars_nlon/2,:,:) = openmars_t(openmars_nlon/2+1:openmars_nlon,:,:)
+    tmp(openmars_nlon/2+1:openmars_nlon,:,:) = openmars_t(1:openmars_nlon/2,:,:)
     openmars_t = tmp
-    tmp(1:nlon_openmars/2,:,1) = openmars_ps(nlon_openmars/2+1:nlon_openmars,:)
-    tmp(nlon_openmars/2+1:nlon_openmars,:,1) = openmars_ps(1:nlon_openmars/2,:)
+    tmp(1:openmars_nlon/2,:,1) = openmars_ps(openmars_nlon/2+1:openmars_nlon,:)
+    tmp(openmars_nlon/2+1:openmars_nlon,:,1) = openmars_ps(1:openmars_nlon/2,:)
     openmars_ps = tmp(:,:,1)
 
     ! Reverse vertical levels (from top to bottom).
-    tmp = openmars_u(:,:,nlev_openmars:1:-1); openmars_u = tmp
-    tmp = openmars_v(:,:,nlev_openmars:1:-1); openmars_v = tmp
-    tmp = openmars_t(:,:,nlev_openmars:1:-1); openmars_t = tmp
-    tmp(1,1,:) = openmars_lev(nlev_openmars:1:-1); openmars_lev = tmp(1,1,:)
+    tmp = openmars_u(:,:,openmars_nlev:1:-1); openmars_u = tmp
+    tmp = openmars_v(:,:,openmars_nlev:1:-1); openmars_v = tmp
+    tmp = openmars_t(:,:,openmars_nlev:1:-1); openmars_t = tmp
+    tmp(1,1,:) = openmars_lev(openmars_nlev:1:-1); openmars_lev = tmp(1,1,:)
 
     deallocate(tmp)
 
     ! Calcuate pressure based on sigma formula.
-    do k = 1, nlev_openmars
+    do k = 1, openmars_nlev
       openmars_p(:,:,k) = openmars_lev(k) * openmars_ps(:,:)
     end do
 

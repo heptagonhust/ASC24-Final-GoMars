@@ -39,8 +39,8 @@ contains
                v      => block%dstate(1)%v_lat, &
                gz     => block%dstate(1)%gz   , &
                gzs    => block%static%gzs)
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
         dlon = abs(mesh%full_lon(i) - lon0)
         dlon = min(dlon, 2 * pi - dlon)
         d = min(R, sqrt(dlon**2 + (mesh%full_lat(j) - lat0)**2))
@@ -49,28 +49,28 @@ contains
     end do
     call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%half_ids, mesh%half_ide
         cos_lon = mesh%half_cos_lon(i)
         u(i,j,1) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
       end do
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
 
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do j = mesh%half_jds, mesh%half_jde
+      do i = mesh%full_ids, mesh%full_ide
         sin_lon = mesh%full_sin_lon(i)
         v(i,j,1) = - u0 * sin_lon * sin_alpha
       end do
     end do
     call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         cos_lon = mesh%full_cos_lon(i)
         gz(i,j,1) = gz0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2
       end do

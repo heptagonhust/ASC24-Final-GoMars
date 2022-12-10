@@ -44,9 +44,9 @@ module vert_coord_mod
 
 contains
 
-  subroutine vert_coord_init(num_lev, namelist_file, scheme, template)
+  subroutine vert_coord_init(nlev, namelist_file, scheme, template)
 
-    integer, intent(in) :: num_lev
+    integer, intent(in) :: nlev
     character(*), intent(in), optional :: namelist_file
     character(*), intent(in), optional :: scheme
     character(*), intent(in), optional :: template
@@ -70,34 +70,34 @@ contains
 
     select case (vert_coord_scheme)
     case ('sigma')
-      call sigma_coord_init(num_lev, namelist_file, vert_coord_template)
+      call sigma_coord_init(nlev, namelist_file, vert_coord_template)
       vert_coord_calc_ph => sigma_coord_calc_ph
       vert_coord_calc_ph_lev => sigma_coord_calc_ph_lev
       vert_coord_calc_dphdt_lev => sigma_coord_calc_dphdt_lev
     case ('hybrid')
-      call hybrid_coord_init(num_lev, namelist_file, vert_coord_template)
+      call hybrid_coord_init(nlev, namelist_file, vert_coord_template)
       vert_coord_calc_ph => hybrid_coord_calc_ph
       vert_coord_calc_ph_lev => hybrid_coord_calc_ph_lev
       vert_coord_calc_dphdt_lev => hybrid_coord_calc_dphdt_lev
     end select
 
     ! Set vertical level intervals.
-    if (global_mesh%num_full_lev > 1) then
-      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+    if (global_mesh%full_nlev > 1) then
+      do k = global_mesh%full_kds, global_mesh%full_kde
         global_mesh%full_dlev(k) = global_mesh%half_lev(k+1) - global_mesh%half_lev(k)
       end do
     else
       global_mesh%full_dlev(1) = 1
     end if
-    do k = global_mesh%half_lev_ibeg + 1, global_mesh%half_lev_iend - 1
+    do k = global_mesh%half_kds + 1, global_mesh%half_kde - 1
       global_mesh%half_dlev(k) = global_mesh%full_lev(k) - global_mesh%full_lev(k-1)
       global_mesh%half_dlev_upper(k) = global_mesh%half_lev(k) - global_mesh%full_lev(k-1)
       global_mesh%half_dlev_lower(k) = global_mesh%full_lev(k) - global_mesh%half_lev(k)
     end do
     global_mesh%half_dlev(1) = global_mesh%full_lev(1) - global_mesh%half_lev(1)
     global_mesh%half_dlev_lower(1) = global_mesh%half_dlev(1)
-    global_mesh%half_dlev(global_mesh%half_lev_iend) = global_mesh%half_lev(global_mesh%half_lev_iend) - global_mesh%full_lev(global_mesh%full_lev_iend)
-    global_mesh%half_dlev_upper(global_mesh%half_lev_iend) = global_mesh%half_dlev(global_mesh%half_lev_iend)
+    global_mesh%half_dlev(global_mesh%half_kde) = global_mesh%half_lev(global_mesh%half_kde) - global_mesh%full_lev(global_mesh%full_kde)
+    global_mesh%half_dlev_upper(global_mesh%half_kde) = global_mesh%half_dlev(global_mesh%half_kde)
 
   end subroutine vert_coord_init
 

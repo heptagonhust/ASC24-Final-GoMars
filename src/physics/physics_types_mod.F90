@@ -100,8 +100,8 @@ contains
 
     call this%clear()
 
-    this%ncol = mesh%num_full_lon * mesh%num_full_lat
-    this%nlev = mesh%num_full_lev
+    this%ncol = mesh%full_nlon * mesh%full_nlat
+    this%nlev = mesh%full_nlev
     allocate(this%i         (this%ncol            ))
     allocate(this%j         (this%ncol            ))
     allocate(this%lon       (this%ncol            ))
@@ -146,8 +146,8 @@ contains
     allocate(this%delta     (this%ncol,this%nlev  ))
 
     icol = 0
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
         icol = icol + 1
         this%i  (icol) = i
         this%j  (icol) = j
@@ -222,8 +222,8 @@ contains
 
     call this%clear()
 
-    this%ncol = mesh%num_full_lon * mesh%num_full_lat
-    this%nlev = mesh%num_full_lev
+    this%ncol = mesh%full_nlon * mesh%full_nlat
+    this%nlev = mesh%full_nlev
     allocate(this%dudt      (this%ncol,this%nlev))
     allocate(this%dvdt      (this%ncol,this%nlev))
     allocate(this%dtdt      (this%ncol,this%nlev))

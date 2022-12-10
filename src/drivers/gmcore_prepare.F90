@@ -26,18 +26,18 @@ program gmcore_prepare
   call fiona_init()
 
   call const_init(planet)
-  call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=2, lat_halo_width=2)
+  call global_mesh%init_global(nlon, nlat, nlev, lon_hw=2, lat_hw=2)
   call process_init()
-  call vert_coord_init(num_lev, scheme=vert_coord_scheme, template=vert_coord_template)
+  call vert_coord_init(nlev, scheme=vert_coord_scheme, template=vert_coord_template)
   call process_create_blocks()
   call damp_init(blocks)
 
   if (is_root_proc()) then
     write(*, *) '=================== GMCORE Parameters ==================='
     write(*, *) 'nonhydrostatic       = ', to_str(nonhydrostatic)
-    write(*, *) 'num_lon              = ', to_str(num_lon)
-    write(*, *) 'num_lat              = ', to_str(num_lat)
-    write(*, *) 'num_lev              = ', to_str(num_lev)
+    write(*, *) 'nlon                 = ', to_str(nlon)
+    write(*, *) 'nlat                 = ', to_str(nlat)
+    write(*, *) 'nlev                 = ', to_str(nlev)
     if (coarse_pole_mul /= 0) then
     write(*, *) 'coarse_pole_mul      = ', to_str(coarse_pole_mul, 2)
     write(*, *) 'coarse_pole_decay    = ', to_str(coarse_pole_decay, 2)

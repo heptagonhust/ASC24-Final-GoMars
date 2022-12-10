@@ -112,9 +112,9 @@ contains
                  old  => blocks(iblk)%adv_batches(1)%old, &
                  q    => blocks(iblk)%adv_batches(1)%q  )
       do l = 1, size(blocks(iblk)%adv_batches(1)%tracer_names)
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
               qm = qm + q(i,j,k,l,old) * mesh%area_cell(j)
             end do
           end do

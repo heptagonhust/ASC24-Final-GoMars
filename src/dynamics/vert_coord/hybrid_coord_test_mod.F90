@@ -34,8 +34,8 @@ contains
     real(r8), intent(out) :: hyai(16)
     real(r8), intent(out) :: hybi(16)
 
-    if (global_mesh%num_full_lev /= 15 .and. is_root_proc()) then
-      call log_error('num_lev should be 15 in namelist!')
+    if (global_mesh%full_nlev /= 15 .and. is_root_proc()) then
+      call log_error('nlev should be 15 in namelist!')
     end if
 
     hyai = [0.20540233  , & !  1
@@ -82,8 +82,8 @@ contains
     real(r8), intent(out) :: hyai(27)
     real(r8), intent(out) :: hybi(27)
 
-    if (global_mesh%num_full_lev /= 26 .and. is_root_proc()) then
-      call log_error('num_lev should be 26 in namelist!')
+    if (global_mesh%full_nlev /= 26 .and. is_root_proc()) then
+      call log_error('nlev should be 26 in namelist!')
     end if
 
     hyai = [0.002194067  , & !  1
@@ -153,8 +153,8 @@ contains
     real(r8), intent(out) :: hyai(31)
     real(r8), intent(out) :: hybi(31)
 
-    if (global_mesh%num_full_lev /= 30 .and. is_root_proc()) then
-      call log_error('num_lev should be 30 in namelist!')
+    if (global_mesh%full_nlev /= 30 .and. is_root_proc()) then
+      call log_error('nlev should be 30 in namelist!')
     end if
 
     hyai = [0.00225523952394724, & !  1
@@ -232,8 +232,8 @@ contains
     real(r8), intent(out) :: hyai(96)
     real(r8), intent(out) :: hybi(96)
 
-    if (global_mesh%num_full_lev /= 95 .and. is_root_proc()) then
-      call log_error('num_lev should be 95 in namelist!')
+    if (global_mesh%full_nlev /= 95 .and. is_root_proc()) then
+      call log_error('nlev should be 95 in namelist!')
     end if
 
     hyai = [          &
@@ -445,8 +445,8 @@ contains
     real(r8), intent(out) :: hyai(17)
     real(r8), intent(out) :: hybi(17)
 
-    if (global_mesh%num_full_lev /= 16 .and. is_root_proc()) then
-      call log_error('num_lev should be 16 in namelist!')
+    if (global_mesh%full_nlev /= 16 .and. is_root_proc()) then
+      call log_error('nlev should be 16 in namelist!')
     end if
 
     hyai = [          &
@@ -497,8 +497,8 @@ contains
     real(r8), intent(out) :: hyai(27)
     real(r8), intent(out) :: hybi(27)
 
-    if (global_mesh%num_full_lev /= 26 .and. is_root_proc()) then
-      call log_error('num_lev should be 26 in namelist!')
+    if (global_mesh%full_nlev /= 26 .and. is_root_proc()) then
+      call log_error('nlev should be 26 in namelist!')
     end if
 
     hyai = [              &
@@ -569,8 +569,8 @@ contains
     real(r8), intent(out) :: hyai(33)
     real(r8), intent(out) :: hybi(33)
 
-    if (global_mesh%num_full_lev /= 32 .and. is_root_proc()) then
-      call log_error('num_lev should be 32 in namelist!')
+    if (global_mesh%full_nlev /= 32 .and. is_root_proc()) then
+      call log_error('nlev should be 32 in namelist!')
     end if
 
     hyai = [              &
@@ -653,8 +653,8 @@ contains
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
 
-    if (global_mesh%num_full_lev /= 60 .and. is_root_proc()) then
-      call log_error('num_lev should be 60 in namelist!')
+    if (global_mesh%full_nlev /= 60 .and. is_root_proc()) then
+      call log_error('nlev should be 60 in namelist!')
     end if
 
     hyai = [ &
@@ -717,13 +717,13 @@ contains
     real(r8) eta_top, deta, eta
     integer k
 
-    if (global_mesh%num_full_lev /= 60 .and. is_root_proc()) then
-      call log_error('num_lev should be 60 in namelist!')
+    if (global_mesh%full_nlev /= 60 .and. is_root_proc()) then
+      call log_error('nlev should be 60 in namelist!')
     end if
 
     eta_top = exp(-g * ztop / Rd / T0)
-    deta = (1 - eta_top) / global_mesh%num_full_lev
-    do k = 1, global_mesh%num_half_lev
+    deta = (1 - eta_top) / global_mesh%full_nlev
+    do k = 1, global_mesh%half_nlev
       eta = eta_top + (k - 1) * deta
       hybi(k) = (eta - eta_top) / (1.0 - eta_top)
       hyai(k) = eta - hybi(k)
@@ -738,8 +738,8 @@ contains
     real(r8), intent(out) :: hyai(65)
     real(r8), intent(out) :: hybi(65)
 
-    if (global_mesh%num_full_lev /= 64 .and. is_root_proc()) then
-      call log_error('num_lev should be 64 in namelist!')
+    if (global_mesh%full_nlev /= 64 .and. is_root_proc()) then
+      call log_error('nlev should be 64 in namelist!')
     end if
 
     hyai = [          &
@@ -886,8 +886,8 @@ contains
     real(r8), intent(out) :: hyai(41)
     real(r8), intent(out) :: hybi(41)
 
-    if (global_mesh%num_full_lev /= 40 .and. is_root_proc()) then
-      call log_error('num_lev should be 40 in namelist!')
+    if (global_mesh%full_nlev /= 40 .and. is_root_proc()) then
+      call log_error('nlev should be 40 in namelist!')
     end if
 
     hyai = [                  &
@@ -988,8 +988,8 @@ contains
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
 
-    if (global_mesh%num_full_lev /= 60 .and. is_root_proc()) then
-      call log_error('num_lev should be 60 in namelist!')
+    if (global_mesh%full_nlev /= 60 .and. is_root_proc()) then
+      call log_error('nlev should be 60 in namelist!')
     end if
 
     hyai = [                   &
@@ -1130,8 +1130,8 @@ contains
     real(r8), intent(out) :: hyai(11)
     real(r8), intent(out) :: hybi(11)
 
-    if (global_mesh%num_full_lev /= 10 .and. is_root_proc()) then
-      call log_error('num_lev should be 10 in namelist!')
+    if (global_mesh%full_nlev /= 10 .and. is_root_proc()) then
+      call log_error('nlev should be 10 in namelist!')
     end if
 
     hyai = [                  &
@@ -1172,8 +1172,8 @@ contains
     real(r8), intent(out) :: hyai(71)
     real(r8), intent(out) :: hybi(71)
 
-    if (global_mesh%num_full_lev /= 70 .and. is_root_proc()) then
-      call log_error('num_lev should be 70 in namelist!')
+    if (global_mesh%full_nlev /= 70 .and. is_root_proc()) then
+      call log_error('nlev should be 70 in namelist!')
     end if
 
     hyai = [                &
@@ -1337,13 +1337,13 @@ contains
     real(r8) deta, eta, etac, c1, c2, c3, c4
     integer k
 
-    deta = 1.0_r8 / global_mesh%num_full_lev
+    deta = 1.0_r8 / global_mesh%full_nlev
     etac = 0.2
     c1 = 2 * etac**2 / (1 - etac)**3
     c2 = -etac * (4 + etac + etac**2) / (1 - etac)**3
     c3 = 2 * (1 + etac + etac**2) / (1 - etac)**3
     c4 = -(1 + etac) / (1 - etac)**3
-    do k = 1, global_mesh%num_half_lev
+    do k = 1, global_mesh%half_nlev
       eta = (k - 1) * deta
       hybi(k) = merge(0.0_r8, c1 + c2 * eta + c3 * eta**2 + c4 * eta**3, eta < etac)
       hyai(k) = eta - hybi(k)

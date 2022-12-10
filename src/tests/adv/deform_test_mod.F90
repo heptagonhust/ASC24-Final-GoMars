@@ -73,9 +73,9 @@ contains
     q(:,:,:,1,old) = 1
     ! Cosine hills
     qmax = 1.0_r8; qmin = 0.1_r8; c = 0.9_r8; r = radius * 0.5_r8
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       lat = mesh%full_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         r1 = calc_distance(lon1, lat1, lon, lat)
         r2 = calc_distance(lon2, lat2, lon, lat)
@@ -91,9 +91,9 @@ contains
     call fill_halo(block%halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Slotted cylinders
     qmax = 1.0_r8; qmin = 0.1_r8; r = radius * 0.5_r8
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       lat = mesh%full_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         r1 = calc_distance(lon1, lat1, lon, lat)
         r2 = calc_distance(lon2, lat2, lon, lat)
@@ -112,9 +112,9 @@ contains
     call fill_halo(block%halo, q(:,:,:,3,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Gaussian hills
     qmax = 0.95_r8; c = 5.0_r8
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       lat = mesh%full_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         call cartesian_transform(lon, lat, x(1), x(2), x(3))
         x = x / radius
@@ -144,18 +144,18 @@ contains
     m = 1
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       lat = mesh%full_lat(j)
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%half_ids, mesh%half_ide
         lon = mesh%half_lon(i)
         u(i,j,1) = k * sin(lon / 2.0_r8)**2 * sin(2 * lat) * cos_t
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do j = mesh%half_jds, mesh%half_jde
       lat = mesh%half_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         v(i,j,1) = k / 2.0_r8 * sin(lon) * cos(lat) * cos_t
         mfy(i,j,1) = v(i,j,1)
@@ -184,18 +184,18 @@ contains
     m = 1
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       lat = mesh%full_lat(j)
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%half_ids, mesh%half_ide
         lon = mesh%half_lon(i)
         u(i,j,1) = k * sin(lon)**2 * sin(2 * lat) * cos_t
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do j = mesh%half_jds, mesh%half_jde
       lat = mesh%half_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         v(i,j,1) = k * sin(2 * lon) * cos(lat) * cos_t
         mfy(i,j,1) = v(i,j,1)
@@ -224,18 +224,18 @@ contains
     m = 1
     k = 5.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       lat = mesh%full_lat(j)
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%half_ids, mesh%half_ide
         lon = mesh%half_lon(i)
         u(i,j,1) = -k * sin(lon / 2.0_r8)**2 * sin(2 * lat) * cos(lat)**2 * cos_t
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do j = mesh%half_jds, mesh%half_jde
       lat = mesh%half_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         v(i,j,1) = k / 2.0_r8 * sin(lon) * cos(lat)**3 * cos_t
         mfy(i,j,1) = v(i,j,1)
@@ -266,18 +266,18 @@ contains
     c1 = pi2 * time_in_seconds / period
     c2 = pi2 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       lat = mesh%full_lat(j)
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%half_ids, mesh%half_ide
         lon = mesh%half_lon(i) - c1
         u(i,j,1) = k * sin(lon)**2 * sin(2 * lat) * cos_t + c2 * cos(lat)
         mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do j = mesh%half_jds, mesh%half_jde
       lat = mesh%half_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i) - c1
         v(i,j,1) = k * sin(2 * lon) * cos(lat) * cos_t
         mfy(i,j,1) = v(i,j,1)

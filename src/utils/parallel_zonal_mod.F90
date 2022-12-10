@@ -46,7 +46,7 @@ contains
     integer, intent(out) :: value
 
 #ifdef ENSURE_ORDER
-    integer allvalue(global_mesh%num_full_lon)
+    integer allvalue(global_mesh%full_nlon)
 #endif
     integer ierr
 
@@ -71,7 +71,7 @@ contains
     real(4), intent(out) :: value
 
 #ifdef ENSURE_ORDER
-    real(4) allvalue(global_mesh%num_full_lon)
+    real(4) allvalue(global_mesh%full_nlon)
 #endif
     integer ierr
 
@@ -96,7 +96,7 @@ contains
     real(8), intent(out) :: value
 
 #ifdef ENSURE_ORDER
-    real(8) allvalue(global_mesh%num_full_lon)
+    real(8) allvalue(global_mesh%full_nlon)
 #endif
     integer ierr
 
@@ -121,7 +121,7 @@ contains
     real(4), intent(out) :: value(:)
 
 #ifdef ENSURE_ORDER
-    real(4) allvalue(global_mesh%num_full_lon,size(value))
+    real(4) allvalue(global_mesh%full_nlon,size(value))
 #endif
     integer ierr
 
@@ -146,7 +146,7 @@ contains
     real(8), intent(out) :: value(:)
 
 #ifdef ENSURE_ORDER
-    real(8) allvalue(global_mesh%num_full_lon,size(value))
+    real(8) allvalue(global_mesh%full_nlon,size(value))
 #endif
     integer ierr
 
@@ -256,7 +256,7 @@ contains
     integer ierr, i, k
 
     if (zonal_circle%id == 0) then
-      k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
+      k = merge(1, 2, size(local_array, 2) == global_mesh%full_nlev)
       array(1:size(local_array, 1),:) = local_array
       do i = 2, zonal_circle%np
         call MPI_RECV(array, 1, zonal_circle%recv_type_r4(i,k), i - 1, 31, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
@@ -276,7 +276,7 @@ contains
     integer ierr, i, k
 
     if (zonal_circle%id == 0) then
-      k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
+      k = merge(1, 2, size(local_array, 2) == global_mesh%full_nlev)
       array(1:size(local_array, 1),:) = local_array
       do i = 2, zonal_circle%np
         call MPI_RECV(array, 1, zonal_circle%recv_type_r8(i,k), i - 1, 31, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
@@ -334,7 +334,7 @@ contains
     integer ierr, i, k
 
     if (zonal_circle%id == 0) then
-      k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
+      k = merge(1, 2, size(local_array, 2) == global_mesh%full_nlev)
       local_array = array(1:size(local_array, 1),:)
       do i = 2, zonal_circle%np
         call MPI_SEND(array, 1, zonal_circle%recv_type_r4(i,k), i - 1, 33, zonal_circle%comm, ierr)
@@ -354,7 +354,7 @@ contains
     integer ierr, i, k
 
     if (zonal_circle%id == 0) then
-      k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
+      k = merge(1, 2, size(local_array, 2) == global_mesh%full_nlev)
       local_array = array(1:size(local_array, 1),:)
       do i = 2, zonal_circle%np
         call MPI_SEND(array, 1, zonal_circle%recv_type_r8(i,k), i - 1, 33, zonal_circle%comm, ierr)

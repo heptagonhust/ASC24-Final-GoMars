@@ -22,8 +22,8 @@ contains
     real(r8), intent(in) :: src_lat(:)
     real(r8), intent(in) :: src_data(:,:)
     type(mesh_type), intent(in) :: dst_mesh
-    real(r8), intent(out) :: dst_data(dst_mesh%full_lon_lb:dst_mesh%full_lon_ub, &
-                                      dst_mesh%full_lat_lb:dst_mesh%full_lat_ub)
+    real(r8), intent(out) :: dst_data(dst_mesh%full_ims:dst_mesh%full_ime, &
+                                      dst_mesh%full_jms:dst_mesh%full_jme)
     logical, intent(in), optional :: extrap
     logical, intent(in), optional :: zero_pole
     integer, intent(out), optional :: ierr
@@ -39,10 +39,10 @@ contains
     nx1 = size(src_lon)
     ny1 = size(src_lat)
 
-    lb_x2 = dst_mesh%full_lon_ibeg
-    ub_x2 = dst_mesh%full_lon_iend
-    lb_y2 = dst_mesh%full_lat_ibeg
-    ub_y2 = dst_mesh%full_lat_iend
+    lb_x2 = dst_mesh%full_ids
+    ub_x2 = dst_mesh%full_ide
+    lb_y2 = dst_mesh%full_jds
+    ub_y2 = dst_mesh%full_jde
 
     allocate(i1(lb_x2:ub_x2), i2(lb_x2:ub_x2))
     allocate(j1(lb_y2:ub_y2), j2(lb_y2:ub_y2))
@@ -139,18 +139,18 @@ contains
     ! Handle pole grids.
     if (dst_mesh%has_south_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%full_lat_ibeg) = 0.0_r8
+        dst_data(:,dst_mesh%full_jds) = 0.0_r8
       else
-        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_lon_ibeg:dst_mesh%full_lon_iend,dst_mesh%full_lat_ibeg), pole)
-        dst_data(:,dst_mesh%full_lat_ibeg) = pole / global_mesh%num_full_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_ids:dst_mesh%full_ide,dst_mesh%full_jds), pole)
+        dst_data(:,dst_mesh%full_jds) = pole / global_mesh%full_nlon
       end if
     end if
     if (dst_mesh%has_north_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%full_lat_iend) = 0.0_r8
+        dst_data(:,dst_mesh%full_jde) = 0.0_r8
       else
-        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_lon_ibeg:dst_mesh%full_lon_iend,dst_mesh%full_lat_iend), pole)
-        dst_data(:,dst_mesh%full_lat_iend) = pole / global_mesh%num_full_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_ids:dst_mesh%full_ide,dst_mesh%full_jde), pole)
+        dst_data(:,dst_mesh%full_jde) = pole / global_mesh%full_nlon
       end if
     end if
 
@@ -162,8 +162,8 @@ contains
     real(r8), intent(in) :: src_lat(:)
     real(r8), intent(in) :: src_data(:,:)
     type(mesh_type), intent(in) :: dst_mesh
-    real(r8), intent(out) :: dst_data(dst_mesh%half_lon_lb:dst_mesh%half_lon_ub, &
-                                      dst_mesh%full_lat_lb:dst_mesh%full_lat_ub)
+    real(r8), intent(out) :: dst_data(dst_mesh%half_ims:dst_mesh%half_ime, &
+                                      dst_mesh%full_jms:dst_mesh%full_jme)
     logical, intent(in), optional :: extrap
     logical, intent(in), optional :: zero_pole
     integer, intent(out), optional :: ierr
@@ -179,10 +179,10 @@ contains
     nx1 = size(src_lon)
     ny1 = size(src_lat)
 
-    lb_x2 = dst_mesh%half_lon_ibeg
-    ub_x2 = dst_mesh%half_lon_iend
-    lb_y2 = dst_mesh%full_lat_ibeg
-    ub_y2 = dst_mesh%full_lat_iend
+    lb_x2 = dst_mesh%half_ids
+    ub_x2 = dst_mesh%half_ide
+    lb_y2 = dst_mesh%full_jds
+    ub_y2 = dst_mesh%full_jde
 
     allocate(i1(lb_x2:ub_x2), i2(lb_x2:ub_x2))
     allocate(j1(lb_y2:ub_y2), j2(lb_y2:ub_y2))
@@ -289,18 +289,18 @@ contains
     ! Handle pole grids.
     if (dst_mesh%has_south_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%full_lat_ibeg) = 0.0_r8
+        dst_data(:,dst_mesh%full_jds) = 0.0_r8
       else
-        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_lon_ibeg:dst_mesh%half_lon_iend,dst_mesh%full_lat_ibeg), pole)
-        dst_data(:,dst_mesh%full_lat_ibeg) = pole / global_mesh%num_half_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_ids:dst_mesh%half_ide,dst_mesh%full_jds), pole)
+        dst_data(:,dst_mesh%full_jds) = pole / global_mesh%half_nlon
       end if
     end if
     if (dst_mesh%has_north_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%full_lat_iend) = 0.0_r8
+        dst_data(:,dst_mesh%full_jde) = 0.0_r8
       else
-        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_lon_ibeg:dst_mesh%half_lon_iend,dst_mesh%full_lat_iend), pole)
-        dst_data(:,dst_mesh%full_lat_iend) = pole / global_mesh%num_half_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_ids:dst_mesh%half_ide,dst_mesh%full_jde), pole)
+        dst_data(:,dst_mesh%full_jde) = pole / global_mesh%half_nlon
       end if
     end if
 
@@ -312,8 +312,8 @@ contains
     real(r8), intent(in) :: src_lat(:)
     real(r8), intent(in) :: src_data(:,:)
     type(mesh_type), intent(in) :: dst_mesh
-    real(r8), intent(out) :: dst_data(dst_mesh%full_lon_lb:dst_mesh%full_lon_ub, &
-                                      dst_mesh%half_lat_lb:dst_mesh%half_lat_ub)
+    real(r8), intent(out) :: dst_data(dst_mesh%full_ims:dst_mesh%full_ime, &
+                                      dst_mesh%half_jms:dst_mesh%half_jme)
     logical, intent(in), optional :: extrap
     logical, intent(in), optional :: zero_pole
     integer, intent(out), optional :: ierr
@@ -329,10 +329,10 @@ contains
     nx1 = size(src_lon)
     ny1 = size(src_lat)
 
-    lb_x2 = dst_mesh%full_lon_ibeg
-    ub_x2 = dst_mesh%full_lon_iend
-    lb_y2 = dst_mesh%half_lat_ibeg
-    ub_y2 = dst_mesh%half_lat_iend
+    lb_x2 = dst_mesh%full_ids
+    ub_x2 = dst_mesh%full_ide
+    lb_y2 = dst_mesh%half_jds
+    ub_y2 = dst_mesh%half_jde
 
     allocate(i1(lb_x2:ub_x2), i2(lb_x2:ub_x2))
     allocate(j1(lb_y2:ub_y2), j2(lb_y2:ub_y2))
@@ -439,12 +439,12 @@ contains
     ! Handle pole grids.
     if (dst_mesh%has_south_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%half_lat_ibeg) = 0.0_r8
+        dst_data(:,dst_mesh%half_jds) = 0.0_r8
       end if
     end if
     if (dst_mesh%has_north_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%half_lat_iend) = 0.0_r8
+        dst_data(:,dst_mesh%half_jde) = 0.0_r8
       end if
     end if
 

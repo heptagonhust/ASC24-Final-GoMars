@@ -28,8 +28,8 @@ contains
         p0 = 1.0e5_r8
         T0 = 300.0_r8
         A  = 50.0_r8
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
             ref_ps(i,j) = p0 * exp(-T0 / A + sqrt((T0 / A)**2 - 2 * gzs(i,j) / A / Rd))
           end do
         end do

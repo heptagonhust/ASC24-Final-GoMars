@@ -31,9 +31,9 @@ module hybrid_coord_mod
 
 contains
 
-  subroutine hybrid_coord_init(num_lev, namelist_file, template)
+  subroutine hybrid_coord_init(nlev, namelist_file, template)
 
-    integer, intent(in) :: num_lev
+    integer, intent(in) :: nlev
     character(*), intent(in), optional :: namelist_file
     character(*), intent(in), optional :: template
 
@@ -44,10 +44,10 @@ contains
     if (allocated(hyam)) deallocate(hyam)
     if (allocated(hybm)) deallocate(hybm)
 
-    allocate(hyai(num_lev+1)); hyai = 0
-    allocate(hybi(num_lev+1)); hybi = 0
-    allocate(hyam(num_lev  )); hyam = 0
-    allocate(hybm(num_lev  )); hybm = 0
+    allocate(hyai(nlev+1)); hyai = 0
+    allocate(hybi(nlev+1)); hybi = 0
+    allocate(hyam(nlev  )); hyam = 0
+    allocate(hybm(nlev  )); hybm = 0
 
     if (present(namelist_file)) then
       open(10, file=namelist_file, status='old')
@@ -114,21 +114,21 @@ contains
       call log_notice('Model top pressure is ' // to_str(ptop, '(ES10.2)') // 'Pa.')
     end if
 
-    if ((baroclinic .or. advection) .and. global_mesh%num_full_lev > 1 .and. all(hyai == 0)) then
+    if ((baroclinic .or. advection) .and. global_mesh%full_nlev > 1 .and. all(hyai == 0)) then
       call log_error('Hybrid coordinate parameters are not set!', pid=proc%id)
     end if
 
     if (all(hyam == 0)) then
-      do k = 1, num_lev
+      do k = 1, nlev
         hyam(k) = 0.5d0 * (hyai(k) + hyai(k+1))
         hybm(k) = 0.5d0 * (hybi(k) + hybi(k+1))
       end do
     end if
 
-    do k = 1, num_lev
+    do k = 1, nlev
       global_mesh%full_lev(k) = hyam(k) + hybm(k)
     end do
-    do k = 1, num_lev + 1
+    do k = 1, nlev + 1
       global_mesh%half_lev(k) = hyai(k) + hybi(k)
     end do
 

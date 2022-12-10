@@ -14,12 +14,12 @@ module parallel_types_mod
   public proc
 
   type zonal_circle_type
-    integer :: group = MPI_GROUP_NULL
-    integer :: comm  = MPI_COMM_NULL
-    integer :: np    = 0
-    integer :: id    = MPI_PROC_NULL
-    integer :: west_ngb_id    = MPI_PROC_NULL
-    integer :: east_ngb_id    = MPI_PROC_NULL
+    integer :: group       = MPI_GROUP_NULL
+    integer :: comm        = MPI_COMM_NULL
+    integer :: np          = 0
+    integer :: id          = MPI_PROC_NULL
+    integer :: west_ngb_id = MPI_PROC_NULL
+    integer :: east_ngb_id = MPI_PROC_NULL
     integer, allocatable :: recv_type_i4(:,:) ! 0: one level, 1: full_lev, 2: half_lev
     integer, allocatable :: recv_type_r4(:,:) ! 0: one level, 1: full_lev, 2: half_lev
     integer, allocatable :: recv_type_r8(:,:) ! 0: one level, 1: full_lev, 2: half_lev
@@ -30,14 +30,14 @@ module parallel_types_mod
   end type zonal_circle_type
 
   type process_neighbor_type
-    integer :: id       = MPI_PROC_NULL
-    integer :: cart_id  = MPI_PROC_NULL
-    integer :: orient   = 0
-    integer :: lon_ibeg = inf_i4
-    integer :: lon_iend = inf_i4
-    integer :: lat_ibeg = inf_i4
-    integer :: lat_iend = inf_i4
-    integer :: lon_halo_width = 0
+    integer :: id      = MPI_PROC_NULL
+    integer :: cart_id = MPI_PROC_NULL
+    integer :: orient  = 0
+    integer :: ids     = inf_i4
+    integer :: ide     = inf_i4
+    integer :: jds     = inf_i4
+    integer :: jde     = inf_i4
+    integer :: lon_hw  = 0
   contains
     procedure :: init => process_neighbor_init
   end type process_neighbor_type
@@ -53,12 +53,12 @@ module parallel_types_mod
     integer :: cart_id        = MPI_PROC_NULL          ! MPI process ID in cart_comm
     integer idom                                       ! Nest domain index (root domain is 1)
     integer np
-    integer num_lon
-    integer num_lat
-    integer lon_ibeg
-    integer lon_iend
-    integer lat_ibeg
-    integer lat_iend
+    integer nlon
+    integer nlat
+    integer ids
+    integer ide
+    integer jds
+    integer jde
     logical :: at_south_pole = .false.
     logical :: at_north_pole = .false.
     type(zonal_circle_type) zonal_circle
@@ -78,7 +78,7 @@ contains
     class(zonal_circle_type), intent(inout) :: this
     type(process_type), intent(in) :: proc
 
-    integer ierr, i, num_lon, ibeg, iend
+    integer ierr, i, nlon, ibeg, iend
     integer west_cart_id, east_cart_id, tmp_id(1)
     integer, allocatable :: zonal_proc_id(:)
 
@@ -101,20 +101,20 @@ contains
       ! Integer
       allocate(this%recv_type_i4(this%np,0:2))
       do i = 1, this%np
-        num_lon = global_mesh%num_full_lon
-        call round_robin(this%np, i - 1, num_lon, ibeg, iend)
-        call MPI_TYPE_CREATE_SUBARRAY(1, [global_mesh%num_full_lon], &
-                                         [                 num_lon], &
+        nlon = global_mesh%full_nlon
+        call round_robin(this%np, i - 1, nlon, ibeg, iend)
+        call MPI_TYPE_CREATE_SUBARRAY(1, [global_mesh%full_nlon], &
+                                         [                 nlon], &
                                          [ibeg-1], MPI_ORDER_FORTRAN, MPI_INT, &
                                          this%recv_type_i4(i,0), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_i4(i,0), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_full_lev], &
-                                         [                 num_lon,global_mesh%num_full_lev], &
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%full_nlon,global_mesh%full_nlev], &
+                                         [                 nlon,global_mesh%full_nlev], &
                                          [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_INT, &
                                          this%recv_type_i4(i,1), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_i4(i,1), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_half_lev], &
-                                         [                 num_lon,global_mesh%num_half_lev], &
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%full_nlon,global_mesh%half_nlev], &
+                                         [                 nlon,global_mesh%half_nlev], &
                                          [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_INT, &
                                          this%recv_type_i4(i,2), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_i4(i,2), ierr)
@@ -122,20 +122,20 @@ contains
       ! Single precision
       allocate(this%recv_type_r4(this%np,0:2))
       do i = 1, this%np
-        num_lon = global_mesh%num_full_lon
-        call round_robin(this%np, i - 1, num_lon, ibeg, iend)
-        call MPI_TYPE_CREATE_SUBARRAY(1, [global_mesh%num_full_lon], &
-                                         [                 num_lon], &
+        nlon = global_mesh%full_nlon
+        call round_robin(this%np, i - 1, nlon, ibeg, iend)
+        call MPI_TYPE_CREATE_SUBARRAY(1, [global_mesh%full_nlon], &
+                                         [                 nlon], &
                                          [ibeg-1], MPI_ORDER_FORTRAN, MPI_REAL, &
                                          this%recv_type_r4(i,0), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r4(i,0), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_full_lev], &
-                                         [                 num_lon,global_mesh%num_full_lev], &
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%full_nlon,global_mesh%full_nlev], &
+                                         [                 nlon,global_mesh%full_nlev], &
                                          [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_REAL, &
                                          this%recv_type_r4(i,1), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r4(i,1), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_half_lev], &
-                                         [                 num_lon,global_mesh%num_half_lev], &
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%full_nlon,global_mesh%half_nlev], &
+                                         [                 nlon,global_mesh%half_nlev], &
                                          [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_REAL, &
                                          this%recv_type_r4(i,2), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r4(i,2), ierr)
@@ -143,20 +143,20 @@ contains
       ! Double precision
       allocate(this%recv_type_r8(this%np,0:2))
       do i = 1, this%np
-        num_lon = global_mesh%num_full_lon
-        call round_robin(this%np, i - 1, num_lon, ibeg, iend)
-        call MPI_TYPE_CREATE_SUBARRAY(1, [global_mesh%num_full_lon], &
-                                         [                 num_lon], &
+        nlon = global_mesh%full_nlon
+        call round_robin(this%np, i - 1, nlon, ibeg, iend)
+        call MPI_TYPE_CREATE_SUBARRAY(1, [global_mesh%full_nlon], &
+                                         [                 nlon], &
                                          [ibeg-1], MPI_ORDER_FORTRAN, MPI_DOUBLE, &
                                          this%recv_type_r8(i,0), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r8(i,0), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_full_lev], &
-                                         [                 num_lon,global_mesh%num_full_lev], &
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%full_nlon,global_mesh%full_nlev], &
+                                         [                 nlon,global_mesh%full_nlev], &
                                          [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_DOUBLE, &
                                          this%recv_type_r8(i,1), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r8(i,1), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_half_lev], &
-                                         [                 num_lon,global_mesh%num_half_lev], &
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%full_nlon,global_mesh%half_nlev], &
+                                         [                 nlon,global_mesh%half_nlev], &
                                          [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_DOUBLE, &
                                          this%recv_type_r8(i,2), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r8(i,2), ierr)
@@ -210,24 +210,24 @@ contains
 
   end subroutine zonal_circle_final
 
-  subroutine process_neighbor_init(this, orient, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+  subroutine process_neighbor_init(this, orient, ids, ide, jds, jde)
 
     class(process_neighbor_type), intent(inout) :: this
     integer, intent(in) :: orient
-    integer, intent(in), optional :: lon_ibeg
-    integer, intent(in), optional :: lon_iend
-    integer, intent(in), optional :: lat_ibeg
-    integer, intent(in), optional :: lat_iend
+    integer, intent(in), optional :: ids
+    integer, intent(in), optional :: ide
+    integer, intent(in), optional :: jds
+    integer, intent(in), optional :: jde
 
     this%orient = orient
 
     select case (orient)
     case (west, east)
-      this%lat_ibeg = lat_ibeg
-      this%lat_iend = lat_iend
+      this%jds = jds
+      this%jde = jde
     case (south, north)
-      this%lon_ibeg = lon_ibeg
-      this%lon_iend = lon_iend
+      this%ids = ids
+      this%ide = ide
     end select
 
   end subroutine process_neighbor_init

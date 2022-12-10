@@ -26,9 +26,9 @@ module sigma_coord_mod
 
 contains
 
-  subroutine sigma_coord_init(num_lev, namelist_file, template)
+  subroutine sigma_coord_init(nlev, namelist_file, template)
 
-    integer, intent(in) :: num_lev
+    integer, intent(in) :: nlev
     character(*), intent(in), optional :: namelist_file
     character(*), intent(in), optional :: template
 
@@ -37,8 +37,8 @@ contains
     if (allocated(sigi)) deallocate(sigi)
     if (allocated(sig )) deallocate(sig )
 
-    allocate(sigi(num_lev+1)); sigi = 0
-    allocate(sig (num_lev  )); sig  = 0
+    allocate(sigi(nlev+1)); sigi = 0
+    allocate(sig (nlev  )); sig  = 0
 
     if (present(namelist_file)) then
       open(10, file=namelist_file, status='old')
@@ -80,10 +80,10 @@ contains
     ]
     pt = 219.406699761748
 
-    do k = 1, num_lev
+    do k = 1, nlev
       global_mesh%full_lev(k) = sig(k)
     end do
-    do k = 1, num_lev + 1
+    do k = 1, nlev + 1
       global_mesh%half_lev(k) = sigi(k)
     end do
 

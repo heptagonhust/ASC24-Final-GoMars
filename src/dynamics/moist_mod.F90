@@ -37,9 +37,9 @@ contains
                adv_batch => block%adv_batches(1))
     do itime = 1, size(block%dstate)
       block%dstate(itime)%qv(              &
-        mesh%full_lon_lb:mesh%full_lon_ub, &
-        mesh%full_lat_lb:mesh%full_lat_ub, &
-        mesh%full_lev_lb:mesh%full_lev_ub) => adv_batch%q(:,:,:,1,adv_batch%old)
+        mesh%full_ims:mesh%full_ime, &
+        mesh%full_jms:mesh%full_jme, &
+        mesh%full_kms:mesh%full_kme) => adv_batch%q(:,:,:,1,adv_batch%old)
       call calc_qm(block, itime)
     end do
     end associate
@@ -57,9 +57,9 @@ contains
     associate (mesh => block%mesh,             &
                qv   => block%dstate(itime)%qv, & ! in
                qm   => block%dstate(itime)%qm)   ! out
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           qm(i,j,k) = qv(i,j,k)
         end do
       end do

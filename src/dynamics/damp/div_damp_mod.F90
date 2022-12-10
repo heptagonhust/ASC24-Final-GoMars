@@ -35,13 +35,13 @@ contains
 
     call div_damp_final()
 
-    allocate(c_lon(global_mesh%num_full_lat,global_mesh%num_full_lev))
-    allocate(c_lat(global_mesh%num_half_lat,global_mesh%num_full_lev))
+    allocate(c_lon(global_mesh%full_nlat,global_mesh%full_nlev))
+    allocate(c_lat(global_mesh%half_nlat,global_mesh%full_nlev))
 
     select case (div_damp_order)
     case (2)
-      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-        do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
           if (baroclinic) then
             c_lon(j,k) = div_damp_coef2 * &
               max(1.0_r8, 8 * (1 + tanh(log(ptop / vert_coord_calc_ph(k, p0))))) * &
@@ -51,8 +51,8 @@ contains
           end if
         end do
       end do
-      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-        do j = global_mesh%half_lat_ibeg, global_mesh%half_lat_iend
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%half_jds, global_mesh%half_jde
           if (baroclinic) then
             c_lat(j,k) = div_damp_coef2 * &
               max(1.0_r8, 8 * (1 + tanh(log(ptop / vert_coord_calc_ph(k, p0))))) * &
@@ -63,13 +63,13 @@ contains
         end do
       end do
     case (4)
-      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-        do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
           c_lon(j,k) = div_damp_coef4 * global_mesh%le_lon(j)**2 * global_mesh%de_lon(j)**2
         end do
       end do
-      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-        do j = global_mesh%half_lat_ibeg, global_mesh%half_lat_iend
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%half_jds, global_mesh%half_jde
           c_lat(j,k) = div_damp_coef4 * global_mesh%le_lat(j)**2 * global_mesh%de_lat(j)**2
         end do
       end do
@@ -102,31 +102,31 @@ contains
                v    => dstate%v_lat)
     select case (div_damp_order)
     case (2)
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
             u(i,j,k) = u(i,j,k) + c_lon(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
             v(i,j,k) = v(i,j,k) + c_lat(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do
     case (4)
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
             u(i,j,k) = u(i,j,k) - c_lon(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
             v(i,j,k) = v(i,j,k) - c_lat(j,k) * (div2(i,j+1,k) - div2(i,j,k)) / mesh%de_lat(j)
           end do
         end do

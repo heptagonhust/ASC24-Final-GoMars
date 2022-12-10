@@ -343,14 +343,14 @@ contains
 
     integer i, j, k
 
-    do k = this%mesh%full_lev_ibeg, this%mesh%full_lev_iend
-      do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
-        do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
+    do k = this%mesh%full_kds, this%mesh%full_kde
+      do j = this%mesh%full_jds_no_pole, this%mesh%full_jde_no_pole
+        do i = this%mesh%half_ids, this%mesh%half_ide
           this%u_lon(i,j,k) = 0.5_r8 * (this%u(i,j,k) + this%u(i+1,j,k))
         end do
       end do
-      do j = this%mesh%half_lat_ibeg, this%mesh%half_lat_iend
-        do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
+      do j = this%mesh%half_jds, this%mesh%half_jde
+        do i = this%mesh%full_ids, this%mesh%full_ide
           this%v_lat(i,j,k) = 0.5_r8 * (this%v(i,j,k) + this%v(i,j+1,k))
         end do
       end do
@@ -364,9 +364,9 @@ contains
 
     integer i, j, k
 
-    do k = this%mesh%full_lev_ibeg, this%mesh%full_lev_iend
-      do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
-        do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
+    do k = this%mesh%full_kds, this%mesh%full_kde
+      do j = this%mesh%full_jds_no_pole, this%mesh%full_jde_no_pole
+        do i = this%mesh%full_ids, this%mesh%full_ide
           this%u(i,j,k) = 0.5_r8 * (this%u_lon(i,j,k) + this%u_lon(i-1,j,k))
           this%v(i,j,k) = 0.5_r8 * (this%v_lat(i,j,k) + this%v_lat(i,j-1,k))
         end do

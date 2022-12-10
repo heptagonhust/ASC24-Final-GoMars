@@ -58,13 +58,13 @@ contains
 
     this%mesh => mesh
     dt = dt_dyn
-    allocate(this%width_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%width_lon = 0
-    allocate(this%ngrid_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%ngrid_lon = 0
-    allocate(this%width_lat(mesh%half_lat_lb:mesh%half_lat_ub)); this%width_lat = 0
-    allocate(this%ngrid_lat(mesh%half_lat_lb:mesh%half_lat_ub)); this%ngrid_lat = 0
+    allocate(this%width_lon(mesh%full_jms:mesh%full_jme)); this%width_lon = 0
+    allocate(this%ngrid_lon(mesh%full_jms:mesh%full_jme)); this%ngrid_lon = 0
+    allocate(this%width_lat(mesh%half_jms:mesh%half_jme)); this%width_lat = 0
+    allocate(this%ngrid_lat(mesh%half_jms:mesh%half_jme)); this%ngrid_lat = 0
 
     if (max_wave_speed > 0) then
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         dx = mesh%de_lon(j)
         dy = mesh%le_lon(j)
         if (dx > 0) then
@@ -75,7 +75,7 @@ contains
           this%ngrid_lon(j) = n
         end if
       end do
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      do j = mesh%half_jds, mesh%half_jde
         dx = mesh%le_lat(j)
         dy = mesh%de_lat(j)
         if (dx > 0) then
@@ -88,23 +88,23 @@ contains
       end do
     end if
 
-    allocate(this%wgt_lon(maxval(this%ngrid_lon),mesh%full_lat_lb:mesh%full_lat_ub)); this%wgt_lon = 0
-    allocate(this%wgt_lat(maxval(this%ngrid_lat),mesh%half_lat_lb:mesh%half_lat_ub)); this%wgt_lat = 0
+    allocate(this%wgt_lon(maxval(this%ngrid_lon),mesh%full_jms:mesh%full_jme)); this%wgt_lon = 0
+    allocate(this%wgt_lat(maxval(this%ngrid_lat),mesh%half_jms:mesh%half_jme)); this%wgt_lat = 0
     select case (type)
     case ('big_filter')
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (this%ngrid_lon(j) > 1) then
           call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
         end if
       end do
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      do j = mesh%half_jds, mesh%half_jde
         if (this%ngrid_lat(j) > 1) then
           call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))
         end if
       end do
     case ('small_filter_phs')
       lat0 = -global_mesh%full_lat_deg(2)
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (this%ngrid_lon(j) > 1) then
           w = exp_two_values(filter_coef1_phs, filter_coef2_phs, lat0, filter_lat0_phs, abs(mesh%full_lat_deg(j)))
           n = ceiling(w * this%ngrid_lon(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
@@ -114,7 +114,7 @@ contains
       end do
     case ('small_filter_pt')
       lat0 = -global_mesh%full_lat_deg(2)
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (this%ngrid_lon(j) > 1) then
           w = exp_two_values(filter_coef1_pt, filter_coef2_pt, lat0, filter_lat0_pt, abs(mesh%full_lat_deg(j)))
           n = ceiling(w * this%ngrid_lon(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
@@ -124,7 +124,7 @@ contains
       end do
     case ('small_filter_uv')
       lat0 = -global_mesh%full_lat_deg(2)
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (this%ngrid_lon(j) > 1) then
           w = exp_two_values(filter_coef1_uv, filter_coef2_uv, lat0, filter_lat0_uv, abs(mesh%full_lat_deg(j)))
           n = ceiling(w * this%ngrid_lon(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
@@ -133,7 +133,7 @@ contains
         end if
       end do
       lat0 = -global_mesh%half_lat_deg(1)
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      do j = mesh%half_jds, mesh%half_jde
         if (this%ngrid_lat(j) > 1) then
           w = exp_two_values(filter_coef1_uv, filter_coef2_uv, lat0, filter_lat0_uv, abs(mesh%half_lat_deg(j)))
           n = ceiling(w * this%ngrid_lat(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lat(j) = n

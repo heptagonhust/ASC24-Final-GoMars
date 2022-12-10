@@ -57,15 +57,15 @@ contains
 
     integer t1, t2, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
-    real(4) tmp(size(array,1),halo(1)%lat_halo_width)
+    real(4) tmp(size(array,1),halo(1)%lat_hw)
 
     t1 = merge(1, 2, full_lon)
     t2 = merge(1, 2, full_lat)
     nx = size(array, 1)
     mx = size(array, 1) / 2
     ny = size(array, 2)
-    hx = halo(1)%lon_halo_width
-    hy = halo(1)%lat_halo_width
+    hx = halo(1)%lon_hw
+    hy = halo(1)%lat_hw
 
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, halo(east)%send_type_2d(t1,t2), halo(east)%proc_id, 3, &
@@ -159,15 +159,15 @@ contains
 
     integer t1, t2, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
-    real(8) tmp(size(array,1),halo(1)%lat_halo_width)
+    real(8) tmp(size(array,1),halo(1)%lat_hw)
 
     t1 = merge(1, 2, full_lon)
     t2 = merge(1, 2, full_lat)
     nx = size(array, 1)
     mx = size(array, 1) / 2
     ny = size(array, 2)
-    hx = halo(1)%lon_halo_width
-    hy = halo(1)%lat_halo_width
+    hx = halo(1)%lon_hw
+    hy = halo(1)%lat_hw
 
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, halo(east)%send_type_2d(t1,t2), halo(east)%proc_id, 3, &
@@ -262,7 +262,7 @@ contains
 
     integer t1, t2, t3, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
-    real(4) tmp(size(array,1),halo(1)%lat_halo_width,size(array,3))
+    real(4) tmp(size(array,1),halo(1)%lat_hw,size(array,3))
 
     t1 = merge(1, 2, full_lon)
     t2 = merge(1, 2, full_lat)
@@ -270,8 +270,8 @@ contains
     nx = size(array, 1)
     mx = size(array, 1) / 2
     ny = size(array, 2)
-    hx = halo(1)%lon_halo_width
-    hy = halo(1)%lat_halo_width
+    hx = halo(1)%lon_hw
+    hy = halo(1)%lat_hw
 
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, halo(east)%send_type_3d(t1,t2,t3), halo(east)%proc_id, 3, &
@@ -365,7 +365,7 @@ contains
 
     integer t1, t2, t3, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
-    real(8) tmp(size(array,1),halo(1)%lat_halo_width,size(array,3))
+    real(8) tmp(size(array,1),halo(1)%lat_hw,size(array,3))
 
     t1 = merge(1, 2, full_lon)
     t2 = merge(1, 2, full_lat)
@@ -373,8 +373,8 @@ contains
     nx = size(array, 1)
     mx = size(array, 1) / 2
     ny = size(array, 2)
-    hx = halo(1)%lon_halo_width
-    hy = halo(1)%lat_halo_width
+    hx = halo(1)%lon_hw
+    hy = halo(1)%lat_hw
 
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, halo(east)%send_type_3d(t1,t2,t3), halo(east)%proc_id, 3, &

@@ -94,10 +94,10 @@ contains
 
     integer is, ie, js, je
 
-    is = block%mesh%full_lon_lb
-    ie = block%mesh%full_lon_ub
-    js = block%mesh%full_lat_lb
-    je = block%mesh%full_lat_ub
+    is = block%mesh%full_ims
+    ie = block%mesh%full_ime
+    js = block%mesh%full_jms
+    je = block%mesh%full_jme
 
     call this%clear()
     this%level_type = height_levels
@@ -112,8 +112,8 @@ contains
       allocate(this%w(is:ie,js:je,size(z)))
     end if
     allocate(this%buf   (is:ie,js:je))
-    allocate(this%zm    (is:ie,js:je,block%mesh%full_lev_lb:block%mesh%full_lev_ub))
-    allocate(this%zm_lev(is:ie,js:je,block%mesh%half_lev_lb:block%mesh%half_lev_ub))
+    allocate(this%zm    (is:ie,js:je,block%mesh%full_kms:block%mesh%full_kme))
+    allocate(this%zm_lev(is:ie,js:je,block%mesh%half_kms:block%mesh%half_kme))
 
     this%levels = z
     this%last_time = curr_time
@@ -129,10 +129,10 @@ contains
 
     integer is, ie, js, je
 
-    is = block%mesh%full_lon_lb
-    ie = block%mesh%full_lon_ub
-    js = block%mesh%full_lat_lb
-    je = block%mesh%full_lat_ub
+    is = block%mesh%full_ims
+    ie = block%mesh%full_ime
+    js = block%mesh%full_jms
+    je = block%mesh%full_jme
 
     call this%clear()
     this%level_type = pressure_levels
@@ -147,8 +147,8 @@ contains
       allocate(this%w(is:ie,js:je,size(p)))
     end if
     allocate(this%buf(is:ie,js:je))
-    allocate(this%zm    (is:ie,js:je,block%mesh%full_lev_lb:block%mesh%full_lev_ub))
-    allocate(this%zm_lev(is:ie,js:je,block%mesh%half_lev_lb:block%mesh%half_lev_ub))
+    allocate(this%zm    (is:ie,js:je,block%mesh%full_kms:block%mesh%full_kme))
+    allocate(this%zm_lev(is:ie,js:je,block%mesh%half_kms:block%mesh%half_kme))
 
     this%levels = p
     this%last_time = curr_time

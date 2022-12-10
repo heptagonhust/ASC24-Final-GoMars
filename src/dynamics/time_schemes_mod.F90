@@ -126,7 +126,7 @@ contains
 
     integer i, j, k
     real(r8) wgt
-    real(r8) tmp1(global_mesh%num_full_lev)
+    real(r8) tmp1(global_mesh%full_nlev)
 
     associate (mesh => block%mesh)
     if (baroclinic) then
@@ -135,8 +135,8 @@ contains
         call fill_halo(block%halo, dtend%dphs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dphs)
         ! ----------------------------------------------------------------------
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
             new_state%phs(i,j) = old_state%phs(i,j) + dt * dtend%dphs(i,j)
           end do
         end do
@@ -156,9 +156,9 @@ contains
         call fill_halo(block%halo, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dpt)
         ! ----------------------------------------------------------------------
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
               new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%m(i,j,k) + dt * dtend%dpt(i,j,k)) / new_state%m(i,j,k)
             end do
           end do
@@ -173,9 +173,9 @@ contains
         call fill_halo(block%halo, dtend%dgz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dgz)
         ! ----------------------------------------------------------------------
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
               new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * dtend%dgz(i,j,k)
             end do
           end do
@@ -194,16 +194,16 @@ contains
       call fill_halo(block%halo, dtend%dv, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
       call filter_on_lat_edge(block%big_filter, dtend%dv)
       ! ----------------------------------------------------------------------
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
             new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * dtend%du(i,j,k)
           end do
         end do
       end do
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
             new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * dtend%dv(i,j,k)
           end do
         end do

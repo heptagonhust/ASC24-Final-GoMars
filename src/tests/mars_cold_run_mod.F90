@@ -44,34 +44,34 @@ contains
     u = 0
     v = 0
     t = t0
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
         phs(i,j) = ps0 * exp(gzs(i,j) / (g * Rd * t0)) - ptop
       end do
     end do
     call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
-    do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%half_kds, mesh%half_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
         end do
       end do
     end do
     call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
         end do
       end do
     end do
     call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
         end do
       end do

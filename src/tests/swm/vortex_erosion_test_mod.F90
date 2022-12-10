@@ -33,16 +33,16 @@ contains
               gzs  => block%static%gzs)
     gh0 = g * 6.0d3
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       u(:,j,1) = u_function(mesh%full_lat(j))
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
     
     v = 0
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      i = mesh%half_lon_ibeg
-      if (j == mesh%full_lat_ibeg) then
+    do j = mesh%full_jds, mesh%full_jde
+      i = mesh%half_ids
+      if (j == mesh%full_jds) then
         gz(i,j,1) = gh0
       else
         call qags(gh_integrand, -0.5d0*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz_, abserr, neval, ierr)
@@ -51,8 +51,8 @@ contains
         end if 
         gz(i,j,1) = gh0 - gz_
       end if
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        gz(i,j,1) = gz(mesh%half_lon_ibeg,j,1)
+      do i = mesh%full_ids, mesh%full_ide
+        gz(i,j,1) = gz(mesh%half_ids,j,1)
       end do 
     end do 
 
@@ -84,11 +84,11 @@ contains
 
     b_lat = 0
     gzs = 0
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       if (mesh%full_lat(j) > 0) then
         y = (tan(pi * 0.25d0) / tan(mesh%full_lat(j)))**2
         b_lat = y * exp(1 - y)
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do i = mesh%full_ids, mesh%full_ide
           gzs(i,j) = hs * at * b_lat * mesh%full_sin_lon(i) * g
         end do
       end if

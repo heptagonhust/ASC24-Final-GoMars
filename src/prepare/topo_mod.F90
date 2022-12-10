@@ -23,12 +23,12 @@ module topo_mod
   type topo_block_type
     logical :: initialized = .false.
     integer id
-    integer lon_ibeg
-    integer lon_iend
-    integer lat_ibeg
-    integer lat_iend
-    integer num_lon
-    integer num_lat
+    integer ids
+    integer ide
+    integer jds
+    integer jde
+    integer nlon
+    integer nlat
     real(r8), allocatable :: lon(:)
     real(r8), allocatable :: lat(:)
     real(r8), allocatable :: gzs(:,:)
@@ -44,28 +44,28 @@ module topo_mod
 
 contains
 
-  subroutine topo_block_init(this, id, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+  subroutine topo_block_init(this, id, ids, ide, jds, jde)
 
     class(topo_block_type), intent(inout) :: this
     integer, intent(in) :: id
-    integer, intent(in) :: lon_ibeg
-    integer, intent(in) :: lon_iend
-    integer, intent(in) :: lat_ibeg
-    integer, intent(in) :: lat_iend
+    integer, intent(in) :: ids
+    integer, intent(in) :: ide
+    integer, intent(in) :: jds
+    integer, intent(in) :: jde
 
     call this%clear()
 
     this%id       = id
-    this%lon_ibeg = lon_ibeg
-    this%lon_iend = lon_iend
-    this%lat_ibeg = lat_ibeg
-    this%lat_iend = lat_iend
-    this%num_lon  = lon_iend - lon_ibeg + 1
-    this%num_lat  = lat_iend - lat_ibeg + 1
+    this%ids = ids
+    this%ide = ide
+    this%jds = jds
+    this%jde = jde
+    this%nlon  = ide - ids + 1
+    this%nlat  = jde - jds + 1
 
-    allocate(this%lon(lon_ibeg:lon_iend))
-    allocate(this%lat(lat_ibeg:lat_iend))
-    allocate(this%gzs(lon_ibeg:lon_iend,lat_ibeg:lat_iend))
+    allocate(this%lon(ids:ide))
+    allocate(this%lat(jds:jde))
+    allocate(this%gzs(ids:ide,jds:jde))
 
     this%initialized = .true.
 
@@ -95,12 +95,12 @@ contains
     end if
 
     if (present(lon) .and. present(lat)) then
-      res = this%lon(this%lon_ibeg) <= lon .and. lon <= this%lon(this%lon_iend) .and. &
-            this%lat(this%lat_ibeg) <= lat .and. lat <= this%lat(this%lat_iend)
+      res = this%lon(this%ids) <= lon .and. lon <= this%lon(this%ide) .and. &
+            this%lat(this%jds) <= lat .and. lat <= this%lat(this%jde)
     else if (present(lon)) then
-      res = this%lon(this%lon_ibeg) <= lon .and. lon <= this%lon(this%lon_iend)
+      res = this%lon(this%ids) <= lon .and. lon <= this%lon(this%ide)
     else if (present(lat)) then
-      res = this%lat(this%lat_ibeg) <= lat .and. lat <= this%lat(this%lat_iend)
+      res = this%lat(this%jds) <= lat .and. lat <= this%lat(this%jde)
     end if
 
   end function topo_block_contain
@@ -123,24 +123,24 @@ contains
       return
     end if
 
-    if (lon1 < this%lon(this%lon_ibeg)) then
-      is = this%lon_ibeg
-    else if (lon1 >= this%lon(this%lon_ibeg)) then
-      do is = this%lon_ibeg, this%lon_iend
+    if (lon1 < this%lon(this%ids)) then
+      is = this%ids
+    else if (lon1 >= this%lon(this%ids)) then
+      do is = this%ids, this%ide
         if (lon1 <= this%lon(is)) exit
       end do
     end if
-    if (lon2 > this%lon(this%lon_iend)) then
-      ie = this%lon_iend
-    else if (lon2 <= this%lon(this%lon_iend)) then
-      do ie = this%lon_iend, this%lon_ibeg, -1
+    if (lon2 > this%lon(this%ide)) then
+      ie = this%ide
+    else if (lon2 <= this%lon(this%ide)) then
+      do ie = this%ide, this%ids, -1
         if (lon2 >= this%lon(ie)) exit
       end do
     end if
-    do js = this%lat_ibeg, this%lat_iend
+    do js = this%jds, this%jde
       if (lat1 <= this%lat(js)) exit
     end do
-    do je = this%lat_iend, this%lat_ibeg, -1
+    do je = this%jde, this%jds, -1
       if (lat2 >= this%lat(je)) exit
     end do
 
@@ -189,10 +189,10 @@ contains
 
     if (is_root_proc()) call log_notice('Use ' // trim(topo_file) // ' as topography.')
 
-    lon1 = blocks(1)%mesh%half_lon_deg(blocks(1)%mesh%half_lon_ibeg-1)
-    lon2 = blocks(1)%mesh%half_lon_deg(blocks(1)%mesh%half_lon_iend  )
-    lat1 = blocks(1)%mesh%half_lat_deg(blocks(1)%mesh%half_lat_ibeg-1)
-    lat2 = blocks(1)%mesh%half_lat_deg(blocks(1)%mesh%half_lat_iend+1)
+    lon1 = blocks(1)%mesh%half_lon_deg(blocks(1)%mesh%half_ids-1)
+    lon2 = blocks(1)%mesh%half_lon_deg(blocks(1)%mesh%half_ide  )
+    lat1 = blocks(1)%mesh%half_lat_deg(blocks(1)%mesh%half_jds-1)
+    lat2 = blocks(1)%mesh%half_lat_deg(blocks(1)%mesh%half_jde+1)
     lat1 = merge(lat1, -90.0_r8, lat1 /= inf)
     lat2 = merge(lat2,  90.0_r8, lat2 /= inf)
     is1 = -999; ie1 = -999; is2 = -999; ie2 = -999
@@ -368,18 +368,18 @@ contains
 
     real(r8) lon1, lon2, lat1, lat2, pole_gzs, pole_std, pole_lnd
     integer i, j, pole_n
-    integer n(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend)
+    integer n(block%mesh%full_ids:block%mesh%full_ide)
 
     associate (mesh => block%mesh           , &
                lnd  => block%static%landmask, &
                gzs  => block%static%gzs     , &
                std  => block%static%zs_std)
       lnd = 0; gzs = 0; std = 0
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do j = mesh%full_jds, mesh%full_jde
         lat1 = mesh%half_lat_deg(j-1); lat1 = merge(lat1, -90.0_r8, lat1 /= inf)
         lat2 = mesh%half_lat_deg(j  ); lat2 = merge(lat2,  90.0_r8, lat2 /= inf)
         n = 0
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do i = mesh%full_ids, mesh%full_ide
           lon1 = mesh%half_lon_deg(i-1)
           lon2 = mesh%half_lon_deg(i  )
           if (topo%contain(lon=lon1) .or. topo%contain(lon=lon2)) then
@@ -398,13 +398,13 @@ contains
           end if
         end do
         if (mesh%is_pole(j)) then
-          call zonal_sum(proc%zonal_circle, gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,j), pole_gzs)
-          call zonal_sum(proc%zonal_circle, std(mesh%full_lon_ibeg:mesh%full_lon_iend,j), pole_std)
-          call zonal_sum(proc%zonal_circle, lnd(mesh%full_lon_ibeg:mesh%full_lon_iend,j), pole_lnd)
+          call zonal_sum(proc%zonal_circle, gzs(mesh%full_ids:mesh%full_ide,j), pole_gzs)
+          call zonal_sum(proc%zonal_circle, std(mesh%full_ids:mesh%full_ide,j), pole_std)
+          call zonal_sum(proc%zonal_circle, lnd(mesh%full_ids:mesh%full_ide,j), pole_lnd)
           call zonal_sum(proc%zonal_circle, n, pole_n)
-          gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,j) = pole_gzs / pole_n
-          std(mesh%full_lon_ibeg:mesh%full_lon_iend,j) = (pole_std - 2 * pole_gzs**2 * pole_n + pole_gzs**2) / pole_n / g
-          lnd(mesh%full_lon_ibeg:mesh%full_lon_iend,j) = pole_lnd / pole_n
+          gzs(mesh%full_ids:mesh%full_ide,j) = pole_gzs / pole_n
+          std(mesh%full_ids:mesh%full_ide,j) = (pole_std - 2 * pole_gzs**2 * pole_n + pole_gzs**2) / pole_n / g
+          lnd(mesh%full_ids:mesh%full_ide,j) = pole_lnd / pole_n
         end if
       end do
       call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
@@ -427,15 +427,15 @@ contains
                landmask => block%static%landmask)
     do cyc = 1, topo_smooth_cycles
       call filter_on_cell(block%big_filter, gzs, gzs_f)
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (abs(mesh%full_lat_deg(j)) > 60) then
           wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (30 * rad)))
           gzs(:,j) = wgt * gzs_f(:,j) + (1 - wgt) * gzs(:,j)
         end if
       end do
       call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
-      ! do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      !   do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      ! do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+      !   do i = mesh%full_ids, mesh%full_ide
       !     if (landmask(i,j) == 0) gzs(i,j) = 0
       !   end do
       ! end do

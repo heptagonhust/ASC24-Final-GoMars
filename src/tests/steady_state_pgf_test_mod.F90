@@ -49,10 +49,10 @@ contains
     u = 0.0
     v = 0.0
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         full_lon = mesh%full_lon(i)
         r = acos(sin(latc) * sin_lat + cos(latc) * cos_lat * cos(full_lon - lonc))
         if (r < Rm) gzs(i,j) = g * h0 / 2.d0 * (1.d0 + cos(pi * r / Rm)) * cos(pi * r / osm)**2
@@ -60,34 +60,34 @@ contains
     end do
     call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
         phs(i,j) = p0 * (1.d0 - gamma / T0 * gzs(i,j) / g)**(g / Rd / gamma) 
       end do
     end do
     call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
-    do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%half_kds, mesh%half_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
         end do
       end do
     end do
     call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
         end do
       end do
     end do
     call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           t (i,j,k) = T0 * (ph(i,j,k) / p0)**(Rd * gamma / g)
           pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
         end do

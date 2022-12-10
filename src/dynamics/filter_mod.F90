@@ -25,20 +25,20 @@ contains
   subroutine filter_on_cell_2d(filter, x, y)
 
     type(filter_type), intent(in) :: filter
-    real(r8), intent(inout) :: x(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                 filter%mesh%full_lat_lb:filter%mesh%full_lat_ub)
-    real(r8), intent(out), optional :: y(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                         filter%mesh%full_lat_lb:filter%mesh%full_lat_ub)
+    real(r8), intent(inout) :: x(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                 filter%mesh%full_jms:filter%mesh%full_jme)
+    real(r8), intent(out), optional :: y(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                         filter%mesh%full_jms:filter%mesh%full_jme)
 
-    real(r8) tmp(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub)
+    real(r8) tmp(filter%mesh%full_ims:filter%mesh%full_ime)
     integer i, j, n, hn
 
     associate (mesh => filter%mesh)
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       if (filter%ngrid_lon(j) > 1) then
         n  = filter%ngrid_lon(j)
         hn = (n - 1) / 2
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do i = mesh%full_ids, mesh%full_ide
           tmp(i) = sum(filter%wgt_lon(:n,j) * x(i-hn:i+hn,j))
         end do
         if (present(y)) then
@@ -57,23 +57,23 @@ contains
   subroutine filter_on_cell_3d(filter, x, y)
 
     type(filter_type), intent(in) :: filter
-    real(r8), intent(inout) :: x(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                 filter%mesh%full_lat_lb:filter%mesh%full_lat_ub, &
-                                 filter%mesh%full_lev_lb:filter%mesh%full_lev_ub)
-    real(r8), intent(out), optional :: y(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                         filter%mesh%full_lat_lb:filter%mesh%full_lat_ub, &
-                                         filter%mesh%full_lev_lb:filter%mesh%full_lev_ub)
+    real(r8), intent(inout) :: x(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                 filter%mesh%full_jms:filter%mesh%full_jme, &
+                                 filter%mesh%full_kms:filter%mesh%full_kme)
+    real(r8), intent(out), optional :: y(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                         filter%mesh%full_jms:filter%mesh%full_jme, &
+                                         filter%mesh%full_kms:filter%mesh%full_kme)
 
-    real(r8) tmp(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub)
+    real(r8) tmp(filter%mesh%full_ims:filter%mesh%full_ime)
     integer i, j, k, n, hn
 
     associate (mesh => filter%mesh)
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
         if (filter%ngrid_lon(j) > 1) then
           n  = filter%ngrid_lon(j)
           hn = (n - 1) / 2
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do i = mesh%full_ids, mesh%full_ide
             tmp(i) = sum(filter%wgt_lon(:n,j) * x(i-hn:i+hn,j,k))
           end do
           if (present(y)) then
@@ -93,23 +93,23 @@ contains
   subroutine filter_on_lon_edge(filter, x, y)
 
     type(filter_type), intent(in) :: filter
-    real(r8), intent(inout) :: x(filter%mesh%half_lon_lb:filter%mesh%half_lon_ub, &
-                                 filter%mesh%full_lat_lb:filter%mesh%full_lat_ub, &
-                                 filter%mesh%full_lev_lb:filter%mesh%full_lev_ub)
-    real(r8), intent(out), optional :: y(filter%mesh%half_lon_lb:filter%mesh%half_lon_ub, &
-                                         filter%mesh%full_lat_lb:filter%mesh%full_lat_ub, &
-                                         filter%mesh%full_lev_lb:filter%mesh%full_lev_ub)
+    real(r8), intent(inout) :: x(filter%mesh%half_ims:filter%mesh%half_ime, &
+                                 filter%mesh%full_jms:filter%mesh%full_jme, &
+                                 filter%mesh%full_kms:filter%mesh%full_kme)
+    real(r8), intent(out), optional :: y(filter%mesh%half_ims:filter%mesh%half_ime, &
+                                         filter%mesh%full_jms:filter%mesh%full_jme, &
+                                         filter%mesh%full_kms:filter%mesh%full_kme)
 
-    real(r8) tmp(filter%mesh%half_lon_lb:filter%mesh%half_lon_ub)
+    real(r8) tmp(filter%mesh%half_ims:filter%mesh%half_ime)
     integer i, j, k, n, hn
 
     associate (mesh => filter%mesh)
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
         if (filter%ngrid_lon(j) > 1) then
           n  = filter%ngrid_lon(j)
           hn = (n - 1) / 2
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          do i = mesh%half_ids, mesh%half_ide
             tmp(i) = sum(filter%wgt_lon(:n,j) * x(i-hn:i+hn,j,k))
           end do
           if (present(y)) then
@@ -129,23 +129,23 @@ contains
   subroutine filter_on_lat_edge(filter, x, y)
 
     type(filter_type), intent(in) :: filter
-    real(r8), intent(inout) :: x(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                 filter%mesh%half_lat_lb:filter%mesh%half_lat_ub, &
-                                 filter%mesh%full_lev_lb:filter%mesh%full_lev_ub)
-    real(r8), intent(out), optional :: y(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                         filter%mesh%half_lat_lb:filter%mesh%half_lat_ub, &
-                                         filter%mesh%full_lev_lb:filter%mesh%full_lev_ub)
+    real(r8), intent(inout) :: x(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                 filter%mesh%half_jms:filter%mesh%half_jme, &
+                                 filter%mesh%full_kms:filter%mesh%full_kme)
+    real(r8), intent(out), optional :: y(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                         filter%mesh%half_jms:filter%mesh%half_jme, &
+                                         filter%mesh%full_kms:filter%mesh%full_kme)
 
-    real(r8) tmp(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub)
+    real(r8) tmp(filter%mesh%full_ims:filter%mesh%full_ime)
     integer i, j, k, n, hn
 
     associate (mesh => filter%mesh)
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%half_jds, mesh%half_jde
         if (filter%ngrid_lat(j) > 1) then
           n  = filter%ngrid_lat(j)
           hn = (n - 1) / 2
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do i = mesh%full_ids, mesh%full_ide
             tmp(i) = sum(filter%wgt_lat(:n,j) * x(i-hn:i+hn,j,k))
           end do
           if (present(y)) then
@@ -165,23 +165,23 @@ contains
   subroutine filter_on_lev_edge(filter, x, y)
 
     type(filter_type), intent(in) :: filter
-    real(r8), intent(inout) :: x(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                 filter%mesh%full_lat_lb:filter%mesh%full_lat_ub, &
-                                 filter%mesh%half_lev_lb:filter%mesh%half_lev_ub)
-    real(r8), intent(out), optional :: y(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub, &
-                                         filter%mesh%full_lat_lb:filter%mesh%full_lat_ub, &
-                                         filter%mesh%half_lev_lb:filter%mesh%half_lev_ub)
+    real(r8), intent(inout) :: x(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                 filter%mesh%full_jms:filter%mesh%full_jme, &
+                                 filter%mesh%half_kms:filter%mesh%half_kme)
+    real(r8), intent(out), optional :: y(filter%mesh%full_ims:filter%mesh%full_ime, &
+                                         filter%mesh%full_jms:filter%mesh%full_jme, &
+                                         filter%mesh%half_kms:filter%mesh%half_kme)
 
-    real(r8) tmp(filter%mesh%full_lon_lb:filter%mesh%full_lon_ub)
+    real(r8) tmp(filter%mesh%full_ims:filter%mesh%full_ime)
     integer i, j, k, n, hn
 
     associate (mesh => filter%mesh)
-    do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do k = mesh%half_kds, mesh%half_kde
+      do j = mesh%full_jds, mesh%full_jde
         if (filter%ngrid_lon(j) > 1) then
           n  = filter%ngrid_lon(j)
           hn = (n - 1) / 2
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do i = mesh%full_ids, mesh%full_ide
             tmp(i) = sum(filter%wgt_lon(:n,j) * x(i-hn:i+hn,j,k))
           end do
           if (present(y)) then

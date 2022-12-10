@@ -45,10 +45,10 @@ contains
                gzs    => block%static%gzs)
     gzs(:,:) = 0.0
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%half_ids, mesh%half_ide
         lon = mesh%half_lon(i)
         a = cos_lat
         b = R * cos_lat**(R - 1) * sin_lat**2 * cos(R * lon)
@@ -58,10 +58,10 @@ contains
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
 
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do j = mesh%half_jds, mesh%half_jde
       cos_lat = mesh%half_cos_lat(j)
       sin_lat = mesh%half_sin_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         a = R * cos_lat**(R - 1) * sin_lat * sin(R * lon)
         v(i,j,1) = - radius * omg * a
@@ -69,14 +69,14 @@ contains
     end do
     call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
       a = 0.5 * omg * (2 * omega + omg) * cos_lat**2 + &
         0.25 * omg**2 * ((R + 1) * cos_lat**(2 * R + 2) + (2 * R**2 - R - 2) * cos_lat**(2 * R) - 2 * R**2 * cos_lat**(2 * R - 2))
       b = 2 * (omega + omg) * omg * cos_lat**R * &
         (R**2 + 2 * R + 2 - (R + 1)**2 * cos_lat**2) / (R + 1) / (R + 2)
       c = 0.25 * omg**2 * cos_lat**(2 * R) * ((R + 1) * cos_lat**2 - R - 2)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         gz(i,j,1) = gz0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
       end do

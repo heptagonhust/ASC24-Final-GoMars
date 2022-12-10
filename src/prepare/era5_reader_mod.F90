@@ -7,9 +7,9 @@ module era5_reader_mod
 
   implicit none
 
-  integer num_era5_lon
-  integer num_era5_lat
-  integer num_era5_lev
+  integer era5_nlon
+  integer era5_nlat
+  integer era5_nlev
 
   real(r8), allocatable, dimension(:    ) :: era5_lon
   real(r8), allocatable, dimension(:    ) :: era5_lat
@@ -36,20 +36,20 @@ contains
     if (is_root_proc()) call log_notice('Use ERA5 ' // trim(bkg_file) // ' as background.')
 
     call fiona_open_dataset('era5', file_path=bkg_file)
-    call fiona_get_dim('era5', 'longitude', size=num_era5_lon)
-    call fiona_get_dim('era5', 'latitude' , size=num_era5_lat)
-    call fiona_get_dim('era5', 'level'    , size=num_era5_lev)
+    call fiona_get_dim('era5', 'longitude', size=era5_nlon)
+    call fiona_get_dim('era5', 'latitude' , size=era5_nlat)
+    call fiona_get_dim('era5', 'level'    , size=era5_nlev)
 
-    allocate(era5_lon (num_era5_lon))
-    allocate(era5_lat (num_era5_lat))
-    allocate(era5_lev (num_era5_lev))
-    allocate(era5_u   (num_era5_lon,num_era5_lat,num_era5_lev))
-    allocate(era5_v   (num_era5_lon,num_era5_lat,num_era5_lev))
-    allocate(era5_t   (num_era5_lon,num_era5_lat,num_era5_lev))
-    allocate(era5_q   (num_era5_lon,num_era5_lat,num_era5_lev))
-    allocate(era5_ps  (num_era5_lon,num_era5_lat             ))
-    allocate(era5_mslp(num_era5_lon,num_era5_lat             ))
-    allocate(era5_psd (num_era5_lon,num_era5_lat             ))
+    allocate(era5_lon (era5_nlon))
+    allocate(era5_lat (era5_nlat))
+    allocate(era5_lev (era5_nlev))
+    allocate(era5_u   (era5_nlon,era5_nlat,era5_nlev))
+    allocate(era5_v   (era5_nlon,era5_nlat,era5_nlev))
+    allocate(era5_t   (era5_nlon,era5_nlat,era5_nlev))
+    allocate(era5_q   (era5_nlon,era5_nlat,era5_nlev))
+    allocate(era5_ps  (era5_nlon,era5_nlat             ))
+    allocate(era5_mslp(era5_nlon,era5_nlat             ))
+    allocate(era5_psd (era5_nlon,era5_nlat             ))
 
     call fiona_start_input('era5')
     call fiona_input    ('era5', 'longitude', era5_lon )
@@ -65,16 +65,16 @@ contains
     call fiona_end_input('era5')
 
     ! Reverse latitude order (from South Pole to North Pole).
-    allocate(tmp(num_era5_lon,num_era5_lat))
-    tmp(1,:) = era5_lat(num_era5_lat:1:-1); era5_lat = tmp(1,:)
-    do k = 1, num_era5_lev
-      tmp = era5_u(:,num_era5_lat:1:-1,k); era5_u(:,:,k) = tmp
-      tmp = era5_v(:,num_era5_lat:1:-1,k); era5_v(:,:,k) = tmp
-      tmp = era5_t(:,num_era5_lat:1:-1,k); era5_t(:,:,k) = tmp
-      tmp = era5_q(:,num_era5_lat:1:-1,k); era5_q(:,:,k) = tmp
+    allocate(tmp(era5_nlon,era5_nlat))
+    tmp(1,:) = era5_lat(era5_nlat:1:-1); era5_lat = tmp(1,:)
+    do k = 1, era5_nlev
+      tmp = era5_u(:,era5_nlat:1:-1,k); era5_u(:,:,k) = tmp
+      tmp = era5_v(:,era5_nlat:1:-1,k); era5_v(:,:,k) = tmp
+      tmp = era5_t(:,era5_nlat:1:-1,k); era5_t(:,:,k) = tmp
+      tmp = era5_q(:,era5_nlat:1:-1,k); era5_q(:,:,k) = tmp
     end do
-    tmp = era5_ps  (:,num_era5_lat:1:-1); era5_ps   = tmp
-    tmp = era5_mslp(:,num_era5_lat:1:-1); era5_mslp = tmp
+    tmp = era5_ps  (:,era5_nlat:1:-1); era5_ps   = tmp
+    tmp = era5_mslp(:,era5_nlat:1:-1); era5_mslp = tmp
     deallocate(tmp)
 
     ! Change units.

@@ -140,16 +140,16 @@ CONTAINS
                t     => block%dstate(1)%t    , &
                pt    => block%dstate(1)%pt   , &
                gzs   => block%static%gzs     )
-    q(mesh%full_lon_lb:mesh%full_lon_ub, &
-      mesh%full_lat_lb:mesh%full_lat_ub, &
-      mesh%full_lev_lb:mesh%full_lev_ub) => block%adv_batches(1)%q(:,:,:,1,block%adv_batches(1)%old)
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    q(mesh%full_ims:mesh%full_ime, &
+      mesh%full_jms:mesh%full_jme, &
+      mesh%full_kms:mesh%full_kme) => block%adv_batches(1)%q(:,:,:,1,block%adv_batches(1)%old)
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
         ! Get surface pressure.
         z(i,j,1) = 0
         call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,1), z(i,j,1), 1, &
           u(i,j,1), v(i,j,1), t(i,j,1), thetav, gzs(i,j), ps(i,j), rho, q(i,j,1))
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do k = mesh%full_kds, mesh%full_kde
           p(i,j,k) = vert_coord_calc_ph(k, ps(i,j))
           call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,k), z(i,j,k), 0, &
             u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, q(i,j,k))
@@ -166,17 +166,17 @@ CONTAINS
     call fill_halo(block%halo,  pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     call fill_halo(block%halo,  gz, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     call fill_halo(block%halo,   q, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%half_ids, mesh%half_ide
           u_lon(i,j,k) = 0.5_r8 * (u(i,j,k) + u(i+1,j,k))
         end do
       end do
     end do
     call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
           v_lat(i,j,k) = 0.5_r8 * (v(i,j,k) + v(i,j+1,k))
         end do
       end do

@@ -52,7 +52,7 @@ contains
                pgf_lon    => dtend%pgf_lon    , & ! out
                pgf_lat    => dtend%pgf_lat)       ! out
     if (hydrostatic) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = mesh%full_kds, mesh%full_kde
         !
         !   4             3
         ! i,j,k        i+1,j,k
@@ -66,8 +66,8 @@ contains
         ! i,j,k+1      i+1,j,k+1  --> east
         !   1             2
         !
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
             L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i+1,j,k))
             dph1 = ph_exn_lev(i+1,j,k+1) - ph_exn_lev(i  ,j,k  ) ! 2 - 4
             dph2 = ph_exn_lev(i  ,j,k+1) - ph_exn_lev(i+1,j,k  ) ! 1 - 3
@@ -89,8 +89,8 @@ contains
         ! i,j,k+1      i,j+1,k+1  --> north
         !   1             2
         !
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
             L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i,j+1,k))
             dph1 = ph_exn_lev(i,j+1,k+1) - ph_exn_lev(i,j  ,k  ) ! 2 - 4
             dph2 = ph_exn_lev(i,j  ,k+1) - ph_exn_lev(i,j+1,k  ) ! 1 - 3
@@ -101,9 +101,9 @@ contains
         end do
       end do
     else if (nonhydrostatic) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
             dpp1 = p_lev     (i+1,j,k+1) - p_lev     (i  ,j,k  ) - ( &
                    ph_lev    (i+1,j,k+1) - ph_lev    (i  ,j,k  )) ! 2 - 4
             dpp2 = p_lev     (i  ,j,k+1) - p_lev     (i+1,j,k  ) - ( &
@@ -120,8 +120,8 @@ contains
             ) / mesh%de_lon(j)
           end do
         end do
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
             dpp1 = p_lev     (i,j+1,k+1) - p_lev     (i,j  ,k  ) - ( &
                    ph_lev    (i,j+1,k+1) - ph_lev    (i,j  ,k  )) ! 2 - 4
             dpp2 = p_lev     (i,j  ,k+1) - p_lev     (i,j+1,k  ) - ( &

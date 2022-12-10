@@ -20,8 +20,8 @@ contains
     real(r8), intent(out) :: hyai(29)
     real(r8), intent(out) :: hybi(29)
 
-    if (global_mesh%num_full_lev /= 28 .and. is_root_proc()) then
-      call log_error('num_lev should be 28 in namelist!')
+    if (global_mesh%full_nlev /= 28 .and. is_root_proc()) then
+      call log_error('nlev should be 28 in namelist!')
     end if
 
     hyai = [       &

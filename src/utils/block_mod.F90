@@ -51,20 +51,20 @@ module block_mod
 
 contains
 
-  subroutine block_init_stage_1(this, id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+  subroutine block_init_stage_1(this, id, lon_hw, lat_hw, ids, ide, jds, jde)
 
     class(block_type), intent(inout) :: this
     integer, intent(in) :: id
-    integer, intent(in) :: lon_halo_width
-    integer, intent(in) :: lat_halo_width
-    integer, intent(in) :: lon_ibeg
-    integer, intent(in) :: lon_iend
-    integer, intent(in) :: lat_ibeg
-    integer, intent(in) :: lat_iend
+    integer, intent(in) :: lon_hw
+    integer, intent(in) :: lat_hw
+    integer, intent(in) :: ids
+    integer, intent(in) :: ide
+    integer, intent(in) :: jds
+    integer, intent(in) :: jde
 
     this%id = id
 
-    call this%mesh%init_from_parent(global_mesh, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+    call this%mesh%init_from_parent(global_mesh, this%id, lon_hw, lat_hw, ids, ide, jds, jde)
     call this%big_filter%init(this%mesh, 'big_filter')
     call this%small_filter_phs%init(this%mesh, 'small_filter_phs')
     call this%small_filter_pt %init(this%mesh, 'small_filter_pt')
@@ -72,14 +72,14 @@ contains
 
   end subroutine block_init_stage_1
 
-  subroutine block_init_stage_2(this, lon_halo_width)
+  subroutine block_init_stage_2(this, lon_hw)
 
     class(block_type), intent(inout) :: this
-    integer, intent(in) :: lon_halo_width
+    integer, intent(in) :: lon_hw
 
     integer i
 
-    call this%mesh%reinit(lon_halo_width)
+    call this%mesh%reinit(lon_hw)
 
     if (.not. allocated(this%dstate)) then
       select case (trim(time_scheme))

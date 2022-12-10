@@ -7,9 +7,9 @@ module fnl_reader_mod
 
   implicit none
 
-  integer num_fnl_lon
-  integer num_fnl_lat
-  integer num_fnl_lev
+  integer fnl_nlon
+  integer fnl_nlat
+  integer fnl_nlev
 
   real(r8), allocatable, dimension(:    ) :: fnl_lon
   real(r8), allocatable, dimension(:    ) :: fnl_lat
@@ -40,8 +40,8 @@ contains
     call codes_index_select(idx, 'shortName', 'u')
     call codes_index_select(idx, 'typeOfLevel', 'isobaricInhPa')
     call codes_new_from_index(idx, igrib, iret)
-    call codes_get(igrib, 'Ni', num_fnl_lon)
-    call codes_get(igrib, 'Nj', num_fnl_lat)
+    call codes_get(igrib, 'Ni', fnl_nlon)
+    call codes_get(igrib, 'Nj', fnl_nlat)
     call codes_get(igrib, 'longitudeOfFirstGridPoint', start_lon); start_lon = start_lon * 1d-6
     call codes_get(igrib, 'longitudeOfLastGridPoint' , end_lon  ); end_lon   = end_lon   * 1d-6
     call codes_get(igrib, 'latitudeOfFirstGridPoint' , start_lat); start_lat = start_lat * 1d-6
@@ -50,31 +50,31 @@ contains
     call codes_get(igrib, 'jDirectionIncrement'      , dlat     ); dlat      = dlat      * 1d-6
     call codes_get(igrib, 'numberOfPoints', numberOfPoints)
     do while (iret /= CODES_END_OF_INDEX)
-      num_fnl_lev = num_fnl_lev + 1
-      call codes_get(igrib, 'level', plev(num_fnl_lev))
+      fnl_nlev = fnl_nlev + 1
+      call codes_get(igrib, 'level', plev(fnl_nlev))
       call codes_new_from_index(idx, igrib, iret)
     end do
     call codes_release(igrib)
 
-    allocate(fnl_lon(num_fnl_lon))
-    allocate(fnl_lat(num_fnl_lat))
-    allocate(fnl_lev(num_fnl_lev)); fnl_lev = plev(:num_fnl_lev)
-    allocate(fnl_u  (num_fnl_lon,num_fnl_lat,num_fnl_lev))
-    allocate(fnl_v  (num_fnl_lon,num_fnl_lat,num_fnl_lev))
-    allocate(fnl_t  (num_fnl_lon,num_fnl_lat,num_fnl_lev))
-    allocate(fnl_ps (num_fnl_lon,num_fnl_lat))
-    allocate(fnl_zs (num_fnl_lon,num_fnl_lat))
+    allocate(fnl_lon(fnl_nlon))
+    allocate(fnl_lat(fnl_nlat))
+    allocate(fnl_lev(fnl_nlev)); fnl_lev = plev(:fnl_nlev)
+    allocate(fnl_u  (fnl_nlon,fnl_nlat,fnl_nlev))
+    allocate(fnl_v  (fnl_nlon,fnl_nlat,fnl_nlev))
+    allocate(fnl_t  (fnl_nlon,fnl_nlat,fnl_nlev))
+    allocate(fnl_ps (fnl_nlon,fnl_nlat))
+    allocate(fnl_zs (fnl_nlon,fnl_nlat))
 
     allocate(global_lons_dummy(numberOfPoints))
     allocate(global_lats_dummy(numberOfPoints))
     allocate(global_array_dummy(numberOfPoints))
-    allocate(global_array(num_fnl_lon,num_fnl_lat))
+    allocate(global_array(fnl_nlon,fnl_nlat))
 
-    do i = 1, num_fnl_lon
+    do i = 1, fnl_nlon
       fnl_lon(i) = start_lon + (i - 1) * dlon
     end do
     ! NOTE: Here we like from South Pole to North Pole.
-    do j = 1, num_fnl_lat
+    do j = 1, fnl_nlat
       fnl_lat(j) = end_lat + (j - 1) * dlat
     end do
 
@@ -87,11 +87,11 @@ contains
     k = 0
     do while (iret /= CODES_END_OF_INDEX)
       call codes_grib_get_data(igrib, global_lats_dummy, global_lons_dummy, global_array_dummy)
-      global_array = reshape(global_array_dummy, [num_fnl_lon,num_fnl_lat])
+      global_array = reshape(global_array_dummy, [fnl_nlon,fnl_nlat])
       k = k + 1
-      do j = 1, num_fnl_lat
-        do i = 1, num_fnl_lon
-          fnl_u(i,j,k) = global_array(i,num_fnl_lat-j+1)
+      do j = 1, fnl_nlat
+        do i = 1, fnl_nlon
+          fnl_u(i,j,k) = global_array(i,fnl_nlat-j+1)
         end do
       end do
       call codes_new_from_index(idx, igrib, iret)
@@ -105,11 +105,11 @@ contains
     k = 0
     do while (iret /= CODES_END_OF_INDEX)
       call codes_grib_get_data(igrib, global_lats_dummy, global_lons_dummy, global_array_dummy)
-      global_array = reshape(global_array_dummy, [num_fnl_lon,num_fnl_lat])
+      global_array = reshape(global_array_dummy, [fnl_nlon,fnl_nlat])
       k = k + 1
-      do j = 1, num_fnl_lat
-        do i = 1, num_fnl_lon
-          fnl_v(i,j,k) = global_array(i,num_fnl_lat-j+1)
+      do j = 1, fnl_nlat
+        do i = 1, fnl_nlon
+          fnl_v(i,j,k) = global_array(i,fnl_nlat-j+1)
         end do
       end do
       call codes_new_from_index(idx, igrib, iret)
@@ -122,11 +122,11 @@ contains
     k = 0
     do while (iret /= CODES_END_OF_INDEX)
       call codes_grib_get_data(igrib, global_lats_dummy, global_lons_dummy, global_array_dummy)
-      global_array = reshape(global_array_dummy, [num_fnl_lon,num_fnl_lat])
+      global_array = reshape(global_array_dummy, [fnl_nlon,fnl_nlat])
       k = k + 1
-      do j = 1, num_fnl_lat
-        do i = 1, num_fnl_lon
-          fnl_t(i,j,k) = global_array(i,num_fnl_lat-j+1)
+      do j = 1, fnl_nlat
+        do i = 1, fnl_nlon
+          fnl_t(i,j,k) = global_array(i,fnl_nlat-j+1)
         end do
       end do
       call codes_new_from_index(idx, igrib, iret)
@@ -138,10 +138,10 @@ contains
     call codes_index_select(idx, 'typeOfLevel', 'surface')
     call codes_new_from_index(idx, igrib, iret)
     call codes_grib_get_data(igrib, global_lats_dummy, global_lons_dummy, global_array_dummy)
-    global_array = reshape(global_array_dummy, [num_fnl_lon,num_fnl_lat])
-    do j = 1, num_fnl_lat
-      do i = 1, num_fnl_lon
-        fnl_ps(i,j) = global_array(i,num_fnl_lat-j+1)
+    global_array = reshape(global_array_dummy, [fnl_nlon,fnl_nlat])
+    do j = 1, fnl_nlat
+      do i = 1, fnl_nlon
+        fnl_ps(i,j) = global_array(i,fnl_nlat-j+1)
       end do
     end do
     call codes_release(igrib)
@@ -151,10 +151,10 @@ contains
     call codes_index_select(idx, 'typeOfLevel', 'surface')
     call codes_new_from_index(idx, igrib, iret)
     call codes_grib_get_data(igrib, global_lats_dummy, global_lons_dummy, global_array_dummy)
-    global_array = reshape(global_array_dummy, [num_fnl_lon,num_fnl_lat])
-    do j = 1, num_fnl_lat
-      do i = 1, num_fnl_lon
-        fnl_zs(i,j) = global_array(i,num_fnl_lat-j+1)
+    global_array = reshape(global_array_dummy, [fnl_nlon,fnl_nlat])
+    do j = 1, fnl_nlat
+      do i = 1, fnl_nlon
+        fnl_zs(i,j) = global_array(i,fnl_nlat-j+1)
       end do
     end do
     call codes_release(igrib)

@@ -48,9 +48,9 @@ contains
     ! Background
     q(:,:,:,1,old) = 1
     ! Cosine bell
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    do j = mesh%full_jds, mesh%full_jde
       lat = mesh%full_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         r = calc_distance(lon0, lat0, lon, lat)
         if (r < R0) then
@@ -81,18 +81,18 @@ contains
                mfx  => dstate%mfx_lon, &
                mfy  => dstate%mfy_lat)
     m = 1
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       lat = mesh%full_lat(j)
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%half_ids, mesh%half_ide
         lon = mesh%half_lon(i)
         u(i,j,1) = u0 * (cos(lat) * cos(alpha) + sin(lat) * cos(lon) * sin(alpha))
       end do
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     mfx = u
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do j = mesh%half_jds, mesh%half_jde
       lat = mesh%half_lat(j)
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         v(i,j,1) = -u0 * sin(lon) * sin(alpha)
       end do

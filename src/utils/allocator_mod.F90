@@ -38,13 +38,13 @@ contains
     if (allocated(array)) deallocate(array)
 
     if (present(full_lon)) then
-      if (full_lon) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub))
+      if (full_lon) allocate(array(mesh%full_ims:mesh%full_ime))
     else if (present(half_lon)) then
-      if (half_lon) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub))
+      if (half_lon) allocate(array(mesh%half_ims:mesh%half_ime))
     else if (present(full_lat)) then
-      if (full_lat) allocate(array(mesh%full_lat_lb:mesh%full_lat_ub))
+      if (full_lat) allocate(array(mesh%full_jms:mesh%full_jme))
     else if (present(half_lat)) then
-      if (half_lat) allocate(array(mesh%half_lat_lb:mesh%half_lat_ub))
+      if (half_lat) allocate(array(mesh%half_jms:mesh%half_jme))
     else
       call log_error('allocate_array_1d_r4: Missing full_lon, half_lon, full_lat or half_lat argument!')
     end if
@@ -63,15 +63,15 @@ contains
     logical        , intent(in ), optional    :: half_lat
 
     if (present(full_lon) .and. present(full_lat)) then
-      if (full_lon .and. full_lat) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      if (full_lon .and. full_lat) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme))
     else if (present(full_lon) .and. present(half_lat)) then
-      if (full_lon .and. half_lat) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub))
+      if (full_lon .and. half_lat) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme))
     else if (present(half_lon) .and. present(full_lat)) then
-      if (half_lon .and. full_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      if (half_lon .and. full_lat) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme))
     else if (present(half_lon) .and. present(half_lat)) then
-      if (half_lon .and. half_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub))
+      if (half_lon .and. half_lat) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme))
     end if
 
     array = 0.0d0
@@ -90,23 +90,23 @@ contains
     logical        , intent(in ), optional    :: half_lev
 
     if (present(full_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     end if
 
     array = 0.0d0
@@ -125,13 +125,13 @@ contains
     if (allocated(array)) deallocate(array)
 
     if (present(full_lon)) then
-      if (full_lon) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub))
+      if (full_lon) allocate(array(mesh%full_ims:mesh%full_ime))
     else if (present(half_lon)) then
-      if (half_lon) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub))
+      if (half_lon) allocate(array(mesh%half_ims:mesh%half_ime))
     else if (present(full_lat)) then
-      if (full_lat) allocate(array(mesh%full_lat_lb:mesh%full_lat_ub))
+      if (full_lat) allocate(array(mesh%full_jms:mesh%full_jme))
     else if (present(half_lat)) then
-      if (half_lat) allocate(array(mesh%half_lat_lb:mesh%half_lat_ub))
+      if (half_lat) allocate(array(mesh%half_jms:mesh%half_jme))
     else
       call log_error('allocate_array_1d_r8: Missing full_lon, half_lon, full_lat or half_lat argument!')
     end if
@@ -150,15 +150,15 @@ contains
     logical        , intent(in ), optional    :: half_lat
 
     if (present(full_lon) .and. present(full_lat)) then
-      if (full_lon .and. full_lat) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      if (full_lon .and. full_lat) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme))
     else if (present(full_lon) .and. present(half_lat)) then
-      if (full_lon .and. half_lat) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub))
+      if (full_lon .and. half_lat) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme))
     else if (present(half_lon) .and. present(full_lat)) then
-      if (half_lon .and. full_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      if (half_lon .and. full_lat) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme))
     else if (present(half_lon) .and. present(half_lat)) then
-      if (half_lon .and. half_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub))
+      if (half_lon .and. half_lat) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme))
     end if
 
     array = 0.0d0
@@ -177,23 +177,23 @@ contains
     logical        , intent(in ), optional    :: half_lev
 
     if (present(full_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     end if
 
     array = 0.0d0
@@ -212,23 +212,23 @@ contains
     logical        , intent(in ), optional    :: half_lev
 
     if (present(full_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     end if
 
     array = 0
@@ -247,23 +247,23 @@ contains
     logical        , intent(in ), optional    :: half_lev
 
     if (present(full_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     end if
 
     array = 0.0d0
@@ -282,23 +282,23 @@ contains
     logical        , intent(in ), optional    :: half_lev
 
     if (present(full_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     end if
 
     array = 0.0d0
@@ -317,13 +317,13 @@ contains
     if (allocated(array)) deallocate(array)
 
     if (present(full_lon)) then
-      if (full_lon) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub))
+      if (full_lon) allocate(array(mesh%full_ims:mesh%full_ime))
     else if (present(half_lon)) then
-      if (half_lon) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub))
+      if (half_lon) allocate(array(mesh%half_ims:mesh%half_ime))
     else if (present(full_lat)) then
-      if (full_lat) allocate(array(mesh%full_lat_lb:mesh%full_lat_ub))
+      if (full_lat) allocate(array(mesh%full_jms:mesh%full_jme))
     else if (present(half_lat)) then
-      if (half_lat) allocate(array(mesh%half_lat_lb:mesh%half_lat_ub))
+      if (half_lat) allocate(array(mesh%half_jms:mesh%half_jme))
     else
       call log_error('allocate_array_1d_r16: Missing full_lon, half_lon, full_lat or half_lat argument!')
     end if
@@ -342,15 +342,15 @@ contains
     logical        , intent(in ), optional    :: half_lat
 
     if (present(full_lon) .and. present(full_lat)) then
-      if (full_lon .and. full_lat) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      if (full_lon .and. full_lat) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme))
     else if (present(full_lon) .and. present(half_lat)) then
-      if (full_lon .and. half_lat) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub))
+      if (full_lon .and. half_lat) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme))
     else if (present(half_lon) .and. present(full_lat)) then
-      if (half_lon .and. full_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      if (half_lon .and. full_lat) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme))
     else if (present(half_lon) .and. present(half_lat)) then
-      if (half_lon .and. half_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub))
+      if (half_lon .and. half_lat) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme))
     end if
 
     array = 0.0d0
@@ -369,23 +369,23 @@ contains
     logical        , intent(in ), optional    :: half_lev
 
     if (present(full_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. full_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (full_lon .and. half_lat .and. full_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(full_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. full_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(full_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (full_lon .and. half_lat .and. half_lev) allocate(array(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(full_lev)) then
-      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. full_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(full_lev)) then
-      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      if (half_lon .and. half_lat .and. full_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
     else if (present(half_lon) .and. present(full_lat) .and. present(half_lev)) then
-      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. full_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
     else if (present(half_lon) .and. present(half_lat) .and. present(half_lev)) then
-      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      if (half_lon .and. half_lat .and. half_lev) allocate(array(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
     else
-      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(array(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
     end if
 
     array = 0.0d0

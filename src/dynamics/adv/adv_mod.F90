@@ -42,39 +42,39 @@ module adv_mod
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: mfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%full_kms:block%mesh%full_kme)
+      real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%full_kms:block%mesh%full_kme)
+      real(r8), intent(out) :: mfy(block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%half_jms:block%mesh%half_jme, &
+                                   block%mesh%full_kms:block%mesh%full_kme)
       real(r8), intent(in), optional :: dt
     end subroutine calc_hflx_interface
     subroutine calc_vflx_interface(block, batch, m, mfz, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%full_kms:block%mesh%full_kme)
+      real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
       real(r8), intent(in), optional :: dt
     end subroutine calc_vflx_interface
     subroutine calc_vflx_lev_interface(block, batch, m, mfz, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-      real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%full_kms:block%mesh%full_kme)
       real(r8), intent(in), optional :: dt
     end subroutine calc_vflx_lev_interface
   end interface
@@ -153,8 +153,8 @@ contains
     integer, intent(in) :: itime
 
     integer i, j, k, l, m
-    real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
-    real(r8) pole(block%mesh%num_full_lev), qm0, qm1, qm2, qm0_half
+    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
+    real(r8) pole(block%mesh%full_nlev), qm0, qm1, qm2, qm0_half
 
     call adv_accum_wind(block, itime)
 
@@ -178,9 +178,9 @@ contains
           call fill_halo(block%halo, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
                          north_halo=.false.,  west_halo=.false., east_halo=.false.)
           ! Update tracer mixing ratio.
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do k = mesh%full_kds, mesh%full_kde
+            do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+              do i = mesh%full_ids, mesh%full_ide
                 q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) - ( &
                   (                                                &
                     qmf_lon(i  ,j,k) -                             &
@@ -194,65 +194,65 @@ contains
             end do
           end do
           if (mesh%has_south_pole()) then
-            j = mesh%full_lat_ibeg
-            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            j = mesh%full_jds
+            do k = mesh%full_kds, mesh%full_kde
+              do i = mesh%full_ids, mesh%full_ide
                 work(i,k) = qmf_lat(i,j,k)
               end do
             end do
             call zonal_sum(proc%zonal_circle, work, pole)
-            pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j) * dt_adv
-            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
+            do k = mesh%full_kds, mesh%full_kde
+              do i = mesh%full_ids, mesh%full_ide
                 q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) - pole(k)
               end do
             end do
           end if
           if (mesh%has_north_pole()) then
-            j = mesh%full_lat_iend
-            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            j = mesh%full_jde
+            do k = mesh%full_kds, mesh%full_kde
+              do i = mesh%full_ids, mesh%full_ide
                 work(i,k) = qmf_lat(i,j-1,k)
               end do
             end do
             call zonal_sum(proc%zonal_circle, work, pole)
-            pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j) * dt_adv
-            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
+            do k = mesh%full_kds, mesh%full_kde
+              do i = mesh%full_ids, mesh%full_ide
                 q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) + pole(k)
               end do
             end do
           end if
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do k = mesh%full_kds, mesh%full_kde
+            do j = mesh%full_jds, mesh%full_jde
+              do i = mesh%full_ids, mesh%full_ide
                 q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%m(i,j,k)
               end do
             end do
           end do
           ! Set upper and lower boundary conditions.
-          do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
-            q(:,:,k,l,new) = q(:,:,mesh%full_lev_ibeg,l,new)
+          do k = mesh%full_kms, mesh%full_kds - 1
+            q(:,:,k,l,new) = q(:,:,mesh%full_kds,l,new)
           end do
-          do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
-            q(:,:,k,l,new) = q(:,:,mesh%full_lev_iend,l,new)
+          do k = mesh%full_kde + 1, mesh%full_kme
+            q(:,:,k,l,new) = q(:,:,mesh%full_kde,l,new)
           end do
           call adv_calc_tracer_vflx(block, block%adv_batches(m), q(:,:,:,l,new), qmf_lev)
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do k = mesh%full_kds, mesh%full_kde
+            do j = mesh%full_jds, mesh%full_jde
+              do i = mesh%full_ids, mesh%full_ide
                 q(i,j,k,l,new) = q(i,j,k,l,new) * block%dstate(itime)%m(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
               end do
             end do
           end do
           ! Fill possible negative values.
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do k = mesh%full_kds, mesh%full_kde
+            do j = mesh%full_jds, mesh%full_jde
+              do i = mesh%full_ids, mesh%full_ide
                 if (q(i,j,k,l,new) < 0) then
                   qm0 = q(i,j,k  ,l,new)
-                  qm1 = merge(q(i,j,k-1,l,new), 0.0_r8, k > mesh%full_lev_ibeg)
-                  qm2 = merge(q(i,j,k+1,l,new), 0.0_r8, k < mesh%full_lev_iend)
+                  qm1 = merge(q(i,j,k-1,l,new), 0.0_r8, k > mesh%full_kds)
+                  qm2 = merge(q(i,j,k+1,l,new), 0.0_r8, k < mesh%full_kde)
                   qm0_half = 0.5_r8 * qm0
                   if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
                     if (qm1 > 0) q(i,j,k-1,l,new) = qm1 - qm0_half
@@ -271,9 +271,9 @@ contains
           end do
           call fill_halo(block%halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
           call filter_on_cell(block%small_filter_phs, q(:,:,:,l,new))
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do k = mesh%full_kds, mesh%full_kde
+            do j = mesh%full_jds, mesh%full_jde
+              do i = mesh%full_ids, mesh%full_ide
                 q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%m(i,j,k)
               end do
             end do
@@ -365,10 +365,10 @@ contains
       end do
       call block%adv_batches(i)%allocate_tracers(nbatch_tracer)
       associate (mesh => block%mesh)
-      allocate(block%adv_batches(i)%q      (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,nbatch_tracer,2))
-      allocate(block%adv_batches(i)%qmf_lon(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
-      allocate(block%adv_batches(i)%qmf_lat(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
-      allocate(block%adv_batches(i)%qmf_lev(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      allocate(block%adv_batches(i)%q      (mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme,nbatch_tracer,2))
+      allocate(block%adv_batches(i)%qmf_lon(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
+      allocate(block%adv_batches(i)%qmf_lat(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
+      allocate(block%adv_batches(i)%qmf_lev(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
       end associate
       k = 0
       do j = 1, ntracer
@@ -412,7 +412,7 @@ contains
           call block%adv_batches(l)%accum_mf_cell( &
             block%dstate(itime)%mfx_lon          , &
             block%dstate(itime)%mfy_lat          )
-          if (global_mesh%num_full_lev > 1) then
+          if (global_mesh%full_nlev > 1) then
             call block%adv_batches(l)%accum_we_lev( &
               block%dstate(itime)%we_lev          , &
               block%dstate(itime)%m_lev           )
