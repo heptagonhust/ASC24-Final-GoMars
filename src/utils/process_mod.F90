@@ -201,9 +201,7 @@ contains
 
     if (.not. allocated(blocks)) allocate(blocks(1))
 
-    ! Use lon_hw in global_mesh.
-    call blocks(1)%init_stage_1(proc%id, global_mesh%lon_hw, global_mesh%lat_hw, &
-                                proc%ids, proc%ide, proc%jds, proc%jde)
+    call blocks(1)%init_stage_1(proc%id, proc%ids, proc%ide, proc%jds, proc%jde)
 
     ! Each process calculate lon_hw from its big_filter%ngrid_lat(:).
     max_hw = 2
@@ -229,7 +227,7 @@ contains
     end if
 
     call global_mesh%reinit(max(lon_hw, proc%ngb(south)%lon_hw, proc%ngb(north)%lon_hw))
-    call blocks(1)%init_stage_2(global_mesh%lon_hw)
+    call blocks(1)%init_stage_2()
 
     call proc%ngb(west )%init(west , jds=proc%jds, jde=proc%jde)
     call proc%ngb(east )%init(east , jds=proc%jds, jde=proc%jde)

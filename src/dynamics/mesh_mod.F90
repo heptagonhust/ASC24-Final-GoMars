@@ -434,16 +434,11 @@ contains
 
   end subroutine mesh_init_global
 
-  subroutine mesh_init_from_parent(this, parent, id,               &
-                                   lon_hw, lat_hw, &
-                                   ids, ide, jds, jde, &
-                                   keep_lev)
+  subroutine mesh_init_from_parent(this, parent, id, ids, ide, jds, jde, keep_lev)
 
     class(mesh_type), intent(inout) :: this
     class(mesh_type), intent(in), target :: parent
     integer, intent(in) :: id
-    integer, intent(in) :: lon_hw
-    integer, intent(in) :: lat_hw
     integer, intent(in) :: ids
     integer, intent(in) :: ide
     integer, intent(in) :: jds
@@ -471,18 +466,14 @@ contains
 
     this%full_nlev = parent%full_nlev
     this%half_nlev = parent%half_nlev
-    this%full_kms  = parent%full_kms
-    this%full_kme  = parent%full_kme
     this%full_kds  = parent%full_kds
     this%full_kde  = parent%full_kde
-    this%half_kms  = parent%half_kms
-    this%half_kme  = parent%half_kme
     this%half_kds  = parent%half_kds
     this%half_kde  = parent%half_kde
 
     this%id        = id
-    this%lon_hw    = lon_hw
-    this%lat_hw    = lat_hw
+    this%lon_hw    = parent%lon_hw
+    this%lat_hw    = parent%lat_hw
     this%start_lon = parent%full_lon(ids)
     this%end_lon   = parent%full_lon(ide) + parent%dlon
     this%start_lat = merge(parent%half_lat(jds-1), -pi05, .not. this%has_south_pole())
@@ -550,7 +541,7 @@ contains
   subroutine mesh_reinit(this, lon_hw)
 
     class(mesh_type), intent(inout) :: this
-    integer, intent(in) :: lon_hw
+    integer, intent(in), optional :: lon_hw
 
     integer nlon, nlat, nlev, lat_hw
 
@@ -559,14 +550,12 @@ contains
     nlev = global_mesh%full_nlev
     lat_hw = global_mesh%lat_hw
 
-    ! Replace lon_hw with new value.
-    this%lon_hw = lon_hw
     if (associated(this%parent)) then
-      call this%init_from_parent(this%parent, this%id, this%lon_hw, this%lat_hw, &
-                                 this%full_ids, this%full_ide, this%full_jds, this%full_jde, &
-                                 keep_lev=.true.)
-    else
+      call this%init_from_parent(this%parent, this%id, this%full_ids, this%full_ide, this%full_jds, this%full_jde, keep_lev=.true.)
+    else if (present(lon_hw)) then
       call this%init_global(nlon, nlat, nlev, 0, lon_hw, lat_hw, keep_lev=.true.)
+    else
+      call log_error('Logical error!', __FILE__, __LINE__)
     end if
 
   end subroutine mesh_reinit
