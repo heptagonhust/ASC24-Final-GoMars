@@ -6,6 +6,7 @@ import subprocess
 import sys
 import hashlib
 import time
+import signal
 
 parser = argparse.ArgumentParser('Run GMCORE tests.')
 parser.add_argument('--slurm', help='Use SLURM job manager', action='store_true')
@@ -18,6 +19,7 @@ parser.add_argument('-c', '--cases', help='Which cases to run', nargs='+', defau
 args = parser.parse_args()
 
 gmcore_root = os.path.dirname(os.path.realpath(__file__))
+job_name = 'gmcore_' + hashlib.new('ripemd160', str(time.time()).encode()).hexdigest()[:8]
 
 if args.node_list:
 	args.node_list = os.path.abspath(args.node_list)
@@ -32,12 +34,17 @@ def run(cmd):
 	print(f'==> {cmd}')
 	res = subprocess.run(cmd, shell=True, check=True)
 
+def clean_job(sig, frame):
+	run(f'scancel -n {job_name}')
+	exit(1)
+	
+signal.signal(signal.SIGINT, clean_job)
+
 def mpiexec(exe, namelist, args):
 	if args.slurm:
 		if not args.queue:
 			print('[Error]: No job queue is provided!')
 			exit(1)
-		job_name = 'gmcore_' + hashlib.new('ripemd160', str(time.time()).encode()).hexdigest()[:8]
 		run(f'srun -p {args.queue} -n {args.np} --ntasks-per-node {args.ntasks_per_node} --mpi=pmi2 --exclusive -J {job_name} {gmcore_root}/build/{exe} {namelist}')
 	elif args.node_list:
 		run(f'mpiexec -rr -f {args.node_list} -np {args.np} {gmcore_root}/build/{exe} {namelist}')
