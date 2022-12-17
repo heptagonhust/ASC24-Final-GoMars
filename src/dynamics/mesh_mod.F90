@@ -312,7 +312,6 @@ contains
     end do
 
     do j = this%half_jds, this%half_jde
-      this%area_vtx(j) = radius**2 * this%dlon * (this%full_sin_lat(j+1) - this%full_sin_lat(j))
       !
       !          2,j+1
       !           /|
@@ -362,6 +361,16 @@ contains
         this%area_lat_north(j) = this%area_cell(j+1)
       end if
       this%area_lat(j) = this%area_lat_north(j) + this%area_lat_south(j)
+    end do
+
+    do j = this%half_jds, this%half_jde
+      if (this%is_south_pole(j)) then
+        this%area_vtx(j) = this%area_lat_west(j) + this%area_lat_east(j) + this%area_lon_south(j+1)
+      else if (this%is_north_pole(j+1)) then
+        this%area_vtx(j) = this%area_lat_west(j) + this%area_lat_east(j) + this%area_lon_north(j)
+      else
+        this%area_vtx(j) = this%area_lat_west(j) + this%area_lat_east(j) + this%area_lon_south(j+1) + this%area_lon_north(j)
+      end if
     end do
 
     do j = this%full_jds_no_pole, this%full_jde_no_pole
