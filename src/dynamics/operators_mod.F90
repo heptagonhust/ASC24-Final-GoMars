@@ -83,7 +83,6 @@ contains
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt)
-      call calc_div                       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (hydrostatic) call calc_gz_lev   (blocks(iblk), blocks(iblk)%dstate(itime))
       call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
     end do
@@ -105,7 +104,6 @@ contains
       if (baroclinic ) call calc_t        (block, dstate)
       call calc_mf                        (block, dstate, dt)
       call calc_ke                        (block, dstate)
-      call calc_div                       (block, dstate)
       call calc_pv                        (block, dstate)
       call interp_pv                      (block, dstate, dt)
       if (hydrostatic) call calc_gz_lev   (block, dstate)
@@ -114,7 +112,6 @@ contains
     case (forward_pass)
       call calc_mf                        (block, dstate, dt)
       call calc_ke                        (block, dstate)
-      call calc_div                       (block, dstate)
       call calc_pv                        (block, dstate)
       call interp_pv                      (block, dstate, dt)
     ! --------------------------------------------------------------------------
