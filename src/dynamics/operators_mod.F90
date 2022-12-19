@@ -314,7 +314,12 @@ contains
       j = mesh%full_jds
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = v(i,j,k)**2
+          ! work(i,k) = v(i,j,k)**2
+          work(i,k) = ke_cell_wgt * v(i,j,k)**2 + (      &
+            mesh%area_lat_west (j  ) * v(i  ,j  ,k)**2 + &
+            mesh%area_lat_east (j  ) * v(i+1,j  ,k)**2 + &
+            mesh%area_lon_south(j+1) * u(i  ,j+1,k)**2   &
+          ) / mesh%area_vtx(j) * (1 - ke_cell_wgt)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -329,7 +334,12 @@ contains
       j = mesh%full_jde
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = v(i,j-1,k)**2
+          ! wwork(i,k) = v(i,j-1,k)**2
+          work(i,k) = ke_cell_wgt * v(i,j-1,k)**2 + (    &
+            mesh%area_lat_west (j-1) * v(i  ,j-1,k)**2 + &
+            mesh%area_lat_east (j-1) * v(i+1,j-1,k)**2 + &
+            mesh%area_lat_north(j-1) * u(i  ,j-1,k)**2   &
+          ) / mesh%area_vtx(j-1) * (1 - ke_cell_wgt)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
