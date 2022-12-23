@@ -11,6 +11,7 @@ module operators_mod
   use adv_mod
   use nh_mod
   use interp_mod
+  use filter_mod
 
   implicit none
 
@@ -408,6 +409,8 @@ contains
         end do
       end do
     end if
+    call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false., south_halo=.false.)
+    call filter_on_cell(block%small_filter, div)
     if (div_damp_order == 4) then
       call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
     else

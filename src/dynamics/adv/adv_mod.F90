@@ -270,7 +270,7 @@ contains
             end do
           end do
           call fill_halo(block%halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-          call filter_on_cell(block%small_filter_phs, q(:,:,:,l,new))
+          call filter_on_cell(block%small_filter, q(:,:,:,l,new))
           do k = mesh%full_kds, mesh%full_kde
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
