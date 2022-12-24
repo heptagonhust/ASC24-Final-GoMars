@@ -14,6 +14,7 @@ program gmcore_swm_driver
   use cross_pole_flow_test_mod
   use shallow_water_waves_test_mod
   use vortex_erosion_test_mod
+  use splash_test_mod
 
   implicit none
 
@@ -35,6 +36,11 @@ program gmcore_swm_driver
 
   call parse_namelist(namelist_path)
 
+  select case (test_case)
+  case ('splash')
+    call splash_test_set_params()
+  end select
+
   call gmcore_init(namelist_path)
 
   if (restart) then
@@ -55,6 +61,8 @@ program gmcore_swm_driver
       set_ic => shallow_water_waves_test_set_ic
     case ('vortex_erosion')
       set_ic => vortex_erosion_test_set_ic
+    case ('splash')
+      set_ic => splash_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
     end select

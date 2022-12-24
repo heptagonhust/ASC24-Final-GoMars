@@ -189,6 +189,7 @@ set(gmcore_files
   src/tests/swm/cross_pole_flow_test_mod.F90
   src/tests/swm/shallow_water_waves_test_mod.F90
   src/tests/swm/vortex_erosion_test_mod.F90
+  src/tests/swm/splash_test_mod.F90
   src/tests/steady_state_test_mod.F90
   src/tests/rossby_haurwitz_wave_3d_test_mod.F90
   src/tests/mountain_wave_test_mod.F90
