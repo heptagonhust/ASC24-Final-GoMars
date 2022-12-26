@@ -19,7 +19,7 @@ contains
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    if (baroclinic) then
+    if (baroclinic .and. mod(time_step, 3) == 0) then
       dstate%pt = dstate%pt * dstate%m
       call filter_on_cell(block%small_filter, dstate%phs)
       call fill_halo(block%halo, dstate%phs, full_lon=.true., full_lat=.true.)
