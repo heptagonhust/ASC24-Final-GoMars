@@ -123,7 +123,7 @@ contains
       call log_error('Invalid grid location ' // trim(loc) // '!', __FILE__, __LINE__)
     end select
 
-    call time_add_alert(name, seconds=dt)
+    call time_add_alert(name, seconds=dt/time_scale)
 
   end subroutine adv_batch_init
 

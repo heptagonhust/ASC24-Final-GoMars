@@ -2,6 +2,9 @@ module const_mod
 
   use, intrinsic :: ieee_arithmetic
   use flogger
+  use datetime, only: earth_day_seconds, mars_sol_seconds
+
+  implicit none
 
 #ifdef REAL_KIND
   integer, parameter :: r8 = REAL_KIND
@@ -20,6 +23,10 @@ module const_mod
 
   real(r8)            :: omega      ! s-1
   real(r8)            :: radius     ! m
+  real(r8)            :: periheli   ! Perihelion distance (million km)
+  real(r8)            :: apheli     ! Aphelion distance (million km)
+  real(r8)            :: eccen      ! Eccentricity
+  real(r8)            :: obliq      ! Obliquity (deg)
   real(r8)            :: g          ! m2 s-2
   real(r8)            :: Rd         ! J kg-1 K-1
   real(r8)            :: Rv         ! J kg-1 K-1
@@ -34,8 +41,8 @@ module const_mod
   real(r8)            :: cvd_o_cpd
   real(r8)            :: lapse_rate ! K m-1
   real(r8)            :: p0         ! Pa
+  real(r8)            :: time_scale
 
-  integer, parameter :: nest_ratio = 3
   integer, parameter :: inf_i4 = 10000000
 
   integer, parameter :: all_pass      = 0
@@ -57,8 +64,11 @@ contains
 
     select case (planet)
     case ('earth')
-      omega      = 2 * pi / 86400.0d0
+      omega      = 2 * pi / earth_day_seconds
       radius     = 6.37122d6
+      periheli   = 147.1d0
+      apheli     = 145.1d0
+      obliq      = 23.4d0
       g          = 9.80616d0
       Rd         = 287.04d0
       Rv         = 461.497d0
@@ -68,19 +78,25 @@ contains
       Rd_o_Rv    = Rd / Rv
       Rv_o_Rd    = Rv / Rd
       p0         = 1.0d5
+      time_scale = 1
     case ('mars')
-      omega      = 2 * pi / 88642.663d0
-      radius     = 3.38992d6
+      omega      = 2 * pi / mars_sol_seconds
+      radius     = 3.397200d6
+      periheli   = 206.66d0
+      apheli     = 249.22d0
+      obliq      = 25.19d0
       g          = 3.72d0
       Rd         = 191.84d0
       cpd        = 735.0d0
       cvd        = 543.16d0
       lapse_rate = 5.06d-3
       p0         = 6.1d2 ! FIXME: Should we use 6 hPa?
+      time_scale = mars_sol_seconds / earth_day_seconds
     case default
       call log_error('Invalid planet!')
     end select
 
+    eccen = (apheli - periheli) / (apheli + periheli)
     Rd_o_g  = Rd / g
     Rd_o_cpd = Rd / cpd
     cpd_o_cvd = cpd / cvd

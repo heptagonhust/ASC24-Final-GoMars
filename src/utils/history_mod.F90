@@ -6,6 +6,7 @@ module history_mod
   use string
   use const_mod
   use namelist_mod, dt => dt_dyn
+  use time_mod
   use parallel_mod
   use allocator_mod
   use mesh_mod
@@ -50,7 +51,7 @@ contains
     time_units = split_string(history_interval(1), ' ', 2)
     read(time_value, *) seconds
     select case (time_units)
-    case ('days')
+    case ('days', 'sol')
       seconds = seconds * 86400
     case ('hours')
       seconds = seconds * 3600
@@ -59,7 +60,7 @@ contains
     case ('seconds')
       seconds = seconds
     case default
-      if (is_root_proc()) call log_error('Invalid history interval ' // trim(history_interval(1)) // '!')
+      if (is_root_proc()) call log_error('Invalid history interval ' // trim(history_interval(1)) // '!', __FILE__, __LINE__)
     end select
 
     call time_add_alert('history_write', seconds=seconds)
@@ -82,6 +83,9 @@ contains
         case ('days')
           if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' days.')
           seconds = seconds * 86400
+        case ('sol')
+          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' sol.')
+          seconds = seconds * 86400
         case ('hours')
           if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' hours.')
           seconds = seconds * 3600
@@ -92,7 +96,7 @@ contains
           if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' seconds.')
           seconds = seconds
         case default
-          if (is_root_proc()) call log_error('Invalid output_h0_new_file ' // trim(output_h0_new_file) // '!')
+          if (is_root_proc()) call log_error('Invalid output_h0_new_file ' // trim(output_h0_new_file) // '!', __FILE__, __LINE__)
         end select
         call time_add_alert('h0_new_file', seconds=seconds)
       end if
@@ -128,15 +132,22 @@ contains
 
   subroutine history_setup_h0_swm()
 
-    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
-    ! Dimensions
+    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), &
+      mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
+    ! Global attributes
+    call fiona_add_att('h0', 'planet', planet)
     call fiona_add_att('h0', 'time_step_size', dt)
+    ! Dimensions
     call fiona_add_dim('h0', 'time' , add_var=.true.)
     call fiona_add_dim('h0', 'lon'  , size=global_mesh%full_nlon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'lat'  , size=global_mesh%full_nlat, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilon' , size=global_mesh%half_nlon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilat' , size=global_mesh%half_nlat, add_var=.true., decomp=.true.)
     ! Variables
+    select case (planet)
+    case ('mars')
+      call fiona_add_var('h0', 'Ls', long_name='solar longitude', units='deg', dim_names=['time'], dtype=dtype)
+    end select
     call fiona_add_var('h0', 'tm'   , long_name='total mass'               , units='m'      , dim_names=['time'])
     call fiona_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4' , dim_names=['time']    , dtype=dtype)
     call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy', units='m2 s-5' , dim_names=['time']    , dtype=dtype)
@@ -159,7 +170,8 @@ contains
 
     integer i, j
 
-    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
+    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), &
+      mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
     ! Dimensions
     call fiona_add_att('h0', 'time_step_size', dt)
     call fiona_add_dim('h0', 'time' , add_var=.true.)
@@ -199,9 +211,12 @@ contains
 
     integer k
 
-    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
-    ! Dimensions
+    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), &
+      mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
+    ! Global attributes
+    call fiona_add_att('h0', 'planet', planet)
     call fiona_add_att('h0', 'time_step_size', dt)
+    ! Dimensions
     call fiona_add_dim('h0', 'time' , add_var=.true.)
     call fiona_add_dim('h0', 'lon'  , size=global_mesh%full_nlon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'lat'  , size=global_mesh%full_nlat, add_var=.true., decomp=.true.)
@@ -210,6 +225,10 @@ contains
     call fiona_add_dim('h0', 'ilat' , size=global_mesh%half_nlat, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilev' , size=global_mesh%half_nlev, add_var=.true., decomp=.false.)
     ! Variables
+    select case (planet)
+    case ('mars')
+      call fiona_add_var('h0', 'Ls', long_name='solar longitude', units='deg', dim_names=['time'], dtype=dtype)
+    end select
     call fiona_add_var('h0', 'tm'     , long_name='total mass'                  , units='m'     , dim_names=['time'])
     call fiona_add_var('h0', 'te'     , long_name='total energy'                , units='m4 s-4', dim_names=['time']      , dtype=dtype)
     call fiona_add_var('h0', 'tpe'    , long_name='total potential enstrophy'   , units='m2 s-5', dim_names=['time']      , dtype=dtype)
@@ -693,6 +712,11 @@ contains
     else
       call fiona_start_output('h0', dble(elapsed_seconds), new_file=.false.)
     end if
+
+    select case (planet)
+    case ('mars')
+      call fiona_output('h0', 'Ls', curr_time%solar_longitude() * deg)
+    end select
 
     if (advection) then
       call history_write_h0_adv(blocks, itime)

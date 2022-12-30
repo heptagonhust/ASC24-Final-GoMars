@@ -2,12 +2,19 @@ module namelist_mod
 
   use string
   use flogger
-  use const_mod, only: r8, const_init
-  use time_mod, start_time => start_time_array, end_time => end_time_array
+  use const_mod, only: r8, const_init, time_scale
 
   implicit none
 
   character(30)   :: planet               = 'earth'
+
+  integer         :: start_time(5)        = 0
+  integer         :: end_time(5)          = 0
+  real(r8)        :: run_hours            = 0
+  real(r8)        :: run_days             = 0
+  real(r8)        :: run_years            = 0
+  real(r8)        :: run_my               = 0
+  real(r8)        :: run_sol              = 0
 
   real(r8)        :: dt_dyn               = 0
   real(r8)        :: dt_adv               = 0
@@ -142,6 +149,8 @@ module namelist_mod
     dt_adv                    , &
     dt_phys                   , &
     run_years                 , &
+    run_my                    , &
+    run_sol                   , &
     run_hours                 , &
     run_days                  , &
     history_interval          , &
@@ -248,6 +257,10 @@ contains
     if (dt_dyn  == 0) dt_dyn  = dt_adv
     if (dt_adv  == 0) dt_adv  = dt_dyn
     if (dt_phys == 0) dt_phys = dt_dyn
+
+    dt_dyn  = dt_dyn  * time_scale
+    dt_adv  = dt_adv  * time_scale
+    dt_phys = dt_phys * time_scale
 
   end subroutine parse_namelist
 

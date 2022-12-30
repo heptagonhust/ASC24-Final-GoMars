@@ -5,6 +5,7 @@ module time_mod
   use container
   use flogger
   use const_mod
+  use namelist_mod, start_time_array => start_time, end_time_array => end_time
 
   implicit none
 
@@ -37,13 +38,6 @@ module time_mod
     logical :: ring = .false.
   end type alert_type
 
-  ! Namelist parameters
-  integer , public :: start_time_array(5)  = 0
-  integer , public :: end_time_array(5)    = 0
-  real(r8), public :: run_hours            = 0
-  real(r8), public :: run_days             = 0
-  real(r8), public :: run_years            = 0
-
   type(datetime_type) start_time
   type(datetime_type) end_time
   type(datetime_type) curr_time
@@ -62,36 +56,60 @@ contains
 
     real(r8), intent(in) :: dt_in_seconds
 
-    if (sum(start_time_array) > 0) then
-      call start_time%init(year=start_time_array(1),  &
-                           month=start_time_array(2), &
-                           day=start_time_array(3),   &
-                           hour=start_time_array(4),  &
-                           minute=start_time_array(5))
-    else
-      call start_time%init(year=1, month=1, day=1, hour=0, minute=0)
-    end if
+    select case (planet)
+    case ('earth')
+      if (sum(start_time_array) > 0) then
+        call start_time%init(year  =start_time_array(1), &
+                             month =start_time_array(2), &
+                             day   =start_time_array(3), &
+                             hour  =start_time_array(4), &
+                             minute=start_time_array(5))
+      else
+        call start_time%init(year=1, month=1, day=1, hour=0, minute=0)
+      end if
+    case ('mars')
+      if (sum(start_time_array) > 0) then
+        call start_time%init(my    =start_time_array(1), &
+                             sol   =start_time_array(2), &
+                             hour  =start_time_array(3), &
+                             minute=start_time_array(4))
+      else
+        call start_time%init(my=1, sol=1, hour=0, minute=0, planet='mars')
+      end if
+    end select
     end_time = start_time
-    if (run_years > 0 .or. run_days > 0 .or. run_hours > 0) then
-      call end_time%add(years=run_years, days=run_days, hours=run_hours)
-    else if (sum(end_time_array) > 0) then
-      call end_time%init(year=end_time_array(1),  &
-                         month=end_time_array(2), &
-                         day=end_time_array(3),   &
-                         hour=end_time_array(4),  &
-                         minute=end_time_array(5))
-    end if
+    select case (planet)
+    case ('earth')
+      if (run_years > 0 .or. run_days > 0 .or. run_hours > 0) then
+        call end_time%add(years=run_years, days=run_days, hours=run_hours)
+      else if (sum(end_time_array) > 0) then
+        call end_time%init(year  =end_time_array(1), &
+                           month =end_time_array(2), &
+                           day   =end_time_array(3), &
+                           hour  =end_time_array(4), &
+                           minute=end_time_array(5))
+      end if
+    case ('mars')
+      if (run_my > 0 .or. run_sol > 0 .or. run_hours > 0) then
+        call end_time%add(my=run_my, sol=run_sol, hours=run_hours)
+      else if (sum(end_time_array) > 0) then
+        call end_time%init(my    =end_time_array(1), &
+                           sol   =end_time_array(2), &
+                           hour  =end_time_array(3), &
+                           minute=end_time_array(4), planet='mars')
+      end if
+    end select
 
     time_step = 0
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    call dt%init(seconds=dt_in_seconds)
+    call dt%init(seconds=dt_in_seconds/time_scale)
 
     curr_time = start_time
 
-    start_time_str = start_time%format('%Y-%m-%dT%H_%M_%S')
-    curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
+    start_time_str = start_time%isoformat()
+    curr_time_str = curr_time%isoformat()
 
     call alerts%init()
 
@@ -148,13 +166,13 @@ contains
 
     time_step = time_step + 1
     if (present(dt_in_seconds)) then
-      elapsed_seconds = elapsed_seconds + dt_in_seconds
-      call curr_time%add(seconds=dt_in_seconds)
+      elapsed_seconds = elapsed_seconds + dt_in_seconds / time_scale
+      call curr_time%add(seconds=dt_in_seconds / time_scale)
     else
       elapsed_seconds = elapsed_seconds + dt%total_seconds()
       curr_time = curr_time + dt
     end if
-    curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
+    curr_time_str = curr_time%isoformat()
 
   end subroutine time_advance
 
@@ -172,12 +190,14 @@ contains
 
     call curr_time%init(tmp2)
     select case (tmp1)
-    case ('minutes')
-      call curr_time%add_minutes(time_value)
-    case ('hours')
-      call curr_time%add_hours(time_value)
     case ('days')
       call curr_time%add_days(time_value)
+    case ('sol')
+      call curr_time%add_sol(time_value)
+    case ('hours')
+      call curr_time%add_hours(time_value)
+    case ('minutes')
+      call curr_time%add_minutes(time_value)
     case ('seconds')
       call curr_time%add_seconds(time_value)
     case default
@@ -221,49 +241,37 @@ contains
 
   end function time_is_finished
 
-  subroutine time_add_alert(name, months, days, hours, minutes, seconds)
+  subroutine time_add_alert(name, months, days, sol, hours, minutes, seconds)
 
     character(*), intent(in)           :: name
     real(r8)    , intent(in), optional :: months
     real(r8)    , intent(in), optional :: days
+    real(r8)    , intent(in), optional :: sol
     real(r8)    , intent(in), optional :: hours
     real(r8)    , intent(in), optional :: minutes
     real(r8)    , intent(in), optional :: seconds
 
     real(r8) months_
     real(r8) days_
+    real(r8) sol_
     real(r8) hours_
     real(r8) minutes_
     real(r8) seconds_
     type(alert_type) alert
 
-    if (present(months)) then
-      months_ = months
-    else
-      months_ = 0.0
-    end if
-    if (present(days)) then
-      days_ = days
-    else
-      days_ = 0.0
-    end if
-    if (present(hours)) then
-      hours_ = hours
-    else
-      hours_ = 0.0
-    end if
-    if (present(minutes)) then
-      minutes_ = minutes
-    else
-      minutes_ = 0.0
-    end if
-    if (present(seconds)) then
-      seconds_ = seconds
-    else
-      seconds_ = 0.0
-    end if
+    months_  = merge(months , 0.0_r8, present(months ))
+    days_    = merge(days   , 0.0_r8, present(days   ))
+    sol_     = merge(sol    , 0.0_r8, present(sol    ))
+    hours_   = merge(hours  , 0.0_r8, present(hours  ))
+    minutes_ = merge(minutes, 0.0_r8, present(minutes))
+    seconds_ = merge(seconds, 0.0_r8, present(seconds))
 
-    call alert%period%init(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
+    select case (planet)
+    case ('earth')
+      call alert%period%init(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
+    case ('mars')
+      call alert%period%init(sol=sol_, hours=hours_, minutes=minutes_, seconds=seconds_)
+    end select
     alert%last_time = start_time
     call alerts%insert(trim(name), alert)
 

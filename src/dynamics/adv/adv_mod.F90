@@ -4,6 +4,7 @@ module adv_mod
   use string
   use const_mod
   use namelist_mod
+  use time_mod
   use block_mod
   use parallel_mod
   use adv_batch_mod
