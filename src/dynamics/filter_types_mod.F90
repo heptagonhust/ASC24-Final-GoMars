@@ -105,7 +105,7 @@ contains
     case ('small_filter')
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (this%ngrid_lon(j) > 1) then
-          w = filter_coef_e
+          w = filter_coef_d
           n = ceiling(w * this%ngrid_lon(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
           this%width_lon(j) = w * this%width_lon(j)
           call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
@@ -113,7 +113,7 @@ contains
       end do
       do j = mesh%half_jds, mesh%half_jde
         if (this%ngrid_lat(j) > 1) then
-          w = filter_coef_e
+          w = filter_coef_d
           n = ceiling(w * this%ngrid_lat(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lat(j) = n
           this%width_lat(j) = w * this%width_lat(j)
           call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))

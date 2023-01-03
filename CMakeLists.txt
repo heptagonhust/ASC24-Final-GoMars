@@ -38,7 +38,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
   else ()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte") # Add -fp-model precise when checking serial-parallel and restart consistencies.
   endif ()
-  if (CMAKE_Fortran_COMPILER_VERSION GREATER 2020)
+  if (CMAKE_Fortran_COMPILER_VERSION GREATER 2021.6)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl=sequential")
   else ()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl=sequential")
