@@ -6,7 +6,6 @@ module time_schemes_mod
   use block_mod
   use operators_mod
   use parallel_mod
-  use nh_mod
   use filter_mod
 
   implicit none

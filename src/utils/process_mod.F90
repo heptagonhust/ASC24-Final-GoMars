@@ -141,6 +141,7 @@ contains
   subroutine decompose_domains()
 
     integer ierr, tmp_id(1), i, j
+    logical correct, all_correct
 
     ! Set neighborhood of the process.
     if (allocated(proc%ngb)) deallocate(proc%ngb)
@@ -182,6 +183,15 @@ contains
 
     call round_robin(proc%cart_dims(1), proc%cart_coords(1), proc%nlon, proc%ids, proc%ide)
     call round_robin(proc%cart_dims(2), proc%cart_coords(2), proc%nlat, proc%jds, proc%jde)
+
+    correct = .true.
+    if (proc%nlat < 2) then
+      correct = .false.
+    end if
+    call MPI_ALLREDUCE(correct, all_correct, 1, MPI_LOGICAL, MPI_LAND, proc%comm, ierr)
+    if (.not. all_correct) then
+      call log_error('Decomposed grid size along latitude should be >= 2!', __FILE__, __LINE__, proc%id)
+    end if
 
   end subroutine decompose_domains
 
