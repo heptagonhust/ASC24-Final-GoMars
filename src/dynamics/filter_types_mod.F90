@@ -36,7 +36,7 @@ contains
     real(8) s
     integer i, x
 
-    s = filter_coef_b * width / 2.0d0
+    s = width / 8.0d0
     do i = 1, ngrid
       x = i - (ngrid + 1) / 2
       w(i) = exp(-x**2 / (2 * s**2)) / (s * sqrt(pi2))

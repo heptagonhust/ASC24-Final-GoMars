@@ -98,7 +98,6 @@ module namelist_mod
   real(r8)        :: max_wave_speed       = 300
   real(r8)        :: max_cfl              = 0.5
   real(r8)        :: filter_coef_a        = 1.0
-  real(r8)        :: filter_coef_b        = 0.4
   real(r8)        :: filter_coef_c        = 0.2
   real(r8)        :: filter_coef_d        = 0.15
 
@@ -118,6 +117,7 @@ module namelist_mod
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.1
+  logical         :: use_pole_damp        = .true.
 
   ! Output settings
   character(8)    :: output_i0_dtype      = 'r8'
@@ -196,7 +196,6 @@ module namelist_mod
     max_wave_speed            , &
     max_cfl                   , &
     filter_coef_a             , &
-    filter_coef_b             , &
     filter_coef_c             , &
     filter_coef_d             , &
     coarse_pole_mul           , &
@@ -218,6 +217,7 @@ module namelist_mod
     rayleigh_damp_top         , &
     use_smag_damp             , &
     smag_damp_coef            , &
+    use_pole_damp             , &
     output_h0                 , &
     output_h0_dtype           , &
     output_h1                 , &
@@ -289,7 +289,6 @@ contains
       write(*, *) 'max_wave_speed      = ', max_wave_speed
       write(*, *) 'max_cfl             = ', max_cfl
       write(*, *) 'filter_coef_a       = ', filter_coef_a
-      write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
       write(*, *) 'filter_coef_d       = ', filter_coef_d
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
@@ -331,6 +330,7 @@ contains
     if (use_smag_damp) then
       write(*, *) 'smag_damp_coef      = ', to_str(smag_damp_coef, 1)
     end if
+      write(*, *) 'use_pole_damp       = ', to_str(use_pole_damp)
       write(*, *) '========================================================='
 
   end subroutine print_namelist

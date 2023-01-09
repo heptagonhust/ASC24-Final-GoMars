@@ -270,7 +270,7 @@ contains
               end do
             end do
           end do
-          if (mod(time_step / block%adv_batches(m)%nstep, 3) == 0) then
+          if (use_pole_damp .and. mod(time_step / block%adv_batches(m)%nstep, 3) == 0) then
             call fill_halo(block%halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., &
                            south_halo=.false., north_halo=.false.)
             call filter_on_cell(block%small_filter, q(:,:,:,l,new))

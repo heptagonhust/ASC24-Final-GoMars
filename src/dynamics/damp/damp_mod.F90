@@ -53,7 +53,9 @@ contains
     if (use_smag_damp) then
       call smag_damp_run(block, dt, dtend, dstate)
     end if
-    call pole_damp_run(block, dstate)
+    if (use_pole_damp) then
+      call pole_damp_run(block, dstate)
+    end if
 
   end subroutine damp_run
 
