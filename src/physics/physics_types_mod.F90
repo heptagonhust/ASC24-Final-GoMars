@@ -35,7 +35,10 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:) :: qc     ! Cloud water mixing ratio
     real(r8), allocatable, dimension(:,:) :: qi     ! Cloud ice mixing ratio
     real(r8), allocatable, dimension(:,:) :: rho    ! Air density
+    real(r8), allocatable, dimension(:  ) :: emis   ! Surface emissivity
+    real(r8), allocatable, dimension(:  ) :: alb    ! Surface albedo
     real(r8), allocatable, dimension(:  ) :: ps     ! Surface pressure (Pa)
+    real(r8), allocatable, dimension(:  ) :: ts     ! Surface temperature (K)
     real(r8), allocatable, dimension(:  ) :: precl  ! Large scale precipitation
     real(r8), allocatable, dimension(:  ) :: pblh   ! PBL height (m)
     integer , allocatable, dimension(:  ) :: pblk   ! PBL level index
@@ -56,6 +59,7 @@ module physics_types_mod
     real(r8), allocatable, dimension(:  ) :: qfx    ! Upward moisture flux at surface (kg s-1 m-2)
     real(r8), allocatable, dimension(:,:) :: exch_h ! Exchange coefficient for heat (K m s-1)
     real(r8), allocatable, dimension(:,:) :: delta  ! Entrainment layer depth (m)
+    real(r8), allocatable, dimension(:  ) :: co2ice ! CO2 ice on the surface (Kg m-2)
   contains
     procedure :: init  => pstate_init
     procedure :: clear => pstate_clear
@@ -123,7 +127,10 @@ contains
     allocate(this%qc        (this%ncol,this%nlev  ))
     allocate(this%qi        (this%ncol,this%nlev  ))
     allocate(this%rho       (this%ncol,this%nlev  ))
+    allocate(this%emis      (this%ncol            ))
+    allocate(this%alb       (this%ncol            ))
     allocate(this%ps        (this%ncol            ))
+    allocate(this%ts        (this%ncol            ))
     allocate(this%precl     (this%ncol            ))
     allocate(this%pblh      (this%ncol            ))
     allocate(this%pblk      (this%ncol            ))
@@ -144,6 +151,11 @@ contains
     allocate(this%qfx       (this%ncol            ))
     allocate(this%exch_h    (this%ncol,this%nlev  ))
     allocate(this%delta     (this%ncol,this%nlev  ))
+
+    select case (planet)
+    case ('mars')
+      allocate(this%co2ice  (this%ncol            ))
+    end select
 
     icol = 0
     do j = mesh%full_jds, mesh%full_jde

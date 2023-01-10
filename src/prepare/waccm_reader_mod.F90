@@ -35,7 +35,7 @@ contains
 
     call waccm_reader_final()
 
-    if (is_root_proc()) call log_notice('Use WACCM ' // trim(bkg_file) // ' as background.')
+    if (proc%is_root()) call log_notice('Use WACCM ' // trim(bkg_file) // ' as background.')
 
     call fiona_open_dataset('waccm', file_path=bkg_file)
     call fiona_get_dim('waccm', 'lon', size=waccm_nlon)

@@ -37,7 +37,7 @@ contains
      lev_dims   (1) =  'lon';   lev_dims   (2) =  'lat';   lev_dims   (3) = 'ilev';      lev_dims(4) = 'time'
     cell_dims_2d(1) =  'lon';  cell_dims_2d(2) =  'lat';  cell_dims_2d(3) = 'time'
 
-    if (is_root_proc()) call log_notice('Write ' // trim(initial_file) // '.')
+    if (proc%is_root()) call log_notice('Write ' // trim(initial_file) // '.')
 
     call fiona_create_dataset('i0', file_path=initial_file, start_time=initial_time, time_units='hours', mpi_comm=proc%comm, group_size=output_group_size)
     call fiona_add_dim('i0', 'time', add_var=.true.)
@@ -121,7 +121,7 @@ contains
     end do
     call fiona_end_output('i0')
 
-    if (is_root_proc()) call log_notice('Done write.')
+    if (proc%is_root()) call log_notice('Done write.')
 
   end subroutine initial_write
 
@@ -134,10 +134,10 @@ contains
 
     if (present(initial_file_)) then
       call fiona_open_dataset('i0', file_path=initial_file_)
-      if (is_root_proc()) call log_notice('Read initial data from ' // trim(initial_file_) // '.')
+      if (proc%is_root()) call log_notice('Read initial data from ' // trim(initial_file_) // '.')
     else
       call fiona_open_dataset('i0', file_path=initial_file)
-      if (is_root_proc()) call log_notice('Read initial data from ' // trim(initial_file) // '.')
+      if (proc%is_root()) call log_notice('Read initial data from ' // trim(initial_file) // '.')
     end if
     call fiona_start_input('i0')
 
@@ -207,7 +207,7 @@ contains
     end do
     call fiona_end_input('i0')
 
-    if (is_root_proc()) call log_notice('Done read initial file.')
+    if (proc%is_root()) call log_notice('Done read initial file.')
 
   end subroutine initial_read
 

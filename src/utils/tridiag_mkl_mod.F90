@@ -67,22 +67,22 @@ contains
 
     ierr = DSS_CREATE(this%handle, MKL_DSS_DEFAULTS)
     if (ierr /= MKL_DSS_SUCCESS) then
-      if (is_root_proc()) call log_error('Failed to call DSS_CREATE!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Failed to call DSS_CREATE!', __FILE__, __LINE__)
     end if
 
     ierr = DSS_DEFINE_STRUCTURE(this%handle, MKL_DSS_SYMMETRIC, this%A%row_idx, this%A%nrow, this%A%ncol, this%A%cols, this%A%nval)
     if (ierr /= MKL_DSS_SUCCESS) then
-      if (is_root_proc()) call log_error('Failed to call DSS_DEFINE_STRUCTURE!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Failed to call DSS_DEFINE_STRUCTURE!', __FILE__, __LINE__)
     end if
 
     ierr = DSS_REORDER(this%handle, MKL_DSS_DEFAULTS, perm)
     if (ierr /= MKL_DSS_SUCCESS) then
-      if (is_root_proc()) call log_error('Failed to call DSS_REORDER!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Failed to call DSS_REORDER!', __FILE__, __LINE__)
     end if
 
     ierr = DSS_FACTOR_REAL(this%handle, MKL_DSS_DEFAULTS, this%A%vals)
     if (ierr /= MKL_DSS_SUCCESS) then
-      if (is_root_proc()) call log_error('Failed to call DSS_FACTOR_REAL!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Failed to call DSS_FACTOR_REAL!', __FILE__, __LINE__)
     end if
 
   end subroutine tridiag_mkl_solver_init_sym_const
@@ -158,7 +158,7 @@ contains
 
     ierr = DSS_SOLVE_REAL(this%handle, MKL_DSS_DEFAULTS, rhs, 1, x)
     if (ierr /= MKL_DSS_SUCCESS) then
-      if (is_root_proc()) call log_error('Failed to call DSS_SOLVE_REAL!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Failed to call DSS_SOLVE_REAL!', __FILE__, __LINE__)
     end if
 
   end subroutine tridiag_mkl_solver_solve

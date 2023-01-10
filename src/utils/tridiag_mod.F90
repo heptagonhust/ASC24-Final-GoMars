@@ -43,7 +43,7 @@ contains
 #ifndef HAS_MKL
     if (solver == 'mkl') then
       solver_ = 'spk'
-      if (is_root_proc()) call log_notice('Switch to spk tridiag solver!')
+      if (proc%is_root()) call log_notice('Switch to spk tridiag solver!')
     else
       solver_ = solver
     end if
@@ -63,7 +63,7 @@ contains
       allocate(this%spk_solver)
       call this%spk_solver%init_sym_const(n, a, b)
     case default
-      if (is_root_proc()) call log_error('Unknown tridiag solver ' // trim(solver) // '!')
+      if (proc%is_root()) call log_error('Unknown tridiag solver ' // trim(solver) // '!')
     end select
 
   end subroutine tridiag_solver_init_sym_const
@@ -84,7 +84,7 @@ contains
       allocate(this%spk_solver)
       call this%spk_solver%clone(other%spk_solver)
     case default
-      if (is_root_proc()) call log_error('Uninitialized tridiag solver!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Uninitialized tridiag solver!', __FILE__, __LINE__)
     end select
 
   end subroutine tridiag_solver_clone
@@ -103,7 +103,7 @@ contains
     case (2)
       call this%spk_solver%solve(rhs, x)
     case default
-      if (is_root_proc()) call log_error('Uninitialized tridiag solver!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Uninitialized tridiag solver!', __FILE__, __LINE__)
     end select
 
   end subroutine tridiag_solver_solve

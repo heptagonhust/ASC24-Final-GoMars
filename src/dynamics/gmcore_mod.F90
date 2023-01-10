@@ -90,7 +90,7 @@ contains
 
     call time_add_alert('print', seconds=seconds)
 
-    if (is_root_proc()) call print_namelist()
+    if (proc%is_root()) call print_namelist()
 
     do iblk = 1, size(blocks)
       if (baroclinic) call moist_link_state(blocks(iblk))
@@ -123,7 +123,7 @@ contains
     if (nonhydrostatic) call nh_prepare(blocks)
     call diagnose(blocks, old)
     call output(old)
-    if (is_root_proc()) call log_print_diag(curr_time%isoformat())
+    if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
     model_main_loop: do while (.not. time_is_finished())
       ! ------------------------------------------------------------------------
@@ -153,7 +153,7 @@ contains
       end if
       ! ------------------------------------------------------------------------
       call diagnose(blocks, old)
-      if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+      if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call output(old)
     end do model_main_loop
 
@@ -212,7 +212,7 @@ contains
       if (time_step == 0) call cpu_time(time1)
       call cpu_time(time2)
       if (time_step /= 0) then
-        if (is_root_proc()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
+        if (proc%is_root()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
       if (output_h0) call history_write_h0(blocks, itime)

@@ -187,7 +187,7 @@ contains
 
     call topo_final()
 
-    if (is_root_proc()) call log_notice('Use ' // trim(topo_file) // ' as topography.')
+    if (proc%is_root()) call log_notice('Use ' // trim(topo_file) // ' as topography.')
 
     lon1 = blocks(1)%mesh%half_lon_deg(blocks(1)%mesh%half_ids-1)
     lon2 = blocks(1)%mesh%half_lon_deg(blocks(1)%mesh%half_ide  )

@@ -56,7 +56,7 @@ contains
     case ('openmars')
       call openmars_reader_run(bkg_file)
     case default
-      if (is_root_proc()) call log_error('Unknown bkg_type ' // trim(bkg_type) // '!')
+      if (proc%is_root()) call log_error('Unknown bkg_type ' // trim(bkg_type) // '!')
     end select
 
   end subroutine bkg_read
@@ -81,7 +81,7 @@ contains
 
     logical do_hydrostatic_correct, do_drymass_correct
 
-    if (is_root_proc()) call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
+    if (proc%is_root()) call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
 
     lapse_kappa = lapse_rate * Rd_o_g
     do_drymass_correct = .false.
@@ -189,7 +189,7 @@ contains
 
     integer iblk, i, j, k
 
-    if (is_root_proc()) call log_notice('Calculate pressure on each grid.')
+    if (proc%is_root()) call log_notice('Calculate pressure on each grid.')
 
     do iblk = 1, size(blocks)
       associate (mesh => blocks(iblk)%mesh         , &
@@ -213,7 +213,7 @@ contains
     real(r8), allocatable, dimension(:,:,:) :: t1, pt1, p1
     integer iblk, i, j, k
 
-    if (is_root_proc()) call log_notice('Regrid temperature and calculate potential temperature.')
+    if (proc%is_root()) call log_notice('Regrid temperature and calculate potential temperature.')
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)                   , &
@@ -304,7 +304,7 @@ contains
     real(r8), allocatable, dimension(:,:,:) :: u1, p1
     integer iblk, i, j, k
 
-    if (is_root_proc()) call log_notice('Regrid u wind component.')
+    if (proc%is_root()) call log_notice('Regrid u wind component.')
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
@@ -387,7 +387,7 @@ contains
     real(r8), allocatable, dimension(:,:,:) :: v1, p1
     integer iblk, i, j, k
 
-    if (is_root_proc()) call log_notice('Regrid v wind component.')
+    if (proc%is_root()) call log_notice('Regrid v wind component.')
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
@@ -470,7 +470,7 @@ contains
     real(r8), allocatable, dimension(:,:,:) :: q1
     integer iblk, i, j, k
 
-    if (is_root_proc()) call log_notice('Regrid water vapor mixing ratio.')
+    if (proc%is_root()) call log_notice('Regrid water vapor mixing ratio.')
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)                   , &

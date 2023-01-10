@@ -32,7 +32,7 @@ contains
 
     call openmars_reader_final()
 
-    if (is_root_proc()) call log_notice('Use OpenMARS ' // trim(bkg_file) // ' as background.')
+    if (proc%is_root()) call log_notice('Use OpenMARS ' // trim(bkg_file) // ' as background.')
 
     call fiona_open_dataset('openmars', file_path=bkg_file)
     call fiona_get_dim('openmars', 'lon', size=openmars_nlon)

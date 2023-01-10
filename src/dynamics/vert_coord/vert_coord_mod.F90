@@ -54,13 +54,13 @@ contains
     integer k
 
     if (present(scheme)) then
-      if (vert_coord_scheme /= scheme .and. is_root_proc()) then
+      if (vert_coord_scheme /= scheme .and. proc%is_root()) then
         call log_notice('Change vert_coord_scheme to ' // trim(scheme) // '.')
       end if
       vert_coord_scheme = scheme
     end if
     if (present(template)) then
-      if (vert_coord_template /= template .and. is_root_proc()) then
+      if (vert_coord_template /= template .and. proc%is_root()) then
         call log_notice('Change vert_coord_template to ' // trim(template) // '.')
       end if
       vert_coord_template = template

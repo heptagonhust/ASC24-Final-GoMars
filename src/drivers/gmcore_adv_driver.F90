@@ -82,7 +82,7 @@ program gmcore_adv_driver
   call history_setup_h0_adv(blocks)
   call output(old)
   call diagnose(blocks)
-  if (is_root_proc()) call log_print_diag(curr_time%isoformat())
+  if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
   do while (.not. time_is_finished())
     do iblk = 1, size(blocks)
@@ -90,7 +90,7 @@ program gmcore_adv_driver
       call adv_run(blocks(iblk), new)
     end do
     call diagnose(blocks)
-    if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+    if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call time_advance(dt_adv)
     call output(old)
   end do
@@ -138,7 +138,7 @@ contains
       if (time_step == 0) call cpu_time(time1)
       call cpu_time(time2)
       if (time_step /= 0) then
-        if (is_root_proc()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
+        if (proc%is_root()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
       call history_write_h0(blocks, itime)

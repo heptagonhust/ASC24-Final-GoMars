@@ -67,6 +67,8 @@ module parallel_types_mod
 
     integer decomp_type
     integer decomp_loc
+  contains
+    procedure :: is_root => process_is_root
   end type process_type
 
   type(process_type) proc
@@ -260,5 +262,13 @@ contains
     iend = ibeg + num - 1
 
   end subroutine round_robin
+
+  pure logical function process_is_root(this) result(res)
+
+    class(process_type), intent(in) :: this
+
+    res = this%id == 0
+
+  end function process_is_root
 
 end module parallel_types_mod

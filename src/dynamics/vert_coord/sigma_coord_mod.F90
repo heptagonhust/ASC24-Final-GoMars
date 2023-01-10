@@ -45,12 +45,12 @@ contains
       read(10, nml=sigma_coord, iostat=ierr)
       close(10)
     !else
-    !  if (is_root_proc()) call log_error('Module sigma_coord_mod needs namelist_file argument!')
+    !  if (proc%is_root()) call log_error('Module sigma_coord_mod needs namelist_file argument!')
     end if
 
     if (ierr /= 0) then
       if (.not. baroclinic) then
-        if (is_root_proc()) call log_notice('Run shallow-water model.')
+        if (proc%is_root()) call log_notice('Run shallow-water model.')
         return
       !else
       !  call log_error('No sigma_coord parameters in ' // trim(namelist_file) // '!')

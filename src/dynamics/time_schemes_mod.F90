@@ -150,7 +150,7 @@ contains
       end if
 
       if (dtend%update_pt) then
-        if (.not. dtend%update_phs .and. .not. dtend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
+        if (.not. dtend%update_phs .and. .not. dtend%copy_phs .and. proc%is_root()) call log_error('Mass is not updated or copied!')
         ! ----------------------------------------------------------------------
         call fill_halo(block%halo, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dpt)

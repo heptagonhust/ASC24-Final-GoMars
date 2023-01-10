@@ -18,7 +18,6 @@ module process_mod
   public process_stop
   public process_final
   public proc
-  public is_root_proc
   public zonal_circle_type
 
   integer, public, parameter :: decomp_1d_lat        = 1
@@ -84,12 +83,6 @@ contains
 
   end subroutine process_final
 
-  pure logical function is_root_proc()
-
-    is_root_proc = proc%id == 0
-
-  end function is_root_proc
-
   subroutine setup_mpi_simple()
 
     integer ierr, np, tmp_comm, i
@@ -104,7 +97,7 @@ contains
       do i = 1, 1
         np = np + num_proc_lon(i) * num_proc_lat(i)
       end do
-      if (proc%np /= np .and. is_root_proc()) then
+      if (proc%np /= np .and. proc%is_root()) then
         call log_notice('Namelist num_proc_lon and num_proc_lat are not compatible with MPI runtime. Reset to MPI runtime.')
         num_proc_lat(1) = proc%np
       end if

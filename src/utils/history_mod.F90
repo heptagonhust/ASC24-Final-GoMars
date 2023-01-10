@@ -60,43 +60,43 @@ contains
     case ('seconds')
       seconds = seconds
     case default
-      if (is_root_proc()) call log_error('Invalid history interval ' // trim(history_interval(1)) // '!', __FILE__, __LINE__)
+      if (proc%is_root()) call log_error('Invalid history interval ' // trim(history_interval(1)) // '!', __FILE__, __LINE__)
     end select
 
     call time_add_alert('history_write', seconds=seconds)
 
     if (output_h0_new_file == '') then
       call time_add_alert('h0_new_file', seconds=seconds)
-      if (is_root_proc()) call log_notice('Output data every ' // trim(history_interval(1)) // '.')
+      if (proc%is_root()) call log_notice('Output data every ' // trim(history_interval(1)) // '.')
     else if (output_h0_new_file == 'one_file') then
-      if (is_root_proc()) call log_notice('Output data in one file.')
+      if (proc%is_root()) call log_notice('Output data in one file.')
     else
       time_value = split_string(output_h0_new_file, ' ', 1)
       time_units = split_string(output_h0_new_file, ' ', 2)
       if (time_units == 'months') then
         read(time_value, *) months
-        if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' months.')
+        if (proc%is_root()) call log_notice('Output data every ' // trim(time_value) // ' months.')
         call time_add_alert('h0_new_file', months=months)
       else
         read(time_value, *) seconds
         select case (time_units)
         case ('days')
-          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' days.')
+          if (proc%is_root()) call log_notice('Output data every ' // trim(time_value) // ' days.')
           seconds = seconds * 86400
         case ('sol')
-          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' sol.')
+          if (proc%is_root()) call log_notice('Output data every ' // trim(time_value) // ' sol.')
           seconds = seconds * 86400
         case ('hours')
-          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' hours.')
+          if (proc%is_root()) call log_notice('Output data every ' // trim(time_value) // ' hours.')
           seconds = seconds * 3600
         case ('minutes')
-          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' minutes.')
+          if (proc%is_root()) call log_notice('Output data every ' // trim(time_value) // ' minutes.')
           seconds = seconds * 60
         case ('seconds')
-          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' seconds.')
+          if (proc%is_root()) call log_notice('Output data every ' // trim(time_value) // ' seconds.')
           seconds = seconds
         case default
-          if (is_root_proc()) call log_error('Invalid output_h0_new_file ' // trim(output_h0_new_file) // '!', __FILE__, __LINE__)
+          if (proc%is_root()) call log_error('Invalid output_h0_new_file ' // trim(output_h0_new_file) // '!', __FILE__, __LINE__)
         end select
         call time_add_alert('h0_new_file', seconds=seconds)
       end if
@@ -700,7 +700,7 @@ contains
 
     real(8) time1, time2
 
-    if (is_root_proc()) then
+    if (proc%is_root()) then
       call log_notice('Write dstate.')
       call cpu_time(time1)
     end if
@@ -730,7 +730,7 @@ contains
 
     call fiona_end_output('h0')
 
-    if (is_root_proc()) then
+    if (proc%is_root()) then
       call cpu_time(time2)
       call log_notice('Done write dstate cost ' // to_str(time2 - time1, 5) // ' seconds.')
     end if

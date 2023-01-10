@@ -107,7 +107,7 @@ contains
                    real(mesh%half_lat(mesh%half_jms:mesh%half_jme), r8), &
                    real(mesh%half_lon(mesh%half_ims:mesh%half_ime), r8), [0.0_dp], u, v, gz, 0)
     call getPhaseSpeed(C, 0)
-    if (is_root_proc()) call log_notice('Phase speed is ' // trim(to_str(C, 20)))
+    if (proc%is_root()) call log_notice('Phase speed is ' // trim(to_str(C, 20)))
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide

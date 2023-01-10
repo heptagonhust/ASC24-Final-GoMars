@@ -34,7 +34,7 @@ contains
     real(r8), intent(out) :: hyai(16)
     real(r8), intent(out) :: hybi(16)
 
-    if (global_mesh%full_nlev /= 15 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 15 .and. proc%is_root()) then
       call log_error('nlev should be 15 in namelist!')
     end if
 
@@ -82,7 +82,7 @@ contains
     real(r8), intent(out) :: hyai(27)
     real(r8), intent(out) :: hybi(27)
 
-    if (global_mesh%full_nlev /= 26 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 26 .and. proc%is_root()) then
       call log_error('nlev should be 26 in namelist!')
     end if
 
@@ -153,7 +153,7 @@ contains
     real(r8), intent(out) :: hyai(31)
     real(r8), intent(out) :: hybi(31)
 
-    if (global_mesh%full_nlev /= 30 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 30 .and. proc%is_root()) then
       call log_error('nlev should be 30 in namelist!')
     end if
 
@@ -232,7 +232,7 @@ contains
     real(r8), intent(out) :: hyai(96)
     real(r8), intent(out) :: hybi(96)
 
-    if (global_mesh%full_nlev /= 95 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 95 .and. proc%is_root()) then
       call log_error('nlev should be 95 in namelist!')
     end if
 
@@ -445,7 +445,7 @@ contains
     real(r8), intent(out) :: hyai(17)
     real(r8), intent(out) :: hybi(17)
 
-    if (global_mesh%full_nlev /= 16 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 16 .and. proc%is_root()) then
       call log_error('nlev should be 16 in namelist!')
     end if
 
@@ -497,7 +497,7 @@ contains
     real(r8), intent(out) :: hyai(27)
     real(r8), intent(out) :: hybi(27)
 
-    if (global_mesh%full_nlev /= 26 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 26 .and. proc%is_root()) then
       call log_error('nlev should be 26 in namelist!')
     end if
 
@@ -569,7 +569,7 @@ contains
     real(r8), intent(out) :: hyai(33)
     real(r8), intent(out) :: hybi(33)
 
-    if (global_mesh%full_nlev /= 32 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 32 .and. proc%is_root()) then
       call log_error('nlev should be 32 in namelist!')
     end if
 
@@ -653,7 +653,7 @@ contains
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
 
-    if (global_mesh%full_nlev /= 60 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 60 .and. proc%is_root()) then
       call log_error('nlev should be 60 in namelist!')
     end if
 
@@ -717,7 +717,7 @@ contains
     real(r8) eta_top, deta, eta
     integer k
 
-    if (global_mesh%full_nlev /= 60 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 60 .and. proc%is_root()) then
       call log_error('nlev should be 60 in namelist!')
     end if
 
@@ -738,7 +738,7 @@ contains
     real(r8), intent(out) :: hyai(65)
     real(r8), intent(out) :: hybi(65)
 
-    if (global_mesh%full_nlev /= 64 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 64 .and. proc%is_root()) then
       call log_error('nlev should be 64 in namelist!')
     end if
 
@@ -886,7 +886,7 @@ contains
     real(r8), intent(out) :: hyai(41)
     real(r8), intent(out) :: hybi(41)
 
-    if (global_mesh%full_nlev /= 40 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 40 .and. proc%is_root()) then
       call log_error('nlev should be 40 in namelist!')
     end if
 
@@ -988,7 +988,7 @@ contains
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
 
-    if (global_mesh%full_nlev /= 60 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 60 .and. proc%is_root()) then
       call log_error('nlev should be 60 in namelist!')
     end if
 
@@ -1130,7 +1130,7 @@ contains
     real(r8), intent(out) :: hyai(11)
     real(r8), intent(out) :: hybi(11)
 
-    if (global_mesh%full_nlev /= 10 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 10 .and. proc%is_root()) then
       call log_error('nlev should be 10 in namelist!')
     end if
 
@@ -1172,7 +1172,7 @@ contains
     real(r8), intent(out) :: hyai(71)
     real(r8), intent(out) :: hybi(71)
 
-    if (global_mesh%full_nlev /= 70 .and. is_root_proc()) then
+    if (global_mesh%full_nlev /= 70 .and. proc%is_root()) then
       call log_error('nlev should be 70 in namelist!')
     end if
 

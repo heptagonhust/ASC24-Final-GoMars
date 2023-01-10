@@ -95,7 +95,7 @@ contains
         ierr = -1
         return
       else
-        if (is_root_proc()) call log_error('vert_interp_log_linear: Input coordinate equals zero!')
+        if (proc%is_root()) call log_error('vert_interp_log_linear: Input coordinate equals zero!')
       end if
     end if
 

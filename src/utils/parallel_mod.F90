@@ -16,7 +16,6 @@ module parallel_mod
   public process_init
   public process_stop
   public process_final
-  public is_root_proc
   public fill_halo
   public zonal_sum
   public zonal_max

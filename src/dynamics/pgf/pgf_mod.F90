@@ -40,7 +40,7 @@ contains
         pgf_prepare => pgf_lin97_prepare
         pgf_run => pgf_lin97_run
       case default
-        if (is_root_proc()) call log_error('Unknown PGF scheme ' // trim(pgf_scheme) // '!')
+        if (proc%is_root()) call log_error('Unknown PGF scheme ' // trim(pgf_scheme) // '!')
       end select
     else
       pgf_prepare => pgf_swm_prepare

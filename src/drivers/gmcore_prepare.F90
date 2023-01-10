@@ -32,7 +32,7 @@ program gmcore_prepare
   call process_create_blocks()
   call damp_init(blocks)
 
-  if (is_root_proc()) then
+  if (proc%is_root()) then
     write(*, *) '=================== GMCORE Parameters ==================='
     write(*, *) 'nonhydrostatic       = ', to_str(nonhydrostatic)
     write(*, *) 'nlon                 = ', to_str(nlon)

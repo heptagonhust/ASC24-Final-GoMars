@@ -55,7 +55,7 @@ contains
       close(10)
     end if
 
-    if (ierr /= 0 .and. .not. (baroclinic .or. advection) .and. is_root_proc()) then
+    if (ierr /= 0 .and. .not. (baroclinic .or. advection) .and. proc%is_root()) then
       call log_notice('Run shallow-water model.')
     end if
 
@@ -104,13 +104,13 @@ contains
         call hybrid_coord_equal_eta(p0, ptop, hyai, hybi)
         local_ptop = ptop
       case default
-        if (baroclinic .and. template == 'N/A' .and. is_root_proc()) then
+        if (baroclinic .and. template == 'N/A' .and. proc%is_root()) then
           call log_error('Hybrid vertical coordinate template "' // trim(template) // '" is invalid!')
         end if
       end select
     end if
 
-    if (is_root_proc()) then
+    if (proc%is_root()) then
       call log_notice('Model top pressure is ' // to_str(ptop, '(ES10.2)') // 'Pa.')
     end if
 

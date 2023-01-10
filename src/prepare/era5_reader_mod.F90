@@ -33,7 +33,7 @@ contains
 
     call era5_reader_final()
 
-    if (is_root_proc()) call log_notice('Use ERA5 ' // trim(bkg_file) // ' as background.')
+    if (proc%is_root()) call log_notice('Use ERA5 ' // trim(bkg_file) // ' as background.')
 
     call fiona_open_dataset('era5', file_path=bkg_file)
     call fiona_get_dim('era5', 'longitude', size=era5_nlon)
