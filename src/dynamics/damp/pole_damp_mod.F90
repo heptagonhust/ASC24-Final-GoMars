@@ -20,12 +20,12 @@ contains
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    if (baroclinic .and. mod(time_step, 3) == 0) then
+    if (baroclinic .and. mod(time_step, 1) == 0) then
       dstate%pt = dstate%pt * dstate%m
-      call filter_on_cell(block%small_filter, dstate%phs)
-      call fill_halo(block%halo, dstate%phs, full_lon=.true., full_lat=.true.)
-      call calc_ph(block, dstate)
-      call calc_m (block, dstate)
+      ! call filter_on_cell(block%small_filter, dstate%phs)
+      ! call fill_halo(block%halo, dstate%phs, full_lon=.true., full_lat=.true.)
+      ! call calc_ph(block, dstate)
+      ! call calc_m (block, dstate)
       call filter_on_cell(block%small_filter, dstate%pt)
       dstate%pt = dstate%pt / dstate%m
       call fill_halo(block%halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)

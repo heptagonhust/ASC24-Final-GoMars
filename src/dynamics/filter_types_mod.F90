@@ -69,7 +69,7 @@ contains
         dy = mesh%le_lon(j)
         if (dx > 0) then
           cfl = max_wave_speed * dt / dx
-          w = filter_coef_a * cfl / max_cfl * (filter_coef_c * (tanh(90 - abs(mesh%full_lat_deg(j))) - 1) + 1)
+          w = filter_coef_a * cfl / max_cfl * (filter_coef_b * (tanh(90 - abs(mesh%full_lat_deg(j))) - 1) + 1)
           n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
           this%width_lon(j) = w
           this%ngrid_lon(j) = n
@@ -80,7 +80,7 @@ contains
         dy = mesh%de_lat(j)
         if (dx > 0) then
           cfl = max_wave_speed * dt / dx
-          w = filter_coef_a * cfl / max_cfl * (filter_coef_c * (tanh(90 - abs(mesh%half_lat_deg(j))) - 1) + 1)
+          w = filter_coef_a * cfl / max_cfl * (filter_coef_b * (tanh(90 - abs(mesh%half_lat_deg(j))) - 1) + 1)
           n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
           this%width_lat(j) = w
           this%ngrid_lat(j) = n
@@ -105,7 +105,7 @@ contains
     case ('small_filter')
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (this%ngrid_lon(j) > 1) then
-          w = filter_coef_d
+          w = filter_coef_c
           n = ceiling(w * this%ngrid_lon(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
           this%width_lon(j) = w * this%width_lon(j)
           call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
@@ -113,7 +113,7 @@ contains
       end do
       do j = mesh%half_jds, mesh%half_jde
         if (this%ngrid_lat(j) > 1) then
-          w = filter_coef_d
+          w = filter_coef_c
           n = ceiling(w * this%ngrid_lat(j)) + 1; if (mod(n, 2) == 0) n = n + 1; this%ngrid_lat(j) = n
           this%width_lat(j) = w * this%width_lat(j)
           call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))
