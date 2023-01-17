@@ -20,6 +20,7 @@ module waccm_reader_mod
   real(r8), allocatable, dimension(:,:,:) :: waccm_u
   real(r8), allocatable, dimension(:,:,:) :: waccm_v
   real(r8), allocatable, dimension(:,:,:) :: waccm_t
+  real(r8), allocatable, dimension(:,:,:) :: waccm_q
   real(r8), allocatable, dimension(:,:,:) :: waccm_p
   real(r8), allocatable, dimension(:,:  ) :: waccm_ps
   real(r8), allocatable, dimension(:,:  ) :: waccm_zs
@@ -49,6 +50,7 @@ contains
     allocate(waccm_u   (waccm_nlon,waccm_nlat,waccm_nlev))
     allocate(waccm_v   (waccm_nlon,waccm_nlat,waccm_nlev))
     allocate(waccm_t   (waccm_nlon,waccm_nlat,waccm_nlev))
+    allocate(waccm_q   (waccm_nlon,waccm_nlat,waccm_nlev))
     allocate(waccm_p   (waccm_nlon,waccm_nlat,waccm_nlev))
     allocate(waccm_ps  (waccm_nlon,waccm_nlat           ))
     allocate(waccm_zs  (waccm_nlon,waccm_nlat           ))
@@ -62,6 +64,7 @@ contains
     call fiona_input('waccm', 'U'   , waccm_u   )
     call fiona_input('waccm', 'V'   , waccm_v   )
     call fiona_input('waccm', 'T'   , waccm_t   )
+    call fiona_input('waccm', 'Q'   , waccm_q   )
     call fiona_input('waccm', 'PS'  , waccm_ps  )
     call fiona_input('waccm', 'PHIS', waccm_zs  )
     call fiona_end_input('waccm')
@@ -83,6 +86,7 @@ contains
     if (allocated(waccm_u   )) deallocate(waccm_u   )
     if (allocated(waccm_v   )) deallocate(waccm_v   )
     if (allocated(waccm_t   )) deallocate(waccm_t   )
+    if (allocated(waccm_q   )) deallocate(waccm_q   )
     if (allocated(waccm_p   )) deallocate(waccm_p   )
     if (allocated(waccm_ps  )) deallocate(waccm_ps  )
     if (allocated(waccm_zs  )) deallocate(waccm_zs  )

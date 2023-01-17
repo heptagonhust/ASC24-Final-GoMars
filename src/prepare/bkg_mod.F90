@@ -467,7 +467,7 @@ contains
 
   subroutine bkg_regrid_q()
 
-    real(r8), allocatable, dimension(:,:,:) :: q1
+    real(r8), allocatable, dimension(:,:,:) :: q1, p1
     integer iblk, i, j, k
 
     if (proc%is_root()) call log_notice('Regrid water vapor mixing ratio.')
@@ -490,6 +490,19 @@ contains
           end do
         end do
         deallocate(q1)
+      case ('waccm')
+        allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,waccm_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,waccm_nlev))
+        do k = 1, waccm_nlev
+          call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_q(:,:,k), mesh, q1(:,:,k))
+          call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_p(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), ph(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,1,old), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(q1, p1)
       end select
       call fill_halo(block%halo, q(:,:,:,1,old), full_lon=.true., full_lat=.true., full_lev=.true.)
       end associate
