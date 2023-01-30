@@ -208,27 +208,39 @@ contains
         end do
       end do
       ! ----------------------------------------------------------------------
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, abs(mesh%full_lat_deg(j)))
-        do i = mesh%half_ids, mesh%half_ide
-          tmp = new_state%u_lon(i,j,1:mesh%full_nlev)
-          do k = mesh%full_kds + 1, mesh%full_kde - 1
-            new_state%u_lon(i,j,k) = c * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c) * tmp(k)
-          end do
-        end do
-      end do
-      do j = mesh%half_jds, mesh%half_jde
-        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, abs(mesh%half_lat_deg(j)))
-        do i = mesh%full_ids, mesh%full_ide
-          tmp = new_state%v_lat(i,j,1:mesh%full_nlev)
-          do k = mesh%full_kds + 1, mesh%full_kde - 1
-            new_state%v_lat(i,j,k) = c * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c) * tmp(k)
-          end do
-        end do
-      end do
+      ! do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+      !   c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, abs(mesh%full_lat_deg(j)))
+      !   do i = mesh%half_ids, mesh%half_ide
+      !     tmp = new_state%u_lon(i,j,1:mesh%full_nlev)
+      !     do k = mesh%full_kds + 1, mesh%full_kde - 1
+      !       new_state%u_lon(i,j,k) = c * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c) * tmp(k)
+      !     end do
+      !   end do
+      ! end do
+      ! do j = mesh%half_jds, mesh%half_jde
+      !   c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, abs(mesh%half_lat_deg(j)))
+      !   do i = mesh%full_ids, mesh%full_ide
+      !     tmp = new_state%v_lat(i,j,1:mesh%full_nlev)
+      !     do k = mesh%full_kds + 1, mesh%full_kde - 1
+      !       new_state%v_lat(i,j,k) = c * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c) * tmp(k)
+      !     end do
+      !   end do
+      ! end do
       ! ----------------------------------------------------------------------
       call fill_halo(block%halo, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block%halo, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      ! ----------------------------------------------------------------------
+      if (nudge_pole_v) then
+        c = nudge_pole_v_coef
+        do j = mesh%half_jms, mesh%half_jme
+          if (mesh%is_south_pole(j)) then
+            new_state%v_lat(:,j,:) = (1 - c) * new_state%v_lat(:,j,:) + c * new_state%v_lat(:,j+1,:)
+          else if (mesh%is_north_pole(j+1)) then
+            new_state%v_lat(:,j,:) = (1 - c) * new_state%v_lat(:,j,:) + c * new_state%v_lat(:,j-1,:)
+          end if
+        end do
+      end if
+      ! ----------------------------------------------------------------------
     end if
     end associate
 

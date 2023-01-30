@@ -97,8 +97,8 @@ module namelist_mod
   ! Filter settings
   real(r8)        :: max_wave_speed       = 300
   real(r8)        :: max_cfl              = 0.5
-  real(r8)        :: filter_coef_a        = 1.4
-  real(r8)        :: filter_coef_b        = 0.2
+  real(r8)        :: filter_coef_a        = 1.5
+  real(r8)        :: filter_coef_b        = 0.5
   real(r8)        :: filter_coef_c        = 0.15
 
   ! Damping settings
@@ -117,7 +117,9 @@ module namelist_mod
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.1
-  logical         :: use_pole_damp        = .true.
+  logical         :: use_pole_damp        = .false.
+  logical         :: nudge_pole_v         = .true.
+  real(r8)        :: nudge_pole_v_coef    = 0.2_r8
 
   ! Output settings
   character(8)    :: output_i0_dtype      = 'r8'
@@ -218,6 +220,8 @@ module namelist_mod
     use_smag_damp             , &
     smag_damp_coef            , &
     use_pole_damp             , &
+    nudge_pole_v              , &
+    nudge_pole_v_coef         , &
     output_h0                 , &
     output_h0_dtype           , &
     output_h1                 , &
