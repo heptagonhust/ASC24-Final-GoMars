@@ -33,13 +33,7 @@ module parallel_types_mod
     integer :: id      = MPI_PROC_NULL
     integer :: cart_id = MPI_PROC_NULL
     integer :: orient  = 0
-    integer :: ids     = inf_i4
-    integer :: ide     = inf_i4
-    integer :: jds     = inf_i4
-    integer :: jde     = inf_i4
     integer :: lon_hw  = 0
-  contains
-    procedure :: init => process_neighbor_init
   end type process_neighbor_type
 
   type process_type
@@ -211,28 +205,6 @@ contains
     call this%clear()
 
   end subroutine zonal_circle_final
-
-  subroutine process_neighbor_init(this, orient, ids, ide, jds, jde)
-
-    class(process_neighbor_type), intent(inout) :: this
-    integer, intent(in) :: orient
-    integer, intent(in), optional :: ids
-    integer, intent(in), optional :: ide
-    integer, intent(in), optional :: jds
-    integer, intent(in), optional :: jde
-
-    this%orient = orient
-
-    select case (orient)
-    case (west, east)
-      this%jds = jds
-      this%jde = jde
-    case (south, north)
-      this%ids = ids
-      this%ide = ide
-    end select
-
-  end subroutine process_neighbor_init
 
   subroutine round_robin(dim, coord, num, ibeg, iend)
 

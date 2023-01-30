@@ -232,13 +232,6 @@ contains
     call global_mesh%reinit(max(lon_hw, proc%ngb(south)%lon_hw, proc%ngb(north)%lon_hw))
     call blocks(1)%init_stage_2()
 
-    call proc%ngb(west )%init(west , jds=proc%jds, jde=proc%jde)
-    call proc%ngb(east )%init(east , jds=proc%jds, jde=proc%jde)
-    hw = max(lon_hw, proc%ngb(south)%lon_hw)
-    call proc%ngb(south)%init(south, ids=proc%ids-hw, ide=proc%ide+hw)
-    hw = max(lon_hw, proc%ngb(north)%lon_hw)
-    call proc%ngb(north)%init(north, ids=proc%ids-hw, ide=proc%ide+hw)
-
     select case (r8)
     case (4)
       dtype = MPI_REAL
@@ -253,15 +246,17 @@ contains
     ! Setup halos (only normal halos for the time being).
     allocate(blocks(1)%halo(size(proc%ngb)))
     do i = 1, size(proc%ngb)
+      proc%ngb(i)%orient = i
       select case (proc%ngb(i)%orient)
       case (west, east)
         call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
                                     host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
-                                    jds=proc%ngb(i)%jds, jde=proc%ngb(i)%jde)
+                                    jds=proc%jds, jde=proc%jde)
       case (south, north)
+        hw = max(lon_hw, proc%ngb(i)%lon_hw)
         call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
                                     host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
-                                    ids=proc%ngb(i)%ids, ide=proc%ngb(i)%ide,    &
+                                    ids=proc%ids-hw, ide=proc%ide+hw,            &
                                     at_south_pole=proc%at_south_pole,            &
                                     at_north_pole=proc%at_north_pole)
       end select
