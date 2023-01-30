@@ -41,6 +41,8 @@ program gmcore_driver
 
   call parse_namelist(namelist_path)
 
+  call gmcore_init_stage1()
+
   if (initial_file == 'N/A' .and. .not. restart) then
     select case (test_case)
     case ('pgf_test')
@@ -56,7 +58,7 @@ program gmcore_driver
     end select
   end if
 
-  call gmcore_init(namelist_path)
+  call gmcore_init_stage2(namelist_path)
 
   if (restart) then
     call restart_read()

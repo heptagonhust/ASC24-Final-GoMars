@@ -83,7 +83,7 @@ contains
 
     if (proc%is_root()) call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
 
-    lapse_kappa = lapse_rate * Rd_o_g
+    lapse_kappa = lapse_rate * rd_o_g
     do_drymass_correct = .false.
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)              , &

@@ -2,7 +2,7 @@ module namelist_mod
 
   use string
   use flogger
-  use const_mod, only: r8, const_init, time_scale
+  use const_mod, only: r8, const_init, time_scale, earth_day_seconds, mars_sol_seconds
 
   implicit none
 
@@ -256,11 +256,18 @@ contains
       nonhydrostatic = .false.
     end if
 
-    call const_init(planet)
-
     if (dt_dyn  == 0) dt_dyn  = dt_adv
     if (dt_adv  == 0) dt_adv  = dt_dyn
     if (dt_phys == 0) dt_phys = dt_dyn
+
+    select case (planet)
+    case ('earth')
+      time_scale = 1
+    case ('mars')
+      time_scale = mars_sol_seconds / earth_day_seconds
+    case default
+      call log_error('Invalid planet!')
+    end select
 
     dt_dyn  = dt_dyn  * time_scale
     dt_adv  = dt_adv  * time_scale

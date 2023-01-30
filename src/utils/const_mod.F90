@@ -3,6 +3,7 @@ module const_mod
   use, intrinsic :: ieee_arithmetic
   use flogger
   use datetime, only: earth_day_seconds, mars_sol_seconds
+  use gas_mod
 
   implicit none
 
@@ -19,29 +20,31 @@ module const_mod
   real( 8), parameter :: rad    = pi / 180.0d0
   real(r8), parameter :: eps    = epsilon(1.0_r8)
   real(r8), parameter :: inf    = huge(1.0_r8)
-  real(r8), parameter :: karman = 0.4_r8             ! Karman constant
+  real(r8), parameter :: ka     = 0.4_r8             ! Karman constant
 
-  real(r8)            :: omega      ! s-1
-  real(r8)            :: radius     ! m
-  real(r8)            :: periheli   ! Perihelion distance (million km)
-  real(r8)            :: apheli     ! Aphelion distance (million km)
-  real(r8)            :: eccen      ! Eccentricity
-  real(r8)            :: obliq      ! Obliquity (deg)
-  real(r8)            :: g          ! m2 s-2
-  real(r8)            :: Rd         ! J kg-1 K-1
-  real(r8)            :: Rv         ! J kg-1 K-1
-  real(r8)            :: cpd        ! J kg-1 K-1
-  real(r8)            :: cvd        ! J kg-1 K-1
-  real(r8)            :: Lv         !
-  real(r8)            :: Rd_o_Rv
-  real(r8)            :: Rv_o_Rd
-  real(r8)            :: Rd_o_cpd
-  real(r8)            :: Rd_o_g
-  real(r8)            :: cpd_o_cvd
-  real(r8)            :: cvd_o_cpd
-  real(r8)            :: lapse_rate ! K m-1
-  real(r8)            :: p0         ! Pa
-  real(r8)            :: time_scale
+  real(r8)            :: omega        = 0 ! s-1
+  real(r8)            :: radius       = 0 ! m
+  real(r8)            :: periheli     = 0 ! Perihelion distance (million km)
+  real(r8)            :: apheli       = 0 ! Aphelion distance (million km)
+  real(r8)            :: eccen        = 0 ! Eccentricity
+  real(r8)            :: obliq        = 0 ! Obliquity (deg)
+  real(r8)            :: g            = 0 ! m2 s-2
+  real(r8)            :: rd           = 0 ! J kg-1 K-1
+  real(r8)            :: rv           = 0 ! J kg-1 K-1
+  real(r8)            :: cpd          = 0 ! J kg-1 K-1
+  real(r8)            :: cvd          = 0 ! J kg-1 K-1
+  real(r8)            :: cpv          = 0 ! J kg-1 K-1
+  real(r8)            :: cvv          = 0 ! J kg-1 K-1
+  real(r8)            :: lv           = 0 !
+  real(r8)            :: rd_o_rv      = 0
+  real(r8)            :: rv_o_rd      = 0
+  real(r8)            :: rd_o_cpd     = 0
+  real(r8)            :: rd_o_g       = 0
+  real(r8)            :: cpd_o_cvd    = 0
+  real(r8)            :: cvd_o_cpd    = 0
+  real(r8)            :: lapse_rate   = 0 ! K m-1
+  real(r8)            :: p0           = 0 ! Pa
+  real(r8)            :: time_scale   = 1
 
   integer, parameter :: inf_i4 = 10000000
 
@@ -62,6 +65,10 @@ contains
 
     character(*), intent(in) :: planet
 
+    rd  = major_gas%r
+    cpd = major_gas%cp
+    cvd = major_gas%cv
+
     select case (planet)
     case ('earth')
       omega      = 2 * pi / earth_day_seconds
@@ -70,15 +77,13 @@ contains
       apheli     = 145.1d0
       obliq      = 23.4d0
       g          = 9.80616d0
-      Rd         = 287.04d0
-      Rv         = 461.497d0
-      cpd        = 1004.0d0
-      cvd        = 717.0d0
+      rv         = minor_gas%r
+      cpv        = minor_gas%cp
+      cvv        = minor_gas%cv
       lapse_rate = 0.006d0
-      Rd_o_Rv    = Rd / Rv
-      Rv_o_Rd    = Rv / Rd
+      rd_o_rv    = rd / rv
+      rv_o_rd    = rv / rd
       p0         = 1.0d5
-      time_scale = 1
     case ('mars')
       omega      = 2 * pi / mars_sol_seconds
       radius     = 3.397200d6
@@ -86,19 +91,15 @@ contains
       apheli     = 249.22d0
       obliq      = 25.19d0
       g          = 3.72d0
-      Rd         = 191.84d0
-      cpd        = 735.0d0
-      cvd        = 543.16d0
       lapse_rate = 5.06d-3
       p0         = 6.1d2 ! FIXME: Should we use 6 hPa?
-      time_scale = mars_sol_seconds / earth_day_seconds
     case default
       call log_error('Invalid planet!')
     end select
 
     eccen = (apheli - periheli) / (apheli + periheli)
-    Rd_o_g  = Rd / g
-    Rd_o_cpd = Rd / cpd
+    rd_o_g  = rd / g
+    rd_o_cpd = rd / cpd
     cpd_o_cvd = cpd / cvd
     cvd_o_cpd = cvd / cpd
 

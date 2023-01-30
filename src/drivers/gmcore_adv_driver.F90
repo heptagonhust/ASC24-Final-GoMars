@@ -38,7 +38,7 @@ program gmcore_adv_driver
 
   call parse_namelist(namelist_path)
 
-  call gmcore_init(namelist_path)
+  call gmcore_init_stage1()
 
   select case (test_case)
   case ('solid_rotation')
@@ -72,6 +72,8 @@ program gmcore_adv_driver
   case default
     call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
   end select
+
+  call gmcore_init_stage2(namelist_path)
 
   do iblk = 1, size(blocks)
     call set_uv(blocks(iblk), blocks(iblk)%dstate(old), elapsed_seconds)

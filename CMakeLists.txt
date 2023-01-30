@@ -112,6 +112,7 @@ add_subdirectory(lib/flogger)
 
 set(gmcore_files
   src/utils/const_mod.F90
+  src/utils/gas_mod.F90
   src/utils/formula_mod.F90
   src/utils/namelist_mod.F90
   src/utils/time_mod.F90

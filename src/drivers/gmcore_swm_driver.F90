@@ -36,12 +36,14 @@ program gmcore_swm_driver
 
   call parse_namelist(namelist_path)
 
+  call gmcore_init_stage1()
+
   select case (test_case)
   case ('splash')
     call splash_test_set_params()
   end select
 
-  call gmcore_init(namelist_path)
+  call gmcore_init_stage2(namelist_path)
 
   if (restart) then
     call restart_read()

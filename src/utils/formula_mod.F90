@@ -38,7 +38,7 @@ contains
     real(r8), intent(in) :: p   ! Pressure
     real(r8), intent(in) :: qv  ! Mixing ratio
 
-    res = t * (p0 / p)**Rd_o_cpd * (1 + Rv_o_Rd * qv)
+    res = t * (p0 / p)**rd_o_cpd * (1 + rv_o_rd * qv)
 
   end function potential_temperature
 
@@ -48,7 +48,7 @@ contains
     real(r8), intent(in) :: p
     real(r8), intent(in) :: qv
 
-    res = pt * (p / p0)**Rd_o_cpd / (1 + Rv_o_Rd * qv)
+    res = pt * (p / p0)**rd_o_cpd / (1 + rv_o_rd * qv)
 
   end function temperature
 
@@ -57,7 +57,7 @@ contains
     real(r8), intent(in) :: t   ! Temperature
     real(r8), intent(in) :: sh  ! Specific humidity
 
-    res = t * (1 + (Rv_o_Rd - 1) * sh)
+    res = t * (1 + (rv_o_rd - 1) * sh)
 
   end function virtual_temperature
 
@@ -66,7 +66,7 @@ contains
     real(r8), intent(in) :: pt
     real(r8), intent(in) :: p
 
-    res = p0 / Rd / pt * (p / p0)**cvd_o_cpd
+    res = p0 / rd / pt * (p / p0)**cvd_o_cpd
 
   end function dry_air_density
 
@@ -76,7 +76,7 @@ contains
     real(r8), intent(in) :: p
     real(r8), intent(in) :: qv  ! Mixing ratio
 
-    res = p / Rd / virtual_temperature(t, specific_humidity(qv))
+    res = p / rd / virtual_temperature(t, specific_humidity(qv))
 
   end function moist_air_density
 

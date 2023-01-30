@@ -16,6 +16,7 @@ module gmcore_mod
   use moist_mod
   use interp_mod
   use debug_mod
+  use gas_mod
   use adv_mod
   use pgf_mod
   use damp_mod
@@ -29,6 +30,8 @@ module gmcore_mod
   private
 
   public gmcore_init
+  public gmcore_init_stage1
+  public gmcore_init_stage2
   public gmcore_run
   public gmcore_final
 
@@ -47,19 +50,36 @@ contains
     character(*), intent(in) :: namelist_path
     integer, intent(in), optional :: comm
 
+    call gmcore_init_stage1()
+    call gmcore_init_stage2(namelist_path, comm)
+
+  end subroutine gmcore_init
+
+  subroutine gmcore_init_stage1()
+
+    call log_init()
+    call gas_mixture_init(planet)
+    call const_init(planet)
+    call time_scheme_init()
+    call time_init(dt_dyn)
+
+  end subroutine gmcore_init_stage1
+
+  subroutine gmcore_init_stage2(namelist_path, comm)
+
+    character(*), intent(in) :: namelist_path
+    integer, intent(in), optional :: comm
+
     character(10) time_value, time_units
     integer iblk
     real(r8) seconds
 
-    call log_init()
     call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=2)
     call process_init(comm)
     call vert_coord_init(nlev, namelist_path)
     call process_create_blocks()
-    call time_init(dt_dyn)
     call diag_state_init(blocks)
     call restart_init()
-    call time_scheme_init()
     call adv_init()
     call pgf_init()
     call interp_init()
@@ -96,7 +116,7 @@ contains
       if (baroclinic) call moist_link_state(blocks(iblk))
     end do
 
-  end subroutine gmcore_init
+  end subroutine gmcore_init_stage2
 
   subroutine gmcore_run()
 
@@ -144,9 +164,9 @@ contains
       end do
       ! ------------------------------------------------------------------------
       !                                Physics
+      call test_forcing_run(dt_dyn, old)
       if (baroclinic) then
         do iblk = 1, size(blocks)
-          call test_forcing_run(blocks(iblk), dt_dyn, blocks(iblk)%static, blocks(iblk)%dstate(old))
           call moist_link_state(blocks(iblk))
           call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
         end do
@@ -167,6 +187,7 @@ contains
     call log_final()
     call time_final()
     call interp_final()
+    call gas_mixture_final()
     call adv_final()
     call damp_final()
     call diag_state_final()
