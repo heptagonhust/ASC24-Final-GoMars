@@ -3,12 +3,11 @@ module div_damp_mod
   use flogger
   use string
   use const_mod
+  use math_mod
   use namelist_mod
   use parallel_mod
   use process_mod
   use block_mod
-  use tridiag_mod
-  use vert_coord_mod
   use operators_mod
 
   implicit none
@@ -44,7 +43,7 @@ contains
         do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
           if (baroclinic) then
             c_lon(j,k) = div_damp_coef2 * &
-              max(1.0_r8, 8 * (1 + tanh(log(ptop / vert_coord_calc_ph(k, p0))))) * &
+              exp_two_values(3.0_r8, 1.0_r8, 1.0_r8, 3.0_r8, real(k, r8)) * &
               global_mesh%le_lon(j) * global_mesh%de_lon(j)
           else
             c_lon(j,k) = div_damp_coef2 * global_mesh%le_lon(j) * global_mesh%de_lon(j)
@@ -55,7 +54,7 @@ contains
         do j = global_mesh%half_jds, global_mesh%half_jde
           if (baroclinic) then
             c_lat(j,k) = div_damp_coef2 * &
-              max(1.0_r8, 8 * (1 + tanh(log(ptop / vert_coord_calc_ph(k, p0))))) * &
+              exp_two_values(3.0_r8, 1.0_r8, 1.0_r8, 3.0_r8, real(k, r8)) * &
               global_mesh%le_lat(j) * global_mesh%de_lat(j)
           else
             c_lat(j,k) = div_damp_coef2 * global_mesh%le_lat(j) * global_mesh%de_lat(j)
