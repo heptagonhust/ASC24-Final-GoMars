@@ -52,7 +52,7 @@ contains
 
     do j = mesh%full_jds, mesh%full_jde
       i = mesh%half_ids
-      if (j == mesh%full_jds) then
+      if (j == 1) then
         gz(i,j,1) = gh0
       else
         call qags(gh_integrand, -0.5d0*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz_, abserr, neval, ierr)
