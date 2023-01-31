@@ -29,8 +29,7 @@ contains
     associate(mesh => block%mesh           , &
               u    => block%dstate(1)%u_lon, &
               v    => block%dstate(1)%v_lat, &
-              gz   => block%dstate(1)%gz   , &
-              gzs  => block%static%gzs)
+              gz   => block%dstate(1)%gz   )
     gh0 = g * 6.0d3
 
     do j = mesh%full_jds, mesh%full_jde

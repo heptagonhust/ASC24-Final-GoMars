@@ -198,8 +198,7 @@ contains
 
   subroutine process_create_blocks()
 
-    integer hw, i, j, dtype
-    integer max_hw, lon_hw
+    integer lon_hw, hw, i, j, dtype
     integer ierr, status(MPI_STATUS_SIZE)
 
     if (.not. allocated(blocks)) allocate(blocks(1))
@@ -207,11 +206,11 @@ contains
     call blocks(1)%init_stage_1(proc%id, proc%ids, proc%ide, proc%jds, proc%jde)
 
     ! Each process calculate lon_hw from its big_filter%ngrid_lat(:).
-    max_hw = 2
+    lon_hw = global_mesh%lon_hw
     do j = blocks(1)%mesh%half_jds, blocks(1)%mesh%half_jde
-      max_hw = max(max_hw, (blocks(1)%big_filter%ngrid_lat(j) - 1) / 2)
+      lon_hw = max(lon_hw, (blocks(1)%big_filter%ngrid_lat(j) - 1) / 2)
     end do
-    lon_hw = max(max_hw, global_mesh%lon_hw)
+    lon_hw = max(lon_hw, global_mesh%lon_hw)
 
     ! Get lon_hw from southern and northern neighbors.
     if (proc%ngb(south)%id /= MPI_PROC_NULL) then

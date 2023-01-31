@@ -178,16 +178,16 @@ contains
       case (east)
         ! full_lon + full_lat
         send_subarray_start(:,1,1) = [full_ids-this%lon_hw,full_jds,0]
-        recv_subarray_start(:,1,1) = [full_ids                    ,full_jds,0]
+        recv_subarray_start(:,1,1) = [full_ids            ,full_jds,0]
         ! half_lon + full_lat
         send_subarray_start(:,2,1) = [half_ids-this%lon_hw,full_jds,0]
-        recv_subarray_start(:,2,1) = [half_ids                    ,full_jds,0]
+        recv_subarray_start(:,2,1) = [half_ids            ,full_jds,0]
         ! full_lon + half_lat
         send_subarray_start(:,1,2) = [full_ids-this%lon_hw,half_jds,0]
-        recv_subarray_start(:,1,2) = [full_ids                    ,half_jds,0]
+        recv_subarray_start(:,1,2) = [full_ids            ,half_jds,0]
         ! half_lon + half_lat
         send_subarray_start(:,2,2) = [half_ids-this%lon_hw,half_jds,0]
-        recv_subarray_start(:,2,2) = [half_ids                    ,half_jds,0]
+        recv_subarray_start(:,2,2) = [half_ids            ,half_jds,0]
       case (south)
         if (merge(at_south_pole, .false., present(at_south_pole))) then
           ! full_lon + full_lat
@@ -220,29 +220,29 @@ contains
         if (merge(at_north_pole, .false., present(at_north_pole))) then
           ! full_lon + full_lat
           send_subarray_start(:,1,1) = [full_ids,full_jds-this%lat_hw-1,0]
-          recv_subarray_start(:,1,1) = [full_ids,full_jds                      ,0]
+          recv_subarray_start(:,1,1) = [full_ids,full_jds              ,0]
           ! half_lon + full_lat
           send_subarray_start(:,2,1) = [half_ids,full_jds-this%lat_hw-1,0]
-          recv_subarray_start(:,2,1) = [half_ids,full_jds                      ,0]
+          recv_subarray_start(:,2,1) = [half_ids,full_jds              ,0]
           ! full_lon + half_lat
           send_subarray_start(:,1,2) = [full_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,1,2) = [full_ids,half_jds                      ,0]
+          recv_subarray_start(:,1,2) = [full_ids,half_jds              ,0]
           ! half_lon + half_lat
           send_subarray_start(:,2,2) = [half_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,2,2) = [half_ids,half_jds                      ,0]
+          recv_subarray_start(:,2,2) = [half_ids,half_jds              ,0]
         else
           ! full_lon + full_lat
           send_subarray_start(:,1,1) = [full_ids,full_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,1,1) = [full_ids,full_jds                      ,0]
+          recv_subarray_start(:,1,1) = [full_ids,full_jds              ,0]
           ! half_lon + full_lat
           send_subarray_start(:,2,1) = [half_ids,full_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,2,1) = [half_ids,full_jds                      ,0]
+          recv_subarray_start(:,2,1) = [half_ids,full_jds              ,0]
           ! full_lon + half_lat
           send_subarray_start(:,1,2) = [full_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,1,2) = [full_ids,half_jds                      ,0]
+          recv_subarray_start(:,1,2) = [full_ids,half_jds              ,0]
           ! half_lon + half_lat
           send_subarray_start(:,2,2) = [half_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,2,2) = [half_ids,half_jds                      ,0]
+          recv_subarray_start(:,2,2) = [half_ids,half_jds              ,0]
         end if
       end select
       do j = 1, 2
