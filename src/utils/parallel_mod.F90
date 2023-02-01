@@ -21,7 +21,6 @@ module parallel_mod
   public zonal_max
   public global_sum
   public global_max
-  public barrier
 
   interface fill_halo
     module procedure fill_halo_2d_r4
@@ -517,13 +516,5 @@ contains
     value = res
 
   end subroutine global_max_0d_i4
-
-  subroutine barrier()
-
-    integer ierr
-
-    call MPI_BARRIER(proc%comm, ierr)
-
-  end subroutine barrier
 
 end module parallel_mod

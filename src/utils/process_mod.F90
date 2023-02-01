@@ -15,6 +15,7 @@ module process_mod
 
   public process_init
   public process_create_blocks
+  public process_barrier
   public process_stop
   public process_final
   public proc
@@ -50,6 +51,14 @@ contains
 
   end subroutine process_init
 
+  subroutine process_barrier()
+
+    integer ierr
+
+    call MPI_BARRIER(proc%comm, ierr)
+
+  end subroutine process_barrier
+
   subroutine process_stop(code, msg)
 
     integer, intent(in) :: code
@@ -60,9 +69,7 @@ contains
     if (present(msg)) then
       call log_warning(msg, pid=proc%id)
     end if
-    call MPI_BARRIER(proc%comm, ierr)
     call MPI_ABORT(proc%comm, code, ierr)
-    call proc%zonal_circle%clear()
 
   end subroutine process_stop
 

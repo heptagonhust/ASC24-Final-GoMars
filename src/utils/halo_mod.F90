@@ -88,6 +88,8 @@ contains
 
     this%lon_hw = merge(lon_hw, mesh%lon_hw, present(lon_hw))
     this%lat_hw = merge(lat_hw, mesh%lat_hw, present(lat_hw))
+    ! Calculate the start and end indices of halo for MPI.
+    ! NOTE: MPI array index starts from zero.
     if (present(ids) .and. present(ide)) then
       full_ids = ids - (mesh%full_ids - this%lon_hw)
       full_ide = ide - (mesh%full_ids - this%lon_hw)
@@ -112,8 +114,6 @@ contains
     end if
     half_jds = merge(full_jds - 1, full_jds, mesh%has_north_pole() .and. orient == north)
     half_jde = merge(full_jde - 1, full_jde, mesh%has_north_pole() .and. orient == north)
-
-    ! NOTE: MPI array index starts from zero.
 
     !                          wx                          nx                          wx      
     !                          |                           |                           |
@@ -148,7 +148,7 @@ contains
     this%type = cross_proc_halo
     nlev = [mesh%full_kme-mesh%full_kms+1,mesh%half_kme-mesh%half_kms+1]
 
-    do k = 1, 2
+    do k = 1, 2 ! From full level to half level
       array_size(:,1,1) = [mesh%full_nlon+2*this%lon_hw,mesh%full_nlat+2*this%lat_hw,nlev(k)]
       array_size(:,2,1) = [mesh%half_nlon+2*this%lon_hw,mesh%full_nlat+2*this%lat_hw,nlev(k)]
       array_size(:,1,2) = [mesh%full_nlon+2*this%lon_hw,mesh%half_nlat+2*this%lat_hw,nlev(k)]
