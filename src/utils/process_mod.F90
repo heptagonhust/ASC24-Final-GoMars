@@ -205,7 +205,7 @@ contains
 
   subroutine process_create_blocks()
 
-    integer lon_hw, hw, i, j, dtype
+    integer lon_hw, i, j, dtype
     integer ierr, status(MPI_STATUS_SIZE)
 
     if (.not. allocated(blocks)) allocate(blocks(1))
@@ -216,6 +216,9 @@ contains
     lon_hw = global_mesh%lon_hw
     do j = blocks(1)%mesh%half_jds, blocks(1)%mesh%half_jde
       lon_hw = max(lon_hw, (blocks(1)%big_filter%ngrid_lat(j) - 1) / 2)
+    end do
+    do j = blocks(1)%mesh%full_jds, blocks(1)%mesh%full_jde
+      lon_hw = max(lon_hw, (blocks(1)%big_filter%ngrid_lon(j) - 1) / 2)
     end do
     lon_hw = max(lon_hw, global_mesh%lon_hw)
 
@@ -235,7 +238,7 @@ contains
       proc%ngb(north)%lon_hw = 0
     end if
 
-    call global_mesh%reinit(max(lon_hw, proc%ngb(south)%lon_hw, proc%ngb(north)%lon_hw))
+    call global_mesh%reinit(lon_hw)
     call blocks(1)%init_stage_2()
 
     select case (r8)
@@ -259,10 +262,10 @@ contains
                                     host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
                                     jds=proc%jds, jde=proc%jde)
       case (south, north)
-        hw = max(lon_hw, proc%ngb(i)%lon_hw)
+        lon_hw = min(blocks(1)%mesh%lon_hw, proc%ngb(i)%lon_hw)
         call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
                                     host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
-                                    ids=proc%ids-hw, ide=proc%ide+hw,            &
+                                    ids=proc%ids, ide=proc%ide, lon_hw=lon_hw,   &
                                     at_south_pole=proc%at_south_pole,            &
                                     at_north_pole=proc%at_north_pole)
       end select

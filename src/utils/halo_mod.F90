@@ -91,26 +91,26 @@ contains
     ! Calculate the start and end indices of halo for MPI.
     ! NOTE: MPI array index starts from zero.
     if (present(ids) .and. present(ide)) then
-      full_ids = ids - (mesh%full_ids - this%lon_hw)
-      full_ide = ide - (mesh%full_ids - this%lon_hw)
+      full_ids = ids - (mesh%full_ids - mesh%lon_hw)
+      full_ide = ide - (mesh%full_ids - mesh%lon_hw)
     else if (orient == west) then
       full_ids = 0
-      full_ide = this%lon_hw - 1
+      full_ide = mesh%lon_hw - 1
     else if (orient == east) then
-      full_ids = mesh%full_nlon + this%lon_hw
-      full_ide = full_ids + this%lon_hw - 1
+      full_ids = mesh%full_nlon + mesh%lon_hw
+      full_ide = full_ids + mesh%lon_hw - 1
     end if
     half_ids = full_ids
     half_ide = full_ide
     if (present(jds) .and. present(jde)) then
-      full_jds = jds - (mesh%full_jds - this%lat_hw)
-      full_jde = jde - (mesh%full_jds - this%lat_hw)
+      full_jds = jds - (mesh%full_jds - mesh%lat_hw)
+      full_jde = jde - (mesh%full_jds - mesh%lat_hw)
     else if (orient == south) then
       full_jds = 0
-      full_jde = this%lat_hw - 1
+      full_jde = mesh%lat_hw - 1
     else if (orient == north) then
-      full_jds = mesh%full_nlat + this%lat_hw
-      full_jde = full_jds + this%lat_hw - 1
+      full_jds = mesh%full_nlat + mesh%lat_hw
+      full_jde = full_jds + mesh%lat_hw - 1
     end if
     half_jds = merge(full_jds - 1, full_jds, mesh%has_north_pole() .and. orient == north)
     half_jde = merge(full_jde - 1, full_jde, mesh%has_north_pole() .and. orient == north)
@@ -148,11 +148,18 @@ contains
     this%type = cross_proc_halo
     nlev = [mesh%full_kme-mesh%full_kms+1,mesh%half_kme-mesh%half_kms+1]
 
+    if (orient == south .or. orient == north) then
+      full_ids = full_ids - this%lon_hw
+      full_ide = full_ide + this%lon_hw
+      half_ids = half_ids - this%lon_hw
+      half_ide = half_ide + this%lon_hw
+    end if
+
     do k = 1, 2 ! From full level to half level
-      array_size(:,1,1) = [mesh%full_nlon+2*this%lon_hw,mesh%full_nlat+2*this%lat_hw,nlev(k)]
-      array_size(:,2,1) = [mesh%half_nlon+2*this%lon_hw,mesh%full_nlat+2*this%lat_hw,nlev(k)]
-      array_size(:,1,2) = [mesh%full_nlon+2*this%lon_hw,mesh%half_nlat+2*this%lat_hw,nlev(k)]
-      array_size(:,2,2) = [mesh%half_nlon+2*this%lon_hw,mesh%half_nlat+2*this%lat_hw,nlev(k)]
+      array_size(:,1,1) = [mesh%full_nlon+2*mesh%lon_hw,mesh%full_nlat+2*mesh%lat_hw,nlev(k)]
+      array_size(:,2,1) = [mesh%half_nlon+2*mesh%lon_hw,mesh%full_nlat+2*mesh%lat_hw,nlev(k)]
+      array_size(:,1,2) = [mesh%full_nlon+2*mesh%lon_hw,mesh%half_nlat+2*mesh%lat_hw,nlev(k)]
+      array_size(:,2,2) = [mesh%half_nlon+2*mesh%lon_hw,mesh%half_nlat+2*mesh%lat_hw,nlev(k)]
       send_subarray_size(:,1,1) = [full_ide-full_ids+1,full_jde-full_jds+1,nlev(k)]
       recv_subarray_size(:,1,1) = send_subarray_size(:,1,1)
       send_subarray_size(:,2,1) = [half_ide-half_ids+1,full_jde-full_jds+1,nlev(k)]
