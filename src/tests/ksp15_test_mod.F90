@@ -70,7 +70,7 @@ contains
           gzs(i,j) = g * h0 * exp(-r0**2 / d0**2) * cos(pi * r0 / xi0)**2 * mesh%full_cos_lat(j)
         end do
       end do
-      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -154,7 +154,7 @@ contains
           gzs(i,j) = g * h0 * exp(-r**2 / d0**2) * cos(pi * r / xi0)**2
         end do
       end do
-      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide

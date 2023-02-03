@@ -14,6 +14,7 @@ module parallel_mod
 
   public proc
   public process_init
+  public process_barrier
   public process_stop
   public process_final
   public fill_halo

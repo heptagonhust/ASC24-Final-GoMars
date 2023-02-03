@@ -77,7 +77,7 @@ contains
         gzs(i,j) = g * h0 * exp(-(r / d)**2)
       end do
     end do
-    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_jds, mesh%full_jde
       sin_lat = mesh%full_sin_lat(j)

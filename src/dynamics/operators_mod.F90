@@ -409,12 +409,12 @@ contains
         end do
       end do
     end if
-    call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false., south_halo=.false.)
+    call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false., south_halo=.false.)
     call filter_on_cell(block%small_filter, div)
     if (div_damp_order == 4) then
-      call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
     else
-      call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
     end if
 
     if (div_damp_order == 4) then

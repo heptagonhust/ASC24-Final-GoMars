@@ -407,7 +407,7 @@ contains
           lnd(mesh%full_ids:mesh%full_ide,j) = pole_lnd / pole_n
         end if
       end do
-      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
       call fill_halo(block%halo, std, full_lon=.true., full_lat=.true.)
       call fill_halo(block%halo, lnd, full_lon=.true., full_lat=.true.)
     end associate
@@ -423,7 +423,7 @@ contains
 
     associate (mesh     => block%mesh         , &
                gzs      => block%static%gzs   , &
-               gzs_f    => block%dstate(1)%phs, & ! Borrow the array.
+               gzs_f    => block%dtend(1)%dphs, & ! Borrow the array.
                landmask => block%static%landmask)
     do cyc = 1, topo_smooth_cycles
       call filter_on_cell(block%big_filter, gzs, gzs_f)
@@ -433,7 +433,7 @@ contains
           gzs(:,j) = wgt * gzs_f(:,j) + (1 - wgt) * gzs(:,j)
         end if
       end do
-      call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
       ! do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       !   do i = mesh%full_ids, mesh%full_ide
       !     if (landmask(i,j) == 0) gzs(i,j) = 0

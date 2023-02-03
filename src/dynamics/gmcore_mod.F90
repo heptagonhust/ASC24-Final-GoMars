@@ -120,7 +120,7 @@ contains
 
   subroutine gmcore_run()
 
-    integer m, iblk, itime
+    integer i, j, iblk, itime
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &
@@ -130,10 +130,14 @@ contains
         call prepare_static(block)
         ! Ensure bottom gz_lev is the same as gzs.
         do itime = lbound(block%dstate, 1), ubound(block%dstate, 1)
-          block%dstate(itime)%gz_lev(:,:,global_mesh%half_kde) = block%static%gzs
+          do j = mesh%full_jms, mesh%full_jme
+            do i = mesh%full_ims, mesh%full_ime
+              block%dstate(itime)%gz_lev(i,j,global_mesh%half_kde) = block%static%gzs(i,j)
+            end do
+          end do
         end do
       end if
-      call blocks(iblk)%dstate(old)%c2a()
+      call dstate%c2a()
       if (baroclinic) call moist_link_state(block)
       end associate
     end do

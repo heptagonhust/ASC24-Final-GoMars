@@ -92,7 +92,7 @@ contains
         end do
       end if
     end do
-    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine vortex_erosion_test_apply_forcing

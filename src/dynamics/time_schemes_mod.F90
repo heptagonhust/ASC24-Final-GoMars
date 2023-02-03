@@ -131,7 +131,7 @@ contains
     if (baroclinic) then
       if (dtend%update_phs) then
         ! ----------------------------------------------------------------------
-        call fill_halo(block%halo, dtend%dphs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+        call fill_halo(block%filter_halo, dtend%dphs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dphs)
         ! ----------------------------------------------------------------------
         do j = mesh%full_jds, mesh%full_jde
@@ -152,7 +152,7 @@ contains
       if (dtend%update_pt) then
         if (.not. dtend%update_phs .and. .not. dtend%copy_phs .and. proc%is_root()) call log_error('Mass is not updated or copied!')
         ! ----------------------------------------------------------------------
-        call fill_halo(block%halo, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+        call fill_halo(block%filter_halo, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dpt)
         ! ----------------------------------------------------------------------
         do k = mesh%full_kds, mesh%full_kde
@@ -169,7 +169,7 @@ contains
     else
       if (dtend%update_gz) then
         ! ----------------------------------------------------------------------
-        call fill_halo(block%halo, dtend%dgz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+        call fill_halo(block%filter_halo, dtend%dgz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dgz)
         ! ----------------------------------------------------------------------
         do k = mesh%full_kds, mesh%full_kde
@@ -188,9 +188,9 @@ contains
 
     if (dtend%update_u .and. dtend%update_v) then
       ! ----------------------------------------------------------------------
-      call fill_halo(block%halo, dtend%du, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%filter_halo, dtend%du, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
       call filter_on_lon_edge(block%big_filter, dtend%du)
-      call fill_halo(block%halo, dtend%dv, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%filter_halo, dtend%dv, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
       call filter_on_lat_edge(block%big_filter, dtend%dv)
       ! ----------------------------------------------------------------------
       do k = mesh%full_kds, mesh%full_kde

@@ -27,6 +27,7 @@ module block_mod
 
   type block_type
     integer id
+    type(mesh_type) filter_mesh
     type(mesh_type) mesh
     type(static_type) static
     type(dstate_type), allocatable :: dstate(:)
@@ -37,6 +38,7 @@ module block_mod
     type(adv_batch_type), allocatable :: adv_batches(:)
     type(filter_type) big_filter
     type(filter_type) small_filter
+    type(halo_type), allocatable :: filter_halo(:)
     type(halo_type), allocatable :: halo(:)
   contains
     procedure :: init_stage_1 => block_init_stage_1
@@ -60,9 +62,10 @@ contains
 
     this%id = id
 
+    call this%filter_mesh%init_from_parent(global_mesh, this%id, ids, ide, jds, jde)
     call this%mesh%init_from_parent(global_mesh, this%id, ids, ide, jds, jde)
-    call this%big_filter%init(this%mesh, 'big_filter')
-    call this%small_filter%init(this%mesh, 'small_filter')
+    call this%big_filter%init(this%filter_mesh, 'big_filter')
+    call this%small_filter%init(this%filter_mesh, 'small_filter')
 
   end subroutine block_init_stage_1
 
@@ -72,7 +75,7 @@ contains
 
     integer i
 
-    call this%mesh%reinit()
+    call this%filter_mesh%reinit()
 
     if (.not. allocated(this%dstate)) then
       select case (trim(time_scheme))
@@ -86,14 +89,14 @@ contains
         if (this%id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
       do i = 1, size(this%dstate)
-        call this%dstate(i)%init(this%mesh)
+        call this%dstate(i)%init(this%filter_mesh, this%mesh)
       end do
       do i = 1, size(this%dtend)
-        call this%dtend(i)%init(this%mesh)
+        call this%dtend(i)%init(this%filter_mesh, this%mesh)
       end do
-      call this%static%init(this%mesh)
+      call this%static%init(this%filter_mesh, this%mesh)
       call this%pstate%init(this%mesh)
-      call this%ptend %init(this%mesh)
+      call this%ptend%init(this%mesh)
     end if
 
   end subroutine block_init_stage_2
@@ -104,6 +107,8 @@ contains
 
     integer i
 
+    call this%filter_mesh%clear()
+    call this%mesh%clear()
     call this%big_filter%clear()
     call this%small_filter%clear()
     do i = 1, size(this%dstate)

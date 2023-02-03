@@ -58,7 +58,7 @@ contains
         if (r < Rm) gzs(i,j) = g * h0 / 2.d0 * (1.d0 + cos(pi * r / Rm)) * cos(pi * r / osm)**2
       end do
     end do
-    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide

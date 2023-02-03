@@ -41,7 +41,7 @@ contains
       x = i - (ngrid + 1) / 2
       w(i) = exp(-x**2 / (2 * s**2)) / (s * sqrt(pi2))
     end do
-    w = w / sum(w)
+    w(:ngrid) = w(:ngrid) / sum(w(:ngrid))
 
   end subroutine gaussian_weight
 

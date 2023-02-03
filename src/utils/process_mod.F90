@@ -212,7 +212,7 @@ contains
 
     call blocks(1)%init_stage_1(proc%id, proc%ids, proc%ide, proc%jds, proc%jde)
 
-    ! Each process calculate lon_hw from its big_filter%ngrid_lat(:).
+    ! Each process calculate lon_hw from its big_filter%ngrid_lat(:) and big_filter%ngrid_lon(:).
     lon_hw = global_mesh%lon_hw
     do j = blocks(1)%mesh%half_jds, blocks(1)%mesh%half_jde
       lon_hw = max(lon_hw, (blocks(1)%big_filter%ngrid_lat(j) - 1) / 2)
@@ -253,15 +253,25 @@ contains
     end select
 
     ! Setup halos (only normal halos for the time being).
+    allocate(blocks(1)%filter_halo(size(proc%ngb)))
     allocate(blocks(1)%halo(size(proc%ngb)))
     do i = 1, size(proc%ngb)
       proc%ngb(i)%orient = i
       select case (proc%ngb(i)%orient)
       case (west, east)
+        call blocks(1)%filter_halo(i)%init(blocks(1)%filter_mesh, proc%ngb(i)%orient, dtype,   &
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
+                                    jds=proc%jds, jde=proc%jde)
         call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
                                     host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
                                     jds=proc%jds, jde=proc%jde)
       case (south, north)
+        lon_hw = 0 ! min(blocks(1)%filter_mesh%lon_hw, proc%ngb(i)%lon_hw)
+        call blocks(1)%filter_halo(i)%init(blocks(1)%filter_mesh, proc%ngb(i)%orient, dtype,   &
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
+                                    ids=proc%ids, ide=proc%ide, lon_hw=lon_hw,   &
+                                    at_south_pole=proc%at_south_pole,            &
+                                    at_north_pole=proc%at_north_pole)
         lon_hw = min(blocks(1)%mesh%lon_hw, proc%ngb(i)%lon_hw)
         call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
                                     host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &

@@ -47,7 +47,7 @@ contains
         gzs(i,j) = gzs0 * (1.0 - d / R)
       end do
     end do
-    call fill_halo(block%halo, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)

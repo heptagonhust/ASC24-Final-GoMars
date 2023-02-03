@@ -173,9 +173,10 @@ module dynamics_types_mod
 
 contains
 
-  subroutine dstate_init(this, mesh)
+  subroutine dstate_init(this, filter_mesh, mesh)
 
     class(dstate_type), intent(inout), target :: this
+    type(mesh_type), intent(in) :: filter_mesh
     type(mesh_type), intent(in), target :: mesh
 
     call this%clear()
@@ -215,8 +216,9 @@ contains
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%ph_exn_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%phs              , full_lon=.true., full_lat=.true.                 )
-    call allocate_array(mesh, this%div              , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor              , half_lon=.true., half_lat=.true., full_lev=.true.)
+
+    call allocate_array(filter_mesh, this%div       , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (baroclinic) then
       call allocate_array(mesh, this%qm             , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -457,20 +459,22 @@ contains
 
   end subroutine dstate_assign
 
-  subroutine dtend_init(this, mesh)
+  subroutine dtend_init(this, filter_mesh, mesh)
 
     class(dtend_type), intent(inout) :: this
+    type(mesh_type), intent(in) :: filter_mesh
     type(mesh_type), intent(in), target :: mesh
 
     call this%clear()
 
     this%mesh => mesh
 
-    call allocate_array(mesh, this%du      , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dv      , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dgz     , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dpt     , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dphs    , full_lon=.true., full_lat=.true.                 )
+    call allocate_array(filter_mesh, this%du  , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(filter_mesh, this%dv  , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(filter_mesh, this%dgz , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(filter_mesh, this%dpt , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(filter_mesh, this%dphs, full_lon=.true., full_lat=.true.                 )
+
     call allocate_array(mesh, this%qhv     , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%qhu     , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dkedlon , half_lon=.true., full_lat=.true., full_lev=.true.)
@@ -730,17 +734,19 @@ contains
 
   end subroutine dtend_assign
 
-  subroutine static_init(this, mesh)
+  subroutine static_init(this, filter_mesh, mesh)
 
     class(static_type), intent(inout) :: this
+    type(mesh_type), intent(in) :: filter_mesh
     type(mesh_type), intent(in), target :: mesh
 
     call this%clear()
 
     this%mesh => mesh
 
+    call allocate_array(filter_mesh, this%gzs, full_lon=.true., full_lat=.true.)
+
     call allocate_array(mesh, this%landmask, full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%gzs     , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%zs_std  , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dzsdlon , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dzsdlat , full_lon=.true., half_lat=.true.)
