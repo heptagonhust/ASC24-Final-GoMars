@@ -88,7 +88,7 @@ contains
         end if
       end do
     end do
-    call fill_halo(block%halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Slotted cylinders
     qmax = 1.0_r8; qmin = 0.1_r8; r = radius * 0.5_r8
     do j = mesh%full_jds, mesh%full_jde
@@ -109,7 +109,7 @@ contains
         end if
       end do
     end do
-    call fill_halo(block%halo, q(:,:,:,3,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, q(:,:,:,3,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Gaussian hills
     qmax = 0.95_r8; c = 5.0_r8
     do j = mesh%full_jds, mesh%full_jde
@@ -121,7 +121,7 @@ contains
         q(i,j,1,4,old) = qmax * (exp(-c * dot_product(x - x1, x - x1)) + exp(-c * dot_product(x - x2, x - x2)))
       end do
     end do
-    call fill_halo(block%halo, q(:,:,:,4,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, q(:,:,:,4,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine deform_test_set_ic

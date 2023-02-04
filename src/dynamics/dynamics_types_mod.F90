@@ -207,7 +207,6 @@ contains
     call allocate_array(mesh, this%pv_lon           , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ke               , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pt               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -218,6 +217,7 @@ contains
     call allocate_array(mesh, this%phs              , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%vor              , half_lon=.true., half_lat=.true., full_lev=.true.)
 
+    call allocate_array(filter_mesh, this%pt        , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(filter_mesh, this%div       , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (baroclinic) then

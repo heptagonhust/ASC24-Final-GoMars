@@ -71,6 +71,8 @@ program gmcore_driver
     select case (test_case)
     case ('steady_state')
       set_ic => steady_state_test_set_ic
+    case ('steady_state_pgf')
+      set_ic => steady_state_pgf_test_set_ic
     case ('rossby_haurwitz_wave')
       set_ic => rossby_haurwitz_wave_3d_test_set_ic
     case ('mountain_wave')

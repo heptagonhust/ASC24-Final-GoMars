@@ -100,8 +100,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, t, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%half_kds, mesh%half_kde
       eta = merge(1.0d-12, mesh%half_lev(k), mesh%half_lev(k) == 0)

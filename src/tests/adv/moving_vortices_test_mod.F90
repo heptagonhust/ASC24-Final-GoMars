@@ -70,7 +70,7 @@ contains
         q(i,j,1,2,old) = 1 - tanh(rho(latr) / gamma * sin(lonr))
       end do
     end do
-    call fill_halo(block%halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine moving_vortices_test_set_ic

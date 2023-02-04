@@ -16,6 +16,7 @@ module adv_batch_mod
 
   ! Different tracers can be combined into one batch, and adved in different frequencfly.
   type adv_batch_type
+    type(mesh_type), pointer :: filter_mesh => null()
     type(mesh_type), pointer :: mesh => null()
     character(10) :: loc  = 'cell'
     character(30) :: name = ''
@@ -67,9 +68,10 @@ module adv_batch_mod
 
 contains
 
-  subroutine adv_batch_init(this, mesh, loc, name, dt, dynamic)
+  subroutine adv_batch_init(this, filter_mesh, mesh, loc, name, dt, dynamic)
 
     class(adv_batch_type), intent(inout) :: this
+    type(mesh_type), intent(in), target :: filter_mesh
     type(mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: loc
     character(*), intent(in) :: name
@@ -78,6 +80,7 @@ contains
 
     call this%clear()
 
+    this%filter_mesh => filter_mesh
     this%mesh      => mesh
     this%loc       = loc
     this%name      = name
@@ -108,14 +111,14 @@ contains
       call allocate_array(mesh, this%divy   , full_lon=.true., full_lat=.true., full_lev=.true.)
       select case (adv_scheme)
       case ('ffsl')
-        call allocate_array(mesh, this%qx   , full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qy   , full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(filter_mesh, this%qx, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(filter_mesh, this%qy, full_lon=.true., full_lat=.true., full_lev=.true.)
         if (ffsl_flux_type == 'ppm') then
-          call allocate_array(mesh, this%qlx, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(filter_mesh, this%qlx, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(filter_mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(filter_mesh, this%q6x, full_lon=.true., full_lat=.true., full_lev=.true.)
           call allocate_array(mesh, this%qly, full_lon=.true., full_lat=.true., full_lev=.true.)
-          call allocate_array(mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
           call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
-          call allocate_array(mesh, this%q6x, full_lon=.true., full_lat=.true., full_lev=.true.)
           call allocate_array(mesh, this%q6y, full_lon=.true., full_lat=.true., full_lev=.true.)
         end if
       end select

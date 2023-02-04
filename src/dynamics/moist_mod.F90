@@ -33,10 +33,10 @@ contains
 
     integer itime
 
-    associate (mesh      => block%mesh          , &
+    associate (mesh      => block%filter_mesh   , &
                adv_batch => block%adv_batches(1))
     do itime = 1, size(block%dstate)
-      block%dstate(itime)%qv(              &
+      block%dstate(itime)%qv(        &
         mesh%full_ims:mesh%full_ime, &
         mesh%full_jms:mesh%full_jme, &
         mesh%full_kms:mesh%full_kme) => adv_batch%q(:,:,:,1,adv_batch%old)
@@ -54,7 +54,7 @@ contains
     real(r8), pointer, dimension(:,:,:) :: qv
     integer i, j, k
 
-    associate (mesh => block%mesh,             &
+    associate (mesh => block%filter_mesh     , &
                qv   => block%dstate(itime)%qv, & ! in
                qm   => block%dstate(itime)%qm)   ! out
     do k = mesh%full_kds, mesh%full_kde

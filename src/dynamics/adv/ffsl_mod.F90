@@ -30,12 +30,12 @@ module ffsl_mod
       real(r8), intent(in ) :: v  (block%mesh%full_ims:block%mesh%full_ime, &
                                    block%mesh%half_jms:block%mesh%half_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
-      real(r8), intent(in ) :: mx (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
-      real(r8), intent(in ) :: my (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
+      real(r8), intent(in ) :: mx (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
+      real(r8), intent(in ) :: my (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
       real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
@@ -50,9 +50,9 @@ module ffsl_mod
       real(r8), intent(in ) :: w  (block%mesh%full_ims:block%mesh%full_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%half_kms:block%mesh%half_kme)
-      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
+      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
       real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%half_kms:block%mesh%half_kme)
@@ -64,9 +64,9 @@ module ffsl_mod
       real(r8), intent(in ) :: w  (block%mesh%full_ims:block%mesh%full_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
-      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
       real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
@@ -101,9 +101,9 @@ contains
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
-    real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%full_kms:block%mesh%full_kme)
@@ -184,8 +184,8 @@ contains
         end do
       end do
     end if
-    call fill_halo(block%halo, mx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    call fill_halo(block%halo, my, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%filter_halo, mx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block%filter_halo, my, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
     call hflx(block, batch, u, v, my, mx, mfx, mfy)
     end associate
@@ -196,9 +196,9 @@ contains
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
-    real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%half_kms:block%mesh%half_kme)
@@ -212,9 +212,9 @@ contains
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
-    real(r8), intent(in ) :: q    (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: q    (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: qmfx (block%mesh%half_ims:block%mesh%half_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
@@ -297,8 +297,8 @@ contains
         end do
       end do
     end if
-    call fill_halo(block%halo, qx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    call fill_halo(block%halo, qy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%filter_halo, qx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block%filter_halo, qy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
     call hflx(block, batch, mfx, mfy, qy, qx, qmfx, qmfy)
     end associate
@@ -309,9 +309,9 @@ contains
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
-    real(r8), intent(in ) :: q   (block%mesh%full_ims:block%mesh%full_ime, &
-                                  block%mesh%full_jms:block%mesh%full_jme, &
-                                  block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: q   (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                  block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                  block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: qmfz(block%mesh%full_ims:block%mesh%full_ime, &
                                   block%mesh%full_jms:block%mesh%full_jme, &
                                   block%mesh%half_kms:block%mesh%half_kme)
@@ -325,9 +325,9 @@ contains
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
-    real(r8), intent(in ) :: q   (block%mesh%full_ims:block%mesh%full_ime, &
-                                  block%mesh%full_jms:block%mesh%full_jme, &
-                                  block%mesh%half_kms:block%mesh%half_kme)
+    real(r8), intent(in ) :: q   (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                  block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                  block%filter_mesh%half_kms:block%filter_mesh%half_kme)
     real(r8), intent(out) :: qmfz(block%mesh%full_ims:block%mesh%full_ime, &
                                   block%mesh%full_jms:block%mesh%full_jme, &
                                   block%mesh%full_kms:block%mesh%full_kme)
@@ -347,12 +347,12 @@ contains
     real(r8), intent(in ) :: v  (block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%half_jms:block%mesh%half_jme, &
                                  block%mesh%full_kms:block%mesh%full_kme)
-    real(r8), intent(in ) :: mx (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
-    real(r8), intent(in ) :: my (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: mx (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
+    real(r8), intent(in ) :: my (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%full_kms:block%mesh%full_kme)
@@ -406,9 +406,9 @@ contains
     real(r8), intent(in ) :: w  (block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%half_kms:block%mesh%half_kme)
-    real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%half_kms:block%mesh%half_kme)
@@ -451,12 +451,12 @@ contains
     real(r8), intent(in ) :: v  (block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%half_jms:block%mesh%half_jme, &
                                  block%mesh%full_kms:block%mesh%full_kme)
-    real(r8), intent(in ) :: mx (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
-    real(r8), intent(in ) :: my (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: mx (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
+    real(r8), intent(in ) :: my (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%full_kms:block%mesh%full_kme)
@@ -484,9 +484,9 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, mlx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%halo, dmx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%halo, m6x, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%filter_halo, mlx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%filter_halo, dmx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%filter_halo, m6x, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     call fill_halo(block%halo, mly, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     call fill_halo(block%halo, dmy, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     call fill_halo(block%halo, m6y, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
@@ -553,9 +553,9 @@ contains
     real(r8), intent(in ) :: w  (block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%half_kms:block%mesh%half_kme)
-    real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%full_kms:block%mesh%full_kme)
+    real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
     real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%half_kms:block%mesh%half_kme)
@@ -613,9 +613,9 @@ contains
     real(r8), intent(in ) :: w  (block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%full_kms:block%mesh%full_kme)
-    real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                 block%mesh%full_jms:block%mesh%full_jme, &
-                                 block%mesh%half_kms:block%mesh%half_kme)
+    real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%half_kms:block%filter_mesh%half_kme)
     real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                  block%mesh%full_jms:block%mesh%full_jme, &
                                  block%mesh%full_kms:block%mesh%full_kme)

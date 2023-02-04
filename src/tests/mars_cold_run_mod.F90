@@ -76,7 +76,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine mars_cold_run_set_ic

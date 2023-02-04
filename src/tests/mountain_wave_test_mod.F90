@@ -115,8 +115,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, t, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
       call calc_gz_lev(block, block%dstate(1))

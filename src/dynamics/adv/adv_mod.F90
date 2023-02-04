@@ -43,9 +43,9 @@ module adv_mod
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
+      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
       real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
@@ -58,9 +58,9 @@ module adv_mod
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
+      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
       real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%half_kms:block%mesh%half_kme)
@@ -70,9 +70,9 @@ module adv_mod
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
       real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
                                    block%mesh%full_jms:block%mesh%full_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
@@ -277,7 +277,7 @@ contains
               end do
             end do
           end do
-          call fill_halo(block%halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fill_halo(block%filter_halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
           end associate
         end do
         i = block%adv_batches(m)%old
@@ -319,7 +319,7 @@ contains
     real(r8) unique_tracer_dt(100)
 
     if (.not. advection) then
-      call block%adv_batch_pt%init(block%mesh, 'cell', 'pt', dt_dyn, dynamic=.true.)
+      call block%adv_batch_pt%init(block%filter_mesh, block%mesh, 'cell', 'pt', dt_dyn, dynamic=.true.)
     end if
 
     nbatch = 0
@@ -351,7 +351,7 @@ contains
     ! Initialize advection batches in block objects and allocate tracer arrays in dstate objects.
     allocate(block%adv_batches(nbatch))
     do i = 1, nbatch
-      call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i), dynamic=.false.)
+      call block%adv_batches(i)%init(block%filter_mesh, block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i), dynamic=.false.)
     end do
 
     ! Record tracer information in advection batches.
@@ -363,8 +363,10 @@ contains
         end if
       end do
       call block%adv_batches(i)%allocate_tracers(nbatch_tracer)
-      associate (mesh => block%mesh)
-      allocate(block%adv_batches(i)%q      (mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme,nbatch_tracer,2))
+      associate (filter_mesh => block%filter_mesh, mesh => block%mesh)
+      allocate(block%adv_batches(i)%q(filter_mesh%full_ims:filter_mesh%full_ime, &
+                                      filter_mesh%full_jms:filter_mesh%full_jme, &
+                                      filter_mesh%full_kms:filter_mesh%full_kme,nbatch_tracer,2))
       allocate(block%adv_batches(i)%qmf_lon(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
       allocate(block%adv_batches(i)%qmf_lat(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
       allocate(block%adv_batches(i)%qmf_lev(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))

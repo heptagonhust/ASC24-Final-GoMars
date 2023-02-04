@@ -163,9 +163,9 @@ CONTAINS
     call fill_halo(block%halo,   u, full_lon=.false., full_lat=.true. , full_lev=.true.)
     call fill_halo(block%halo,   v, full_lon=.true. , full_lat=.false., full_lev=.true.)
     call fill_halo(block%halo,   t, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block%halo,  pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     call fill_halo(block%halo,  gz, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     call fill_halo(block%halo,   q, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%filter_halo, pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%half_ids, mesh%half_ide
