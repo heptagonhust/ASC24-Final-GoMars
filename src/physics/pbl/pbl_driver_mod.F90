@@ -40,7 +40,7 @@ contains
         qi3d              =pstate%qi          , &
         p3d               =pstate%p           , &
         p3di              =pstate%p_lev       , &
-        pi3d              =pstate%p_exn       , &
+        pi3d              =pstate%pk          , &
         rublten           =ptend%dudt         , &
         rvblten           =ptend%dvdt         , &
         rthblten          =ptend%dptdt        , &
@@ -68,7 +68,7 @@ contains
         xland             =pstate%land        , &
         hfx               =pstate%hfx         , &
         qfx               =pstate%qfx         , &
-        wspd              =pstate%wsp         , &
+        wspd              =pstate%wsb         , &
         br                =pstate%Rib         , &
         dt                =dt                 , &
         kpbl2d            =pstate%pblk        , &

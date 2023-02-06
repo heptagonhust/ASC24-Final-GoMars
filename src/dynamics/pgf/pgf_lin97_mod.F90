@@ -43,14 +43,14 @@ contains
     !          | /
     !          |/
     !          o
-    associate (mesh       => block%mesh       , & ! in
-               qm         => dstate%qm        , & ! in
-               ph_exn_lev => dstate%ph_exn_lev, & ! in
-               ph_lev     => dstate%ph_lev    , & ! in
-               gz_lev     => dstate%gz_lev    , & ! in
-               p_lev      => dstate%p_lev     , & ! in
-               pgf_lon    => dtend%pgf_lon    , & ! out
-               pgf_lat    => dtend%pgf_lat)       ! out
+    associate (mesh    => block%mesh    , & ! in
+               qm      => dstate%qm     , & ! in
+               pkh_lev => dstate%pkh_lev, & ! in
+               ph_lev  => dstate%ph_lev , & ! in
+               gz_lev  => dstate%gz_lev , & ! in
+               p_lev   => dstate%p_lev  , & ! in
+               pgf_lon => dtend%pgf_lon , & ! out
+               pgf_lat => dtend%pgf_lat )   ! out
     if (hydrostatic) then
       do k = mesh%full_kds, mesh%full_kde
         !
@@ -69,10 +69,10 @@ contains
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
             L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i+1,j,k))
-            dph1 = ph_exn_lev(i+1,j,k+1) - ph_exn_lev(i  ,j,k  ) ! 2 - 4
-            dph2 = ph_exn_lev(i  ,j,k+1) - ph_exn_lev(i+1,j,k  ) ! 1 - 3
-            dgz1 = gz_lev    (i  ,j,k+1) - gz_lev    (i+1,j,k  ) ! 1 - 3
-            dgz2 = gz_lev    (i  ,j,k  ) - gz_lev    (i+1,j,k+1) ! 4 - 2
+            dph1 = pkh_lev(i+1,j,k+1) - pkh_lev(i  ,j,k  ) ! 2 - 4
+            dph2 = pkh_lev(i  ,j,k+1) - pkh_lev(i+1,j,k  ) ! 1 - 3
+            dgz1 = gz_lev (i  ,j,k+1) - gz_lev (i+1,j,k  ) ! 1 - 3
+            dgz2 = gz_lev (i  ,j,k  ) - gz_lev (i+1,j,k+1) ! 4 - 2
             pgf_lon(i,j,k) = -(dph1 * dgz1 + dph2 * dgz2) / mesh%de_lon(j) / (dph1 + dph2) / L
           end do
         end do
@@ -92,10 +92,10 @@ contains
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i,j+1,k))
-            dph1 = ph_exn_lev(i,j+1,k+1) - ph_exn_lev(i,j  ,k  ) ! 2 - 4
-            dph2 = ph_exn_lev(i,j  ,k+1) - ph_exn_lev(i,j+1,k  ) ! 1 - 3
-            dgz1 = gz_lev    (i,j  ,k+1) - gz_lev    (i,j+1,k  ) ! 1 - 3
-            dgz2 = gz_lev    (i,j  ,k  ) - gz_lev    (i,j+1,k+1) ! 4 - 2
+            dph1 = pkh_lev(i,j+1,k+1) - pkh_lev(i,j  ,k  ) ! 2 - 4
+            dph2 = pkh_lev(i,j  ,k+1) - pkh_lev(i,j+1,k  ) ! 1 - 3
+            dgz1 = gz_lev (i,j  ,k+1) - gz_lev (i,j+1,k  ) ! 1 - 3
+            dgz2 = gz_lev (i,j  ,k  ) - gz_lev (i,j+1,k+1) ! 4 - 2
             pgf_lat(i,j,k) = -(dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2) / L
           end do
         end do
@@ -104,16 +104,16 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            dpp1 = p_lev     (i+1,j,k+1) - p_lev     (i  ,j,k  ) - ( &
-                   ph_lev    (i+1,j,k+1) - ph_lev    (i  ,j,k  )) ! 2 - 4
-            dpp2 = p_lev     (i  ,j,k+1) - p_lev     (i+1,j,k  ) - ( &
-                   ph_lev    (i  ,j,k+1) - ph_lev    (i+1,j,k  )) ! 1 - 3
-            dph1 = ph_exn_lev(i+1,j,k+1) - ph_exn_lev(i  ,j,k  )  ! 2 - 4
-            dph2 = ph_exn_lev(i  ,j,k+1) - ph_exn_lev(i+1,j,k  )  ! 1 - 3
-            dp1  = ph_lev    (i+1,j,k+1) - ph_lev    (i  ,j,k  )  ! 2 - 4
-            dp2  = ph_lev    (i  ,j,k+1) - ph_lev    (i+1,j,k  )  ! 1 - 3
-            dgz1 = gz_lev    (i  ,j,k+1) - gz_lev    (i+1,j,k  )  ! 1 - 3
-            dgz2 = gz_lev    (i  ,j,k  ) - gz_lev    (i+1,j,k+1)  ! 4 - 2
+            dpp1 = p_lev  (i+1,j,k+1) - p_lev  (i  ,j,k  ) - ( &
+                   ph_lev (i+1,j,k+1) - ph_lev (i  ,j,k  )) ! 2 - 4
+            dpp2 = p_lev  (i  ,j,k+1) - p_lev  (i+1,j,k  ) - ( &
+                   ph_lev (i  ,j,k+1) - ph_lev (i+1,j,k  )) ! 1 - 3
+            dph1 = pkh_lev(i+1,j,k+1) - pkh_lev(i  ,j,k  )  ! 2 - 4
+            dph2 = pkh_lev(i  ,j,k+1) - pkh_lev(i+1,j,k  )  ! 1 - 3
+            dp1  = ph_lev (i+1,j,k+1) - ph_lev (i  ,j,k  )  ! 2 - 4
+            dp2  = ph_lev (i  ,j,k+1) - ph_lev (i+1,j,k  )  ! 1 - 3
+            dgz1 = gz_lev (i  ,j,k+1) - gz_lev (i+1,j,k  )  ! 1 - 3
+            dgz2 = gz_lev (i  ,j,k  ) - gz_lev (i+1,j,k+1)  ! 4 - 2
             pgf_lon(i,j,k) = -(                             &
               (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
               (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part
@@ -122,16 +122,16 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            dpp1 = p_lev     (i,j+1,k+1) - p_lev     (i,j  ,k  ) - ( &
-                   ph_lev    (i,j+1,k+1) - ph_lev    (i,j  ,k  )) ! 2 - 4
-            dpp2 = p_lev     (i,j  ,k+1) - p_lev     (i,j+1,k  ) - ( &
-                   ph_lev    (i,j  ,k+1) - ph_lev    (i,j  ,k  )) ! 1 - 3
-            dph1 = ph_exn_lev(i,j+1,k+1) - ph_exn_lev(i,j  ,k  )  ! 2 - 4
-            dph2 = ph_exn_lev(i,j  ,k+1) - ph_exn_lev(i,j+1,k  )  ! 1 - 3
-            dp1  = ph_lev    (i,j+1,k+1) - ph_lev    (i,j  ,k  )  ! 2 - 4
-            dp2  = ph_lev    (i,j  ,k+1) - ph_lev    (i,j+1,k  )  ! 1 - 3
-            dgz1 = gz_lev    (i,j  ,k+1) - gz_lev    (i,j+1,k  )  ! 1 - 3
-            dgz2 = gz_lev    (i,j  ,k  ) - gz_lev    (i,j+1,k+1)  ! 4 - 2
+            dpp1 = p_lev  (i,j+1,k+1) - p_lev  (i,j  ,k  ) - ( &
+                   ph_lev (i,j+1,k+1) - ph_lev (i,j  ,k  )) ! 2 - 4
+            dpp2 = p_lev  (i,j  ,k+1) - p_lev  (i,j+1,k  ) - ( &
+                   ph_lev (i,j  ,k+1) - ph_lev (i,j  ,k  )) ! 1 - 3
+            dph1 = pkh_lev(i,j+1,k+1) - pkh_lev(i,j  ,k  )  ! 2 - 4
+            dph2 = pkh_lev(i,j  ,k+1) - pkh_lev(i,j+1,k  )  ! 1 - 3
+            dp1  = ph_lev (i,j+1,k+1) - ph_lev (i,j  ,k  )  ! 2 - 4
+            dp2  = ph_lev (i,j  ,k+1) - ph_lev (i,j+1,k  )  ! 1 - 3
+            dgz1 = gz_lev (i,j  ,k+1) - gz_lev (i,j+1,k  )  ! 1 - 3
+            dgz2 = gz_lev (i,j  ,k  ) - gz_lev (i,j+1,k+1)  ! 4 - 2
             pgf_lat(i,j,k) = -(                             &
               (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
               (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part

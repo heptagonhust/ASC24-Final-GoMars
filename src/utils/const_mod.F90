@@ -44,6 +44,7 @@ module const_mod
   real(r8)            :: cvd_o_cpd    = 0
   real(r8)            :: lapse_rate   = 0 ! K m-1
   real(r8)            :: p0           = 0 ! Pa
+  real(r8)            :: pk0          = 0 ! Pa
   real(r8)            :: time_scale   = 1
 
   integer, parameter :: inf_i4 = 10000000
@@ -97,11 +98,12 @@ contains
       call log_error('Invalid planet!')
     end select
 
-    eccen = (apheli - periheli) / (apheli + periheli)
-    rd_o_g  = rd / g
-    rd_o_cpd = rd / cpd
+    eccen     = (apheli - periheli) / (apheli + periheli)
+    rd_o_g    = rd / g
+    rd_o_cpd  = rd / cpd
     cpd_o_cvd = cpd / cvd
     cvd_o_cpd = cvd / cpd
+    pk0       = p0**rd_o_cpd
 
   end subroutine const_init
 

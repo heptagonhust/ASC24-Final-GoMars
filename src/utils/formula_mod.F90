@@ -11,8 +11,11 @@ module formula_mod
   public potential_temperature
   public temperature
   public virtual_temperature
+  public virtual_potential_temperature
   public dry_air_density
   public moist_air_density
+  public buoyancy_frequency
+  public local_richardson_number
 
 contains
 
@@ -52,14 +55,23 @@ contains
 
   end function temperature
 
-  pure elemental real(r8) function virtual_temperature(t, sh) result(res)
+  pure elemental real(r8) function virtual_temperature(t, qv) result(res)
 
     real(r8), intent(in) :: t   ! Temperature
-    real(r8), intent(in) :: sh  ! Specific humidity
+    real(r8), intent(in) :: qv  ! Mixing ratio
 
-    res = t * (1 + (rv_o_rd - 1) * sh)
+    res = t * (1 + rv_o_rd * qv) / (1 + qv)
 
   end function virtual_temperature
+
+  pure elemental real(r8) function virtual_potential_temperature(tv, p) result(res)
+
+    real(r8), intent(in) :: tv  ! Virtual temperature
+    real(r8), intent(in) :: p   ! Pressure
+
+    res = tv * (p0 / p)**rd_o_cpd
+
+  end function virtual_potential_temperature
 
   pure elemental real(r8) function dry_air_density(pt, p) result(res)
 
@@ -79,5 +91,34 @@ contains
     res = p / rd / virtual_temperature(t, specific_humidity(qv))
 
   end function moist_air_density
+
+  pure elemental real(r8) function buoyancy_frequency(pt1, pt2, z1, z2) result(res)
+
+    real(r8), intent(in) :: pt1
+    real(r8), intent(in) :: pt2
+    real(r8), intent(in) :: z1
+    real(r8), intent(in) :: z2
+
+    res = g * (pt1 - pt2) / (z1 - z2) / (pt1 + pt2) * 2
+
+  end function buoyancy_frequency
+
+  pure elemental real(r8) function local_richardson_number(N2, z1, z2, u1, u2, v1, v2) result(res)
+
+    real(r8), intent(in) :: N2
+    real(r8), intent(in) :: z1
+    real(r8), intent(in) :: z2
+    real(r8), intent(in) :: u1
+    real(r8), intent(in) :: u2
+    real(r8), intent(in) :: v1
+    real(r8), intent(in) :: v2
+
+    real(r8) s2
+
+    s2 = ((u1 - u2)**2 + (v1 - v2)**2) / (z1 - z2)**2
+
+    res = n2 / (s2 + 1.0e-4_r8)
+
+  end function local_richardson_number
 
 end module formula_mod

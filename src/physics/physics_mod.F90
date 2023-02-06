@@ -115,7 +115,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%halo, dstate%qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block%filter_halo, dstate%qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
       call calc_qm(block, itime)
     end if
 
@@ -128,7 +128,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%halo, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block%filter_halo, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     end if
     end associate
 

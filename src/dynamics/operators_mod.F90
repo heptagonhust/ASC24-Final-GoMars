@@ -133,20 +133,20 @@ contains
 
     integer i, j, k
 
-    associate (mesh       => block%mesh       , &
-               phs        => dstate%phs       , & ! in
-               ph_lev     => dstate%ph_lev    , & ! out
-               ph_exn_lev => dstate%ph_exn_lev, & ! out
-               ph         => dstate%ph        )   ! out
+    associate (mesh    => block%mesh    , &
+               phs     => dstate%phs    , & ! in
+               ph_lev  => dstate%ph_lev , & ! out
+               pkh_lev => dstate%pkh_lev, & ! out
+               ph      => dstate%ph     )   ! out
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
-          ph_exn_lev(i,j,k) = ph_lev(i,j,k)**Rd_o_cpd
+          pkh_lev(i,j,k) = ph_lev(i,j,k)**rd_o_cpd
         end do
       end do
     end do
-    call fill_halo(block%halo, ph_exn_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, pkh_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
@@ -455,7 +455,7 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           dgz = 0.0_r8
           do l = k, mesh%full_nlev
-            dgz = dgz + Rd * t(i,j,l) * log(ph_lev(i,j,l+1) / ph_lev(i,j,l))
+            dgz = dgz + rd * t(i,j,l) * log(ph_lev(i,j,l+1) / ph_lev(i,j,l))
           end do
           gz_lev(i,j,k) = gzs(i,j) + dgz
         end do
@@ -1094,7 +1094,7 @@ contains
     !   do j = mesh%full_jds, mesh%full_jde
     !     do i = mesh%full_ids, mesh%full_ide
     !       ptf_lev(i,j,k) = -(gz_lev(i,j,k+1) - gz_lev(i,j,k-1)) / (2 * cpd) / &
-    !         (ph(i,j,k)**Rd_o_cpd - ph(i,j,k-1)**Rd_o_cpd) * p0**Rd_o_cpd
+    !         (ph(i,j,k)**rd_o_cpd - ph(i,j,k-1)**rd_o_cpd) * p0**rd_o_cpd
     !     end do
     !   end do
     ! end do

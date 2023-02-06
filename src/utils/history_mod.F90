@@ -378,6 +378,8 @@ contains
     call fiona_add_var('h1', 'mfx_lat'      , long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'm'            , long_name='dph on full levels'                            , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
+    call fiona_add_var('h1', 'n2'           , long_name='square of buoyancy frequency'                  , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'ri'           , long_name='local Richardson number'                       , units='', dim_names= lev_dims_3d)
     if (use_smag_damp) then
       call fiona_add_var('h1', 'smag_t'     , long_name='Tension for Smagorinsky diffusion'             , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'smag_s'     , long_name='Shear for Smagorinsky diffusion'               , units='', dim_names= vtx_dims_3d)
@@ -819,9 +821,10 @@ contains
     call fiona_output('h1', 'lev'   , global_mesh%full_lev(1:global_mesh%full_nlev))
     call fiona_output('h1', 'ilev'  , global_mesh%half_lev(1:global_mesh%half_nlev))
 
-    associate (mesh   => blocks(1)%mesh        , &
-               dstate  => blocks(1)%dstate(itime), &
-               dtend   => blocks(1)%dtend (itime), &
+    associate (mesh   => blocks(1)%mesh         , &
+               dstate => blocks(1)%dstate(itime), &
+               pstate => blocks(1)%pstate       , &
+               dtend  => blocks(1)%dtend (itime), &
                static => blocks(1)%static)
     is = mesh%full_ids; ie = mesh%full_ide
     js = mesh%full_jds; je = mesh%full_jde
@@ -859,8 +862,8 @@ contains
     call fiona_output('h1', 'pgf_lon' ,  dtend%pgf_lon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlon' ,  dtend%dkedlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dudt   ' ,  dtend%du       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mfx_lon', dstate%mfx_lon   (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mfy_lon', dstate%mfy_lon   (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfx_lon' , dstate%mfx_lon  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfy_lon' , dstate%mfy_lon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedudlev',  dtend%wedudlev (is:ie,js:je,ks:ke), start=start, count=count)
     if (use_smag_damp) then
       call fiona_output('h1', 'kmh_lon' , dstate%kmh_lon  (is:ie,js:je,ks:ke), start=start, count=count)
@@ -875,8 +878,8 @@ contains
     call fiona_output('h1', 'pgf_lat' ,  dtend%pgf_lat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlat' ,  dtend%dkedlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dvdt'    ,  dtend%dv       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mfy_lat', dstate%mfy_lat   (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mfx_lat', dstate%mfx_lat   (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfy_lat' , dstate%mfy_lat  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfx_lat' , dstate%mfx_lat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedvdlev',  dtend%wedvdlev (is:ie,js:je,ks:ke), start=start, count=count)
     if (use_smag_damp) then
       call fiona_output('h1', 'kmh_lat' , dstate%kmh_lat  (is:ie,js:je,ks:ke), start=start, count=count)
@@ -888,6 +891,9 @@ contains
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
     call fiona_output('h1', 'we_lev', dstate%we_lev(is:ie,js:je,ks:ke), start=start, count=count)
+
+    call fiona_output('h1', 'n2', pstate%n2_lev, start=start, count=count)
+    call fiona_output('h1', 'ri', pstate%ri_lev, start=start, count=count)
 
     if (physics_suite /= 'none') then
       is = mesh%full_ids; ie = mesh%full_ide
