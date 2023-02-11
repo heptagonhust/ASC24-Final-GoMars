@@ -79,12 +79,11 @@ contains
     real(r8) lapse_kappa
     integer iblk, i, j
 
-    logical do_hydrostatic_correct, do_drymass_correct
+    logical do_hydrostatic_correct
 
     if (proc%is_root()) call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
 
     lapse_kappa = lapse_rate * rd_o_g
-    do_drymass_correct = .false.
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)              , &
                  mesh  => blocks(iblk)%mesh         , &
@@ -97,11 +96,10 @@ contains
 
         select case (bkg_type)
         case ('era5')
-          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_mslp, mesh, p0)
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_ps, mesh, p0)
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_zs, mesh, z0)
           call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_t(:,:,era5_nlev), mesh, t0)
           t0_p = era5_lev(era5_nlev)
-          z0 = 0.0_r8
-          do_hydrostatic_correct = .true.
 #ifdef HAS_ECCODES
         case ('fnl')
           call latlon_interp_bilinear_cell(fnl_lon, fnl_lat, fnl_ps, mesh, phs)
@@ -129,61 +127,12 @@ contains
             end do
           end do
         end if
-        ! Evaluate dry mass surface pressure
-        if (do_drymass_correct) then
-          call calc_dry_air_ps(era5_lon, era5_lat, era5_lev, era5_ps, era5_q, era5_psd)
-          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_psd, mesh, phs)
-        end if
-
         call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
         deallocate(p0, t0, z0, t0_p)
       end associate
     end do
 
   end subroutine bkg_regrid_phs
-
-  subroutine calc_dry_air_ps(lon, lat, lev, ps, q, psd)
-
-    real(r8), intent(in) :: lon(era5_nlon), &
-                            lat(era5_nlat), &
-                            lev(era5_nlev)
-    real(r8), intent(in) :: ps(era5_nlon,era5_nlat), &
-                             q(era5_nlon,era5_nlat,era5_nlev)
-    real(r8), intent(out) :: psd(era5_nlon,era5_nlat)
-
-    integer i, j, k, nlev_eff
-    real(r8) pfull(era5_nlev  ), hpfull(era5_nlev  ), dpfull(era5_nlev)
-    real(r8) pface(era5_nlev+1), hpface(era5_nlev+1)
-
-    do j = 1, era5_nlat
-      do i = 1, era5_nlon
-        pfull = lev(:)
-        ! Check effective full level number.
-        nlev_eff = 99999
-        do k = 1, era5_nlev
-          if (pfull(k) >= ps(i,j)) then
-            nlev_eff = k
-            exit
-          end if 
-        end do
-        if (nlev_eff == 99999) nlev_eff = era5_nlev 
-
-        pface(2:nlev_eff) = (pfull(1:nlev_eff-1) + pfull(2:nlev_eff)) * 0.5_r8
-        pface(1) = 0.0_r8
-        pface(nlev_eff+1) = ps(i,j)
- 
-        dpfull(1:nlev_eff) = pface(2:nlev_eff+1) - pface(1:nlev_eff)
-        hpface(1) = pface(1)
-
-        do k = 2, nlev_eff+1
-          hpface(k) = hpface(k-1) + dpfull(k-1) * (1.0_r8 - q(i,j,k-1))
-        end do 
-        hpfull(1:nlev_eff) = (hpface(1:nlev_eff) + hpface(2:nlev_eff+1)) * 0.5_r8
-        psd(i,j) = hpface(nlev_eff+1)
-      end do
-    end do
-
-  end subroutine calc_dry_air_ps
 
   subroutine bkg_calc_ph()
 
@@ -482,7 +431,7 @@ contains
       case ('era5')
         allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
         do k = 1, era5_nlev
-          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_q(:,:,k), mesh, q1(:,:,k))
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_qv(:,:,k), mesh, q1(:,:,k))
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
