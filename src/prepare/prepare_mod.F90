@@ -58,7 +58,7 @@ contains
 
     call bkg_regrid_phs()
     call bkg_calc_ph()
-    call bkg_regrid_q()
+    call bkg_regrid_qv()
     call bkg_regrid_pt()
     call bkg_regrid_u()
     call bkg_regrid_v()

@@ -11,6 +11,7 @@ module formula_mod
   public potential_temperature
   public temperature
   public virtual_temperature
+  public virtual_temperature_from_modified_potential_temperature
   public virtual_potential_temperature
   public dry_air_density
   public moist_air_density
@@ -63,6 +64,16 @@ contains
     res = t * (1 + rv_o_rd * qv) / (1 + qv)
 
   end function virtual_temperature
+
+  pure elemental real(r8) function virtual_temperature_from_modified_potential_temperature(pt, pk, qv) result(res)
+
+    real(r8), intent(in) :: pt  ! Modified potential temperature
+    real(r8), intent(in) :: pk  ! p**(rd/cpd)
+    real(r8), intent(in) :: qv  ! Mixing ratio
+
+    res = pt * pk / pk0 / (1 + qv)
+
+  end function virtual_temperature_from_modified_potential_temperature
 
   pure elemental real(r8) function virtual_potential_temperature(tv, p) result(res)
 

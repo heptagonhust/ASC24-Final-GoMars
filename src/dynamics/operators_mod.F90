@@ -171,11 +171,13 @@ contains
                pt   => dstate%pt , & ! in
                ph   => dstate%ph , & ! in
                qv   => dstate%qv , & ! in
-               t    => dstate%t  )   ! out
+               t    => dstate%t  , & ! out
+               tv   => dstate%tv )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k), qv(i,j,k))
+          tv(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt(i,j,k), ph(i,j,k)**rd_o_cpd, qv(i,j,k))
         end do
       end do
     end do
@@ -446,7 +448,7 @@ contains
 
     associate (mesh   => block%mesh      , &
                gzs    => block%static%gzs, & ! in
-               t      => dstate%t        , & ! in
+               tv     => dstate%tv       , & ! in
                ph_lev => dstate%ph_lev   , & ! in
                gz_lev => dstate%gz_lev   , & ! out
                gz     => dstate%gz       )   ! out
@@ -455,7 +457,7 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           dgz = 0.0_r8
           do l = k, mesh%full_nlev
-            dgz = dgz + rd * t(i,j,l) * log(ph_lev(i,j,l+1) / ph_lev(i,j,l))
+            dgz = dgz + rd * tv(i,j,l) * log(ph_lev(i,j,l+1) / ph_lev(i,j,l))
           end do
           gz_lev(i,j,k) = gzs(i,j) + dgz
         end do

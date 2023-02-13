@@ -1,6 +1,6 @@
 module dcmip12_test_mod
 
-  use const_mod, only: r8, pi, pi2, Rd, g, radius
+  use const_mod, only: r8, pi, pi2, rd, g, radius
   use namelist_mod, dt => dt_adv
   use parallel_mod
   use history_mod
@@ -36,7 +36,7 @@ contains
   subroutine dcmip12_test_init()
 
     ptop = 25494.4
-    rho0 = p0 / (Rd * T0)
+    rho0 = p0 / (rd * T0)
 
   end subroutine dcmip12_test_init
 
@@ -95,7 +95,7 @@ contains
                m_lon   => dstate%m_lon  , &
                m_lat   => dstate%m_lat  , &
                m_lev   => dstate%m_lev  , &
-               t       => dstate%t      , &
+               tv      => dstate%tv     , &
                gz_lev  => dstate%gz_lev , &
                gz      => dstate%gz     , &
                u       => dstate%u_lon  , &
@@ -104,7 +104,7 @@ contains
                mfy_lat => dstate%mfy_lat, &
                we      => dstate%we_lev)
     phs = p0
-    t   = T0
+    tv  = T0
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -147,7 +147,7 @@ contains
         lat = mesh%half_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          rho = ph(i,j,k) / (Rd * T0)
+          rho = ph(i,j,k) / (rd * T0)
           v(i,j,k) = -radius * w0 * pi * rho0 / (K0 * ztop * rho) * &
             cos(lat) * sin(K0 * lat) * cos(pi * gz(i,j,k) / (g * ztop)) * cos_t
           mfy_lat(i,j,k) = v(i,j,k) * m_lat(i,j,k)
@@ -160,7 +160,7 @@ contains
         lat = mesh%full_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          rho = ph_lev(i,j,k) / (Rd * T0)
+          rho = ph_lev(i,j,k) / (rd * T0)
           dphdlev = m_lev(i,j,k) / mesh%half_dlev(k)
           we(i,j,k) = -dphdlev * g * w0 * rho0 / K0 * (                   &
             -2 * sin(K0 * lat) * sin(lat) + K0 * cos(lat) * cos(K0 * lat) &

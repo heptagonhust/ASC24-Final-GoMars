@@ -19,6 +19,7 @@ module bkg_mod
   use latlon_interp_mod
   use vert_interp_mod
   use interp_mod
+  use moist_mod
 
   implicit none
 
@@ -28,10 +29,10 @@ module bkg_mod
   public bkg_final
   public bkg_regrid_phs
   public bkg_calc_ph
+  public bkg_regrid_qv
   public bkg_regrid_pt
   public bkg_regrid_u
   public bkg_regrid_v
-  public bkg_regrid_q
 
 contains
 
@@ -166,14 +167,14 @@ contains
     if (proc%is_root()) call log_notice('Regrid temperature and calculate potential temperature.')
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                   , &
-                 mesh  => blocks(iblk)%mesh              , &
-                 phs   => blocks(iblk)%dstate(1)%phs     , & ! in
-                 ph    => blocks(iblk)%dstate(1)%ph      , & ! in
-                 old   => blocks(iblk)%adv_batches(1)%old, & ! in
-                 q     => blocks(iblk)%adv_batches(1)%q  , & ! in
-                 t     => blocks(iblk)%dstate(1)%t       , & ! out
-                 pt    => blocks(iblk)%dstate(1)%pt      )   ! out
+      associate (block => blocks(iblk)              , &
+                 mesh  => blocks(iblk)%mesh         , &
+                 phs   => blocks(iblk)%dstate(1)%phs, & ! in
+                 ph    => blocks(iblk)%dstate(1)%ph , & ! in
+                 qv    => blocks(iblk)%dstate(1)%qv , & ! in
+                 t     => blocks(iblk)%dstate(1)%t  , & ! out
+                 tv    => blocks(iblk)%dstate(1)%tv , & ! out
+                 pt    => blocks(iblk)%dstate(1)%pt )   ! out
         select case (bkg_type)
         case ('era5')
           allocate(t1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -183,7 +184,8 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(era5_lev, t1(i,j,:), ph(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,1,old))
+              tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:))
+              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
             end do
           end do
           deallocate(t1)
@@ -196,7 +198,8 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(fnl_lev, t1(i,j,:), ph(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,1,old))
+              tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:))
+              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
             end do
           end do
           deallocate(t1)
@@ -224,6 +227,7 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              tv(i,j,:) = virtual_temperature(t(i,j,:), 0.0_r8)
               pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
             end do
           end do
@@ -238,6 +242,7 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              tv(i,j,:) = virtual_temperature(t(i,j,:), 0.0_r8)
               pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
             end do
           end do
@@ -415,7 +420,7 @@ contains
 
   end subroutine bkg_regrid_v
 
-  subroutine bkg_regrid_q()
+  subroutine bkg_regrid_qv()
 
     real(r8), allocatable, dimension(:,:,:) :: q1, p1
     integer iblk, i, j, k
@@ -423,11 +428,11 @@ contains
     if (proc%is_root()) call log_notice('Regrid water vapor mixing ratio.')
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                   , &
-                 mesh  => blocks(iblk)%mesh              , &
-                 ph    => blocks(iblk)%dstate(1)%ph      , &
-                 old   => blocks(iblk)%adv_batches(1)%old, &
-                 q     => blocks(iblk)%adv_batches(1)%q)
+      call moist_link_state(blocks(iblk))
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%mesh        , &
+                 ph    => blocks(iblk)%dstate(1)%ph, & ! in
+                 qv    => blocks(iblk)%dstate(1)%qv)   ! out
       select case (bkg_type)
       case ('era5')
         allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -436,7 +441,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(era5_lev, q1(i,j,:), ph(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,1,old), allow_extrap=.true.)
+            call vert_interp_linear(era5_lev, q1(i,j,:), ph(i,j,1:mesh%full_nlev), qv(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
         deallocate(q1)
@@ -449,15 +454,15 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), ph(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,1,old), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), ph(i,j,1:mesh%full_nlev), qv(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, q(:,:,:,1,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
       end associate
     end do
 
-  end subroutine bkg_regrid_q
+  end subroutine bkg_regrid_qv
 
 end module bkg_mod

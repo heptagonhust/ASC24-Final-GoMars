@@ -50,6 +50,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: ptf_lat           ! Potential temperature on the merdional edge
     real(r8), allocatable, dimension(:,:,:) :: ptf_lev           ! Potential temperature on the vertical edge
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
+    real(r8), allocatable, dimension(:,:,:) :: tv                ! Virtual temperature
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: pkh_lev           ! Exner pressure on half levels
@@ -211,6 +212,7 @@ contains
     call allocate_array(mesh, this%ptf_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%tv               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%pkh_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -292,6 +294,7 @@ contains
     if (allocated(this%ptf_lat          )) deallocate(this%ptf_lat          )
     if (allocated(this%ptf_lev          )) deallocate(this%ptf_lev          )
     if (allocated(this%t                )) deallocate(this%t                )
+    if (allocated(this%tv               )) deallocate(this%tv               )
     if (allocated(this%ph               )) deallocate(this%ph               )
     if (allocated(this%ph_lev           )) deallocate(this%ph_lev           )
     if (allocated(this%pkh_lev          )) deallocate(this%pkh_lev          )

@@ -53,7 +53,6 @@ contains
                phs    => block%dstate(1)%phs   , &
                ph_lev => block%dstate(1)%ph_lev, &
                ph     => block%dstate(1)%ph    , &
-               t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static%gzs)
     do k = mesh%full_kds, mesh%full_kde
@@ -110,12 +109,10 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          t (i,j,k) = 288.d0
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
+          pt(i,j,k) = potential_temperature(288.0_r8, ph(i,j,k), 0.0_r8)
         end do
       end do
     end do
-    call fill_halo(block%halo, t, full_lon=.true., full_lat=.true., full_lev=.true.)
     call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
