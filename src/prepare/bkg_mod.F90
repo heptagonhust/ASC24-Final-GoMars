@@ -81,7 +81,7 @@ contains
 
     logical do_hydrostatic_correct
 
-    if (proc%is_root()) call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
+    if (proc%is_root()) call log_notice('Regrid surface pressure.')
 
     lapse_kappa = lapse_rate * rd_o_g
     do iblk = 1, size(blocks)
@@ -100,6 +100,7 @@ contains
           call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_zs, mesh, z0)
           call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_t(:,:,era5_nlev), mesh, t0)
           t0_p = era5_lev(era5_nlev)
+          do_hydrostatic_correct = .true.
 #ifdef HAS_ECCODES
         case ('fnl')
           call latlon_interp_bilinear_cell(fnl_lon, fnl_lat, fnl_ps, mesh, phs)
