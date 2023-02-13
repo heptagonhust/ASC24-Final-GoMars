@@ -138,23 +138,21 @@ CONTAINS
                v     => block%dstate(1)%v    , &
                v_lat => block%dstate(1)%v_lat, &
                t     => block%dstate(1)%t    , &
+               qv    => block%dstate(1)%qv   , &
                pt    => block%dstate(1)%pt   , &
                gzs   => block%static%gzs     )
-    q(mesh%full_ims:mesh%full_ime, &
-      mesh%full_jms:mesh%full_jme, &
-      mesh%full_kms:mesh%full_kme) => block%adv_batches(1)%q(:,:,:,1,block%adv_batches(1)%old)
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         ! Get surface pressure.
         z(i,j,1) = 0
         call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,1), z(i,j,1), 1, &
-          u(i,j,1), v(i,j,1), t(i,j,1), thetav, gzs(i,j), ps(i,j), rho, q(i,j,1))
+          u(i,j,1), v(i,j,1), t(i,j,1), thetav, gzs(i,j), ps(i,j), rho, qv(i,j,1))
         do k = mesh%full_kds, mesh%full_kde
           p(i,j,k) = vert_coord_calc_ph(k, ps(i,j))
           call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,k), z(i,j,k), 0, &
-            u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, q(i,j,k))
-          q(i,j,k) = q(i,j,k) / (1 - q(i,j,k))
-          pt(i,j,k) = potential_temperature(t(i,j,k), p(i,j,k), q(i,j,k))
+            u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, qv(i,j,k))
+          qv(i,j,k) = qv(i,j,k) / (1 - qv(i,j,k))
+          pt(i,j,k) = potential_temperature(t(i,j,k), p(i,j,k), qv(i,j,k))
           gz(i,j,k) = g * z(i,j,k)
         end do
       end do
@@ -164,7 +162,7 @@ CONTAINS
     call fill_halo(block%halo,   v, full_lon=.true. , full_lat=.false., full_lev=.true.)
     call fill_halo(block%halo,   t, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     call fill_halo(block%halo,  gz, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block%halo,   q, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%filter_halo, qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     call fill_halo(block%filter_halo, pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde

@@ -20,23 +20,27 @@ contains
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    if (baroclinic .and. mod(time_step, 1) == 0) then
-      dstate%pt = dstate%pt * dstate%m
-      ! call filter_on_cell(block%small_filter, dstate%phs)
-      ! call fill_halo(block%halo, dstate%phs, full_lon=.true., full_lat=.true.)
-      ! call calc_ph(block, dstate)
-      ! call calc_m (block, dstate)
+    integer i, j, k
+
+    if (baroclinic) then
+      do k = block%mesh%full_kds, block%mesh%full_kde
+        do j = block%mesh%full_jds, block%mesh%full_jde
+          do i = block%mesh%full_ids, block%mesh%full_ide
+            dstate%pt(i,j,k) = dstate%pt(i,j,k) * dstate%m(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
       call filter_on_cell(block%small_filter, dstate%pt)
-      dstate%pt = dstate%pt / dstate%m
-      call fill_halo(block%halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call filter_on_lon_edge(block%small_filter, dstate%u_lon)
-      call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call filter_on_lat_edge(block%small_filter, dstate%v_lat)
-      call fill_halo(block%halo, dstate%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-    else
-      ! call filter_on_cell(block%small_filter, dstate%gz)
-      ! call fill_halo(block%halo, dstate%gz, full_lon=.true., full_lat=.true.)
-      ! call calc_m (block, dstate)
+      do k = block%mesh%full_kds, block%mesh%full_kde
+        do j = block%mesh%full_jds, block%mesh%full_jde
+          do i = block%mesh%full_ids, block%mesh%full_ide
+            dstate%pt(i,j,k) = dstate%pt(i,j,k) / dstate%m(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
   end subroutine pole_damp_run
