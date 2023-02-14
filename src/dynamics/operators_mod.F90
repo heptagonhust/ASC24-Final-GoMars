@@ -141,7 +141,7 @@ contains
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
+          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
           pkh_lev(i,j,k) = ph_lev(i,j,k)**rd_o_cpd
         end do
       end do
@@ -210,7 +210,7 @@ contains
           do l = 1, k - 1
             mf = mf + dmfdlon(i,j,l) + dmfdlat(i,j,l)
           end do
-          we_lev(i,j,k) = - vert_coord_calc_dphdt_lev(k, dphs(i,j)) - mf
+          we_lev(i,j,k) = - vert_coord_calc_dmgdt_lev(k, dphs(i,j)) - mf
         end do
       end do
     end do

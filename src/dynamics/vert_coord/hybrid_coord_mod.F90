@@ -15,9 +15,9 @@ module hybrid_coord_mod
 
   public hybrid_coord_init
   public hybrid_coord_final
-  public hybrid_coord_calc_ph
-  public hybrid_coord_calc_ph_lev
-  public hybrid_coord_calc_dphdt_lev
+  public hybrid_coord_calc_mg
+  public hybrid_coord_calc_mg_lev
+  public hybrid_coord_calc_dmgdt_lev
 
   real(r8), allocatable, dimension(:) :: hyai
   real(r8), allocatable, dimension(:) :: hybi
@@ -143,31 +143,31 @@ contains
 
   end subroutine hybrid_coord_final
 
-  pure real(r8) function hybrid_coord_calc_ph(k, phs) result(res)
+  pure real(r8) function hybrid_coord_calc_mg(k, phs) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
 
     res = hyam(k) * (p0 - local_ptop) + hybm(k) * (phs - local_ptop) + local_ptop
 
-  end function hybrid_coord_calc_ph
+  end function hybrid_coord_calc_mg
 
-  pure real(r8) function hybrid_coord_calc_ph_lev(k, phs) result(res)
+  pure real(r8) function hybrid_coord_calc_mg_lev(k, phs) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
 
     res = hyai(k) * (p0 - local_ptop) + hybi(k) * (phs - local_ptop) + local_ptop
 
-  end function hybrid_coord_calc_ph_lev
+  end function hybrid_coord_calc_mg_lev
 
-  pure real(r8) function hybrid_coord_calc_dphdt_lev(k, dphsdt) result(res)
+  pure real(r8) function hybrid_coord_calc_dmgdt_lev(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
-    real(r8), intent(in) :: dphsdt
+    real(r8), intent(in) :: dmgsdt
 
-    res = hybi(k) * dphsdt
+    res = hybi(k) * dmgsdt
 
-  end function hybrid_coord_calc_dphdt_lev
+  end function hybrid_coord_calc_dmgdt_lev
 
 end module hybrid_coord_mod

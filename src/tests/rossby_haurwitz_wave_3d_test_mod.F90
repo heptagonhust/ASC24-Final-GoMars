@@ -88,7 +88,7 @@ contains
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
+          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
         end do
       end do
     end do

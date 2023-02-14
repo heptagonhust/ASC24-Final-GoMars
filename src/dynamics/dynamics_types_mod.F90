@@ -51,6 +51,9 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: ptf_lev           ! Potential temperature on the vertical edge
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: tv                ! Virtual temperature
+    real(r8), allocatable, dimension(:,:,:) :: mg                ! Dry-air weight on full levels
+    real(r8), allocatable, dimension(:,:,:) :: mg_lev            ! Dry-air weight on half levels
+    real(r8), allocatable, dimension(:,:  ) :: mgs               ! Surface dry-air weight
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: pkh_lev           ! Exner pressure on half levels
@@ -213,6 +216,9 @@ contains
     call allocate_array(mesh, this%ptf_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%tv               , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mg               , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mg_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%mgs              , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%pkh_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -295,6 +301,9 @@ contains
     if (allocated(this%ptf_lev          )) deallocate(this%ptf_lev          )
     if (allocated(this%t                )) deallocate(this%t                )
     if (allocated(this%tv               )) deallocate(this%tv               )
+    if (allocated(this%mg               )) deallocate(this%mg               )
+    if (allocated(this%mg_lev           )) deallocate(this%mg_lev           )
+    if (allocated(this%mgs              )) deallocate(this%mgs              )
     if (allocated(this%ph               )) deallocate(this%ph               )
     if (allocated(this%ph_lev           )) deallocate(this%ph_lev           )
     if (allocated(this%pkh_lev          )) deallocate(this%pkh_lev          )

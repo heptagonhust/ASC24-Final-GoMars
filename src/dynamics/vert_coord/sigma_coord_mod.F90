@@ -12,9 +12,9 @@ module sigma_coord_mod
 
   public sigma_coord_init
   public sigma_coord_final
-  public sigma_coord_calc_ph
-  public sigma_coord_calc_ph_lev
-  public sigma_coord_calc_dphdt_lev
+  public sigma_coord_calc_mg
+  public sigma_coord_calc_mg_lev
+  public sigma_coord_calc_dmgdt_lev
 
   real(r8), allocatable, dimension(:) :: sigi
   real(r8), allocatable, dimension(:) :: sig
@@ -96,31 +96,31 @@ contains
 
   end subroutine sigma_coord_final
 
-  pure real(r8) function sigma_coord_calc_ph(k, phs) result(res)
+  pure real(r8) function sigma_coord_calc_mg(k, phs) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
 
     res = sig(k) * (phs - pt) + pt
 
-  end function sigma_coord_calc_ph
+  end function sigma_coord_calc_mg
 
-  pure real(r8) function sigma_coord_calc_ph_lev(k, phs) result(res)
+  pure real(r8) function sigma_coord_calc_mg_lev(k, phs) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
 
     res = sigi(k) * (phs - pt) + pt
 
-  end function sigma_coord_calc_ph_lev
+  end function sigma_coord_calc_mg_lev
 
-  pure real(r8) function sigma_coord_calc_dphdt_lev(k, dphsdt) result(res)
+  pure real(r8) function sigma_coord_calc_dmgdt_lev(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
-    real(r8), intent(in) :: dphsdt
+    real(r8), intent(in) :: dmgsdt
 
-    res = sigi(k) * dphsdt
+    res = sigi(k) * dmgsdt
 
-  end function sigma_coord_calc_dphdt_lev
+  end function sigma_coord_calc_dmgdt_lev
 
 end module sigma_coord_mod

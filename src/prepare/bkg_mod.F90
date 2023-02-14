@@ -150,7 +150,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              ph(i,j,k) = vert_coord_calc_ph(k, phs(i,j))
+              ph(i,j,k) = vert_coord_calc_mg(k, phs(i,j))
             end do
           end do
         end do

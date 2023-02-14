@@ -14,33 +14,33 @@ module vert_coord_mod
 
   public vert_coord_init
   public vert_coord_final
-  public vert_coord_calc_ph
-  public vert_coord_calc_ph_lev
-  public vert_coord_calc_dphdt_lev
+  public vert_coord_calc_mg
+  public vert_coord_calc_mg_lev
+  public vert_coord_calc_dmgdt_lev
 
   interface
-    pure real(r8) function vert_coord_calc_ph_interface(k, phs)
+    pure real(r8) function vert_coord_calc_mg_interface(k, phs)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: phs
-    end function vert_coord_calc_ph_interface
+    end function vert_coord_calc_mg_interface
 
-    pure real(r8) function vert_coord_calc_ph_lev_interface(k, phs)
+    pure real(r8) function vert_coord_calc_mg_lev_interface(k, phs)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: phs
-    end function vert_coord_calc_ph_lev_interface
+    end function vert_coord_calc_mg_lev_interface
 
-    pure real(r8) function vert_coord_calc_dphdt_lev_interface(k, dphsdt)
+    pure real(r8) function vert_coord_calc_dmgdt_lev_interface(k, dmgsdt)
       import r8
       integer, intent(in) :: k
-      real(r8), intent(in) :: dphsdt
-    end function vert_coord_calc_dphdt_lev_interface
+      real(r8), intent(in) :: dmgsdt
+    end function vert_coord_calc_dmgdt_lev_interface
   end interface
 
-  procedure(vert_coord_calc_ph_interface), pointer :: vert_coord_calc_ph
-  procedure(vert_coord_calc_ph_lev_interface), pointer :: vert_coord_calc_ph_lev
-  procedure(vert_coord_calc_dphdt_lev_interface), pointer :: vert_coord_calc_dphdt_lev
+  procedure(vert_coord_calc_mg_interface), pointer :: vert_coord_calc_mg
+  procedure(vert_coord_calc_mg_lev_interface), pointer :: vert_coord_calc_mg_lev
+  procedure(vert_coord_calc_dmgdt_lev_interface), pointer :: vert_coord_calc_dmgdt_lev
 
 contains
 
@@ -71,14 +71,14 @@ contains
     select case (vert_coord_scheme)
     case ('sigma')
       call sigma_coord_init(nlev, namelist_file, vert_coord_template)
-      vert_coord_calc_ph => sigma_coord_calc_ph
-      vert_coord_calc_ph_lev => sigma_coord_calc_ph_lev
-      vert_coord_calc_dphdt_lev => sigma_coord_calc_dphdt_lev
+      vert_coord_calc_mg => sigma_coord_calc_mg
+      vert_coord_calc_mg_lev => sigma_coord_calc_mg_lev
+      vert_coord_calc_dmgdt_lev => sigma_coord_calc_dmgdt_lev
     case ('hybrid')
       call hybrid_coord_init(nlev, namelist_file, vert_coord_template)
-      vert_coord_calc_ph => hybrid_coord_calc_ph
-      vert_coord_calc_ph_lev => hybrid_coord_calc_ph_lev
-      vert_coord_calc_dphdt_lev => hybrid_coord_calc_dphdt_lev
+      vert_coord_calc_mg => hybrid_coord_calc_mg
+      vert_coord_calc_mg_lev => hybrid_coord_calc_mg_lev
+      vert_coord_calc_dmgdt_lev => hybrid_coord_calc_dmgdt_lev
     end select
 
     ! Set vertical level intervals.
