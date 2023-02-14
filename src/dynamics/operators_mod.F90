@@ -20,7 +20,7 @@ module operators_mod
   public operators_init
   public operators_prepare
   public calc_ph
-  public calc_m
+  public calc_dmg
   public calc_t
   public calc_gz_lev
   public calc_we_lev
@@ -30,7 +30,7 @@ module operators_mod
   public calc_grad_ke
   public calc_grad_mf
   public calc_grad_ptf
-  public calc_dphsdt
+  public calc_dmgsdt
   public calc_wedudlev_wedvdlev
   public nh_prepare
   public nh_solve
@@ -78,7 +78,7 @@ contains
 
     do iblk = 1, size(blocks)
       if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%dstate(itime))
-      call calc_m                         (blocks(iblk), blocks(iblk)%dstate(itime))
+      call calc_dmg                       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
@@ -101,7 +101,7 @@ contains
     ! --------------------------------------------------------------------------
     case (all_pass)
       if (baroclinic ) call calc_ph       (block, dstate)
-      call calc_m                         (block, dstate)
+      call calc_dmg                       (block, dstate)
       if (baroclinic ) call calc_t        (block, dstate)
       call calc_mf                        (block, dstate, dt)
       call calc_ke                        (block, dstate)
@@ -134,14 +134,17 @@ contains
     integer i, j, k
 
     associate (mesh    => block%mesh    , &
-               phs     => dstate%phs    , & ! in
+               mgs     => dstate%mgs    , & ! in
+               mg_lev  => dstate%mg_lev , & ! out
+               mg      => dstate%mg     , & ! out
                ph_lev  => dstate%ph_lev , & ! out
                pkh_lev => dstate%pkh_lev, & ! out
                ph      => dstate%ph     )   ! out
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
+          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
+          ph_lev(i,j,k) = mg_lev(i,j,k) ! Assume dry-air.
           pkh_lev(i,j,k) = ph_lev(i,j,k)**rd_o_cpd
         end do
       end do
@@ -151,11 +154,12 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
+          mg(i,j,k) = 0.5_r8 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
           ph(i,j,k) = 0.5_r8 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine calc_ph
@@ -198,7 +202,7 @@ contains
     associate (mesh       => block%mesh       , &
                dmfdlon    => dtend%dmfdlon    , & ! in
                dmfdlat    => dtend%dmfdlat    , & ! in
-               dphs       => dtend%dphs       , & ! in
+               dmgs       => dtend%dmgs       , & ! in
                dmg_lev    => dstate%dmg_lev   , & ! in
                we_lev     => dstate%we_lev    , & ! out
                we_lev_lon => dstate%we_lev_lon, & ! out
@@ -210,7 +214,7 @@ contains
           do l = 1, k - 1
             mf = mf + dmfdlon(i,j,l) + dmfdlat(i,j,l)
           end do
-          we_lev(i,j,k) = - vert_coord_calc_dmgdt_lev(k, dphs(i,j)) - mf
+          we_lev(i,j,k) = - vert_coord_calc_dmgdt_lev(k, dmgs(i,j)) - mf
         end do
       end do
     end do
@@ -476,7 +480,7 @@ contains
 
   end subroutine calc_gz_lev
 
-  subroutine calc_m(block, dstate)
+  subroutine calc_dmg(block, dstate)
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
@@ -484,8 +488,8 @@ contains
     integer i, j, k, l
 
     associate (mesh    => block%mesh      , &
-               ph      => dstate%ph       , & ! in
-               ph_lev  => dstate%ph_lev   , & ! in
+               mg      => dstate%mg       , & ! in
+               mg_lev  => dstate%mg_lev   , & ! in
                gz      => dstate%gz       , & ! in
                gzs     => block%static%gzs, & ! in
                dmg     => dstate%dmg      , & ! out
@@ -497,14 +501,14 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            dmg(i,j,k) = ph_lev(i,j,k+1) - ph_lev(i,j,k)
+            dmg(i,j,k) = mg_lev(i,j,k+1) - mg_lev(i,j,k)
             if (dmg(i,j,k) <= 0) then
               do l = mesh%half_kds, mesh%half_kde
-                print *, l, ph_lev(i,j,l)
+                print *, l, mg_lev(i,j,l)
               end do
-              print *, 'phs(i,j) =', dstate%phs(i,j)
+              print *, 'mgs(i,j) =', dstate%mgs(i,j)
               print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
-              print *, 'The pressure levels are not monotonic!'
+              print *, 'The dry-air weight levels are not monotonic!'
               call process_stop(1)
             end if
           end do
@@ -514,7 +518,7 @@ contains
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            dmg_lev(i,j,k) = ph(i,j,k) - ph(i,j,k-1)
+            dmg_lev(i,j,k) = mg(i,j,k) - mg(i,j,k-1)
           end do
         end do
       end do
@@ -522,14 +526,14 @@ contains
       k = mesh%half_kds
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dmg_lev(i,j,k) = ph(i,j,k) - ph_lev(i,j,k)
+          dmg_lev(i,j,k) = mg(i,j,k) - mg_lev(i,j,k)
         end do
       end do
       ! Bottom boundary
       k = mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dmg_lev(i,j,k) = ph_lev(i,j,k) - ph(i,j,k-1)
+          dmg_lev(i,j,k) = mg_lev(i,j,k) - mg(i,j,k-1)
         end do
       end do
       call fill_halo(block%halo, dmg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
@@ -549,7 +553,7 @@ contains
     call interp_cell_to_vtx(mesh, dmg, dmg_vtx)
     end associate
 
-  end subroutine calc_m
+  end subroutine calc_dmg
 
   subroutine calc_mf(block, dstate, dt)
 
@@ -1112,7 +1116,7 @@ contains
 
   end subroutine calc_grad_ptf
 
-  subroutine calc_dphsdt(block, dstate, dtend, dt)
+  subroutine calc_dmgsdt(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(in) :: dstate
@@ -1124,18 +1128,18 @@ contains
     associate (mesh    => block%mesh   , &
                dmfdlon => dtend%dmfdlon, & ! in
                dmfdlat => dtend%dmfdlat, & ! in
-               dphs    => dtend%dphs   )   ! out
-    dtend%dphs = 0
+               dmgs    => dtend%dmgs   )   ! out
+    dtend%dmgs = 0
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dphs(i,j) = dphs(i,j) - dmfdlon(i,j,k) - dmfdlat(i,j,k)
+          dmgs(i,j) = dmgs(i,j) - dmfdlon(i,j,k) - dmfdlat(i,j,k)
         end do
       end do
     end do
     end associate
 
-  end subroutine calc_dphsdt
+  end subroutine calc_dmgsdt
 
   subroutine calc_wedudlev_wedvdlev(block, dstate, dtend, dt)
 

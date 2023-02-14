@@ -119,7 +119,7 @@ contains
         end do
       end do
     end do
-    call calc_m(block, dstate)
+    call calc_dmg(block, dstate)
     call calc_gz_lev(block, dstate)
     call interp_lev_edge_to_cell(mesh, gz_lev, gz)
     ! Set invariant pressure thickness.

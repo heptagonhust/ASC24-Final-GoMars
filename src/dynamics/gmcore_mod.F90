@@ -138,7 +138,10 @@ contains
         end do
       end if
       call dstate%c2a()
-      if (baroclinic) call moist_link_state(block)
+      if (baroclinic) then
+        call moist_link_state(block)
+        call moist_calc_dry_air(block, old)
+      end if
       end associate
     end do
 
@@ -400,7 +403,7 @@ contains
       call operators_prepare(block, star_state, dt, pass)
       if (hydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
-        call calc_dphsdt           (block, star_state, tend1, dt)
+        call calc_dmgsdt           (block, star_state, tend1, dt)
         call calc_we_lev           (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
         call calc_grad_ptf         (block, star_state, tend1, dt)
@@ -434,7 +437,7 @@ contains
         tend1%update_pt  = .true.
       else if (nonhydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
-        call calc_dphsdt           (block, star_state, tend1, dt)
+        call calc_dmgsdt           (block, star_state, tend1, dt)
         call calc_we_lev           (block, star_state, tend1, dt)
         call calc_grad_ptf         (block, star_state, tend1, dt)
 
@@ -507,7 +510,7 @@ contains
       call operators_prepare(block, star_state, dt, pass)
       if (hydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
-        call calc_dphsdt           (block, star_state, tend1, dt)
+        call calc_dmgsdt           (block, star_state, tend1, dt)
         call calc_we_lev           (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
         call calc_grad_ptf         (block, star_state, tend1, dt)

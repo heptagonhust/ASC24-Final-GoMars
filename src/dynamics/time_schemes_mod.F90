@@ -131,18 +131,22 @@ contains
     if (baroclinic) then
       if (dtend%update_phs) then
         ! ----------------------------------------------------------------------
-        call fill_halo(block%filter_halo, dtend%dphs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, dtend%dphs)
+        call fill_halo(block%filter_halo, dtend%dmgs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dtend%dmgs)
         ! ----------------------------------------------------------------------
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            new_state%phs(i,j) = old_state%phs(i,j) + dt * dtend%dphs(i,j)
+            new_state%mgs(i,j) = old_state%mgs(i,j) + dt * dtend%dmgs(i,j)
           end do
         end do
-        call fill_halo(block%halo, new_state%phs, full_lon=.true., full_lat=.true.)
-        call calc_ph(block, new_state)
-        call calc_m (block, new_state)
+        call fill_halo(block%halo, new_state%mgs, full_lon=.true., full_lat=.true.)
+        new_state%phs = new_state%mgs ! FIXME: Assume dry-air.
+        call calc_ph (block, new_state)
+        call calc_dmg(block, new_state)
       else if (dtend%copy_phs) then
+        new_state%mgs    = old_state%mgs
+        new_state%mg_lev = old_state%mg_lev
+        new_state%mg     = old_state%mg
         new_state%phs    = old_state%phs
         new_state%ph_lev = old_state%ph_lev
         new_state%ph     = old_state%ph
@@ -180,7 +184,7 @@ contains
           end do
         end do
         call fill_halo(block%halo, new_state%gz, full_lon=.true., full_lat=.true.)
-        call calc_m(block, new_state)
+        call calc_dmg(block, new_state)
       else if (dtend%copy_gz) then
         new_state%gz = old_state%gz
       end if

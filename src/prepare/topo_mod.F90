@@ -423,7 +423,7 @@ contains
 
     associate (mesh     => block%mesh         , &
                gzs      => block%static%gzs   , &
-               gzs_f    => block%dtend(1)%dphs, & ! Borrow the array.
+               gzs_f    => block%dtend(1)%dmgs, & ! Borrow the array.
                landmask => block%static%landmask)
     do cyc = 1, topo_smooth_cycles
       call filter_on_cell(block%big_filter, gzs, gzs_f)

@@ -111,7 +111,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: dv
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
-    real(r8), allocatable, dimension(:,:  ) :: dphs
+    real(r8), allocatable, dimension(:,:  ) :: dmgs
     ! Tendencies from physics
     real(r8), allocatable, dimension(:,:,:) :: dudt_phys
     real(r8), allocatable, dimension(:,:,:) :: dvdt_phys
@@ -485,7 +485,7 @@ contains
     call allocate_array(filter_mesh, this%dv  , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(filter_mesh, this%dgz , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(filter_mesh, this%dpt , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(filter_mesh, this%dphs, full_lon=.true., full_lat=.true.                 )
+    call allocate_array(filter_mesh, this%dmgs, full_lon=.true., full_lat=.true.                 )
 
     call allocate_array(mesh, this%qhv     , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%qhu     , full_lon=.true., half_lat=.true., full_lev=.true.)
@@ -543,7 +543,7 @@ contains
     if (allocated(this%dv      )) deallocate(this%dv      )
     if (allocated(this%dgz     )) deallocate(this%dgz     )
     if (allocated(this%dpt     )) deallocate(this%dpt     )
-    if (allocated(this%dphs    )) deallocate(this%dphs    )
+    if (allocated(this%dmgs    )) deallocate(this%dmgs    )
     if (allocated(this%qhv     )) deallocate(this%qhv     )
     if (allocated(this%qhu     )) deallocate(this%qhu     )
     if (allocated(this%dkedlon )) deallocate(this%dkedlon )
@@ -605,7 +605,7 @@ contains
     end if
     if (baroclinic) then
       if (x%update_phs .and. y%update_phs) then
-        res%dphs = x%dphs + y%dphs
+        res%dmgs = x%dmgs + y%dmgs
         res%update_phs = .true.
       else
         res%update_phs = .false.
@@ -646,7 +646,7 @@ contains
     end if
     if (baroclinic) then
       if (x%update_phs) then
-        res%dphs = s * x%dphs
+        res%dmgs = s * x%dmgs
         res%update_phs = .true.
       else
         res%update_phs = .false.
@@ -687,7 +687,7 @@ contains
     end if
     if (baroclinic) then
       if (x%update_phs) then
-        res%dphs = x%dphs / s
+        res%dmgs = x%dmgs / s
         res%update_phs = .true.
       else
         res%update_phs = .false.
@@ -726,7 +726,7 @@ contains
     end if
     if (baroclinic) then
       if (y%update_phs) then
-        x%dphs = y%dphs
+        x%dmgs = y%dmgs
         x%update_phs = .true.
       else
         x%update_phs = .false.
