@@ -138,10 +138,10 @@ contains
                  dstate => blocks(iblk)%dstate(itime))
       if (allocated(block%adv_batches)) then
         do m = 1, size(block%adv_batches)
-          call block%adv_batches(m)%copy_old_m(dstate%m)
+          call block%adv_batches(m)%copy_old_m(dstate%dmg)
         end do
       end if
-      call block%adv_batch_pt%copy_old_m(dstate%m)
+      call block%adv_batch_pt%copy_old_m(dstate%dmg)
       if (.not. restart) call adv_accum_wind(block, itime)
       end associate
     end do
@@ -227,7 +227,7 @@ contains
           do k = mesh%full_kds, mesh%full_kde
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%m(i,j,k)
+                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%dmg(i,j,k)
               end do
             end do
           end do
@@ -242,7 +242,7 @@ contains
           do k = mesh%full_kds, mesh%full_kde
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = q(i,j,k,l,new) * block%dstate(itime)%m(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
+                q(i,j,k,l,new) = q(i,j,k,l,new) * block%dstate(itime)%dmg(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
               end do
             end do
           end do
@@ -278,7 +278,7 @@ contains
           do k = mesh%full_kds, mesh%full_kde
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%m(i,j,k)
+                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%dmg(i,j,k)
               end do
             end do
           end do
@@ -289,7 +289,7 @@ contains
         block%adv_batches(m)%old = block%adv_batches(m)%new
         block%adv_batches(m)%new = i
       end if
-      call block%adv_batches(m)%copy_old_m(block%dstate(itime)%m)
+      call block%adv_batches(m)%copy_old_m(block%dstate(itime)%dmg)
     end do
 
   end subroutine adv_run
@@ -421,7 +421,7 @@ contains
           if (global_mesh%full_nlev > 1) then
             call block%adv_batches(l)%accum_we_lev( &
               block%dstate(itime)%we_lev          , &
-              block%dstate(itime)%m_lev           )
+              block%dstate(itime)%dmg_lev         )
           end if
         end select
       end do

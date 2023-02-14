@@ -32,11 +32,11 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: we_lev_lat        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: gz                ! Geopotential (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: gz_lev            ! Geopotential height on half levels (m2 s-2)
-    real(r8), allocatable, dimension(:,:,:) :: m                 ! Mass
-    real(r8), allocatable, dimension(:,:,:) :: m_vtx             ! Mass on vertex
-    real(r8), allocatable, dimension(:,:,:) :: m_lon             ! Mass on zonal edge
-    real(r8), allocatable, dimension(:,:,:) :: m_lat             ! Mass on merdional edge
-    real(r8), allocatable, dimension(:,:,:) :: m_lev             ! Mass on half levels
+    real(r8), allocatable, dimension(:,:,:) :: dmg               ! Mass
+    real(r8), allocatable, dimension(:,:,:) :: dmg_vtx           ! Mass on vertex
+    real(r8), allocatable, dimension(:,:,:) :: dmg_lon           ! Mass on zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: dmg_lat           ! Mass on merdional edge
+    real(r8), allocatable, dimension(:,:,:) :: dmg_lev           ! Mass on half levels
     real(r8), allocatable, dimension(:,:,:) :: mfx_lon           ! Normal mass flux on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: mfy_lat           ! Normal mass flux on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: mfx_lat           ! Tangient mass flux on zonal edge
@@ -195,11 +195,11 @@ contains
     call allocate_array(mesh, this%we_lev_lat       , full_lon=.true., half_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%gz               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%gz_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%m                , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%m_vtx            , half_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%m_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%m_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%m_lev            , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%dmg              , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmg_vtx          , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmg_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmg_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmg_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%mfx_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfy_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfy_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
@@ -277,10 +277,10 @@ contains
     if (allocated(this%we_lev_lat       )) deallocate(this%we_lev_lat       )
     if (allocated(this%gz               )) deallocate(this%gz               )
     if (allocated(this%gz_lev           )) deallocate(this%gz_lev           )
-    if (allocated(this%m                )) deallocate(this%m                )
-    if (allocated(this%m_vtx            )) deallocate(this%m_vtx            )
-    if (allocated(this%m_lon            )) deallocate(this%m_lon            )
-    if (allocated(this%m_lat            )) deallocate(this%m_lat            )
+    if (allocated(this%dmg              )) deallocate(this%dmg              )
+    if (allocated(this%dmg_vtx          )) deallocate(this%dmg_vtx          )
+    if (allocated(this%dmg_lon          )) deallocate(this%dmg_lon          )
+    if (allocated(this%dmg_lat          )) deallocate(this%dmg_lat          )
     if (allocated(this%mfx_lon          )) deallocate(this%mfx_lon          )
     if (allocated(this%mfy_lat          )) deallocate(this%mfy_lat          )
     if (allocated(this%mfx_lat          )) deallocate(this%mfx_lat          )
@@ -303,7 +303,7 @@ contains
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%vor              )) deallocate(this%vor              )
 
-    if (allocated(this%m_lev            )) deallocate(this%m_lev            )
+    if (allocated(this%dmg_lev          )) deallocate(this%dmg_lev          )
     if (allocated(this%we               )) deallocate(this%we               )
     if (allocated(this%w                )) deallocate(this%w                )
     if (allocated(this%w_lev            )) deallocate(this%w_lev            )

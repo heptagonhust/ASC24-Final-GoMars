@@ -138,10 +138,10 @@ contains
     associate (mesh => block%mesh    , &
                u    => dstate%u_lon  , &
                v    => dstate%v_lat  , &
-               m    => dstate%m      , &
+               dmg  => dstate%dmg    , &
                mfx  => dstate%mfx_lon, &
                mfy  => dstate%mfy_lat)
-    m = 1
+    dmg = 1
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -176,12 +176,12 @@ contains
     real(r8) lon, lat, k, cos_t
 
     associate (mesh => block%mesh    , &
-               m    => dstate%m      , &
+               dmg  => dstate%dmg    , &
                u    => dstate%u_lon  , &
                v    => dstate%v_lat  , &
                mfx  => dstate%mfx_lon, &
                mfy  => dstate%mfy_lat)
-    m = 1
+    dmg = 1
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -216,12 +216,12 @@ contains
     real(r8) lon, lat, k, cos_t
 
     associate (mesh => block%mesh    , &
-               m    => dstate%m      , &
+               dmg  => dstate%dmg    , &
                u    => dstate%u_lon  , &
                v    => dstate%v_lat  , &
                mfx  => dstate%mfx_lon, &
                mfy  => dstate%mfy_lat)
-    m = 1
+    dmg = 1
     k = 5.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -256,12 +256,12 @@ contains
     real(r8) lon, lat, k, c1, c2, cos_t
 
     associate (mesh => block%mesh    , &
-               m    => dstate%m      , &
+               dmg  => dstate%dmg    , &
                u    => dstate%u_lon  , &
                v    => dstate%v_lat  , &
                mfx  => dstate%mfx_lon, &
                mfy  => dstate%mfy_lat)
-    m = 1
+    dmg = 1
     k = 10.0_r8 * radius / period
     c1 = pi2 * time_in_seconds / period
     c2 = pi2 * radius / period

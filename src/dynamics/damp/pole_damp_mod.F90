@@ -26,7 +26,7 @@ contains
       do k = block%mesh%full_kds, block%mesh%full_kde
         do j = block%mesh%full_jds, block%mesh%full_jde
           do i = block%mesh%full_ids, block%mesh%full_ide
-            dstate%pt(i,j,k) = dstate%pt(i,j,k) * dstate%m(i,j,k)
+            dstate%pt(i,j,k) = dstate%pt(i,j,k) * dstate%dmg(i,j,k)
           end do
         end do
       end do
@@ -36,7 +36,7 @@ contains
       do k = block%mesh%full_kds, block%mesh%full_kde
         do j = block%mesh%full_jds, block%mesh%full_jde
           do i = block%mesh%full_ids, block%mesh%full_ide
-            dstate%pt(i,j,k) = dstate%pt(i,j,k) / dstate%m(i,j,k)
+            dstate%pt(i,j,k) = dstate%pt(i,j,k) / dstate%dmg(i,j,k)
           end do
         end do
       end do

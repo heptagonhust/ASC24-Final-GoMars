@@ -146,7 +146,7 @@ contains
         new_state%phs    = old_state%phs
         new_state%ph_lev = old_state%ph_lev
         new_state%ph     = old_state%ph
-        new_state%m      = old_state%m
+        new_state%dmg    = old_state%dmg
       end if
 
       if (dtend%update_pt) then
@@ -158,7 +158,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%m(i,j,k) + dt * dtend%dpt(i,j,k)) / new_state%m(i,j,k)
+              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%dmg(i,j,k) + dt * dtend%dpt(i,j,k)) / new_state%dmg(i,j,k)
             end do
           end do
         end do

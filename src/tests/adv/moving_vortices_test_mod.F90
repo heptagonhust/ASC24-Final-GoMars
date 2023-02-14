@@ -89,12 +89,12 @@ contains
     call inverse_rotation_transform(lonp0, latp0, lonv, latv, lonvr, latvr)
 
     associate (mesh => block%mesh    , &
-               m    => dstate%m      , &
+               dmg  => dstate%dmg    , &
                u    => dstate%u_lon  , &
                v    => dstate%v_lat  , &
                mfx  => dstate%mfx_lon, &
                mfy  => dstate%mfy_lat)
-    m = 1
+    dmg = 1
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       lat = mesh%full_lat(j)
       do i = mesh%half_ids, mesh%half_ide

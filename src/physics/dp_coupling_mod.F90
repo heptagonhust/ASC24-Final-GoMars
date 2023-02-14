@@ -31,7 +31,7 @@ contains
                t        => block%dstate(itime)%t        , & ! in
                ph       => block%dstate(itime)%ph       , & ! in
                ph_lev   => block%dstate(itime)%ph_lev   , & ! in
-               dph      => block%dstate(itime)%m        , & ! in
+               dph      => block%dstate(itime)%dmg      , & ! in
                p        => block%dstate(itime)%p        , & ! in
                p_lev    => block%dstate(itime)%p_lev    , & ! in
                gz       => block%dstate(itime)%gz       , & ! in

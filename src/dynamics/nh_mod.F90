@@ -51,14 +51,14 @@ contains
     integer i, j, k
 
     ! Diagnose dry air density from hydrostatic equation.
-    associate (mesh   => block%mesh  , &
+    associate (mesh   => block%mesh   , &
                gz_lev => dstate%gz_lev, & ! in
-               m      => dstate%m     , & ! in
+               dmg    => dstate%dmg   , & ! in
                rhod   => dstate%rhod  )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          rhod(i,j,k) = - m(i,j,k) / (gz_lev(i,j,k+1) - gz_lev(i,j,k))
+          rhod(i,j,k) = - dmg(i,j,k) / (gz_lev(i,j,k+1) - gz_lev(i,j,k))
           if (rhod(i,j,k) <= 0) then
             print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
             print *, 'Model is instable!'
@@ -107,8 +107,8 @@ contains
     integer i, j, k
 
     associate (mesh       => block%mesh      , &
-               old_m      => old_state%m     , & ! in
-               new_m      => new_state%m     , & ! in
+               old_dmg    => old_state%dmg   , & ! in
+               new_dmg    => new_state%dmg   , & ! in
                old_p      => old_state%p     , & ! in
                new_p      => new_state%p     , & ! out
                old_gz_lev => old_state%gz_lev, & ! in
@@ -119,8 +119,8 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             new_p(i,j,k) = old_p(i,j,k) * (1.0_r8 + cpd_o_cvd * ( &
-              (new_m(i,j,k) * new_pt(i,j,k)) /                    &
-              (old_m(i,j,k) * old_pt(i,j,k)) -                    &
+              (new_dmg(i,j,k) * new_pt(i,j,k)) /                  &
+              (old_dmg(i,j,k) * old_pt(i,j,k)) -                  &
               (new_gz_lev(i,j,k+1) - new_gz_lev(i,j,k)) /         &
               (old_gz_lev(i,j,k+1) - old_gz_lev(i,j,k))           &
             ))
@@ -212,28 +212,28 @@ contains
     !         -----------------------------------------------------
     !                                dp1
     !
-    associate (mesh        => block%mesh       , &
-               beta        => implicit_w_wgt   , &
-               adv_gz_lon  => dtend%adv_gz_lon , & ! FIXME: After test success, merge advection tends togethor.
-               adv_gz_lat  => dtend%adv_gz_lat , & !
-               adv_gz_lev  => dtend%adv_gz_lev , & !
-               adv_w_lon   => dtend%adv_w_lon  , & !
-               adv_w_lat   => dtend%adv_w_lat  , & !
-               adv_w_lev   => dtend%adv_w_lev  , & !
-               old_p       => old_state%p      , &
-               star_p      => star_state%p     , &
-               star_p_lev  => star_state%p_lev , &
-               old_w_lev   => old_state%w_lev  , &
-               star_w_lev  => star_state%w_lev , &
-               new_w_lev   => new_state%w_lev  , &
-               star_m_lev  => star_state%m_lev , &
-               new_m_lev   => new_state%m_lev  , &
-               old_gz_lev  => old_state%gz_lev , &
-               star_gz_lev => star_state%gz_lev, &
-               new_gz_lev  => new_state%gz_lev , &
-               old_m       => old_state%m      , &
-               new_m       => new_state%m      , &
-               old_pt      => old_state%pt     , &
+    associate (mesh        => block%mesh        , &
+               beta        => implicit_w_wgt    , &
+               adv_gz_lon  => dtend%adv_gz_lon  , & ! FIXME: After test success, merge advection tends togethor.
+               adv_gz_lat  => dtend%adv_gz_lat  , & !
+               adv_gz_lev  => dtend%adv_gz_lev  , & !
+               adv_w_lon   => dtend%adv_w_lon   , & !
+               adv_w_lat   => dtend%adv_w_lat   , & !
+               adv_w_lev   => dtend%adv_w_lev   , & !
+               old_p       => old_state%p       , &
+               star_p      => star_state%p      , &
+               star_p_lev  => star_state%p_lev  , &
+               old_w_lev   => old_state%w_lev   , &
+               star_w_lev  => star_state%w_lev  , &
+               new_w_lev   => new_state%w_lev   , &
+               star_m_lev  => star_state%dmg_lev, &
+               new_dmg_lev => new_state%dmg_lev , &
+               old_gz_lev  => old_state%gz_lev  , &
+               star_gz_lev => star_state%gz_lev , &
+               new_gz_lev  => new_state%gz_lev  , &
+               old_dmg     => old_state%dmg     , &
+               new_dmg     => new_state%dmg     , &
+               old_pt      => old_state%pt      , &
                new_pt      => new_state%pt)
       ! last: n, old: *, new: n + 1
       gdtbeta     = g * dt * beta
@@ -258,14 +258,14 @@ contains
           w1(k) = w1(k) + gdt1mbeta * (star_p_lev(i,j,k) - star_p(i,j,k-1)) / star_m_lev(i,j,k)
           ! Use linearized dstate of ideal gas to calculate the first part of ∂pⁿ⁺¹ (i.e. dp1).
           do k = mesh%half_kds + 1, mesh%half_kde - 1
-            dp1 = (old_p(i,j,k) - old_p(i,j,k-1)) + cpd_o_cvd * ((                                   &
-              old_p(i,j,k  ) * new_m(i,j,k  ) * new_pt(i,j,k  ) / old_m(i,j,k  ) / old_pt(i,j,k  ) - &
-              old_p(i,j,k-1) * new_m(i,j,k-1) * new_pt(i,j,k-1) / old_m(i,j,k-1) / old_pt(i,j,k-1)   &
-            ) - (                                                                                    &
-              old_p(i,j,k  ) * (gz1(k+1) - gz1(k  )) / dgz(k  ) -                                    &
-              old_p(i,j,k-1) * (gz1(k  ) - gz1(k-1)) / dgz(k-1)                                      &
+            dp1 = (old_p(i,j,k) - old_p(i,j,k-1)) + cpd_o_cvd * ((                                       &
+              old_p(i,j,k  ) * new_dmg(i,j,k  ) * new_pt(i,j,k  ) / old_dmg(i,j,k  ) / old_pt(i,j,k  ) - &
+              old_p(i,j,k-1) * new_dmg(i,j,k-1) * new_pt(i,j,k-1) / old_dmg(i,j,k-1) / old_pt(i,j,k-1)   &
+            ) - (                                                                                        &
+              old_p(i,j,k  ) * (gz1(k+1) - gz1(k  )) / dgz(k  ) -                                        &
+              old_p(i,j,k-1) * (gz1(k  ) - gz1(k-1)) / dgz(k-1)                                          &
             ))
-            w1(k) = w1(k) + gdtbeta * dp1 / new_m_lev(i,j,k)
+            w1(k) = w1(k) + gdtbeta * dp1 / new_dmg_lev(i,j,k)
           end do
           ! Set coefficients for implicit solver.
           a(1) = 0.0_r8
@@ -274,9 +274,9 @@ contains
           d(1) = 0.0_r8 ! Top w is set to zero.
           do k = mesh%half_kds + 1, mesh%half_kde - 1
             a(k) = gdtbeta2gam * old_p(i,j,k-1) / dgz(k-1)
-            b(k) = new_m_lev(i,j,k) - gdtbeta2gam * (old_p(i,j,k) / dgz(k) + old_p(i,j,k-1) / dgz(k-1))
+            b(k) = new_dmg_lev(i,j,k) - gdtbeta2gam * (old_p(i,j,k) / dgz(k) + old_p(i,j,k-1) / dgz(k-1))
             c(k) = gdtbeta2gam * old_p(i,j,k  ) / dgz(k  )
-            d(k) = new_m_lev(i,j,k) * w1(k)
+            d(k) = new_dmg_lev(i,j,k) * w1(k)
           end do
           a(mesh%half_nlev) = 0.0_r8
           b(mesh%half_nlev) = 1.0_r8

@@ -273,7 +273,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            tm = tm + dstate%m(i,j,k) * mesh%area_cell(j)
+            tm = tm + dstate%dmg(i,j,k) * mesh%area_cell(j)
           end do
         end do
       end do
@@ -294,7 +294,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              te_ie = te_ie + dstate%m(i,j,k) * cpd * dstate%t(i,j,k) * mesh%area_cell(j)
+              te_ie = te_ie + dstate%dmg(i,j,k) * cpd * dstate%t(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
@@ -306,7 +306,7 @@ contains
       else
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            te_pe = te_pe + (dstate%m(i,j,1)**2 * g * 0.5_r8 + dstate%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
+            te_pe = te_pe + (dstate%dmg(i,j,1)**2 * g * 0.5_r8 + dstate%dmg(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
           end do
         end do
       end if
@@ -322,12 +322,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            tpe = tpe + dstate%m_lon(i,j,k) * dstate%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
+            tpe = tpe + dstate%dmg_lon(i,j,k) * dstate%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            tpe = tpe + dstate%m_lat(i,j,k) * dstate%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
+            tpe = tpe + dstate%dmg_lat(i,j,k) * dstate%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
           end do
         end do
       end do
@@ -336,7 +336,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tpt = tpt + dstate%m(i,j,k) * dstate%pt(i,j,k) * mesh%area_cell(j)
+              tpt = tpt + dstate%dmg(i,j,k) * dstate%pt(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
