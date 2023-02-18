@@ -56,21 +56,18 @@ contains
 
     call bkg_read(bkg_type, bkg_file)
 
-    call bkg_regrid_phs()
-    call bkg_calc_ph()
+    call bkg_regrid_mgs()
+    call bkg_calc_mg()
     call bkg_regrid_qv()
+    call bkg_calc_ph()
     call bkg_regrid_pt()
     call bkg_regrid_u()
     call bkg_regrid_v()
     call ref_calc_ps()
 
-    if (nonhydrostatic) then
-      do iblk = 1, size(blocks)
-        call calc_ph    (blocks(iblk), blocks(iblk)%dstate(1))
-        call calc_t     (blocks(iblk), blocks(iblk)%dstate(1))
-        call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(1))
-      end do
-    end if
+    do iblk = 1, size(blocks)
+      call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(1))
+    end do
 
   end subroutine prepare_run
 

@@ -83,18 +83,19 @@ contains
     real(r8), intent(in) :: time_in_seconds
 
     integer i, j, k
-    real(r8) lon, lat, rho, cos_t, dphdlev
+    real(r8) lon, lat, rho, cos_t, dmgdlev
 
     cos_t = cos(pi * time_in_seconds / tau)
 
     associate (mesh    => block%mesh    , &
-               phs     => dstate%phs    , &
-               ph_lev  => dstate%ph_lev , &
-               ph      => dstate%ph     , &
-               dmg     => dstate%dmg    , &
+               mgs     => dstate%mgs    , &
+               mg_lev  => dstate%mg_lev , &
+               mg      => dstate%mg     , &
                dmg_lon => dstate%dmg_lon, &
                dmg_lat => dstate%dmg_lat, &
                dmg_lev => dstate%dmg_lev, &
+               ph_lev  => dstate%ph_lev , &
+               ph      => dstate%ph     , &
                tv      => dstate%tv     , &
                gz_lev  => dstate%gz_lev , &
                gz      => dstate%gz     , &
@@ -103,34 +104,14 @@ contains
                mfx_lon => dstate%mfx_lon, &
                mfy_lat => dstate%mfy_lat, &
                we      => dstate%we_lev)
-    phs = p0
-    tv  = T0
-    do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
-        end do
-      end do
-    end do
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
-        end do
-      end do
-    end do
+    mgs = p0
+    call calc_mg(block, dstate)
+    ph_lev = mg_lev
+    ph = mg
+    tv = T0
     call calc_dmg(block, dstate)
     call calc_gz_lev(block, dstate)
     call interp_lev_edge_to_cell(mesh, gz_lev, gz)
-    ! Set invariant pressure thickness.
-    do k = mesh%full_kds, mesh%full_kde
-      dmg    (:,:,k) = p0 * mesh%full_dlev(k)
-      dmg_lon(:,:,k) = p0 * mesh%full_dlev(k)
-      dmg_lat(:,:,k) = p0 * mesh%full_dlev(k)
-    end do
-    do k = mesh%half_kds, mesh%half_kde
-      dmg_lev(:,:,k) = p0 * mesh%half_dlev(k)
-    end do
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         lat = mesh%full_lat(j)
@@ -147,7 +128,7 @@ contains
         lat = mesh%half_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          rho = ph(i,j,k) / (rd * T0)
+          rho = mg(i,j,k) / (rd * T0)
           v(i,j,k) = -radius * w0 * pi * rho0 / (K0 * ztop * rho) * &
             cos(lat) * sin(K0 * lat) * cos(pi * gz(i,j,k) / (g * ztop)) * cos_t
           mfy_lat(i,j,k) = v(i,j,k) * dmg_lat(i,j,k)
@@ -160,9 +141,9 @@ contains
         lat = mesh%full_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          rho = ph_lev(i,j,k) / (rd * T0)
-          dphdlev = dmg_lev(i,j,k) / mesh%half_dlev(k)
-          we(i,j,k) = -dphdlev * g * w0 * rho0 / K0 * (                   &
+          rho = mg_lev(i,j,k) / (rd * T0)
+          dmgdlev = dmg_lev(i,j,k) / mesh%half_dlev(k)
+          we(i,j,k) = -dmgdlev * g * w0 * rho0 / K0 * (                   &
             -2 * sin(K0 * lat) * sin(lat) + K0 * cos(lat) * cos(K0 * lat) &
           ) * sin(pi * gz_lev(i,j,k) / (g * ztop)) * cos_t / p0
         end do

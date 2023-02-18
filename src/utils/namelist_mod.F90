@@ -98,8 +98,8 @@ module namelist_mod
   real(r8)        :: max_wave_speed       = 300
   real(r8)        :: max_cfl              = 0.5
   real(r8)        :: filter_coef_a        = 1.5
-  real(r8)        :: filter_coef_b        = 0.5
-  real(r8)        :: filter_coef_c        = 0.15
+  real(r8)        :: filter_coef_b        = 0.2
+  real(r8)        :: filter_coef_c        = 0.1
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.

@@ -57,7 +57,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: pkh_lev           ! Exner pressure on half levels
-    real(r8), allocatable, dimension(:,:  ) :: phs               ! Surface hydrostatic pressure
+    real(r8), pointer    , dimension(:,:  ) :: phs               ! Surface hydrostatic pressure
     real(r8), allocatable, dimension(:,:,:) :: div               ! Divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: vor               ! Vorticity (s-1)
@@ -121,10 +121,10 @@ module dynamics_types_mod
     logical :: update_v   = .false.
     logical :: update_gz  = .false.
     logical :: update_pt  = .false.
-    logical :: update_phs = .false.
+    logical :: update_mgs = .false.
     logical :: copy_gz    = .false.
     logical :: copy_pt    = .false.
-    logical :: copy_phs   = .false.
+    logical :: copy_mgs   = .false.
     ! Individual tendencies
     real(r8), allocatable, dimension(:,:,:) :: qhv
     real(r8), allocatable, dimension(:,:,:) :: qhu
@@ -221,14 +221,14 @@ contains
     call allocate_array(mesh, this%mgs              , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%pkh_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%phs              , full_lon=.true., full_lat=.true.                 )
+    call allocate_array(mesh, this%pkh_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%vor              , half_lon=.true., half_lat=.true., full_lev=.true.)
 
     call allocate_array(filter_mesh, this%pt        , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(filter_mesh, this%div       , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (baroclinic) then
+      this%phs(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme) => this%ph_lev(:,:,mesh%half_kde)
       call allocate_array(mesh, this%qm             , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
@@ -307,7 +307,6 @@ contains
     if (allocated(this%ph               )) deallocate(this%ph               )
     if (allocated(this%ph_lev           )) deallocate(this%ph_lev           )
     if (allocated(this%pkh_lev          )) deallocate(this%pkh_lev          )
-    if (allocated(this%phs              )) deallocate(this%phs              )
     if (allocated(this%div              )) deallocate(this%div              )
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%vor              )) deallocate(this%vor              )
@@ -400,7 +399,7 @@ contains
       res%u_lon = x%u_lon + y%u_lon
       res%v_lat = x%v_lat + y%v_lat
       res%pt    = x%pt    + y%pt
-      res%phs   = x%phs   + y%phs
+      res%mgs   = x%mgs   + y%mgs
     else if (nonhydrostatic) then
     else
       res%u_lon = x%u_lon + y%u_lon
@@ -421,7 +420,7 @@ contains
       res%u_lon = s * x%u_lon
       res%v_lat = s * x%v_lat
       res%pt    = s * x%pt
-      res%phs   = s * x%phs
+      res%mgs   = s * x%mgs
     else if (nonhydrostatic) then
     else
       res%u_lon = s * x%u_lon
@@ -442,7 +441,7 @@ contains
       res%u_lon = x%u_lon / s
       res%v_lat = x%v_lat / s
       res%pt    = x%pt / s
-      res%phs   = x%phs / s
+      res%mgs   = x%mgs / s
     else if (nonhydrostatic) then
     else
       res%u_lon = x%u_lon / s
@@ -461,7 +460,7 @@ contains
       x%u_lon = y%u_lon
       x%v_lat = y%v_lat
       x%pt    = y%pt
-      x%phs   = y%phs
+      x%mgs   = y%mgs
     else if (nonhydrostatic) then
     else
       x%u_lon = y%u_lon
@@ -528,10 +527,10 @@ contains
     this%update_v   = .false.
     this%update_gz  = .false.
     this%update_pt  = .false.
-    this%update_phs = .false.
+    this%update_mgs = .false.
     this%copy_gz    = .false.
     this%copy_pt    = .false.
-    this%copy_phs   = .false.
+    this%copy_mgs   = .false.
 
   end subroutine dtend_reset_flags
 
@@ -604,11 +603,11 @@ contains
       res%update_v = .false.
     end if
     if (baroclinic) then
-      if (x%update_phs .and. y%update_phs) then
+      if (x%update_mgs .and. y%update_mgs) then
         res%dmgs = x%dmgs + y%dmgs
-        res%update_phs = .true.
+        res%update_mgs = .true.
       else
-        res%update_phs = .false.
+        res%update_mgs = .false.
       end if
       if (x%update_pt .and. y%update_pt) then
         res%dpt = x%dpt + y%dpt
@@ -645,11 +644,11 @@ contains
       res%update_v = .false.
     end if
     if (baroclinic) then
-      if (x%update_phs) then
+      if (x%update_mgs) then
         res%dmgs = s * x%dmgs
-        res%update_phs = .true.
+        res%update_mgs = .true.
       else
-        res%update_phs = .false.
+        res%update_mgs = .false.
       end if
       if (x%update_pt) then
         res%dpt = s * x%dpt
@@ -686,11 +685,11 @@ contains
       res%update_v = .false.
     end if
     if (baroclinic) then
-      if (x%update_phs) then
+      if (x%update_mgs) then
         res%dmgs = x%dmgs / s
-        res%update_phs = .true.
+        res%update_mgs = .true.
       else
-        res%update_phs = .false.
+        res%update_mgs = .false.
       end if
       if (x%update_pt) then
         res%dpt = x%dpt / s
@@ -725,11 +724,11 @@ contains
       x%update_v = .false.
     end if
     if (baroclinic) then
-      if (y%update_phs) then
+      if (y%update_mgs) then
         x%dmgs = y%dmgs
-        x%update_phs = .true.
+        x%update_mgs = .true.
       else
-        x%update_phs = .false.
+        x%update_mgs = .false.
       end if
       if (y%update_pt) then
         x%dpt = y%dpt

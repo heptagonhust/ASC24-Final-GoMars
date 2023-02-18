@@ -140,6 +140,7 @@ CONTAINS
                t     => block%dstate(1)%t    , &
                qv    => block%dstate(1)%qv   , &
                pt    => block%dstate(1)%pt   , &
+               mgs   => block%dstate(1)%mgs  , &
                gzs   => block%static%gzs     )
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
@@ -151,7 +152,7 @@ CONTAINS
           p(i,j,k) = vert_coord_calc_mg(k, ps(i,j))
           call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,k), z(i,j,k), 0, &
             u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, qv(i,j,k))
-          qv(i,j,k) = qv(i,j,k) / (1 - qv(i,j,k))
+          qv(i,j,k) = mixing_ratio(qv(i,j,k))
           pt(i,j,k) = potential_temperature(t(i,j,k), p(i,j,k), qv(i,j,k))
           gz(i,j,k) = g * z(i,j,k)
         end do
@@ -180,6 +181,8 @@ CONTAINS
       end do
     end do
     call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+
+    mgs = ps
     end associate
 
   end subroutine tropical_cyclone_test_set_ic

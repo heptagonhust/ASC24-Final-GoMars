@@ -1,5 +1,6 @@
 module moist_mod
 
+  use const_mod
   use namelist_mod
   use block_mod
   use adv_mod
@@ -12,7 +13,6 @@ module moist_mod
 
   public moist_init
   public moist_link_state
-  public moist_calc_dry_air
   public calc_qm
 
 contains
@@ -70,37 +70,5 @@ contains
     end associate
 
   end subroutine calc_qm
-
-  subroutine moist_calc_dry_air(block, itime)
-
-    type(block_type), intent(inout) :: block
-    integer, intent(in) :: itime
-
-    integer i, j, k
-
-    associate (mesh   => block%filter_mesh         , &
-               phs    => block%dstate(itime)%phs   , & ! in
-               qv     => block%dstate(itime)%qv    , & ! in
-               mgs    => block%dstate(itime)%mgs   , & ! out
-               mg_lev => block%dstate(itime)%mg_lev, & ! out
-               mg     => block%dstate(itime)%mg    )   ! out
-    mgs = phs
-    do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
-        end do
-      end do
-    end do
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          mg(i,j,k) = 0.5_r8 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
-        end do
-      end do
-    end do
-    end associate
-
-  end subroutine moist_calc_dry_air
 
 end module moist_mod

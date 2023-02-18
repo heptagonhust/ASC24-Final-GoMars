@@ -19,16 +19,16 @@ module vert_coord_mod
   public vert_coord_calc_dmgdt_lev
 
   interface
-    pure real(r8) function vert_coord_calc_mg_interface(k, phs)
+    pure real(r8) function vert_coord_calc_mg_interface(k, mgs)
       import r8
       integer, intent(in) :: k
-      real(r8), intent(in) :: phs
+      real(r8), intent(in) :: mgs
     end function vert_coord_calc_mg_interface
 
-    pure real(r8) function vert_coord_calc_mg_lev_interface(k, phs)
+    pure real(r8) function vert_coord_calc_mg_lev_interface(k, mgs)
       import r8
       integer, intent(in) :: k
-      real(r8), intent(in) :: phs
+      real(r8), intent(in) :: mgs
     end function vert_coord_calc_mg_lev_interface
 
     pure real(r8) function vert_coord_calc_dmgdt_lev_interface(k, dmgsdt)

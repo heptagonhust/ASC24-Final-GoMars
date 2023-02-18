@@ -129,7 +129,7 @@ contains
 
     associate (mesh => block%mesh)
     if (baroclinic) then
-      if (dtend%update_phs) then
+      if (dtend%update_mgs) then
         ! ----------------------------------------------------------------------
         call fill_halo(block%filter_halo, dtend%dmgs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dmgs)
@@ -140,21 +140,21 @@ contains
           end do
         end do
         call fill_halo(block%halo, new_state%mgs, full_lon=.true., full_lat=.true.)
-        new_state%phs = new_state%mgs ! FIXME: Assume dry-air.
-        call calc_ph (block, new_state)
+        new_state%mgs = new_state%mgs
+        call calc_mg (block, new_state)
         call calc_dmg(block, new_state)
-      else if (dtend%copy_phs) then
+        call calc_ph (block, new_state)
+      else if (dtend%copy_mgs) then ! FIXME: Do we still need copy?
         new_state%mgs    = old_state%mgs
         new_state%mg_lev = old_state%mg_lev
         new_state%mg     = old_state%mg
-        new_state%phs    = old_state%phs
+        new_state%dmg    = old_state%dmg
         new_state%ph_lev = old_state%ph_lev
         new_state%ph     = old_state%ph
-        new_state%dmg    = old_state%dmg
       end if
 
       if (dtend%update_pt) then
-        if (.not. dtend%update_phs .and. .not. dtend%copy_phs .and. proc%is_root()) call log_error('Mass is not updated or copied!')
+        if (.not. dtend%update_mgs .and. .not. dtend%copy_mgs .and. proc%is_root()) call log_error('Mass is not updated or copied!')
         ! ----------------------------------------------------------------------
         call fill_halo(block%filter_halo, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dpt)

@@ -37,7 +37,7 @@ contains
                v      => block%dstate(1)%v_lat , &
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
-               ph     => block%dstate(1)%ph    , &
+               mg     => block%dstate(1)%mg    , &
                ph_lev => block%dstate(1)%ph_lev, &
                phs    => block%dstate(1)%phs   , &
                gzs    => block%static%gzs)
@@ -63,16 +63,16 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
+          mg(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
+          pt(i,j,k) = potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
         end do
       end do
     end do

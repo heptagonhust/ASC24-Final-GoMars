@@ -96,21 +96,21 @@ contains
 
   end subroutine sigma_coord_final
 
-  pure real(r8) function sigma_coord_calc_mg(k, phs) result(res)
+  pure real(r8) function sigma_coord_calc_mg(k, mgs) result(res)
 
     integer, intent(in) :: k
-    real(r8), intent(in) :: phs
+    real(r8), intent(in) :: mgs
 
-    res = sig(k) * (phs - pt) + pt
+    res = sig(k) * (mgs - pt) + pt
 
   end function sigma_coord_calc_mg
 
-  pure real(r8) function sigma_coord_calc_mg_lev(k, phs) result(res)
+  pure real(r8) function sigma_coord_calc_mg_lev(k, mgs) result(res)
 
     integer, intent(in) :: k
-    real(r8), intent(in) :: phs
+    real(r8), intent(in) :: mgs
 
-    res = sigi(k) * (phs - pt) + pt
+    res = sigi(k) * (mgs - pt) + pt
 
   end function sigma_coord_calc_mg_lev
 

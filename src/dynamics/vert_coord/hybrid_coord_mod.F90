@@ -143,21 +143,21 @@ contains
 
   end subroutine hybrid_coord_final
 
-  pure real(r8) function hybrid_coord_calc_mg(k, phs) result(res)
+  pure real(r8) function hybrid_coord_calc_mg(k, mgs) result(res)
 
     integer, intent(in) :: k
-    real(r8), intent(in) :: phs
+    real(r8), intent(in) :: mgs
 
-    res = hyam(k) * (p0 - local_ptop) + hybm(k) * (phs - local_ptop) + local_ptop
+    res = hyam(k) * (p0 - local_ptop) + hybm(k) * (mgs - local_ptop) + local_ptop
 
   end function hybrid_coord_calc_mg
 
-  pure real(r8) function hybrid_coord_calc_mg_lev(k, phs) result(res)
+  pure real(r8) function hybrid_coord_calc_mg_lev(k, mgs) result(res)
 
     integer, intent(in) :: k
-    real(r8), intent(in) :: phs
+    real(r8), intent(in) :: mgs
 
-    res = hyai(k) * (p0 - local_ptop) + hybi(k) * (phs - local_ptop) + local_ptop
+    res = hyai(k) * (p0 - local_ptop) + hybi(k) * (mgs - local_ptop) + local_ptop
 
   end function hybrid_coord_calc_mg_lev
 

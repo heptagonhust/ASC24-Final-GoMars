@@ -50,9 +50,9 @@ contains
     associate (mesh   => block%mesh            , &
                u      => block%dstate(1)%u_lon , &
                v      => block%dstate(1)%v_lat , &
-               phs    => block%dstate(1)%phs   , &
-               ph_lev => block%dstate(1)%ph_lev, &
-               ph     => block%dstate(1)%ph    , &
+               mgs    => block%dstate(1)%mgs   , &
+               mg_lev => block%dstate(1)%mg_lev, &
+               mg     => block%dstate(1)%mg    , &
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static%gzs)
     do k = mesh%full_kds, mesh%full_kde
@@ -82,40 +82,41 @@ contains
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
       do i = mesh%full_ids, mesh%full_ide
-        phs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kap * (u0 / radius + 2.0_r8 * omega) * &
+        mgs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kap * (u0 / radius + 2.0_r8 * omega) * &
                    (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * gzs(i,j))
       end do
     end do
-    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
+          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, mg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
+          mg(i,j,k) = 0.5d0 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          pt(i,j,k) = potential_temperature(288.0_r8, ph(i,j,k), 0.0_r8)
+          pt(i,j,k) = potential_temperature(288.0_r8, mg(i,j,k), 0.0_r8)
         end do
       end do
     end do
     call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
+      ! FIXME: Calculate tv.
       call calc_gz_lev(block, block%dstate(1))
     end if
     end associate

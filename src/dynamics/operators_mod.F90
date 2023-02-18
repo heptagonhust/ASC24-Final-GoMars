@@ -19,6 +19,7 @@ module operators_mod
 
   public operators_init
   public operators_prepare
+  public calc_mg
   public calc_ph
   public calc_dmg
   public calc_t
@@ -77,8 +78,9 @@ contains
     integer iblk
 
     do iblk = 1, size(blocks)
-      if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic ) call calc_mg       (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_dmg                       (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
@@ -100,8 +102,9 @@ contains
     select case (pass)
     ! --------------------------------------------------------------------------
     case (all_pass)
-      if (baroclinic ) call calc_ph       (block, dstate)
+      if (baroclinic ) call calc_mg       (block, dstate)
       call calc_dmg                       (block, dstate)
+      if (baroclinic ) call calc_ph       (block, dstate)
       if (baroclinic ) call calc_t        (block, dstate)
       call calc_mf                        (block, dstate, dt)
       call calc_ke                        (block, dstate)
@@ -126,7 +129,7 @@ contains
 
   end subroutine operators_prepare_2
 
-  subroutine calc_ph(block, dstate)
+  subroutine calc_mg(block, dstate)
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
@@ -136,30 +139,59 @@ contains
     associate (mesh    => block%mesh    , &
                mgs     => dstate%mgs    , & ! in
                mg_lev  => dstate%mg_lev , & ! out
-               mg      => dstate%mg     , & ! out
-               ph_lev  => dstate%ph_lev , & ! out
-               pkh_lev => dstate%pkh_lev, & ! out
-               ph      => dstate%ph     )   ! out
+               mg      => dstate%mg     )   ! out
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
-          ph_lev(i,j,k) = mg_lev(i,j,k) ! Assume dry-air.
+        end do
+      end do
+    end do
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          mg(i,j,k) = 0.5_r8 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
+        end do
+      end do
+    end do
+    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
+    end associate
+
+  end subroutine calc_mg
+
+  subroutine calc_ph(block, dstate)
+
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
+
+    integer i, j, k, km1, kp1
+
+    associate (mesh    => block%mesh    , &
+               mg_lev  => dstate%mg_lev , & ! in
+               dmg     => dstate%dmg    , & ! in
+               qv      => dstate%qv     , & ! in FIXME: Should we use qm here?
+               ph_lev  => dstate%ph_lev , & ! out
+               pkh_lev => dstate%pkh_lev, & ! out
+               ph      => dstate%ph     )   ! out
+    ph_lev(:,:,mesh%half_kds) = mg_lev(:,:,mesh%half_kds)
+    do k = mesh%half_kds + 1, mesh%half_kde
+      km1 = k - 1
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          ph_lev(i,j,k) = ph_lev(i,j,km1) + dmg(i,j,km1) * (1 + qv(i,j,km1))
           pkh_lev(i,j,k) = ph_lev(i,j,k)**rd_o_cpd
         end do
       end do
     end do
     call fill_halo(block%halo, pkh_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
-
     do k = mesh%full_kds, mesh%full_kde
+      kp1 = k + 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          mg(i,j,k) = 0.5_r8 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
-          ph(i,j,k) = 0.5_r8 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
+          ph(i,j,k) = 0.5_r8 * (ph_lev(i,j,k) + ph_lev(i,j,kp1))
         end do
       end do
     end do
-    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine calc_ph
@@ -508,7 +540,7 @@ contains
               end do
               print *, 'mgs(i,j) =', dstate%mgs(i,j)
               print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
-              print *, 'The dry-air weight levels are not monotonic!'
+              call log_warning('The dry-air weight levels are not monotonic!', __FILE__, __LINE__)
               call process_stop(1)
             end if
           end do

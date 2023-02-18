@@ -52,9 +52,9 @@ contains
                u      => block%dstate(1)%u_lon , &
                v      => block%dstate(1)%v_lat , &
                w      => block%dstate(1)%w_lev , &
-               phs    => block%dstate(1)%phs   , &
-               ph_lev => block%dstate(1)%ph_lev, &
-               ph     => block%dstate(1)%ph    , &
+               mgs    => block%dstate(1)%mgs   , &
+               mg_lev => block%dstate(1)%mg_lev, &
+               mg     => block%dstate(1)%mg    , &
                pt     => block%dstate(1)%pt    , &
                t      => block%dstate(1)%t     , &
                gz_lev => block%dstate(1)%gz_lev, &
@@ -76,29 +76,29 @@ contains
         cos_2lat = cos(2 * mesh%full_lat(j))
         ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
         do i = mesh%full_ids, mesh%full_ide
-          phs(i,j) = peq * exp(u0 / (4 * t0 * Rd) * (u0 + 2 * omega * radius) * (cos_2lat - 1)) * &
+          mgs(i,j) = peq * exp(u0 / (4 * t0 * Rd) * (u0 + 2 * omega * radius) * (cos_2lat - 1)) * &
                      (ts / teq)**(1 / Rd_o_cpd)
         end do
       end do
-      call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
 
       do k = mesh%half_kds, mesh%half_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
+            mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
           end do
         end do
       end do
-      call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block%halo, mg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
+            mg(i,j,k) = 0.5d0 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
           end do
         end do
       end do
-      call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
 
       if (nonhydrostatic) then
         w = 0.0_r8
@@ -107,7 +107,7 @@ contains
             cos_2lat = cos(2 * mesh%full_lat(j))
             ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
             do i = mesh%full_ids, mesh%full_ide
-              gz_lev(i,j,k) = - g**2 / N2 * log(ts / t0 * ((ph_lev(i,j,k) / phs(i,j))**Rd_o_cpd - 1) + 1)
+              gz_lev(i,j,k) = - g**2 / N2 * log(ts / t0 * ((mg_lev(i,j,k) / mgs(i,j))**Rd_o_cpd - 1) + 1)
             end do
           end do
         end do
@@ -119,7 +119,7 @@ contains
           cos_2lat = cos(2 * mesh%full_lat(j))
           ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
           do i = mesh%full_ids, mesh%full_ide
-            pt(i,j,k) = ts * (p0 / phs(i,j))**Rd_o_cpd / (ts / t0 * ((ph(i,j,k) / phs(i,j))**Rd_o_cpd - 1) + 1)
+            pt(i,j,k) = ts * (p0 / mgs(i,j))**Rd_o_cpd / (ts / t0 * ((mg(i,j,k) / mgs(i,j))**Rd_o_cpd - 1) + 1)
           end do
         end do
       end do

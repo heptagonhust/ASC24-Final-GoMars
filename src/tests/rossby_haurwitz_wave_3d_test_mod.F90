@@ -41,11 +41,11 @@ contains
     associate (mesh   => block%mesh            , &
                u      => block%dstate(1)%u_lon , &
                v      => block%dstate(1)%v_lat , &
-               phs    => block%dstate(1)%phs   , &
+               mgs    => block%dstate(1)%mgs   , &
                pt     => block%dstate(1)%pt    , &
                t      => block%dstate(1)%t     , &
-               ph_lev => block%dstate(1)%ph_lev, &
-               ph     => block%dstate(1)%ph    , &
+               mg_lev => block%dstate(1)%mg_lev, &
+               mg     => block%dstate(1)%mg    , &
                gz_lev => block%dstate(1)%gz_lev, &
                gz     => block%dstate(1)%gz)
     do k = mesh%full_kds, mesh%full_kde
@@ -80,34 +80,34 @@ contains
         b_lat = 2 * (omega + M) * M / (n + 1) / (n + 2) * cos_lat**n * ((n**2 + 2 * n + 2) - (n + 1)**2 * cos_lat**2)
         c_lat = M**2 / 4d0 * cos_lat**(2 * n) * ((n + 1) * cos_lat**2 - (n + 2))
         phi_p = a**2 * (a_lat + b_lat * cos(n * lon) + c_lat * cos(2 * n * lon))
-        phs(i,j) = pref * (1 + gamma / g / t0 * phi_p)**(g / gamma / Rd)
+        mgs(i,j) = pref * (1 + gamma / g / t0 * phi_p)**(g / gamma / Rd)
       end do
     end do
-    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
+          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, mg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
+          mg(i,j,k) = 0.5d0 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          t (i,j,k) = t0 * (ph(i,j,k) / pref)**(gamma * Rd / g)
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
+          t (i,j,k) = t0 * (mg(i,j,k) / pref)**(gamma * Rd / g)
+          pt(i,j,k) = potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
         end do
       end do
     end do
@@ -117,7 +117,7 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          gz(i,j,k) = g * t0 / gamma * (1 - (ph(i,j,k) / pref)**(gamma * Rd / g))
+          gz(i,j,k) = g * t0 / gamma * (1 - (mg(i,j,k) / pref)**(gamma * Rd / g))
         end do
       end do
     end do
@@ -126,7 +126,7 @@ contains
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          gz_lev(i,j,k) = g * t0 / gamma * (1 - (ph_lev(i,j,k) / pref)**(gamma * Rd / g))
+          gz_lev(i,j,k) = g * t0 / gamma * (1 - (mg_lev(i,j,k) / pref)**(gamma * Rd / g))
         end do
       end do
     end do

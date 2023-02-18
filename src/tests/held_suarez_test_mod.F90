@@ -37,23 +37,23 @@ contains
     call random_seed()
 
     associate (mesh  => block%mesh         , &
-               phs   => block%dstate(1)%phs, &
-               ph    => block%dstate(1)%ph , &
+               mgs   => block%dstate(1)%mgs, &
+               mg    => block%dstate(1)%mg , &
                t     => block%dstate(1)%t  , &
                pt    => block%dstate(1)%pt )
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         call random_number(random)
-        phs(i,j) = phs(i,j) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
+        mgs(i,j) = mgs(i,j) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
       end do
     end do
-    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           call random_number(random)
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
+          pt(i,j,k) = potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
         end do
       end do
     end do
@@ -74,7 +74,7 @@ contains
     associate (mesh  => block%mesh  , &
                u     => dstate%u_lon, &
                v     => dstate%v_lat, &
-               ph    => dstate%ph   , &
+               mg    => dstate%mg   , &
                t     => dstate%t    , &
                pt    => dstate%pt   )
     do k = mesh%full_kds, mesh%full_kde
@@ -101,13 +101,13 @@ contains
       do j = mesh%full_jds, mesh%full_jde
         kt = ka + (ks - ka) * max(0.0_r8, (mesh%full_lev(k) - sig_b) / (1.0_r8 - sig_b)) * mesh%full_cos_lat(j)**4
         do i = mesh%full_ids, mesh%full_ide
-          p_p0 = ph(i,j,k) / p0
+          p_p0 = mg(i,j,k) / p0
           teq = max(200.0_r8, (315.0_r8 - dt_lat * mesh%full_sin_lat(j)**2 - dpt_lev * log(p_p0) * mesh%full_cos_lat(j)**2) * p_p0**Rd_o_cpd)
           pt(i,j,k) = pt(i,j,k) - dt * kt * pt(i,j,k) * (1.0_r8 - teq / t(i,j,k))
         end do
       end do
     end do
-    call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine held_suarez_test_apply_forcing

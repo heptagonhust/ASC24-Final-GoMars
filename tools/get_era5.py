@@ -28,6 +28,7 @@ if not os.path.isfile(plev_file):
 			'format': 'netcdf',
 			'variable': [
 				'temperature',
+				'geopotential',
 				'u_component_of_wind',
 				'v_component_of_wind',
 				'specific_humidity',

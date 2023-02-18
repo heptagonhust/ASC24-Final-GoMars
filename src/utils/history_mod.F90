@@ -618,18 +618,18 @@ contains
       case (height_levels)
         do k = 1, size(diag_state(iblk)%levels)
           call fiona_output('h0', 'u' // to_str(int(diag_state(iblk)%levels(k))) // 'm', &
-            diag_state(iblk)%u(is:ie,js:je,ks:ke), start=start, count=count)
+            diag_state(iblk)%u(is:ie,js:je,k), start=start, count=count)
           call fiona_output('h0', 'v' // to_str(int(diag_state(iblk)%levels(k))) // 'm', &
-            diag_state(iblk)%v(is:ie,js:je,ks:ke), start=start, count=count)
+            diag_state(iblk)%v(is:ie,js:je,k), start=start, count=count)
         end do
       case (pressure_levels)
         do k = 1, size(diag_state(iblk)%levels)
           call fiona_output('h0', 'u' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
-            diag_state(iblk)%u(is:ie,js:je,ks:ke), start=start, count=count)
+            diag_state(iblk)%u(is:ie,js:je,k), start=start, count=count)
           call fiona_output('h0', 'v' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
-            diag_state(iblk)%v(is:ie,js:je,ks:ke), start=start, count=count)
+            diag_state(iblk)%v(is:ie,js:je,k), start=start, count=count)
           call fiona_output('h0', 't' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
-            diag_state(iblk)%t(is:ie,js:je,ks:ke), start=start, count=count)
+            diag_state(iblk)%t(is:ie,js:je,k), start=start, count=count)
         end do
       end select
       end associate

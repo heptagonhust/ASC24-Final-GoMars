@@ -32,34 +32,34 @@ contains
     associate (mesh   => block%mesh            , &
                u      => block%dstate(1)%u_lon , &
                v      => block%dstate(1)%v_lat , &
-               phs    => block%dstate(1)%phs   , &
-               ph_lev => block%dstate(1)%ph_lev, &
-               ph     => block%dstate(1)%ph    , &
+               mgs    => block%dstate(1)%mgs   , &
+               mg_lev => block%dstate(1)%mg_lev, &
+               mg     => block%dstate(1)%mg    , &
                gz_lev => block%dstate(1)%gz_lev, &
                gz     => block%dstate(1)%gz    , &
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static%gzs)
-    phs = 1.0e5_r8
+    mgs = 1.0e5_r8
     v   = 0
 
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
+          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block%halo, mg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
+          mg(i,j,k) = 0.5d0 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_kds, mesh%full_kde
       eta = mesh%full_lev(k)
@@ -88,7 +88,7 @@ contains
             (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * 2 * u0 * cos(etav)**1.5d0 + &
             (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega          &
           )
-          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k), 0.0_r8)
+          pt(i,j,k) = potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
         end do
       end do
     end do

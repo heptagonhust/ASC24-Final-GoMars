@@ -140,7 +140,6 @@ contains
       call dstate%c2a()
       if (baroclinic) then
         call moist_link_state(block)
-        call moist_calc_dry_air(block, old)
       end if
       end associate
     end do
@@ -303,7 +302,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            te_pe = te_pe + static%gzs(i,j) * dstate%phs(i,j) * mesh%area_cell(j)
+            te_pe = te_pe + static%gzs(i,j) * dstate%mgs(i,j) * mesh%area_cell(j)
           end do
         end do
       else
@@ -433,7 +432,7 @@ contains
 
         tend1%update_u   = .true.
         tend1%update_v   = .true.
-        tend1%update_phs = .true.
+        tend1%update_mgs = .true.
         tend1%update_pt  = .true.
       else if (nonhydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
@@ -449,7 +448,7 @@ contains
           end do
         end do
 
-        tend1%update_phs = .true.
+        tend1%update_mgs = .true.
         tend1%update_pt  = .true.
         call update_state(block, tend1, old_state, new_state, dt)
 
@@ -537,7 +536,7 @@ contains
           end do
         end do
 
-        tend1%update_phs = .true.
+        tend1%update_mgs = .true.
         tend1%update_pt  = .true.
       else if (nonhydrostatic) then
 
