@@ -448,7 +448,7 @@ contains
       end do
     end if
     call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false., south_halo=.false.)
-    call filter_on_cell(block%small_filter, div)
+    call filter_on_cell(block%big_filter, div)
     if (div_damp_order == 4) then
       call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
     else
