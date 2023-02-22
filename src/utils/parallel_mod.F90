@@ -43,7 +43,7 @@ module parallel_mod
 
 contains
 
-  subroutine fill_halo_2d_r4(halo, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo)
+  subroutine fill_halo_2d_r4(halo, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
     type(halo_type), intent(in) :: halo(:)
     real(4), intent(inout) :: array(:,:)
@@ -53,6 +53,7 @@ contains
     logical, intent(in), optional :: east_halo
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
+    logical, intent(in), optional :: cross_pole
 
     integer t1, t2, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
@@ -106,7 +107,8 @@ contains
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole) then
+    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       call MPI_SENDRECV(array, 1, halo(south)%send_type_2d(t1,t2), halo(south)%proc_id, 11, &
                         array, 1, halo(south)%recv_type_2d(t1,t2), halo(south)%proc_id, 11, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
@@ -124,7 +126,8 @@ contains
       end if
     end if
 
-    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole) then
+    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
       call MPI_SENDRECV(array, 1, halo(north)%send_type_2d(t1,t2), halo(north)%proc_id, 12, &
                         array, 1, halo(north)%recv_type_2d(t1,t2), halo(north)%proc_id, 12, &
@@ -145,7 +148,7 @@ contains
 
   end subroutine fill_halo_2d_r4
 
-  subroutine fill_halo_2d_r8(halo, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo)
+  subroutine fill_halo_2d_r8(halo, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
     type(halo_type), intent(in) :: halo(:)
     real(8), intent(inout) :: array(:,:)
@@ -155,6 +158,7 @@ contains
     logical, intent(in), optional :: east_halo
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
+    logical, intent(in), optional :: cross_pole
 
     integer t1, t2, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
@@ -208,7 +212,8 @@ contains
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole) then
+    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       call MPI_SENDRECV(array, 1, halo(south)%send_type_2d(t1,t2), halo(south)%proc_id, 11, &
                         array, 1, halo(south)%recv_type_2d(t1,t2), halo(south)%proc_id, 11, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
@@ -226,7 +231,8 @@ contains
       end if
     end if
 
-    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole) then
+    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
       call MPI_SENDRECV(array, 1, halo(north)%send_type_2d(t1,t2), halo(north)%proc_id, 12, &
                         array, 1, halo(north)%recv_type_2d(t1,t2), halo(north)%proc_id, 12, &
@@ -247,7 +253,7 @@ contains
 
   end subroutine fill_halo_2d_r8
 
-  subroutine fill_halo_3d_r4(halo, array, full_lon, full_lat, full_lev, west_halo, east_halo, south_halo, north_halo)
+  subroutine fill_halo_3d_r4(halo, array, full_lon, full_lat, full_lev, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
     type(halo_type), intent(in) :: halo(:)
     real(4), intent(inout) :: array(:,:,:)
@@ -258,6 +264,7 @@ contains
     logical, intent(in), optional :: east_halo
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
+    logical, intent(in), optional :: cross_pole
 
     integer t1, t2, t3, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
@@ -312,7 +319,8 @@ contains
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole) then
+    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       call MPI_SENDRECV(array, 1, halo(south)%send_type_3d(t1,t2,t3), halo(south)%proc_id, 11, &
                         array, 1, halo(south)%recv_type_3d(t1,t2,t3), halo(south)%proc_id, 11, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
@@ -330,7 +338,8 @@ contains
       end if
     end if
 
-    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole) then
+    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
       call MPI_SENDRECV(array, 1, halo(north)%send_type_3d(t1,t2,t3), halo(north)%proc_id, 12, &
                         array, 1, halo(north)%recv_type_3d(t1,t2,t3), halo(north)%proc_id, 12, &
@@ -350,7 +359,7 @@ contains
 
   end subroutine fill_halo_3d_r4
 
-  subroutine fill_halo_3d_r8(halo, array, full_lon, full_lat, full_lev, west_halo, east_halo, south_halo, north_halo)
+  subroutine fill_halo_3d_r8(halo, array, full_lon, full_lat, full_lev, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
     type(halo_type), intent(in) :: halo(:)
     real(8), intent(inout) :: array(:,:,:)
@@ -361,6 +370,7 @@ contains
     logical, intent(in), optional :: east_halo
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
+    logical, intent(in), optional :: cross_pole
 
     integer t1, t2, t3, i, j, nx, ny, mx, hx, hy, ierr
     integer send_req, recv_req
@@ -415,7 +425,8 @@ contains
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole) then
+    if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       call MPI_SENDRECV(array, 1, halo(south)%send_type_3d(t1,t2,t3), halo(south)%proc_id, 11, &
                         array, 1, halo(south)%recv_type_3d(t1,t2,t3), halo(south)%proc_id, 11, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
@@ -433,7 +444,8 @@ contains
       end if
     end if
 
-    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole) then
+    if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole .and. &
+        merge(cross_pole, .false., present(cross_pole))) then
       send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
       call MPI_SENDRECV(array, 1, halo(north)%send_type_3d(t1,t2,t3), halo(north)%proc_id, 12, &
                         array, 1, halo(north)%recv_type_3d(t1,t2,t3), halo(north)%proc_id, 12, &

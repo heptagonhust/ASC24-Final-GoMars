@@ -65,7 +65,7 @@ contains
 
     call time_add_alert('history_write', seconds=seconds)
 
-    if (output_h0_new_file == '') then
+    if (trim(output_h0_new_file) == '') then
       call time_add_alert('h0_new_file', seconds=seconds)
       if (proc%is_root()) call log_notice('Output data every ' // trim(history_interval(1)) // '.')
     else if (output_h0_new_file == 'one_file') then
@@ -712,7 +712,7 @@ contains
     else if (time_is_alerted('h0_new_file')) then
       call fiona_start_output('h0', dble(elapsed_seconds), new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
     else
-      call fiona_start_output('h0', dble(elapsed_seconds), new_file=.false.)
+      call fiona_start_output('h0', dble(elapsed_seconds), new_file=time_step==0)
     end if
 
     select case (planet)

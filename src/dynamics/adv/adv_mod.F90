@@ -282,7 +282,7 @@ contains
               end do
             end do
           end do
-          call fill_halo(block%filter_halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fill_halo(block%filter_halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end associate
         end do
         i = block%adv_batches(m)%old

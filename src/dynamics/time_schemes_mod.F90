@@ -166,7 +166,7 @@ contains
             end do
           end do
         end do
-        call fill_halo(block%filter_halo, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call fill_halo(block%filter_halo, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       else if (dtend%copy_pt) then
         new_state%pt = old_state%pt
       end if

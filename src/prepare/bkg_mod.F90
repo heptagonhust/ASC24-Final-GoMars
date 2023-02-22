@@ -222,7 +222,7 @@ contains
           end do
           deallocate(t1, p1)
         end select
-        call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -413,7 +413,7 @@ contains
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       call calc_qm(block, 1)
       end associate
     end do
