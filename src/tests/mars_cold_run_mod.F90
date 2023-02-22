@@ -8,6 +8,7 @@ module mars_cold_run_mod
   use vert_coord_mod
   use formula_mod
   use topo_mod
+  use operators_mod
 
   implicit none
 
@@ -38,7 +39,7 @@ contains
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
                mg     => block%dstate(1)%mg    , &
-               ph_lev => block%dstate(1)%ph_lev, &
+               mgs    => block%dstate(1)%mgs   , &
                phs    => block%dstate(1)%phs   , &
                gzs    => block%static%gzs)
     u = 0
@@ -46,28 +47,12 @@ contains
     t = t0
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
-        phs(i,j) = ps0 * exp(gzs(i,j) / (g * Rd * t0)) - ptop
+        mgs(i,j) = ps0 * exp(-gzs(i,j) / (Rd * t0)) - ptop
       end do
     end do
-    call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
 
-    do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
-        end do
-      end do
-    end do
-    call fill_halo(block%halo, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          mg(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
-        end do
-      end do
-    end do
-    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call calc_mg(block, block%dstate(1))
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
@@ -77,6 +62,8 @@ contains
       end do
     end do
     call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+
+    phs = mgs
     end associate
 
   end subroutine mars_cold_run_set_ic

@@ -142,7 +142,7 @@ set(gmcore_files
   src/dynamics/vert_coord/sigma_coord_mod.F90
   src/dynamics/vert_coord/hybrid_coord_test_mod.F90
   src/dynamics/vert_coord/hybrid_coord_ecmwf_mod.F90
-  src/dynamics/vert_coord/hybrid_coord_mars_mod.F90
+  src/dynamics/vert_coord/mars_vert_coord_mod.F90
   src/dynamics/vert_coord/hybrid_coord_mod.F90
   src/dynamics/vert_coord/vert_coord_mod.F90
   src/dynamics/dynamics_types_mod.F90

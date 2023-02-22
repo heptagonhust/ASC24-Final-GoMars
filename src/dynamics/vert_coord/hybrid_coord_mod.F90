@@ -5,7 +5,7 @@ module hybrid_coord_mod
   use namelist_mod, p0 => hybrid_coord_p0
   use hybrid_coord_test_mod
   use hybrid_coord_ecmwf_mod
-  use hybrid_coord_mars_mod
+  use mars_vert_coord_mod
   use mesh_mod
   use process_mod
 
@@ -97,7 +97,7 @@ contains
       case ('waccm_l70')
         call hybrid_coord_waccm_l70(p0, ptop, hyai, hybi)
       case ('emars28')
-        call hybrid_coord_mars_emars28(p0, ptop, hyai, hybi)
+        call mars_vert_coord_emars28(p0, ptop, hyai, hybi)
       case ('dcmip_l60')
         call hybrid_coord_dcmip_l60(p0, ptop, hyai, hybi)
       case ('equal_eta')

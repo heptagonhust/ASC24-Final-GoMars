@@ -512,10 +512,12 @@ contains
     call allocate_array(mesh, this%adv_w_lat , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%adv_w_lev , full_lon=.true., full_lat=.true., half_lev=.true.)
 
-    call allocate_array(mesh, this%dudt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dvdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dtdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dshdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+    if (trim(physics_suite) /= '') then
+      call allocate_array(mesh, this%dudt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dvdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dtdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dshdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+    end if
 
   end subroutine dtend_init
 

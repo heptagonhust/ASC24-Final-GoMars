@@ -1,4 +1,4 @@
-module hybrid_coord_mars_mod
+module mars_vert_coord_mod
 
   use flogger
   use const_mod
@@ -9,11 +9,12 @@ module hybrid_coord_mars_mod
 
   private
 
-  public hybrid_coord_mars_emars28
+  public mars_vert_coord_emars28
+  public mars_vert_coord_nasa24
 
 contains
 
-  subroutine hybrid_coord_mars_emars28(p0, ptop, hyai, hybi)
+  subroutine mars_vert_coord_emars28(p0, ptop, hyai, hybi)
 
     real(r8), intent(out) :: p0
     real(r8), intent(out) :: ptop
@@ -91,6 +92,30 @@ contains
     hyai = hyai / p0
     ptop = p0 * hyai(1)
 
-  end subroutine hybrid_coord_mars_emars28
+  end subroutine mars_vert_coord_emars28
 
-end module hybrid_coord_mars_mod
+  subroutine mars_vert_coord_nasa24(ptop, sigi, sig)
+
+    real(r8), intent(out) :: ptop
+    real(r8), intent(out) :: sigi(25)
+    real(r8), intent(out) :: sig(24)
+
+    sigi = [                                                    &
+      0.0, 0.0001237, 0.0003423, 0.00073, 0.0014177, 0.0026376, &
+      0.0047998, 0.008657, 0.0143857, 0.0238144, 0.0393587,     &
+      0.0649849, 0.1072458, 0.1768876, 0.2917842, 0.4448475,    &
+      0.6020744, 0.7372935, 0.8585347, 0.9304322, 0.974,        &
+      0.988, 0.996, 0.999, 1.0                                  &
+    ]
+    sig = [                                                     &
+      0.00006185, 0.000233, 0.00053615, 0.00107385, 0.00202765, &
+      0.0037187, 0.0067284, 0.01152135, 0.01910005, 0.03158655, &
+      0.0521718, 0.08611535, 0.1420667, 0.2343359, 0.36831585,  &
+      0.52346095, 0.66968395, 0.7979141, 0.89448345, 0.9522161, &
+      0.981, 0.992, 0.9975, 0.9995                              &
+    ]
+    ptop = 0.0008
+
+  end subroutine mars_vert_coord_nasa24
+
+end module mars_vert_coord_mod
