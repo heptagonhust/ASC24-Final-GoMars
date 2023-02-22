@@ -19,6 +19,7 @@ module block_mod
   public blocks
   public global_mesh
   public mesh_type
+  public halo_type
   public static_type
   public dstate_type
   public pstate_type
@@ -84,7 +85,7 @@ contains
         allocate(this%dtend (2))
       case ('pc2', 'wrfrk3')
         allocate(this%dstate(3))
-        allocate(this%dtend (3))
+        allocate(this%dtend (2))
       case default
         if (this%id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
