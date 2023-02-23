@@ -47,7 +47,7 @@ contains
     t = t0
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
-        mgs(i,j) = ps0 * exp(-gzs(i,j) / (Rd * t0)) - ptop
+        mgs(i,j) = ps0 * exp(-gzs(i,j) / (rd * t0)) - ptop
       end do
     end do
     call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
