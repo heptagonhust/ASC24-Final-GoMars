@@ -53,7 +53,7 @@ contains
     if (use_smag_damp) then
       call smag_damp_run(block, dt, dtend, dstate)
     end if
-    if (use_pole_damp) then
+    if (use_pole_damp .or. nudge_pole_v) then
       call pole_damp_run(block, dstate)
     end if
 

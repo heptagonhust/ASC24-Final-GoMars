@@ -296,7 +296,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              te_ie = te_ie + dstate%dmg(i,j,k) * cpd * dstate%t(i,j,k) * mesh%area_cell(j)
+              te_ie = te_ie + dstate%dmg(i,j,k) * cpd * dstate%tv(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do

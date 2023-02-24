@@ -65,7 +65,7 @@ contains
     end do
 
     do k = global_mesh%full_kds, global_mesh%full_kde
-      decay_from_top(k) = exp_two_values(1.0_r8, 0.0_r8, 1.0_r8, 10.0_r8, real(k, r8))
+      decay_from_top(k) = exp_two_values(1.0_r8, 0.0_r8, 1.0_r8, 6.0_r8, real(k, r8))
     end do
 
   end subroutine laplace_damp_init
@@ -183,7 +183,7 @@ contains
       end if
       call laplace_damp_on_cell_2d(mesh, halo, order, f(:,:,k), coef=ck, lat_coef=lat_coef, fill=.false.)
     end do
-    call fill_halo(halo, f, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(halo, f, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
 
   end subroutine laplace_damp_on_cell_3d
 
