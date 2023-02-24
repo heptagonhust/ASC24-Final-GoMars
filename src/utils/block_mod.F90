@@ -35,6 +35,7 @@ module block_mod
     type(pstate_type) pstate
     type(dtend_type), allocatable :: dtend(:)
     type(ptend_type) ptend
+    type(aux_array_type) aux
     type(adv_batch_type) adv_batch_pt
     type(adv_batch_type), allocatable :: adv_batches(:)
     type(filter_type) big_filter
@@ -98,6 +99,7 @@ contains
       call this%static%init(this%filter_mesh, this%mesh)
       call this%pstate%init(this%mesh)
       call this%ptend%init(this%mesh)
+      call this%aux%init(this%mesh)
     end if
 
   end subroutine block_init_stage_2
@@ -119,7 +121,8 @@ contains
       call this%dtend(i)%clear()
     end do
     call this%pstate%clear()
-    call this%ptend %clear()
+    call this%ptend%clear()
+    call this%aux%clear()
     call this%adv_batch_pt%clear()
     if (allocated(this%adv_batches)) then
       do i = 1, size(this%adv_batches)

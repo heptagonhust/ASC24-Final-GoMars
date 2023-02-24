@@ -214,12 +214,8 @@ contains
     !
     associate (mesh        => block%mesh        , &
                beta        => implicit_w_wgt    , &
-               adv_gz_lon  => dtend%adv_gz_lon  , & ! FIXME: After test success, merge advection tends togethor.
-               adv_gz_lat  => dtend%adv_gz_lat  , & !
-               adv_gz_lev  => dtend%adv_gz_lev  , & !
-               adv_w_lon   => dtend%adv_w_lon   , & !
-               adv_w_lat   => dtend%adv_w_lat   , & !
-               adv_w_lev   => dtend%adv_w_lev   , & !
+               adv_gz      => dtend%adv_gz      , & ! FIXME: After test success, merge advection tends togethor.
+               adv_w       => dtend%adv_w       , & !
                old_p       => old_state%p       , &
                star_p      => star_state%p      , &
                star_p_lev  => star_state%p_lev  , &
@@ -245,8 +241,8 @@ contains
           do k = mesh%full_kds, mesh%full_kde
             dgz(k) = old_gz_lev(i,j,k+1) - old_gz_lev(i,j,k)
           end do
-          gz1 = old_gz_lev(i,j,:) - dt * (adv_gz_lon(i,j,:) + adv_gz_lat(i,j,:) + adv_gz_lev(i,j,:)) + gdt1mbeta * star_w_lev(i,j,:)
-          w1  = old_w_lev (i,j,:) - dt * (adv_w_lon (i,j,:) + adv_w_lat (i,j,:) + adv_w_lev (i,j,:)) - g * dt
+          gz1 = old_gz_lev(i,j,:) - dt * adv_gz(i,j,:) + gdt1mbeta * star_w_lev(i,j,:)
+          w1  = old_w_lev (i,j,:) - dt * adv_w (i,j,:) - g * dt
           do k = mesh%half_kds + 1, mesh%half_kde - 1
             w1(k) = w1(k) + gdt1mbeta * (star_p(i,j,k) - star_p(i,j,k-1)) / star_m_lev(i,j,k)
           end do

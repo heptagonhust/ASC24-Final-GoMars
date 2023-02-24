@@ -410,26 +410,6 @@ contains
         call calc_grad_ke          (block, star_state, tend1, dt)
         call pgf_run               (block, star_state, tend1)
 
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-            do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%pgf_lon(i,j,k) - tend1%dkedlon(i,j,k) - tend1%wedudlev(i,j,k)
-            end do
-          end do
-
-          do j = mesh%half_jds, mesh%half_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
-            end do
-          end do
-
-          do j = mesh%full_jds, mesh%full_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dpt(i,j,k) = - tend1%dptfdlon(i,j,k) - tend1%dptfdlat(i,j,k) - tend1%dptfdlev(i,j,k)
-            end do
-          end do
-        end do
-
         tend1%update_u   = .true.
         tend1%update_v   = .true.
         tend1%update_mgs = .true.
@@ -439,14 +419,6 @@ contains
         call calc_dmgsdt           (block, star_state, tend1, dt)
         call calc_we_lev           (block, star_state, tend1, dt)
         call calc_grad_ptf         (block, star_state, tend1, dt)
-
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds, mesh%full_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dpt(i,j,k) = - tend1%dptfdlon(i,j,k) - tend1%dptfdlat(i,j,k) - tend1%dptfdlev(i,j,k)
-            end do
-          end do
-        end do
 
         tend1%update_mgs = .true.
         tend1%update_pt  = .true.
@@ -459,20 +431,6 @@ contains
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
         call pgf_run               (block,  new_state, tend1)
 
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-            do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%pgf_lon(i,j,k) - tend1%dkedlon(i,j,k) - tend1%wedudlev(i,j,k)
-            end do
-          end do
-
-          do j = mesh%half_jds, mesh%half_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
-            end do
-          end do
-        end do
-
         tend1%update_u   = .true.
         tend1%update_v   = .true.
       else
@@ -482,21 +440,9 @@ contains
         call pgf_run             (block, star_state, tend1)
 
         do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-            do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%pgf_lon(i,j,k) - tend1%dkedlon(i,j,k)
-            end do
-          end do
-
-          do j = mesh%half_jds, mesh%half_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k)
-            end do
-          end do
-
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz(i,j,k) = - (tend1%dmfdlon(i,j,k) + tend1%dmfdlat(i,j,k)) * g
+              tend1%dgz(i,j,k) = -tend1%dmf(i,j,k) * g
             end do
           end do
         end do
@@ -516,26 +462,6 @@ contains
         call calc_coriolis         (block, star_state, tend1, dt)
         call calc_grad_ke          (block, star_state, tend1, dt)
 
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-            do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%dkedlon(i,j,k) - tend1%wedudlev(i,j,k)
-            end do
-          end do
-
-          do j = mesh%half_jds, mesh%half_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
-            end do
-          end do
-
-          do j = mesh%full_jds, mesh%full_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dpt(i,j,k) = - tend1%dptfdlon(i,j,k) - tend1%dptfdlat(i,j,k) - tend1%dptfdlev(i,j,k)
-            end do
-          end do
-        end do
-
         tend1%update_mgs = .true.
         tend1%update_pt  = .true.
       else if (nonhydrostatic) then
@@ -546,21 +472,9 @@ contains
         call calc_grad_ke         (block, star_state, tend1, dt)
 
         do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-            do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%dkedlon(i,j,k)
-            end do
-          end do
-
-          do j = mesh%half_jds, mesh%half_jde
-            do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%dkedlat(i,j,k)
-            end do
-          end do
-
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz(i,j,k) = - (tend1%dmfdlon(i,j,k) + tend1%dmfdlat(i,j,k)) * g
+              tend1%dgz(i,j,k) = -tend1%dmf(i,j,k) * g
             end do
           end do
         end do
@@ -575,13 +489,13 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
             do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) = tend2%du(i,j,k) - tend1%pgf_lon(i,j,k)
+              tend1%du(i,j,k) = tend1%du(i,j,k) + tend2%du(i,j,k)
             end do
           end do
 
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = tend2%dv(i,j,k) - tend1%pgf_lat(i,j,k)
+              tend1%dv(i,j,k) = tend1%dv(i,j,k) + tend2%dv(i,j,k)
             end do
           end do
         end do
@@ -596,13 +510,13 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
             do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) = tend2%du(i,j,k) - tend1%pgf_lon(i,j,k)
+              tend1%du(i,j,k) = tend1%du(i,j,k) + tend2%du(i,j,k)
             end do
           end do
 
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = tend2%dv(i,j,k) - tend1%pgf_lat(i,j,k)
+              tend1%dv(i,j,k) = tend1%dv(i,j,k) + tend2%dv(i,j,k)
             end do
           end do
         end do

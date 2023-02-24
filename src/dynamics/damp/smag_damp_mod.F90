@@ -44,7 +44,7 @@ contains
 
   subroutine smag_damp_run(block, dt, dtend, dstate)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     real(r8), intent(in) :: dt
     type(dtend_type), intent(inout) :: dtend
     type(dstate_type), intent(inout) :: dstate
@@ -52,18 +52,18 @@ contains
     integer i, j, k
     real(r8) ls2
 
-    associate (mesh      => block%mesh      , &
-               smag_t    => dstate%smag_t   , & ! working array
-               smag_s    => dstate%smag_s   , & ! working array
-               kmh_lon   => dstate%kmh_lon  , & ! working array
-               kmh_lat   => dstate%kmh_lat  , & ! working array
-               kmh       => dstate%kmh      , & ! working array
-               dudt      => dtend%smag_dudt , & ! working array
-               dvdt      => dtend%smag_dvdt , & ! working array
-               dptdt     => dtend%smag_dptdt, & ! working array
-               u         => dstate%u_lon    , & ! inout
-               v         => dstate%v_lat    , & ! inout
-               pt        => dstate%pt       )   ! inout
+    associate (mesh      => block%mesh       , &
+               smag_t    => block%aux%smag_t , & ! working array
+               smag_s    => block%aux%smag_s , & ! working array
+               kmh_lon   => block%aux%kmh_lon, & ! working array
+               kmh_lat   => block%aux%kmh_lat, & ! working array
+               kmh       => block%aux%kmh    , & ! working array
+               dudt      => dtend%du         , & ! working array
+               dvdt      => dtend%dv         , & ! working array
+               dptdt     => dtend%dpt        , & ! working array
+               u         => dstate%u_lon     , & ! inout
+               v         => dstate%v_lat     , & ! inout
+               pt        => dstate%pt        )   ! inout
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide

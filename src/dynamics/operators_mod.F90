@@ -232,8 +232,7 @@ contains
     real(r8) mf
 
     associate (mesh       => block%mesh       , &
-               dmfdlon    => dtend%dmfdlon    , & ! in
-               dmfdlat    => dtend%dmfdlat    , & ! in
+               dmf        => dtend%dmf        , & ! in
                dmgs       => dtend%dmgs       , & ! in
                dmg_lev    => dstate%dmg_lev   , & ! in
                we_lev     => dstate%we_lev    , & ! out
@@ -244,7 +243,7 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           mf = 0.0_r8
           do l = 1, k - 1
-            mf = mf + dmfdlon(i,j,l) + dmfdlat(i,j,l)
+            mf = mf + dmf(i,j,l)
           end do
           we_lev(i,j,k) = - vert_coord_calc_dmgdt_lev(k, dmgs(i,j)) - mf
         end do
@@ -890,13 +889,13 @@ contains
                mfx_lat => dstate%mfx_lat, & ! in
                pv_lon  => dstate%pv_lon , & ! in
                pv_lat  => dstate%pv_lat , & ! in
-               qhu     => dtend%qhu     , & ! out
-               qhv     => dtend%qhv     )   ! out
+               du      => dtend%du      , & ! out
+               dv      => dtend%dv      )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
           if (coriolis_scheme == 1) then
-            qhu(i,j,k) = (                                                 &
+            dv(i,j,k) = dv(i,j,k) - (                                      &
               mesh%half_tangent_wgt(1,j) * (                               &
                 mfx_lon(i-1,j  ,k) * (pv_lat(i,j,k) + pv_lon(i-1,j  ,k)) + &
                 mfx_lon(i  ,j  ,k) * (pv_lat(i,j,k) + pv_lon(i  ,j  ,k))   &
@@ -907,7 +906,7 @@ contains
               )                                                            &
             ) * 0.5_r8
           else if (coriolis_scheme == 2) then
-            qhu(i,j,k) = mfx_lat(i,j,k) * pv_lat(i,j,k)
+            dv(i,j,k) = dv(i,j,k) - mfx_lat(i,j,k) * pv_lat(i,j,k)
           end if
         end do
       end do
@@ -916,7 +915,7 @@ contains
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
           if (coriolis_scheme == 1) then
-            qhv(i,j,k) = (                                                 &
+            du(i,j,k) = du(i,j,k) + (                                      &
               mesh%full_tangent_wgt(1,j) * (                               &
                 mfy_lat(i  ,j-1,k) * (pv_lon(i,j,k) + pv_lat(i  ,j-1,k)) + &
                 mfy_lat(i+1,j-1,k) * (pv_lon(i,j,k) + pv_lat(i+1,j-1,k))   &
@@ -927,7 +926,7 @@ contains
               )                                                            &
             ) * 0.5_r8
           else if (coriolis_scheme == 2) then
-            qhv(i,j,k) = mfy_lon(i,j,k) * pv_lon(i,j,k)
+            du(i,j,k) = du(i,j,k) + mfy_lon(i,j,k) * pv_lon(i,j,k)
           end if
         end do
       end do
@@ -945,21 +944,21 @@ contains
 
     integer i, j, k
 
-    associate (mesh    => block%mesh   , &
-               ke      => dstate%ke    , & ! in
-               dkedlon => dtend%dkedlon, & ! out
-               dkedlat => dtend%dkedlat)   ! out
+    associate (mesh => block%mesh, &
+               ke   => dstate%ke , & ! in
+               du   => dtend%du  , & ! out
+               dv   => dtend%dv  )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          dkedlon(i,j,k) = (ke(i+1,j,k) - ke(i,j,k)) / mesh%de_lon(j)
+          du(i,j,k) = du(i,j,k) - (ke(i+1,j,k) - ke(i,j,k)) / mesh%de_lon(j)
         end do
       end do
     end do
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          dkedlat(i,j,k) = (ke(i,j+1,k) - ke(i,j,k)) / mesh%de_lat(j)
+          dv(i,j,k) = dv(i,j,k) - (ke(i,j+1,k) - ke(i,j,k)) / mesh%de_lat(j)
         end do
       end do
     end do
@@ -981,24 +980,16 @@ contains
     associate (mesh    => block%mesh    , &
                mfx_lon => dstate%mfx_lon, & ! in
                mfy_lat => dstate%mfy_lat, & ! in
-               dmfdlon => dtend%dmfdlon , & ! out
-               dmfdlat => dtend%dmfdlat )   ! out
+               dmf     => dtend%dmf     )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
-          dmfdlon(i,j,k) = (                  &
+          dmf(i,j,k) = ((                      &
             mfx_lon(i,j,k) - mfx_lon(i-1,j,k) &
-          ) * mesh%le_lon(j) / mesh%area_cell(j)
-        end do
-      end do
-    end do
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%full_ids, mesh%full_ide
-          dmfdlat(i,j,k) = (                      &
+          ) * mesh%le_lon(j) + ( &
             mfy_lat(i,j  ,k) * mesh%le_lat(j  ) - &
             mfy_lat(i,j-1,k) * mesh%le_lat(j-1)   &
-          ) / mesh%area_cell(j)
+          )) / mesh%area_cell(j)
         end do
       end do
     end do
@@ -1013,7 +1004,7 @@ contains
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          dmfdlat(i,j,k) = pole(k)
+          dmf(i,j,k) = pole(k)
         end do
       end do
     end if
@@ -1028,7 +1019,7 @@ contains
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          dmfdlat(i,j,k) = pole(k)
+          dmf(i,j,k) = pole(k)
         end do
       end do
     end if
@@ -1048,15 +1039,11 @@ contains
     real(r8) pole(dstate%mesh%full_nlev)
 
     associate (mesh     => block%mesh    , &
-               gz_lev   => dstate%gz_lev , & ! in
-               ph       => dstate%ph     , & ! in
                pt       => dstate%pt     , & ! in
                ptf_lon  => dstate%ptf_lon, & ! out
                ptf_lat  => dstate%ptf_lat, & ! out
                ptf_lev  => dstate%ptf_lev, & ! out
-               dptfdlon => dtend%dptfdlon, & ! out
-               dptfdlat => dtend%dptfdlat, & ! out
-               dptfdlev => dtend%dptfdlev)   ! out
+               dpt      => dtend%dpt     )   ! out
     call adv_calc_tracer_hflx(block, block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(block%halo, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
@@ -1065,19 +1052,12 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
-          dptfdlon(i,j,k) = (                 &
-            ptf_lon(i,j,k) - ptf_lon(i-1,j,k) &
-          ) * mesh%le_lon(j) / mesh%area_cell(j)
-        end do
-      end do
-    end do
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%full_ids, mesh%full_ide
-          dptfdlat(i,j,k) = (                     &
+          dpt(i,j,k) = -((                        &
+            ptf_lon(i,j,k) - ptf_lon(i-1,j,k)     &
+          ) * mesh%le_lon(j) + (                  &
             ptf_lat(i,j  ,k) * mesh%le_lat(j  ) - &
             ptf_lat(i,j-1,k) * mesh%le_lat(j-1)   &
-          ) / mesh%area_cell(j)
+          )) / mesh%area_cell(j)
         end do
       end do
     end do
@@ -1092,7 +1072,7 @@ contains
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          dptfdlat(i,j,k) = pole(k)
+          dpt(i,j,k) = -pole(k)
         end do
       end do
     end if
@@ -1107,7 +1087,7 @@ contains
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          dptfdlat(i,j,k) = pole(k)
+          dpt(i,j,k) = -pole(k)
         end do
       end do
     end if
@@ -1123,27 +1103,10 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dptfdlev(i,j,k) = ptf_lev(i,j,k+1) - ptf_lev(i,j,k)
+          dpt(i,j,k) = dpt(i,j,k) - (ptf_lev(i,j,k+1) - ptf_lev(i,j,k))
         end do
       end do
     end do
-    ! ------------------------------ Taylor 2020 -------------------------------
-    ! do k = mesh%half_kds + 1, mesh%half_kde - 1
-    !   do j = mesh%full_jds, mesh%full_jde
-    !     do i = mesh%full_ids, mesh%full_ide
-    !       ptf_lev(i,j,k) = -(gz_lev(i,j,k+1) - gz_lev(i,j,k-1)) / (2 * cpd) / &
-    !         (ph(i,j,k)**rd_o_cpd - ph(i,j,k-1)**rd_o_cpd) * p0**rd_o_cpd
-    !     end do
-    !   end do
-    ! end do
-    ! do k = mesh%full_kds, mesh%full_kde
-    !   do j = mesh%full_jds, mesh%full_jde
-    !     do i = mesh%full_ids, mesh%full_ide
-    !       dptfdlev(i,j,k) = dstate%we_lev(i,j,k+1) * ptf_lev(i,j,k+1) - &
-    !                         dstate%we_lev(i,j,k  ) * ptf_lev(i,j,k  )
-    !     end do
-    !   end do
-    ! end do
     end associate
 
   end subroutine calc_grad_ptf
@@ -1157,15 +1120,14 @@ contains
 
     integer i, j, k
 
-    associate (mesh    => block%mesh   , &
-               dmfdlon => dtend%dmfdlon, & ! in
-               dmfdlat => dtend%dmfdlat, & ! in
-               dmgs    => dtend%dmgs   )   ! out
+    associate (mesh => block%mesh, &
+               dmf  => dtend%dmf , & ! in
+               dmgs => dtend%dmgs)   ! out
     dtend%dmgs = 0
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dmgs(i,j) = dmgs(i,j) - dmfdlon(i,j,k) - dmfdlat(i,j,k)
+          dmgs(i,j) = dmgs(i,j) - dmf(i,j,k)
         end do
       end do
     end do
@@ -1191,12 +1153,12 @@ contains
                dmg_lat    => dstate%dmg_lat   , & ! in
                we_lev_lon => dstate%we_lev_lon, & ! in
                we_lev_lat => dstate%we_lev_lat, & ! in
-               wedudlev   => dtend%wedudlev   , & ! out
-               wedvdlev   => dtend%wedvdlev   )   ! out
+               du         => dtend%du         , & ! out
+               dv         => dtend%dv         )   ! out
     do k = mesh%full_kds + 1, mesh%full_kde - 1
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          wedudlev(i,j,k) = (                               &
+          du(i,j,k) = du(i,j,k) - (                         &
             we_lev_lon(i,j,k+1) * (u(i,j,k+1) - u(i,j,k)) + &
             we_lev_lon(i,j,k  ) * (u(i,j,k) - u(i,j,k-1))   &
           ) / dmg_lon(i,j,k) / 2.0_r8
@@ -1206,14 +1168,14 @@ contains
     k = mesh%full_kds
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       do i = mesh%half_ids, mesh%half_ide
-        wedudlev(i,j,k) = (we_lev_lon(i,j,k+1) * &
+        du(i,j,k) = du(i,j,k) - (we_lev_lon(i,j,k+1) * &
           (u(i,j,k+1) - u(i,j,k))) / dmg_lon(i,j,k) / 2.0_r8
       end do
     end do
     k = mesh%full_kde
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       do i = mesh%half_ids, mesh%half_ide
-        wedudlev(i,j,k) = (we_lev_lon(i,j,k  ) * &
+        du(i,j,k) = du(i,j,k) - (we_lev_lon(i,j,k  ) * &
           (u(i,j,k) - u(i,j,k-1))) / dmg_lon(i,j,k) / 2.0_r8
       end do
     end do
@@ -1221,7 +1183,7 @@ contains
     do k = mesh%full_kds + 1, mesh%full_kde - 1
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          wedvdlev(i,j,k) = (                                 &
+          dv(i,j,k) = dv(i,j,k) - (                           &
             we_lev_lat(i,j,k+1) * (v(i,j,k+1) - v(i,j,k  )) + &
             we_lev_lat(i,j,k  ) * (v(i,j,k  ) - v(i,j,k-1))   &
           ) / dmg_lat(i,j,k) / 2.0_r8
@@ -1231,14 +1193,14 @@ contains
     k = mesh%full_kds
     do j = mesh%half_jds, mesh%half_jde
       do i = mesh%full_ids, mesh%full_ide
-        wedvdlev(i,j,k) = (we_lev_lat(i,j,k+1) * &
+        dv(i,j,k) = dv(i,j,k) - (we_lev_lat(i,j,k+1) * &
           (v(i,j,k+1) - v(i,j,k))) / dmg_lat(i,j,k) / 2.0_r8
       end do
     end do
     k = mesh%full_kde
     do j = mesh%half_jds, mesh%half_jde
       do i = mesh%full_ids, mesh%full_ide
-        wedvdlev(i,j,k) = (we_lev_lat(i,j,k  ) * &
+        dv(i,j,k) = dv(i,j,k) - (we_lev_lat(i,j,k  ) * &
           (v(i,j,k) - v(i,j,k-1))) / dmg_lat(i,j,k) / 2.0_r8
       end do
     end do

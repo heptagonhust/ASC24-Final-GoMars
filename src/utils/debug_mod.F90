@@ -11,7 +11,6 @@ module debug_mod
   private
 
   public debug_check_areas
-  public debug_check_space_operators
   public debug_print_min_max
   public debug_print_min_max_cell
   public debug_print_min_max_lev_edge
@@ -111,120 +110,6 @@ contains
     end if
 
   end subroutine debug_check_areas
-
-  subroutine debug_check_space_operators(block, dstate, dtend)
-
-    type(block_type), intent(inout) :: block
-    type(dstate_type), intent(in) :: dstate
-    type(dtend_type), intent(in) :: dtend
-
-    integer i, j, k
-    type(mesh_type), pointer :: mesh
-    real(r8) ip_cf
-    real(r8) ip_ke, ip_ke_h, ip_ke_v
-    real(r8) ip_pe
-    real(r8) ip_mf
-    real(r8) ip_ptf
-
-    mesh => dstate%mesh
-    ip_cf  = 0.0_r8
-    ip_ke  = 0.0_r8; ip_ke_h = 0.0_r8; ip_ke_v = 0.0_r8
-    ip_pe  = 0.0_r8
-    ip_mf  = 0.0_r8
-    ip_ptf = 0.0_r8
-
-    if (baroclinic .and. hydrostatic) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            ip_cf   = ip_cf   + dtend%qhv     (i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j)
-            ip_ke_h = ip_ke_h + dtend%dkedlon (i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
-            ip_ke_v = ip_ke_v + ( &
-              dtend%wedudlev(i,j,k) * dstate%mfx_lon(i,j,k) + &
-              0.5_r8 * dstate%u_lon(i,j,k)**2 * (dstate%we_lev_lon(i,j,k+1) - dstate%we_lev_lon(i,j,k)) &
-            ) * mesh%area_lon(j)
-          end do
-        end do
-      end do
-
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            ip_cf   = ip_cf   - dtend%qhu     (i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j)
-            ip_ke_h = ip_ke_h + dtend%dkedlat (i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
-            ip_ke_v = ip_ke_v + ( &
-              dtend%wedvdlev(i,j,k) * dstate%mfy_lat(i,j,k) + &
-              0.5_r8 * dstate%v_lat(i,j,k)**2 * (dstate%we_lev_lat(i,j,k+1) - dstate%we_lev_lat(i,j,k)) &
-            ) * mesh%area_lat(j)
-          end do
-        end do
-      end do
-
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            ip_ke_h = ip_ke_h + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * dstate%ke(i,j,k) * mesh%area_cell(j)
-            ip_ptf  = ip_ptf + (dtend%dptfdlon(i,j,k) + dtend%dptfdlat(i,j,k) + dtend%dptfdlev(i,j,k)) * mesh%area_cell(j)
-          end do
-        end do
-      end do
-
-      call global_sum(proc%comm, ip_cf)
-      call global_sum(proc%comm, ip_ke_h)
-      call global_sum(proc%comm, ip_ke_v)
-      call global_sum(proc%comm, ip_ptf)
-
-      if (proc%id == 0) then
-        write(6, *) &
-          ip_cf   / (4 * pi * radius**2), &
-          ip_ke_h / (4 * pi * radius**2), &
-          ip_ke_v / (4 * pi * radius**2), &
-          ip_ptf  / (4 * pi * radius**2)
-      end if
-    else
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            ip_cf = ip_cf  + dtend%qhv    (i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j)
-            ip_ke = ip_ke + dtend%dkedlon(i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
-            ip_pe = ip_pe + dtend%pgf_lon(i,j,k) * dstate%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
-          end do
-        end do
-      end do
-
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            ip_cf = ip_cf - dtend%qhu    (i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j)
-            ip_ke = ip_ke + dtend%dkedlat(i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
-            ip_pe = ip_pe + dtend%pgf_lat(i,j,k) * dstate%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
-          end do
-        end do
-      end do
-
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            ip_ke = ip_ke + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * dstate%ke(i,j,k) * mesh%area_cell(j)
-            ip_pe = ip_pe + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * dstate%gz(i,j,k) * mesh%area_cell(j)
-            ip_mf = ip_mf + (dtend%dmfdlon(i,j,k) + dtend%dmfdlat(i,j,k)) * mesh%area_cell(j)
-          end do
-        end do
-      end do
-
-      call global_sum(proc%comm, ip_cf)
-      call global_sum(proc%comm, ip_ke)
-      call global_sum(proc%comm, ip_pe)
-
-      if (proc%id == 0) then
-        write(6, *) &
-          ip_cf / (4 * pi * radius**2), &
-          ip_ke / (4 * pi * radius**2), &
-          ip_pe / (4 * pi * radius**2)
-      end if
-    end if
-
-  end subroutine debug_check_space_operators
 
   subroutine debug_print_min_max_1d(array, label)
 
