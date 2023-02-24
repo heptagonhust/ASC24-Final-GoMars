@@ -740,7 +740,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, pv, full_lon=.false., full_lat=.false., full_lev=.true.)
+    call fill_halo(block%halo, pv, full_lon=.false., full_lat=.false., full_lev=.true., cross_pole=.true.)
     end associate
 
   end subroutine calc_pv

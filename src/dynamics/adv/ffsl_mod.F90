@@ -184,8 +184,8 @@ contains
         end do
       end do
     end if
-    call fill_halo(block%filter_halo, mx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    call fill_halo(block%filter_halo, my, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%filter_halo, mx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
+    call fill_halo(block%filter_halo, my, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false., cross_pole=.true.)
     ! Run outer flux form operators.
     call hflx(block, batch, u, v, my, mx, mfx, mfy)
     end associate
@@ -297,8 +297,8 @@ contains
         end do
       end do
     end if
-    call fill_halo(block%filter_halo, qx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    call fill_halo(block%filter_halo, qy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%filter_halo, qx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
+    call fill_halo(block%filter_halo, qy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false., cross_pole=.true.)
     ! Run outer flux form operators.
     call hflx(block, batch, mfx, mfy, qy, qx, qmfx, qmfy)
     end associate
@@ -487,9 +487,9 @@ contains
     call fill_halo(block%filter_halo, mlx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     call fill_halo(block%filter_halo, dmx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     call fill_halo(block%filter_halo, m6x, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%halo, mly, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    call fill_halo(block%halo, dmy, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    call fill_halo(block%halo, m6y, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block%halo, mly, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
+    call fill_halo(block%halo, dmy, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
+    call fill_halo(block%halo, m6y, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
     do k = mesh%full_kds, mesh%full_kde
       ! Along x-axis
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
