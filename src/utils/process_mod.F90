@@ -98,6 +98,16 @@ contains
     proc%decomp_type = decomp_1d_lat
     proc%decomp_loc  = decomp_normal_region
 
+    if (num_proc_lon(1) * num_proc_lat(1) /= proc%np) then
+      num_proc_lat(1) = global_mesh%full_nlat / 2
+      if (num_proc_lat(1) < proc%np) then
+        if (mod(proc%np, num_proc_lat(1)) == 0) then
+          num_proc_lon(1) = proc%np / num_proc_lat(1)
+        end if
+        call log_notice('Set process layout to ' // to_str(num_proc_lon(1)) // ' x ' // to_str(num_proc_lat(1)) // '.', pid=proc%id)
+      end if
+    end if
+
     if (num_proc_lon(1) * num_proc_lat(1) == proc%np) then
       ! Check if process topology in namelist is compatible with MPI runtime.
       np = 0
