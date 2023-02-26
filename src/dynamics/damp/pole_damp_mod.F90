@@ -46,7 +46,7 @@ contains
       call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! ----------------------------------------------------------------------
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, abs(mesh%full_lat_deg(j)))
+        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%full_lat_deg(j)), r8))
         do i = mesh%half_ids, mesh%half_ide
           tmp = u_lon(i,j,1:mesh%full_nlev)
           do k = mesh%full_kds + 1, mesh%full_kde - 1
@@ -56,7 +56,7 @@ contains
       end do
       call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       do j = mesh%half_jds, mesh%half_jde
-        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, abs(mesh%half_lat_deg(j)))
+        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%half_lat_deg(j)), r8))
         do i = mesh%full_ids, mesh%full_ide
           tmp = v_lat(i,j,1:mesh%full_nlev)
           do k = mesh%full_kds + 1, mesh%full_kde - 1

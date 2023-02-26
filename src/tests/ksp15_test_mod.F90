@@ -6,6 +6,7 @@ module ksp15_test_mod
   use block_mod
   use vert_coord_mod
   use formula_mod
+  use operators_mod
 
   implicit none
 
@@ -49,6 +50,7 @@ contains
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static   %gzs   , &
+               mgs    => block%dstate(1)%mgs   , &
                phs    => block%dstate(1)%phs   , &
                mg     => block%dstate(1)%mg    , &
                mg_lev => block%dstate(1)%mg_lev, &
@@ -74,28 +76,13 @@ contains
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          phs(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs(i,j) / Rd / teq)
+          mgs(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs(i,j) / Rd / teq)
         end do
       end do
-      call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+      phs = mgs
 
-      do k = mesh%half_kds, mesh%half_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
-          end do
-        end do
-      end do
-      call fill_halo(block%halo, mg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            mg(i,j,k) = 0.5d0 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
-          end do
-        end do
-      end do
-      call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call calc_mg(block, block%dstate(1))
 
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde

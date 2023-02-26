@@ -763,8 +763,6 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
-
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -772,7 +770,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., east_halo=.false., north_halo=.false.)
+    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
     end associate
 
   end subroutine interp_pv_midpoint
@@ -799,14 +798,14 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            b  = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
+            b = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
             pv_lon(i,j,k) = b * upwind1(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-1:j,k)) + &
                             (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
+            b = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
             pv_lat(i,j,k) = b * upwind1(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-1:i,j,k)) + &
                             (1 - b) * 0.5_r8 * (pv(i-1,j,k) + pv(i,j,k))
           end do
@@ -816,7 +815,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            b  = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
+            b = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
             pv_lon(i,j,k) = b * upwind3(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-2:j+1,k)) + &
                             (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
@@ -830,8 +829,8 @@ contains
         end do
       end do
     end select
-    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
     end associate
 
   end subroutine interp_pv_upwind
@@ -867,8 +866,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
     end associate
 
   end subroutine interp_pv_tvd

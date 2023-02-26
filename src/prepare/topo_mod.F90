@@ -425,6 +425,10 @@ contains
                gzs      => block%static%gzs   , &
                gzs_f    => block%dtend(1)%dmgs, & ! Borrow the array.
                landmask => block%static%landmask)
+    ! do cyc = 1, 3
+    !   call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 6, gzs, fill=.true.)
+    !   where (gzs < 0) gzs = 0
+    ! end do
     do cyc = 1, topo_smooth_cycles
       call filter_on_cell(block%big_filter, gzs, gzs_f)
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -440,7 +444,6 @@ contains
       !   end do
       ! end do
     end do
-    ! call laplace_damp_on_cell(block, 8, gzs, fill=.true.)
     end associate
 
   end subroutine topo_smooth

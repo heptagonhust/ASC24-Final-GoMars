@@ -28,19 +28,6 @@ module laplace_damp_mod
     module procedure laplace_damp_on_cell_3d
   end interface laplace_damp_on_cell
 
-  integer, parameter :: diff_hw(1:8) = [1, 1, 2, 2, 3, 3, 4, 4]
-
-  real(r8), target :: diff_weights(9,1:8) = reshape([  &
-    -1,  1,   0,   0,   0,   0,   0,   0,  0,  & ! 1
-     1, -2,   1,   0,   0,   0,   0,   0,  0,  & ! 2
-    -1,  3, - 3,   1,   0,   0,   0,   0,  0,  & ! 3
-     1, -4,   6, - 4,   1,   0,   0,   0,  0,  & ! 4
-    -1,  5, -10,  10, - 5,   1,   0,   0,  0,  & ! 5
-     1, -6,  15, -20,  15, - 6,   1,   0,  0,  & ! 6
-    -1,  7, -21,  35, -35,  21, - 7,   1,  0,  & ! 7
-     1, -8,  28, -56,  70, -56,  28, - 8,  1   & ! 8
-  ], [9, 8])
-
   real(r8), allocatable, dimension(:), target :: lat_ones
   real(r8), allocatable, dimension(:), target :: lev_ones
   real(r8), allocatable, dimension(:), target :: decay_from_pole
@@ -64,8 +51,9 @@ contains
       decay_from_sfc(k) = exp((global_mesh%full_nlev - k)**2 * log(0.1d0) / k0**2)
     end do
 
+    k0 = 10
     do k = global_mesh%full_kds, global_mesh%full_kde
-      decay_from_top(k) = exp_two_values(1.0_r8, 0.0_r8, 1.0_r8, 6.0_r8, real(k, r8))
+      decay_from_top(k) = exp_two_values(1.0_r8, 0.0_r8, 1.0_r8, real(k0, r8), real(k, r8))
     end do
 
   end subroutine laplace_damp_init
@@ -111,6 +99,14 @@ contains
     gx1 = f
     gy1 = f
     do k = 1, (order - 2) / 2
+      if (mesh%has_south_pole()) then
+        j = mesh%full_jds
+        gy1(:,j-1) = gy1(:,j)
+      end if
+      if (mesh%has_north_pole()) then
+        j = mesh%full_jde
+        gy1(:,j+1) = gy1(:,j)
+      end if
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           gx2(i,j) = gx1(i-1,j) - 2 * gx1(i,j) + gx1(i+1,j)
@@ -122,6 +118,14 @@ contains
       gx1 = gx2
       gy1 = gy2
     end do
+    if (mesh%has_south_pole()) then
+      j = mesh%full_jds
+      gy1(:,j-1) = gy1(:,j)
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%full_jde
+      gy1(:,j+1) = gy1(:,j)
+    end if
     ! Calculate damping flux at interfaces.
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       do i = mesh%half_ids - 1, mesh%half_ide
@@ -226,7 +230,15 @@ contains
       gx1 = f(:,:,k)
       gy1 = f(:,:,k)
       do l = 1, (order - 2) / 2
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        if (mesh%has_south_pole()) then
+          j = mesh%full_jds
+          gy1(:,j-1) = gy1(:,j)
+        end if
+        if (mesh%has_north_pole()) then
+          j = mesh%full_jde
+          gy1(:,j+1) = gy1(:,j)
+        end if
+        do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
             gx2(i,j) = gx1(i-1,j) - 2 * gx1(i,j) + gx1(i+1,j)
             gy2(i,j) = gy1(i,j-1) - 2 * gy1(i,j) + gy1(i,j+1)
@@ -237,6 +249,14 @@ contains
         gx1 = gx2
         gy1 = gy2
       end do
+      if (mesh%has_south_pole()) then
+        j = mesh%full_jds
+        gy1(:,j-1) = gy1(:,j)
+      end if
+      if (mesh%has_north_pole()) then
+        j = mesh%full_jde
+        gy1(:,j+1) = gy1(:,j)
+      end if
       ! Calculate damping flux at interfaces.
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide + 1
