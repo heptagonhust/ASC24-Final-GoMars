@@ -51,7 +51,7 @@ contains
     type(mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: type
 
-    real(8) dx, dy, dt, cfl, w, lat0
+    real(8) dx, dt, cfl, w
     integer j, n
 
     call this%clear()
@@ -66,7 +66,6 @@ contains
     if (max_wave_speed > 0) then
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         dx = mesh%de_lon(j)
-        dy = mesh%le_lon(j)
         if (dx > 0) then
           cfl = max_wave_speed * dt / dx
           w = filter_coef_a * cfl / max_cfl * (filter_coef_b * (tanh(90 - abs(mesh%full_lat_deg(j))) - 1) + 1)
@@ -77,8 +76,7 @@ contains
         end if
       end do
       do j = mesh%half_jds, mesh%half_jde
-        dx = mesh%le_lat(j)
-        dy = mesh%de_lat(j)
+        dx = merge(mesh%de_lon(j+1), mesh%de_lon(j), mesh%half_lat(j) < 0)
         if (dx > 0) then
           cfl = max_wave_speed * dt / dx
           w = filter_coef_a * cfl / max_cfl * (filter_coef_b * (tanh(90 - abs(mesh%half_lat_deg(j))) - 1) + 1)

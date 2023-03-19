@@ -43,7 +43,7 @@ contains
         do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
           if (baroclinic) then
             c_lon(j,k) = div_damp_coef2 * &
-              exp_two_values(3.0_r8, 1.0_r8, 1.0_r8, 3.0_r8, real(k, r8)) * &
+              exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
               global_mesh%le_lon(j) * global_mesh%de_lon(j)
           else
             c_lon(j,k) = div_damp_coef2 * global_mesh%le_lon(j) * global_mesh%de_lon(j)
@@ -54,7 +54,7 @@ contains
         do j = global_mesh%half_jds, global_mesh%half_jde
           if (baroclinic) then
             c_lat(j,k) = div_damp_coef2 * &
-              exp_two_values(3.0_r8, 1.0_r8, 1.0_r8, 3.0_r8, real(k, r8)) * &
+              exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
               global_mesh%le_lat(j) * global_mesh%de_lat(j)
           else
             c_lat(j,k) = div_damp_coef2 * global_mesh%le_lat(j) * global_mesh%de_lat(j)
@@ -87,7 +87,7 @@ contains
 
   subroutine div_damp_run(block, dstate)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
@@ -95,8 +95,8 @@ contains
     call calc_div(block, dstate)
 
     associate (mesh => block%mesh  , &
-               div  => dstate%div  , &
-               div2 => dstate%div2 , &
+               div  => block%aux%div , &
+               div2 => block%aux%div2, &
                u    => dstate%u_lon, &
                v    => dstate%v_lat)
     select case (div_damp_order)

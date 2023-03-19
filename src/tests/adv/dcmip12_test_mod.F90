@@ -78,7 +78,7 @@ contains
 
   subroutine dcmip12_test_set_uv(block, dstate, time_in_seconds)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: time_in_seconds
 
@@ -87,22 +87,22 @@ contains
 
     cos_t = cos(pi * time_in_seconds / tau)
 
-    associate (mesh    => block%mesh    , &
-               mgs     => dstate%mgs    , &
-               mg_lev  => dstate%mg_lev , &
-               mg      => dstate%mg     , &
-               dmg_lon => dstate%dmg_lon, &
-               dmg_lat => dstate%dmg_lat, &
-               dmg_lev => dstate%dmg_lev, &
-               ph_lev  => dstate%ph_lev , &
-               ph      => dstate%ph     , &
-               tv      => dstate%tv     , &
-               gz_lev  => dstate%gz_lev , &
-               gz      => dstate%gz     , &
-               u       => dstate%u_lon  , &
-               v       => dstate%v_lat  , &
-               mfx_lon => dstate%mfx_lon, &
-               mfy_lat => dstate%mfy_lat, &
+    associate (mesh    => block%mesh       , &
+               mgs     => dstate%mgs       , &
+               mg_lev  => dstate%mg_lev    , &
+               mg      => dstate%mg        , &
+               dmg_lon => block%aux%dmg_lon, &
+               dmg_lat => block%aux%dmg_lat, &
+               dmg_lev => dstate%dmg_lev   , &
+               ph_lev  => dstate%ph_lev    , &
+               ph      => dstate%ph        , &
+               tv      => dstate%tv        , &
+               gz_lev  => dstate%gz_lev    , &
+               gz      => dstate%gz        , &
+               u       => dstate%u_lon     , &
+               v       => dstate%v_lat     , &
+               mfx_lon => dstate%mfx_lon   , &
+               mfy_lat => dstate%mfy_lat   , &
                we      => dstate%we_lev)
     mgs = p0
     call calc_mg(block, dstate)

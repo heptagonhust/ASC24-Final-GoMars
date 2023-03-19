@@ -63,10 +63,11 @@ contains
     call bkg_regrid_pt()
     call bkg_regrid_u()
     call bkg_regrid_v()
-    call ref_calc_ps()
+    ! call ref_calc_ps()
 
     do iblk = 1, size(blocks)
       call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(1))
+      call prepare_static(blocks(iblk))
     end do
 
   end subroutine prepare_run

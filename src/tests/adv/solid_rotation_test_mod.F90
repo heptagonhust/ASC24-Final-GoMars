@@ -67,7 +67,7 @@ contains
 
   subroutine solid_rotation_test_set_uv(block, dstate, time_in_seconds)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: time_in_seconds
 

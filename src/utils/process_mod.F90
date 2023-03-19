@@ -248,8 +248,16 @@ contains
       proc%ngb(north)%lon_hw = 0
     end if
 
+    if (lon_hw > blocks(1)%mesh%full_nlon) then
+      call log_error('Too large zonal halo width ' // to_str(lon_hw) // '!', __FILE__, __LINE__)
+    end if
+
     call global_mesh%reinit(lon_hw)
     call blocks(1)%init_stage_2()
+
+    if (proc%is_root()) then
+      call log_notice('Maximum zonal halo width is ' // to_str(lon_hw) // '.')
+    end if
 
     select case (r8)
     case (4)

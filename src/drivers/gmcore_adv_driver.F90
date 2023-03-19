@@ -23,7 +23,7 @@ program gmcore_adv_driver
     end subroutine set_ic_interface
     subroutine set_uv_interface(block, dstate, time_in_seconds)
       import block_type, dstate_type, r8
-      type(block_type), intent(in) :: block
+      type(block_type), intent(inout) :: block
       type(dstate_type), intent(inout) :: dstate
       real(r8), intent(in) :: time_in_seconds
     end subroutine set_uv_interface

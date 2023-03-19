@@ -12,7 +12,6 @@ module adv_mod
   use upwind_mod
   use weno_mod
   use tvd_mod
-  use filter_mod
 
   implicit none
 
@@ -91,12 +90,12 @@ module adv_mod
   procedure(calc_vflx_interface    ), pointer :: adv_calc_tracer_vflx     => null()
   procedure(calc_vflx_lev_interface), pointer :: adv_calc_tracer_vflx_lev => null()
 
-  integer ntracer
-  character(30), allocatable :: batch_names(:)
-  character(30), allocatable :: tracer_names(:)
-  character(30), allocatable :: tracer_long_names(:)
-  character(30), allocatable :: tracer_units(:)
-  real(r8), allocatable :: tracer_dt(:)
+  integer :: ntracer = 0
+  character(30), dimension(1000) :: batch_names
+  character(30), dimension(1000) :: tracer_names
+  character(30), dimension(1000) :: tracer_long_names
+  character(30), dimension(1000) :: tracer_units
+  real(r8), dimension(1000) :: tracer_dt
 
 contains
 
@@ -117,11 +116,6 @@ contains
     end select
 
     ntracer = 0
-    allocate(batch_names      (1000))
-    allocate(tracer_names     (1000))
-    allocate(tracer_long_names(1000))
-    allocate(tracer_units     (1000))
-    allocate(tracer_dt        (1000))
 
     call tvd_init()
 
@@ -270,11 +264,6 @@ contains
               end do
             end do
           end do
-          if (use_pole_damp) then
-            call fill_halo(block%filter_halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., &
-                           south_halo=.false., north_halo=.false.)
-            call filter_on_cell(block%small_filter, q(:,:,:,l,new))
-          end if
           do k = mesh%full_kds, mesh%full_kde
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
@@ -432,11 +421,6 @@ contains
   subroutine adv_final()
 
     ntracer = 0
-    if (allocated(batch_names      )) deallocate(batch_names      )
-    if (allocated(tracer_names     )) deallocate(tracer_names     )
-    if (allocated(tracer_long_names)) deallocate(tracer_long_names)
-    if (allocated(tracer_units     )) deallocate(tracer_units     )
-    if (allocated(tracer_dt        )) deallocate(tracer_dt        )
 
   end subroutine adv_final
 

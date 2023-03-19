@@ -3,6 +3,7 @@ module hybrid_coord_mod
   use flogger
   use const_mod, only: r8
   use namelist_mod, p0 => hybrid_coord_p0
+  use hybrid_coord_ncep_mod
   use hybrid_coord_test_mod
   use hybrid_coord_ecmwf_mod
   use mars_vert_coord_mod
@@ -55,10 +56,6 @@ contains
       close(10)
     end if
 
-    if (ierr /= 0 .and. .not. (baroclinic .or. advection) .and. proc%is_root()) then
-      call log_notice('Run shallow-water model.')
-    end if
-
     if (present(template)) then
       select case (template)
       case ('test_l15')
@@ -103,6 +100,8 @@ contains
       case ('equal_eta')
         call hybrid_coord_equal_eta(p0, ptop, hyai, hybi)
         local_ptop = ptop
+      case ('ncep')
+        call hybrid_coord_ncep(p0, ptop, hyai, hybi)
       case default
         if (baroclinic .and. template == 'N/A' .and. proc%is_root()) then
           call log_error('Hybrid vertical coordinate template "' // trim(template) // '" is invalid!')

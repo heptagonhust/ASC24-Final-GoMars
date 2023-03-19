@@ -4,6 +4,7 @@ program gmcore_prepare
   use string
   use topo_mod
   use bkg_mod
+  use time_mod
   use mesh_mod
   use process_mod
   use block_mod
@@ -11,6 +12,8 @@ program gmcore_prepare
   use initial_mod
   use namelist_mod
   use damp_mod
+  use moist_mod
+  use adv_mod
   use prepare_mod
 
   implicit none
@@ -25,12 +28,17 @@ program gmcore_prepare
 
   call fiona_init()
 
+  call gas_mixture_init(planet)
   call const_init(planet)
+  call time_init(dt_dyn)
   call global_mesh%init_global(nlon, nlat, nlev, lon_hw=2, lat_hw=2)
   call process_init()
   call vert_coord_init(nlev, scheme=vert_coord_scheme, template=vert_coord_template)
   call process_create_blocks()
+  call adv_init()
   call damp_init(blocks)
+  call moist_init()
+  call adv_allocate_tracers(blocks)
 
   if (proc%is_root()) then
     write(*, *) '=================== GMCORE Parameters ==================='
@@ -44,7 +52,7 @@ program gmcore_prepare
     end if
     write(*, *) 'vert_coord_scheme    = ', trim(vert_coord_scheme)
     write(*, *) 'vert_coord_template  = ', trim(vert_coord_template)
-    write(*, *) 'output_group_size    = ', to_str(output_group_size)
+    write(*, *) 'output_ngroup        = ', to_str(output_ngroup)
     write(*, *) 'initial_time         = ', trim(initial_time)
     write(*, *) 'namelist_file        = ', trim(namelist_file)
     write(*, *) 'topo_file            = ', trim(topo_file)
@@ -60,6 +68,12 @@ program gmcore_prepare
 
   call prepare_run()
 
+  if (initial_file == 'N/A') then
+    write(initial_file, '("gmcore.", A, "x", A, "x", A, ".i0.nc")') &
+      to_str(nlon), &
+      to_str(nlat), &
+      to_str(nlev)
+  end if
   call initial_write(initial_file, initial_time)
 
   call prepare_final()

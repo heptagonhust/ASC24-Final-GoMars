@@ -86,4 +86,4 @@ if not os.path.isfile(out_file):
 	os.system(f'cdo merge {plev_file} {sfc_file} {out_file}.tmp')
 	os.system(f'nccopy -d 6 {out_file}.tmp {out_file}')
 	if os.path.isfile(out_file):
-		os.system(f'rm -f {plev_file} {sfc_file}')
+		os.system(f'rm -f {plev_file} {sfc_file} {out_file}.tmp')

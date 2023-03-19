@@ -5,6 +5,7 @@ module pole_damp_mod
   use math_mod
   use block_mod
   use filter_mod
+  use laplace_damp_mod
   use operators_mod
   use parallel_mod
 
@@ -18,14 +19,22 @@ contains
 
   subroutine pole_damp_run(block, dstate)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
     real(r8) c, tmp(global_mesh%full_nlev)
 
-    associate (mesh => block%mesh, dmg => dstate%dmg, pt => dstate%pt, u_lon => dstate%u_lon, v_lat => dstate%v_lat)
+    associate (mesh    => block%mesh  , &
+               dmg     => dstate%dmg  , &
+               pt      => dstate%pt   , &
+               qv      => dstate%qv   , &
+               u_lon_f => block%dtend(1)%du, &
+               v_lat_f => block%dtend(1)%dv, &
+               u_lon   => dstate%u_lon, &
+               v_lat   => dstate%v_lat)
     if (use_pole_damp .and. baroclinic) then
+      c = 1.0e2_r8
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -33,8 +42,8 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
+      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, pt, lat_coef=decay_from_pole, coef=c)
       call filter_on_cell(block%small_filter, pt)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
@@ -45,8 +54,32 @@ contains
       end do
       call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! ----------------------------------------------------------------------
+      if (time_is_alerted('moist')) then
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qv(i,j,k) = qv(i,j,k) * dmg(i,j,k)
+            end do
+          end do
+        end do
+        call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+        ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, qv, lat_coef=decay_from_pole, coef=c)
+        call filter_on_cell(block%small_filter, qv)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qv(i,j,k) = qv(i,j,k) / dmg(i,j,k)
+            end do
+          end do
+        end do
+        call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      end if
+      ! ----------------------------------------------------------------------
+      ! call laplace_damp_on_lon_edge(block%mesh, block%halo, 4, u_lon, lat_coef=decay_from_pole, coef=c)
+      ! call laplace_damp_on_lat_edge(block%mesh, block%halo, 4, v_lat, lat_coef=decay_from_pole, coef=c)
+      ! ----------------------------------------------------------------------
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%full_lat_deg(j)), r8))
+        c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%full_lat_deg(j)), r8))
         do i = mesh%half_ids, mesh%half_ide
           tmp = u_lon(i,j,1:mesh%full_nlev)
           do k = mesh%full_kds + 1, mesh%full_kde - 1
@@ -56,7 +89,7 @@ contains
       end do
       call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       do j = mesh%half_jds, mesh%half_jde
-        c = exp_two_values(0.1_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%half_lat_deg(j)), r8))
+        c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%half_lat_deg(j)), r8))
         do i = mesh%full_ids, mesh%full_ide
           tmp = v_lat(i,j,1:mesh%full_nlev)
           do k = mesh%full_kds + 1, mesh%full_kde - 1

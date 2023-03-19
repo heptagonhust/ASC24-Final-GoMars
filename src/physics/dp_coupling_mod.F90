@@ -37,7 +37,8 @@ contains
                gz       => block%dstate(itime)%gz       , & ! in
                gz_lev   => block%dstate(itime)%gz_lev   , & ! in
                ps       => block%dstate(itime)%phs      , & ! in
-               qv       => block%dstate(itime)%qv       )   ! in
+               qv       => block%dstate(itime)%qv       , & ! in
+               land     => block%static%landmask        )   ! in
     ! Full levels
     do k = mesh%full_kds, mesh%full_kde
       icol = 0
@@ -92,7 +93,9 @@ contains
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         icol = icol + 1
-        pstate%ps(icol) = ps(i,j)
+        pstate%ps  (icol) = ps(i,j)
+        pstate%wsb (icol) = sqrt(u(i,j,mesh%full_kde)**2 + v(i,j,mesh%full_kde)**2)
+        pstate%land(icol) = land(i,j)
       end do
     end do
     end associate

@@ -55,10 +55,16 @@ contains
 
     integer, intent(in) :: itime
 
-    integer iblk, is, ie, js, je, ks, ke
+    integer iblk, is, ie, js, je, ks, ke, ierr
     integer start(3), count(3)
     character(4) lon_dims_3d(4), lat_dims_3d(4), lev_dims_3d(4), cell_dims_3d(4)
     character(4) lon_dims_2d(3), lat_dims_2d(3),                 cell_dims_2d(3)
+    real(8) time1, time2
+
+    if (proc%is_root()) then
+      call log_notice('Write restart.')
+      call MPI_WTIME(time1, ierr)
+    end if
 
      lon_dims_3d(1) = 'ilon';  lon_dims_3d(2) =  'lat';  lon_dims_3d(3) =  'lev';  lon_dims_3d(4) = 'time'
      lat_dims_3d(1) =  'lon';  lat_dims_3d(2) = 'ilat';  lat_dims_3d(3) =  'lev';  lat_dims_3d(4) = 'time'
@@ -68,7 +74,9 @@ contains
      lat_dims_2d(1) =  'lon';  lat_dims_2d(2) = 'ilat';  lat_dims_2d(3) = 'time'
     cell_dims_2d(1) =  'lon'; cell_dims_2d(2) =  'lat'; cell_dims_2d(3) = 'time'
 
-    call fiona_create_dataset('r0', desc=case_desc, file_prefix=trim(case_name) // '.' // trim(curr_time_str), mpi_comm=proc%comm)
+    call fiona_create_dataset('r0', desc=case_desc, file_prefix=trim(case_name) // '.' // trim(curr_time_str), &
+      mpi_comm=proc%comm, ngroup=output_ngroup)
+
     call fiona_add_att('r0', 'time_step_size', dt_dyn)
     call fiona_add_att('r0', 'restart_interval', restart_interval)
     call fiona_add_dim('r0', 'time', add_var=.true.)
@@ -81,7 +89,7 @@ contains
     call fiona_add_dim('r0', 'ilev', size=global_mesh%half_nlev, add_var=.true.)
     call fiona_add_var('r0', 'u'   , long_name='u wind component'            , units='m s-1' , dim_names=lon_dims_3d , dtype='r8')
     call fiona_add_var('r0', 'v'   , long_name='v wind component'            , units='m s-1' , dim_names=lat_dims_3d , dtype='r8')
-    call fiona_add_var('r0', 'phs' , long_name='hydrostatic surface pressure', units='Pa'    , dim_names=cell_dims_2d, dtype='r8')
+    call fiona_add_var('r0', 'mgs' , long_name='surface dry-air weight'      , units='Pa'    , dim_names=cell_dims_2d, dtype='r8')
     call fiona_add_var('r0', 'pt'  , long_name='potential temperature'       , units='K'     , dim_names=cell_dims_3d, dtype='r8')
   if (nonhydrostatic) then
     call fiona_add_var('r0', 'gz_lev', long_name='geopotential height'       , units='m2 s-2', dim_names=lev_dims_3d , dtype='r8')
@@ -120,7 +128,7 @@ contains
 
         call fiona_output('r0', 'gzs'   , static%gzs  (is:ie,js:je      ), start=start, count=count)
       if (baroclinic) then
-        call fiona_output('r0', 'phs'   , dstate%phs   (is:ie,js:je      ), start=start, count=count)
+        call fiona_output('r0', 'mgs'   , dstate%mgs   (is:ie,js:je      ), start=start, count=count)
         call fiona_output('r0', 'pt'    , dstate%pt    (is:ie,js:je,ks:ke), start=start, count=count)
       else
         call fiona_output('r0', 'gz'    , dstate%gz    (is:ie,js:je,ks:ke), start=start, count=count)
@@ -184,6 +192,11 @@ contains
       end associate
     end do
     call fiona_end_output('r0')
+    call process_barrier()
+    if (proc%is_root()) then
+      call MPI_WTIME(time2, ierr)
+      call log_notice('Done write restart cost ' // to_str(time2 - time1, 5) // ' seconds.')
+    end if
 
   end subroutine restart_write
 
@@ -196,18 +209,24 @@ contains
     type(datetime_type) time
     integer iblk, time_step, is, ie, js, je, ks, ke
     integer start(3), count(3)
-    real(r8) time_value
-    character(30) time_units
+    real(r8) time_value, time1, time2
+    character(50) time_units
 
     if (restart_file == 'N/A') then
       call log_error('Parameter restart_file is needed to restart!')
     end if
 
-    call fiona_open_dataset('r0', file_path=restart_file, mpi_comm=proc%comm)
+    if (proc%is_root()) then
+      call log_notice('Read restart file ' // trim(restart_file) // '.')
+      call cpu_time(time1)
+    end if
+
+    call fiona_open_dataset('r0', file_path=restart_file, mpi_comm=proc%comm, ngroup=input_ngroup)
     call fiona_start_input('r0')
 
     time_step = 1
 
+    time_value = 0
     call fiona_input('r0', 'time', time_value, time_step=time_step)
     call fiona_get_att('r0', 'time', 'units', time_units)
     do iblk = 1, size(blocks)
@@ -222,12 +241,12 @@ contains
         count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
 
         call fiona_input('r0', 'gzs', static%gzs(is:ie,js:je), start=start, count=count, time_step=time_step)
-        call fill_halo(block%halo, static%gzs, full_lon=.true., full_lat=.true.)
+        call fill_halo(block%filter_halo, static%gzs, full_lon=.true., full_lat=.true.)
         if (baroclinic) then
-          call fiona_input('r0', 'phs', dstate%phs(is:ie,js:je      ), start=start, count=count, time_step=time_step)
-          call fill_halo(block%halo, dstate%phs, full_lon=.true., full_lat=.true.)
+          call fiona_input('r0', 'mgs', dstate%mgs(is:ie,js:je      ), start=start, count=count, time_step=time_step)
+          call fill_halo(block%halo, dstate%mgs, full_lon=.true., full_lat=.true.)
           call fiona_input('r0', 'pt' , dstate%pt (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-          call fill_halo(block%halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
         else
           call fiona_input('r0', 'gz' , dstate%gz (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
           call fill_halo(block%halo, dstate%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -235,7 +254,7 @@ contains
 
         if (associated(dstate%qv)) then
           call fiona_input('r0', 'qv' , dstate%qv (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-          call fill_halo(block%halo, dstate%qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fill_halo(block%filter_halo, dstate%qv, full_lon=.true., full_lat=.true., full_lev=.true.)
           associate (adv_batch => block%adv_batches(1))
           is = mesh%half_ids; ie = mesh%half_ide
           js = mesh%full_jds; je = mesh%full_jde
@@ -307,7 +326,11 @@ contains
     call fiona_end_input('r0')
 
     call time_fast_forward(time_value, time_units)
-    if (proc%is_root()) call log_notice('Restart to ' // trim(curr_time_str))
+    call process_barrier()
+    if (proc%is_root()) then
+      call cpu_time(time2)
+      call log_notice('Restart to ' // trim(curr_time_str) // ' cost ' // to_str(time2 - time1, 5) // ' seconds.')
+    end if
 
   end subroutine restart_read
 

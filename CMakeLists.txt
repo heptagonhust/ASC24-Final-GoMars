@@ -38,7 +38,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
   else ()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte") # Add -fp-model precise when checking serial-parallel and restart consistencies.
   endif ()
-  if (CMAKE_Fortran_COMPILER_VERSION GREATER 2021.6)
+  if (CMAKE_Fortran_COMPILER_VERSION GREATER 2021.0)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl=sequential")
   else ()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl=sequential")
@@ -140,6 +140,7 @@ set(gmcore_files
   src/dynamics/pgf/pgf_lin97_mod.F90
   src/dynamics/mesh_mod.F90
   src/dynamics/vert_coord/sigma_coord_mod.F90
+  src/dynamics/vert_coord/hybrid_coord_ncep_mod.F90
   src/dynamics/vert_coord/hybrid_coord_test_mod.F90
   src/dynamics/vert_coord/hybrid_coord_ecmwf_mod.F90
   src/dynamics/vert_coord/mars_vert_coord_mod.F90

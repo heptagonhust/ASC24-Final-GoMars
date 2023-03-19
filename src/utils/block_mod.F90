@@ -87,19 +87,25 @@ contains
       case ('pc2', 'wrfrk3')
         allocate(this%dstate(3))
         allocate(this%dtend (2))
+      case ('N/A')
+        allocate(this%dstate(1))
       case default
         if (this%id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
-      do i = 1, size(this%dstate)
-        call this%dstate(i)%init(this%filter_mesh, this%mesh)
-      end do
-      do i = 1, size(this%dtend)
-        call this%dtend(i)%init(this%filter_mesh, this%mesh)
-      end do
+      if (allocated(this%dstate)) then
+        do i = 1, size(this%dstate)
+          call this%dstate(i)%init(this%filter_mesh, this%mesh)
+        end do
+      end if
+      if (allocated(this%dtend)) then
+        do i = 1, size(this%dtend)
+          call this%dtend(i)%init(this%filter_mesh, this%mesh)
+        end do
+      end if
       call this%static%init(this%filter_mesh, this%mesh)
       call this%pstate%init(this%mesh)
       call this%ptend%init(this%mesh)
-      call this%aux%init(this%mesh)
+      call this%aux%init(this%filter_mesh, this%mesh)
     end if
 
   end subroutine block_init_stage_2
@@ -114,12 +120,16 @@ contains
     call this%mesh%clear()
     call this%big_filter%clear()
     call this%small_filter%clear()
-    do i = 1, size(this%dstate)
-      call this%dstate(i)%clear()
-    end do
-    do i = 1, size(this%dtend)
-      call this%dtend(i)%clear()
-    end do
+    if (allocated(this%dstate)) then
+      do i = 1, size(this%dstate)
+        call this%dstate(i)%clear()
+      end do
+    end if
+    if (allocated(this%dtend)) then
+      do i = 1, size(this%dtend)
+        call this%dtend(i)%clear()
+      end do
+    end if
     call this%pstate%clear()
     call this%ptend%clear()
     call this%aux%clear()

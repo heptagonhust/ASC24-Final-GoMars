@@ -45,7 +45,7 @@ contains
     !          o
     associate (mesh    => block%mesh    , & ! in
                qm      => dstate%qm     , & ! in
-               pkh_lev => dstate%pkh_lev, & ! in
+               pkh_lev => block%aux%pkh_lev, & ! in
                ph_lev  => dstate%ph_lev , & ! in
                gz_lev  => dstate%gz_lev , & ! in
                p_lev   => dstate%p_lev  , & ! in

@@ -61,6 +61,14 @@ module namelist_mod
   real(r8)        :: ptop                 = 2.194e2_r8
   real(r8)        :: hybrid_coord_p0      = 1.0e5_r8
 
+  ! Parameters for generating hybrid levels from NCEP.
+  real(r8)        :: hybrid_coord_ncep_psig   = 0
+  real(r8)        :: hybrid_coord_ncep_ppre   = 0
+  real(r8)        :: hybrid_coord_ncep_dpbot  = 0
+  real(r8)        :: hybrid_coord_ncep_dpsig  = 0
+  real(r8)        :: hybrid_coord_ncep_dppre  = 0
+  real(r8)        :: hybrid_coord_ncep_dptop  = 0
+
   integer         :: ke_scheme            = 2
   real(r8)        :: ke_cell_wgt          = 0.5_r8
 
@@ -104,33 +112,37 @@ module namelist_mod
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.
+  real(r8)        :: topo_max_slope       = 0.12_r8
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
-  real(r8)        :: div_damp_imp_lat0    = 90
   real(r8)        :: div_damp_top         = 3.0_r8
-  real(r8)        :: div_damp_pole        = 0.0_r8
-  real(r8)        :: div_damp_lat0        = 90
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
-  real(r8)        :: smag_damp_coef       = 0.1
+  real(r8)        :: smag_damp_coef       = 0.015
   logical         :: use_pole_damp        = .false.
   logical         :: nudge_pole_v         = .true.
   real(r8)        :: nudge_pole_v_coef    = 0.2_r8
 
+  ! Input settings
+  integer         :: input_ngroup         = 0
+
   ! Output settings
+#if (REAL_KIND == 4)
+  character(8)    :: output_i0_dtype      = 'r4'
+#elif (REAL_KIND == 8)
   character(8)    :: output_i0_dtype      = 'r8'
+#endif
   logical         :: output_h0            = .true.
   character(8)    :: output_h0_dtype      = 'r4'
   logical         :: output_h1            = .false.
-  logical         :: split_h0             = .false.
   character(30)   :: output_h0_new_file   = ''
   character(8)    :: output_h0_vars(100)  = ''
-  integer         :: output_group_size    = 0
+  integer         :: output_ngroup        = 0
 
   namelist /gmcore_control/     &
     planet                    , &
@@ -174,6 +186,12 @@ module namelist_mod
     refer_state_scheme        , &
     ptop                      , &
     hybrid_coord_p0           , &
+    hybrid_coord_ncep_psig    , &
+    hybrid_coord_ncep_ppre    , &
+    hybrid_coord_ncep_dpbot   , &
+    hybrid_coord_ncep_dpsig   , &
+    hybrid_coord_ncep_dppre   , &
+    hybrid_coord_ncep_dptop   , &
     ke_scheme                 , &
     ke_cell_wgt               , &
     pv_scheme                 , &
@@ -207,14 +225,12 @@ module namelist_mod
     physics_suite             , &
     pbl_scheme                , &
     use_topo_smooth           , &
+    topo_max_slope            , &
     topo_smooth_cycles        , &
     use_div_damp              , &
     div_damp_order            , &
-    div_damp_imp_lat0         , &
     div_damp_k0               , &
     div_damp_top              , &
-    div_damp_pole             , &
-    div_damp_lat0             , &
     div_damp_coef2            , &
     div_damp_coef4            , &
     rayleigh_damp_w_coef      , &
@@ -224,13 +240,13 @@ module namelist_mod
     use_pole_damp             , &
     nudge_pole_v              , &
     nudge_pole_v_coef         , &
+    input_ngroup              , &
     output_h0                 , &
     output_h0_dtype           , &
     output_h1                 , &
-    split_h0                  , &
     output_h0_new_file        , &
     output_h0_vars            , &
-    output_group_size
+    output_ngroup
 
 contains
 
@@ -326,14 +342,13 @@ contains
       write(*, *) 'upwind_order        = ', to_str(upwind_order)
       write(*, *) 'use_topo_smooth     = ', to_str(use_topo_smooth)
     if (use_topo_smooth) then
+      write(*, *) 'topo_max_slope      = ', topo_max_slope
       write(*, *) 'topo_smooth_cycles  = ', to_str(topo_smooth_cycles)
     end if
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
     if (use_div_damp) then
       write(*, *) 'div_damp_coef2      = ', div_damp_coef2
       write(*, *) 'div_damp_top        = ', to_str(div_damp_top, 3)
-      write(*, *) 'div_damp_pole       = ', div_damp_pole
-      write(*, *) 'div_damp_lat0       = ', div_damp_lat0
     end if
     if (nonhydrostatic) then
       write(*, *) 'implicit_w_wgt      = ', to_str(implicit_w_wgt, 3)
@@ -342,7 +357,7 @@ contains
     end if
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
-      write(*, *) 'smag_damp_coef      = ', to_str(smag_damp_coef, 1)
+      write(*, *) 'smag_damp_coef      = ', smag_damp_coef
     end if
       write(*, *) 'use_pole_damp       = ', to_str(use_pole_damp)
       write(*, *) '========================================================='

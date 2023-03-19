@@ -1,5 +1,6 @@
 module gmcore_mod
 
+  use mpi
   use flogger
   use string
   use const_mod
@@ -141,6 +142,7 @@ contains
       if (baroclinic) then
         call moist_link_state(block)
       end if
+      call calc_div(block, dstate)
       end associate
     end do
 
@@ -232,12 +234,13 @@ contains
 
     integer, intent(in) :: itime
 
-    real(r8), save :: time1 = 0, time2
+    real(8), save :: time1 = 0, time2
     integer i, j, k, iblk
 
     if (time_step == 0 .or. time_is_alerted('history_write')) then
-      if (time_step == 0) call cpu_time(time1)
-      call cpu_time(time2)
+      if (time_step == 0) time1 = MPI_WTIME()
+      call process_barrier()
+      time2 = MPI_WTIME()
       if (time_step /= 0) then
         if (proc%is_root()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
@@ -257,20 +260,20 @@ contains
     integer, intent(in) :: itime
 
     integer i, j, k, iblk
-    real(r8) tm, te, tav, tpe, tpt, max_w
+    real(r8) tm, te, tpe, tpt, max_w
     real(r8) te_ke, te_ie, te_pe
 
     tm    = 0
     te    = 0
-    tav   = 0
     tpe   = 0
     tpt   = 0
     te_ke = 0
     te_ie = 0
     te_pe = 0
     do iblk = 1, size(blocks)
-      associate (mesh   => blocks(iblk)%mesh, &
-                 dstate  => blocks(iblk)%dstate(itime), &
+      associate (block  => blocks(iblk)              , &
+                 mesh   => blocks(iblk)%mesh         , &
+                 dstate => blocks(iblk)%dstate(itime), &
                  static => blocks(iblk)%static)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
@@ -314,22 +317,14 @@ contains
       end if
 
       do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%half_ids, mesh%half_ide
-            tav = tav + dstate%pv(i,j,k) * mesh%area_vtx(j)
-          end do
-        end do
-      end do
-
-      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            tpe = tpe + dstate%dmg_lon(i,j,k) * dstate%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
+            tpe = tpe + block%aux%dmg_lon(i,j,k) * dstate%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            tpe = tpe + dstate%dmg_lat(i,j,k) * dstate%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
+            tpe = tpe + block%aux%dmg_lat(i,j,k) * dstate%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
           end do
         end do
       end do
@@ -349,7 +344,6 @@ contains
     call global_sum(proc%comm, te_ke)
     call global_sum(proc%comm, te_ie)
     call global_sum(proc%comm, te_pe)
-    call global_sum(proc%comm, tav)
     call global_sum(proc%comm, tpe)
     if (baroclinic) call global_sum(proc%comm, tpt)
     te = te_ke + te_ie + te_pe
@@ -357,7 +351,6 @@ contains
     do iblk = 1, size(blocks)
       blocks(iblk)%dstate(itime)%tm  = tm
       blocks(iblk)%dstate(itime)%te  = te
-      blocks(iblk)%dstate(itime)%tav = tav
       blocks(iblk)%dstate(itime)%tpe = tpe
       blocks(iblk)%dstate(itime)%te_ke = te_ke
       blocks(iblk)%dstate(itime)%te_ie = te_ie
