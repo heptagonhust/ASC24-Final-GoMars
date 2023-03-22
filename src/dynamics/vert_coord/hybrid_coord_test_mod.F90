@@ -13,6 +13,7 @@ module hybrid_coord_test_mod
   public hybrid_coord_test_l26
   public hybrid_coord_test_l30
   public hybrid_coord_test_l95
+  public hybrid_coord_gfdl_l33
   public hybrid_coord_wrf_l16
   public hybrid_coord_wrf_l26
   public hybrid_coord_wrf_l32
@@ -438,10 +439,99 @@ contains
 
   end subroutine hybrid_coord_test_l95
 
+  subroutine hybrid_coord_gfdl_l33(p0, ptop, hyai, hybi)
+
+    real(r8), intent(in) :: p0
+    real(r8), intent(out) :: ptop
+    real(r8), intent(out) :: hyai(:)
+    real(r8), intent(out) :: hybi(:)
+
+    if (global_mesh%full_nlev /= 33 .and. proc%is_root()) then
+      call log_error('nlev should be 16 in namelist!')
+    end if
+
+    hyai = [          &
+      0.002194000,    &
+      0.006588411,    &
+      0.013099227,    &
+      0.021326672,    &
+      0.030766575,    &
+      0.041152207,    &
+      0.052439072,    &
+      0.064742124,    &
+      0.078414819,    &
+      0.093831279,    &
+      0.111554355,    &
+      0.127816289,    &
+      0.139339326,    &
+      0.146891729,    &
+      0.151076318,    &
+      0.152372959,    &
+      0.151171553,    &
+      0.147797402,    &
+      0.142531064,    &
+      0.135623682,    &
+      0.127308506,    &
+      0.117809941,    &
+      0.107349512,    &
+      0.096150273,    &
+      0.084438809,    &
+      0.072445742,    &
+      0.060405327,    &
+      0.048553071,    &
+      0.037122458,    &
+      0.026341753,    &
+      0.016428998,    &
+      0.007587120,    &
+      0.000000000,    &
+      0.000000000     &
+    ]
+
+    hybi = [          &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00000000,     &
+      0.00395318,     &
+      0.01530462,     &
+      0.03342685,     &
+      0.05782337,     &
+      0.08807690,     &
+      0.12380818,     &
+      0.16464262,     &
+      0.21018238,     &
+      0.25998589,     &
+      0.31355220,     &
+      0.37030867,     &
+      0.42960712,     &
+      0.49072042,     &
+      0.55284822,     &
+      0.61512518,     &
+      0.67663187,     &
+      0.73641258,     &
+      0.79349631,     &
+      0.84691554,     &
+      0.89573330,     &
+      0.93906802,     &
+      0.97611487,     &
+      1.00000000      &
+    ]
+
+    ptop = p0 * hyai(1)
+
+  end subroutine hybrid_coord_gfdl_l33
+
   subroutine hybrid_coord_wrf_l16(p0, ptop, hyai, hybi)
 
     real(r8), intent(in) :: p0
-    real(r8), intent(in ) :: ptop
+    real(r8), intent(in) :: ptop
     real(r8), intent(out) :: hyai(17)
     real(r8), intent(out) :: hybi(17)
 

@@ -744,10 +744,10 @@ contains
 
     integer i, j, k
 
-    associate (mesh   => block%mesh   , &
-               pv     => block%aux%pv , & ! in
-               pv_lon => dstate%pv_lon, & ! out
-               pv_lat => dstate%pv_lat)   ! out
+    associate (mesh   => block%mesh      , &
+               pv     => block%aux%pv    , & ! in
+               pv_lon => block%aux%pv_lon, & ! out
+               pv_lat => block%aux%pv_lat)   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -783,8 +783,8 @@ contains
                ut     => block%aux%u_lat, & ! in
                vt     => block%aux%v_lon, & ! in
                pv     => block%aux%pv   , & ! in
-               pv_lon => dstate%pv_lon  , & ! out
-               pv_lat => dstate%pv_lat  )   ! out
+               pv_lon => block%aux%pv_lon, & ! out
+               pv_lat => block%aux%pv_lat)   ! out
     select case (upwind_order_pv)
     case (1)
       do k = mesh%full_kds, mesh%full_kde
@@ -842,8 +842,8 @@ contains
                ut       => block%aux%u_lat, & ! in
                vt       => block%aux%v_lon, & ! in
                pv       => block%aux%pv   , & ! in
-               pv_lon   => dstate%pv_lon  , & ! out
-               pv_lat   => dstate%pv_lat  )   ! out
+               pv_lon   => block%aux%pv_lon, & ! out
+               pv_lat   => block%aux%pv_lat)   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -878,8 +878,8 @@ contains
                mfy_lat => dstate%mfy_lat   , & ! in
                mfy_lon => block%aux%mfy_lon, & ! in
                mfx_lat => block%aux%mfx_lat, & ! in
-               pv_lon  => dstate%pv_lon    , & ! in
-               pv_lat  => dstate%pv_lat    , & ! in
+               pv_lon  => block%aux%pv_lon , & ! in
+               pv_lat  => block%aux%pv_lat , & ! in
                du      => dtend%du         , & ! out
                dv      => dtend%dv         )   ! out
     select case (coriolis_scheme)

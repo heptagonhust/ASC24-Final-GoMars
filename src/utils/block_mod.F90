@@ -81,7 +81,7 @@ contains
 
     if (.not. allocated(this%dstate)) then
       select case (trim(time_scheme))
-      case ('euler')
+      case ('euler', 'rk2')
         allocate(this%dstate(2))
         allocate(this%dtend (2))
       case ('pc2', 'wrfrk3')

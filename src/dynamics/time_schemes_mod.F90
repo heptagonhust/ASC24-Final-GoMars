@@ -65,6 +65,8 @@ contains
     select case (time_scheme)
     case ('euler')
       time_integrator => euler
+    case ('rk2')
+      time_integrator => rk2
     case ('pc2')
       time_integrator => pc2
     case ('wrfrk3')
@@ -217,6 +219,21 @@ contains
     end associate
 
   end subroutine update_state
+
+  subroutine rk2(space_operators, block, old, new, dt)
+
+    procedure(space_operators_interface) space_operators
+    type(block_type ), intent(inout) :: block
+    integer, intent(in) :: old
+    integer, intent(in) :: new
+    real(r8), intent(in) :: dt
+
+    associate (dstate => block%dstate, dtend => block%dtend)
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 2.0_r8)
+    call step(space_operators, block, dstate(old), dstate(new), dstate(new), dtend(old), dtend(new), dt         )
+    end associate
+
+  end subroutine rk2
 
   subroutine pc2(space_operators, block, old, new, dt)
 

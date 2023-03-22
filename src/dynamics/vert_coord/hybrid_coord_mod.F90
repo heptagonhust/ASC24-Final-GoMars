@@ -66,6 +66,8 @@ contains
         call hybrid_coord_test_l30(p0, ptop, hyai, hybi)
       case ('test_l95')
         call hybrid_coord_test_l95(p0, ptop, hyai, hybi)
+      case ('gfdl_l33')
+        call hybrid_coord_gfdl_l33(p0, ptop, hyai, hybi)
       case ('ecmwf_l50')
         call hybrid_coord_ecmwf_l50(p0, ptop, hyai, hybi)
       case ('ecmwf_l90')

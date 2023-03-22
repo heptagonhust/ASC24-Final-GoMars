@@ -33,8 +33,6 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: dmg_lev           ! Mass on half levels
     real(r8), allocatable, dimension(:,:,:) :: mfx_lon           ! Normal mass flux on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: mfy_lat           ! Normal mass flux on merdional edge
-    real(r8), allocatable, dimension(:,:,:) :: pv_lon            ! Potential vorticity on zonal edge
-    real(r8), allocatable, dimension(:,:,:) :: pv_lat            ! Potential vorticity on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: pt                ! Potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: tv                ! Virtual temperature
@@ -142,6 +140,8 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: v_lon             ! Meridional wind speed at lon edge (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: u_lat             ! Zonal wind speed at lat edge (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: ke                ! Kinetic energy
+    real(r8), allocatable, dimension(:,:,:) :: pv_lon            ! Potential vorticity on zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: pv_lat            ! Potential vorticity on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: dmg_lon           ! Mass on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: dmg_lat           ! Mass on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: dmg_vtx           ! Mass on vertex
@@ -186,8 +186,6 @@ contains
     call allocate_array(mesh, this%dmg_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%mfx_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfy_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pv_lon           , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pv_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%tv               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mg               , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -243,8 +241,6 @@ contains
     if (allocated(this%dmg_lev          )) deallocate(this%dmg_lev          )
     if (allocated(this%mfx_lon          )) deallocate(this%mfx_lon          )
     if (allocated(this%mfy_lat          )) deallocate(this%mfy_lat          )
-    if (allocated(this%pv_lon           )) deallocate(this%pv_lon           )
-    if (allocated(this%pv_lat           )) deallocate(this%pv_lat           )
     if (allocated(this%pt               )) deallocate(this%pt               )
     if (allocated(this%t                )) deallocate(this%t                )
     if (allocated(this%tv               )) deallocate(this%tv               )
@@ -706,6 +702,8 @@ contains
     call allocate_array(mesh, this%v_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ke             , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%pv_lon         , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%pv_lat         , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dmg_lon        , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dmg_lat        , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dmg_vtx        , half_lon=.true., half_lat=.true., full_lev=.true.)
@@ -738,6 +736,8 @@ contains
     if (allocated(this%v_lon            )) deallocate(this%v_lon            )
     if (allocated(this%u_lat            )) deallocate(this%u_lat            )
     if (allocated(this%ke               )) deallocate(this%ke               )
+    if (allocated(this%pv_lon           )) deallocate(this%pv_lon           )
+    if (allocated(this%pv_lat           )) deallocate(this%pv_lat           )
     if (allocated(this%dmg_lon          )) deallocate(this%dmg_lon          )
     if (allocated(this%dmg_lat          )) deallocate(this%dmg_lat          )
     if (allocated(this%dmg_vtx          )) deallocate(this%dmg_vtx          )

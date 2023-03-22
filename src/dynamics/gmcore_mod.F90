@@ -319,12 +319,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            tpe = tpe + block%aux%dmg_lon(i,j,k) * dstate%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
+            tpe = tpe + block%aux%dmg_lon(i,j,k) * block%aux%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            tpe = tpe + block%aux%dmg_lat(i,j,k) * dstate%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
+            tpe = tpe + block%aux%dmg_lat(i,j,k) * block%aux%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
           end do
         end do
       end do
