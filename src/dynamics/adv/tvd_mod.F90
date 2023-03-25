@@ -50,13 +50,13 @@ contains
     real(r8), parameter :: eps = 1.0e-6
     real(r8) r, C
 
-    if (cfl > 0) then
-      r = (f - fm1 + eps) / (fp1 - f + eps)
+    if (cfl >= 0) then
+      C = flux_limiter((f   - fm1 + eps) / (fp1 - f + eps))
+      res = f   + 0.5_r8 * (1 - cfl) * (fp1 - f)
     else
-      r = (fp2 - fp1 + eps) / (fp1 - f + eps)
+      C = flux_limiter((fp2 - fp1 + eps) / (fp1 - f + eps))
+      res = fp1 - 0.5_r8 * (1 + cfl) * (fp1 - f)
     end if
-    C = flux_limiter(r)
-    res = 0.5_r8 * (fp1 + f - ((1 - C) * sign(1.0_r8, cfl) + cfl * C) * (fp1 - f))
 
   end function tvd
 

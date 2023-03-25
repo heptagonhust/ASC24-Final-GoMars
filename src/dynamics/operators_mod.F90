@@ -836,12 +836,10 @@ contains
     real(r8) cfl
     integer i, j, k
 
-    associate (mesh     => block%mesh     , &
-               un       => dstate%u_lon   , & ! in
-               vn       => dstate%v_lat   , & ! in
-               ut       => block%aux%u_lat, & ! in
-               vt       => block%aux%v_lon, & ! in
-               pv       => block%aux%pv   , & ! in
+    associate (mesh     => block%mesh      , &
+               ut       => block%aux%u_lat , & ! in
+               vt       => block%aux%v_lon , & ! in
+               pv       => block%aux%pv    , & ! in
                pv_lon   => block%aux%pv_lon, & ! out
                pv_lat   => block%aux%pv_lat)   ! out
     do k = mesh%full_kds, mesh%full_kde

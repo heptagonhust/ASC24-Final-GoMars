@@ -77,6 +77,19 @@ contains
 
     call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=2)
     call process_init(comm)
+
+    if (proc%is_root()) then
+      print *, ''
+      print *, ' ▄▄▄▄▄▄▄ ▄▄   ▄▄ ▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄▄ '
+      print *, '█       █  █▄█  █       █       █   ▄  █ █       █'
+      print *, '█   ▄▄▄▄█       █       █   ▄   █  █ █ █ █    ▄▄▄█'
+      print *, '█  █  ▄▄█       █     ▄▄█  █ █  █   █▄▄█▄█   █▄▄▄ '
+      print *, '█  █ █  █       █    █  █  █▄█  █    ▄▄  █    ▄▄▄█'
+      print *, '█  █▄▄█ █ ██▄██ █    █▄▄█       █   █  █ █   █▄▄▄ '
+      print *, '█▄▄▄▄▄▄▄█▄█   █▄█▄▄▄▄▄▄▄█▄▄▄▄▄▄▄█▄▄▄█  █▄█▄▄▄▄▄▄▄█'
+      print *, ''
+    end if
+
     call vert_coord_init(nlev, namelist_path)
     call process_create_blocks()
     call diag_state_init(blocks)
