@@ -736,7 +736,7 @@ contains
     call fiona_output('h1', 'mfy_lat' , dstate%mfy_lat  (is:ie,js:je,1), start=start, count=count)
     end associate
 
-    call fiona_end_output('h1')
+    call fiona_end_output('h1', keep_dataset=.true.)
 
   end subroutine history_write_h1_swm
 
@@ -824,7 +824,7 @@ contains
     end if
     end associate
     
-    call fiona_end_output('h1')
+    call fiona_end_output('h1', keep_dataset=.true.)
 
   end subroutine history_write_h1_hydrostatic
 
@@ -892,7 +892,7 @@ contains
     call fiona_output('h1', 'adv_w' ,  dtend%adv_w (is:ie,js:je,ks:ke), start=start, count=count)
     end associate
 
-    call fiona_end_output('h1')
+    call fiona_end_output('h1', keep_dataset=.true.)
 
   end subroutine history_write_h1_nonhydrostatic
 

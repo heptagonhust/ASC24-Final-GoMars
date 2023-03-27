@@ -14,14 +14,14 @@ module steady_state_pgf_test_mod
   public steady_state_pgf_test_set_params
   public steady_state_pgf_test_set_ic
 
-  real(r8), parameter :: T0    = 300.d0      ! K
-  real(r8), parameter :: h0    = 2000.d0     ! m
-  real(r8), parameter :: p0    = 1.0e5       ! pa
-  real(r8), parameter :: lonc  = 3.d0 * pi / 2
-  real(r8), parameter :: latc  = 0.0
-  real(r8), parameter :: Rm    = 3.d0 * pi / 4
+  real(r8), parameter :: T0    = 300.0d0     ! K
+  real(r8), parameter :: h0    = 2000.0d0    ! m
+  real(r8), parameter :: p0    = 1.0d5       ! Pa
+  real(r8), parameter :: lonc  = 3 * pi / 2
+  real(r8), parameter :: latc  = 0
+  real(r8), parameter :: Rm    = 3 * pi / 4
   real(r8), parameter :: gamma = 0.0065d0
-  real(r8), parameter :: osm   = pi / 16.d0
+  real(r8), parameter :: osm   = pi / 16.0d0
 
 contains
 
@@ -55,14 +55,14 @@ contains
       do i = mesh%full_ids, mesh%full_ide
         full_lon = mesh%full_lon(i)
         r = acos(sin(latc) * sin_lat + cos(latc) * cos_lat * cos(full_lon - lonc))
-        if (r < Rm) gzs(i,j) = g * h0 / 2.d0 * (1.d0 + cos(pi * r / Rm)) * cos(pi * r / osm)**2
+        if (r < Rm) gzs(i,j) = g * h0 / 2 * (1 + cos(pi * r / Rm)) * cos(pi * r / osm)**2
       end do
     end do
     call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
-        mgs(i,j) = p0 * (1.d0 - gamma / T0 * gzs(i,j) / g)**(g / Rd / gamma) 
+        mgs(i,j) = p0 * (1 - gamma / T0 * gzs(i,j) / g)**(g / Rd / gamma)
       end do
     end do
     call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)

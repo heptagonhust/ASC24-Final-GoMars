@@ -175,7 +175,9 @@ contains
                ph      => dstate%ph     , & ! out
                phs     => dstate%phs    , & ! pointer
                ps      => dstate%ps     )   ! out
-    ph_lev(:,:,mesh%half_kds) = mg_lev(:,:,mesh%half_kds)
+    k = mesh%half_kds
+    ph_lev(:,:,k) = mg_lev(:,:,k)
+    pkh_lev(:,:,k) = ph_lev(:,:,k)**rd_o_cpd
     do k = mesh%half_kds + 1, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
