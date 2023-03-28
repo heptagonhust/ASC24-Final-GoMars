@@ -51,18 +51,21 @@ contains
     character(*), intent(in) :: namelist_path
     integer, intent(in), optional :: comm
 
-    call gmcore_init_stage1()
+    call gmcore_init_stage1(namelist_path)
     call gmcore_init_stage2(namelist_path, comm)
 
   end subroutine gmcore_init
 
-  subroutine gmcore_init_stage1()
+  subroutine gmcore_init_stage1(namelist_path)
+
+    character(*), intent(in) :: namelist_path
 
     call log_init()
     call gas_mixture_init(planet)
     call const_init(planet)
     call time_scheme_init()
     call time_init(dt_dyn)
+    call vert_coord_init_stage1(nlev, namelist_path)
 
   end subroutine gmcore_init_stage1
 
@@ -90,7 +93,7 @@ contains
       print *, ''
     end if
 
-    call vert_coord_init(nlev, namelist_path)
+    call vert_coord_init_stage2()
     call process_create_blocks()
     call diag_state_init(blocks)
     call restart_init()

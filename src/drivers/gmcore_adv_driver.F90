@@ -38,7 +38,7 @@ program gmcore_adv_driver
 
   call parse_namelist(namelist_path)
 
-  call gmcore_init_stage1()
+  call gmcore_init_stage1(namelist_path)
 
   select case (test_case)
   case ('solid_rotation')

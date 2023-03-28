@@ -11,7 +11,8 @@ module sigma_coord_mod
 
   private
 
-  public sigma_coord_init
+  public sigma_coord_init_stage1
+  public sigma_coord_init_stage2
   public sigma_coord_final
   public sigma_coord_calc_mg
   public sigma_coord_calc_mg_lev
@@ -25,13 +26,13 @@ module sigma_coord_mod
 
 contains
 
-  subroutine sigma_coord_init(nlev, namelist_file, template)
+  subroutine sigma_coord_init_stage1(nlev, namelist_file, template)
 
     integer, intent(in) :: nlev
     character(*), intent(in), optional :: namelist_file
     character(*), intent(in), optional :: template
 
-    integer ierr, k
+    integer ierr
 
     if (allocated(sigi)) deallocate(sigi)
     if (allocated(sig )) deallocate(sig )
@@ -79,6 +80,12 @@ contains
       ptop = 219.406699761748
     end if
 
+  end subroutine sigma_coord_init_stage1
+
+  subroutine sigma_coord_init_stage2()
+
+    integer k
+
     do k = 1, nlev
       global_mesh%full_lev(k) = sig(k)
     end do
@@ -86,7 +93,7 @@ contains
       global_mesh%half_lev(k) = sigi(k)
     end do
 
-  end subroutine sigma_coord_init
+  end subroutine sigma_coord_init_stage2
 
   subroutine sigma_coord_final()
 

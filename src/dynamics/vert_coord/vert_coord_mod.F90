@@ -12,11 +12,13 @@ module vert_coord_mod
 
   private
 
-  public vert_coord_init
+  public vert_coord_init_stage1
+  public vert_coord_init_stage2
   public vert_coord_final
   public vert_coord_calc_mg
   public vert_coord_calc_mg_lev
   public vert_coord_calc_dmgdt_lev
+  public hyai, hybi
 
   interface
     pure real(r8) function vert_coord_calc_mg_interface(k, mgs)
@@ -44,14 +46,12 @@ module vert_coord_mod
 
 contains
 
-  subroutine vert_coord_init(nlev, namelist_file, scheme, template)
+  subroutine vert_coord_init_stage1(nlev, namelist_file, scheme, template)
 
     integer, intent(in) :: nlev
     character(*), intent(in), optional :: namelist_file
     character(*), intent(in), optional :: scheme
     character(*), intent(in), optional :: template
-
-    integer k
 
     if (present(scheme)) then
       if (vert_coord_scheme /= scheme .and. proc%is_root()) then
@@ -70,15 +70,28 @@ contains
 
     select case (vert_coord_scheme)
     case ('sigma')
-      call sigma_coord_init(nlev, namelist_file, vert_coord_template)
+      call sigma_coord_init_stage1(nlev, namelist_file, vert_coord_template)
       vert_coord_calc_mg => sigma_coord_calc_mg
       vert_coord_calc_mg_lev => sigma_coord_calc_mg_lev
       vert_coord_calc_dmgdt_lev => sigma_coord_calc_dmgdt_lev
     case ('hybrid')
-      call hybrid_coord_init(nlev, namelist_file, vert_coord_template)
+      call hybrid_coord_init_stage1(nlev, namelist_file, vert_coord_template)
       vert_coord_calc_mg => hybrid_coord_calc_mg
       vert_coord_calc_mg_lev => hybrid_coord_calc_mg_lev
       vert_coord_calc_dmgdt_lev => hybrid_coord_calc_dmgdt_lev
+    end select
+
+  end subroutine vert_coord_init_stage1
+
+  subroutine vert_coord_init_stage2()
+
+    integer k
+
+    select case (vert_coord_scheme)
+    case ('sigma')
+      call sigma_coord_init_stage2()
+    case ('hybrid')
+      call hybrid_coord_init_stage2()
     end select
 
     ! Set vertical level intervals.
@@ -99,7 +112,7 @@ contains
     global_mesh%half_dlev(global_mesh%half_kde) = global_mesh%half_lev(global_mesh%half_kde) - global_mesh%full_lev(global_mesh%full_kde)
     global_mesh%half_dlev_upper(global_mesh%half_kde) = global_mesh%half_dlev(global_mesh%half_kde)
 
-  end subroutine vert_coord_init
+  end subroutine vert_coord_init_stage2
 
   subroutine vert_coord_final()
 

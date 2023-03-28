@@ -14,11 +14,13 @@ module hybrid_coord_mod
 
   private
 
-  public hybrid_coord_init
+  public hybrid_coord_init_stage1
+  public hybrid_coord_init_stage2
   public hybrid_coord_final
   public hybrid_coord_calc_mg
   public hybrid_coord_calc_mg_lev
   public hybrid_coord_calc_dmgdt_lev
+  public hyai, hybi
 
   real(r8), allocatable, dimension(:) :: hyai
   real(r8), allocatable, dimension(:) :: hybi
@@ -32,13 +34,13 @@ module hybrid_coord_mod
 
 contains
 
-  subroutine hybrid_coord_init(nlev, namelist_file, template)
+  subroutine hybrid_coord_init_stage1(nlev, namelist_file, template)
 
     integer, intent(in) :: nlev
     character(*), intent(in), optional :: namelist_file
     character(*), intent(in), optional :: template
 
-    integer ierr, k
+    integer ierr
 
     if (allocated(hyai)) deallocate(hyai)
     if (allocated(hybi)) deallocate(hybi)
@@ -111,6 +113,12 @@ contains
       end select
     end if
 
+  end subroutine hybrid_coord_init_stage1
+
+  subroutine hybrid_coord_init_stage2()
+
+    integer k
+
     if (proc%is_root()) then
       call log_notice('Model top pressure is ' // to_str(ptop, '(ES10.2)') // 'Pa.')
     end if
@@ -133,7 +141,7 @@ contains
       global_mesh%half_lev(k) = hyai(k) + hybi(k)
     end do
 
-  end subroutine hybrid_coord_init
+  end subroutine hybrid_coord_init_stage2
 
   subroutine hybrid_coord_final()
 

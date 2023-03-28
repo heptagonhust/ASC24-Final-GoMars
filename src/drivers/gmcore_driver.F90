@@ -41,11 +41,11 @@ program gmcore_driver
 
   call parse_namelist(namelist_path)
 
-  call gmcore_init_stage1()
+  call gmcore_init_stage1(namelist_path)
 
   if (initial_file == 'N/A' .and. .not. restart) then
     select case (test_case)
-    case ('pgf_test')
+    case ('steady_state_pgf')
       call steady_state_pgf_test_set_params()
     case ('mountain_wave')
       init_diag_state => mountain_wave_test_set_diag
@@ -81,8 +81,6 @@ program gmcore_driver
       set_ic => baroclinic_wave_test_set_ic
     case ('held_suarez')
       set_ic => held_suarez_test_set_ic
-    case ('pgf_test')
-      set_ic => steady_state_pgf_test_set_ic
     case ('ksp15_01')
       set_ic => ksp15_01_test_set_ic
     case ('ksp15_02')
