@@ -594,16 +594,16 @@ contains
 
     integer i, j, k
 
-    associate (mesh    => block%mesh    , &
-               dmg     => dstate%dmg    , & ! in
+    associate (mesh    => block%mesh       , &
+               dmg     => dstate%dmg       , & ! in
                dmg_lon => block%aux%dmg_lon, & ! in
                dmg_lat => block%aux%dmg_lat, & ! in
-               u_lon   => dstate%u_lon  , & ! in
-               v_lat   => dstate%v_lat  , & ! in
-               u_lat   => block%aux%u_lat, & ! out
-               v_lon   => block%aux%v_lon, & ! out
-               mfx_lon => dstate%mfx_lon, & ! out
-               mfy_lat => dstate%mfy_lat, & ! out
+               u_lon   => dstate%u_lon     , & ! in
+               v_lat   => dstate%v_lat     , & ! in
+               u_lat   => block%aux%u_lat  , & ! out
+               v_lon   => block%aux%v_lon  , & ! out
+               mfx_lon => dstate%mfx_lon   , & ! out
+               mfy_lat => dstate%mfy_lat   , & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
     call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
@@ -779,12 +779,12 @@ contains
     real(r8) b
     integer i, j, k
 
-    associate (mesh   => block%mesh     , &
-               un     => dstate%u_lon   , & ! in
-               vn     => dstate%v_lat   , & ! in
-               ut     => block%aux%u_lat, & ! in
-               vt     => block%aux%v_lon, & ! in
-               pv     => block%aux%pv   , & ! in
+    associate (mesh   => block%mesh      , &
+               un     => dstate%u_lon    , & ! in
+               vn     => dstate%v_lat    , & ! in
+               ut     => block%aux%u_lat , & ! in
+               vt     => block%aux%v_lon , & ! in
+               pv     => block%aux%pv    , & ! in
                pv_lon => block%aux%pv_lon, & ! out
                pv_lat => block%aux%pv_lat)   ! out
     select case (upwind_order_pv)
