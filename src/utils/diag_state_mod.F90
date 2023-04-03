@@ -61,9 +61,7 @@ module diag_state_mod
 
 contains
 
-  subroutine diag_state_init(blocks)
-
-    type(block_type), intent(in) :: blocks(:)
+  subroutine diag_state_init()
 
     allocate(diag_state(size(blocks)))
 

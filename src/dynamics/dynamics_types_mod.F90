@@ -119,14 +119,25 @@ module dynamics_types_mod
   type static_type
     type(mesh_type), pointer :: mesh => null()
     real(r8), allocatable, dimension(:,:) :: landmask
+    ! Topography
     real(r8), allocatable, dimension(:,:) :: gzs
     real(r8), allocatable, dimension(:,:) :: zs_std
     real(r8), allocatable, dimension(:,:) :: dzsdlon
     real(r8), allocatable, dimension(:,:) :: dzsdlat
+    ! Reference surface pressure
     real(r8), allocatable, dimension(:,:) :: ref_ps
+    real(r8), allocatable, dimension(:,:) :: ref_ps_smth
+    real(r8), allocatable, dimension(:,:) :: ref_ps_perb
+    ! Coriolis parameters
+    real(8), allocatable, dimension(:  ) :: full_f
+    real(8), allocatable, dimension(:  ) :: half_f
+    ! Weight for constructing tangential wind
+    real(8), allocatable, dimension(:,:) :: full_tangent_wgt
+    real(8), allocatable, dimension(:,:) :: half_tangent_wgt
   contains
-    procedure :: init       => static_init
-    procedure :: clear      => static_clear
+    procedure :: init_stage1 => static_init_stage1
+    procedure :: init_stage2 => static_init_stage2
+    procedure :: clear       => static_clear
     final :: static_final
   end type static_type
 
@@ -645,7 +656,7 @@ contains
 
   end subroutine dtend_assign
 
-  subroutine static_init(this, filter_mesh, mesh)
+  subroutine static_init_stage1(this, filter_mesh, mesh)
 
     class(static_type), intent(inout) :: this
     type(mesh_type), intent(in) :: filter_mesh
@@ -661,9 +672,75 @@ contains
     call allocate_array(mesh, this%zs_std  , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dzsdlon , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dzsdlat , full_lon=.true., half_lat=.true.)
-    ! call allocate_array(mesh, this%ref_ps  , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%ref_ps  , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%ref_ps_smth, full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%ref_ps_perb, full_lon=.true., full_lat=.true.)
 
-  end subroutine static_init
+    allocate(this%full_f             (this%mesh%full_jms:this%mesh%full_jme)); this%full_f              = inf
+    allocate(this%half_f             (this%mesh%half_jms:this%mesh%half_jme)); this%half_f              = inf
+    allocate(this%full_tangent_wgt (2,this%mesh%full_jms:this%mesh%full_jme)); this%full_tangent_wgt    = inf
+    allocate(this%half_tangent_wgt (2,this%mesh%half_jms:this%mesh%half_jme)); this%half_tangent_wgt    = inf
+
+  end subroutine static_init_stage1
+
+  subroutine static_init_stage2(this)
+
+    class(static_type), intent(inout) :: this
+
+    integer j
+
+    do j = this%mesh%full_jds, this%mesh%full_jde
+      this%full_f(j) = 2 * omega * this%mesh%full_sin_lat(j)
+    end do
+    do j = this%mesh%half_jds, this%mesh%half_jde
+      this%half_f(j) = 2 * omega * this%mesh%half_sin_lat(j)
+    end do
+
+
+    !  ____________________                 ____________________                  ____________________                  ____________________                 
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |_____o____|____o____|   j           |_____o____|____*____|   j            |_____*____|____o____|   j            |_____o____|____o____|   j             
+    ! |          |////|////|               |          |////|    |                |/////|    |         |                |     |    |         |                
+    ! |          |/3//|/2//|               |          |////|    |                |/////|    |         |                |     |    |         |                
+    ! |          x---------|   j           |          x---------|   j            |-----|----x         |   j            |-----|----x         |   j            
+    ! |          |    |/1//|               |          |    |    |                |/////|////|         |                |     |////|         |                
+    ! |_____o____|____*____|   j - 1       |_____o____|____o____|   j - 1        |_____o____|____o____|   j - 1        |_____*____|____o____|   j - 1        
+    !       i    i   i+1                         i    i   i+1                          i    i   i+1                          i
+    !
+    !
+    !       [ 1    As_1 + As_2 + As_3]
+    ! w = - [--- - ------------------]
+    !       [ 2        A_{i+1,j}     ]
+    !
+    !
+
+    select case (tangent_wgt_scheme)
+    case ('classic')
+      do j = this%mesh%full_jds_no_pole, this%mesh%full_jde_no_pole
+        this%full_tangent_wgt(1,j) = this%mesh%le_lat(j-1) / this%mesh%de_lon(j) * 0.25d0
+        this%full_tangent_wgt(2,j) = this%mesh%le_lat(j  ) / this%mesh%de_lon(j) * 0.25d0
+      end do
+
+      do j = this%mesh%half_jds, this%mesh%half_jde
+        this%half_tangent_wgt(1,j) = this%mesh%le_lon(j  ) / this%mesh%de_lat(j) * 0.25d0
+        this%half_tangent_wgt(2,j) = this%mesh%le_lon(j+1) / this%mesh%de_lat(j) * 0.25d0
+      end do
+    case ('thuburn09')
+      do j = this%mesh%full_jds_no_pole, this%mesh%full_jde_no_pole
+        this%full_tangent_wgt(1,j) = this%mesh%le_lat(j-1) / this%mesh%de_lon(j) * this%mesh%area_subcell(2,j  ) / this%mesh%area_cell(j  )
+        this%full_tangent_wgt(2,j) = this%mesh%le_lat(j  ) / this%mesh%de_lon(j) * this%mesh%area_subcell(1,j  ) / this%mesh%area_cell(j  )
+      end do
+
+      do j = this%mesh%half_jds, this%mesh%half_jde
+        this%half_tangent_wgt(1,j) = this%mesh%le_lon(j  ) / this%mesh%de_lat(j) * this%mesh%area_subcell(1,j  ) / this%mesh%area_cell(j  )
+        this%half_tangent_wgt(2,j) = this%mesh%le_lon(j+1) / this%mesh%de_lat(j) * this%mesh%area_subcell(2,j+1) / this%mesh%area_cell(j+1)
+      end do
+    end select
+
+  end subroutine static_init_stage2
 
   subroutine static_clear(this)
 
@@ -675,6 +752,12 @@ contains
     if (allocated(this%dzsdlon )) deallocate(this%dzsdlon )
     if (allocated(this%dzsdlat )) deallocate(this%dzsdlat )
     if (allocated(this%ref_ps  )) deallocate(this%ref_ps  )
+    if (allocated(this%ref_ps_smth)) deallocate(this%ref_ps_smth)
+    if (allocated(this%ref_ps_perb)) deallocate(this%ref_ps_perb)
+    if (allocated(this%full_f          )) deallocate(this%full_f          )
+    if (allocated(this%half_f          )) deallocate(this%half_f          )
+    if (allocated(this%full_tangent_wgt)) deallocate(this%full_tangent_wgt)
+    if (allocated(this%half_tangent_wgt)) deallocate(this%half_tangent_wgt)
 
   end subroutine static_clear
 

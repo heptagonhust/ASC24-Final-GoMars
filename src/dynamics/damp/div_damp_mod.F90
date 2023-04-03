@@ -23,12 +23,9 @@ module div_damp_mod
 
 contains
 
-  subroutine div_damp_init(blocks)
-
-    type(block_type), intent(in) :: blocks(:)
+  subroutine div_damp_init()
 
     integer j, k
-    integer iblk
 
     if (.not. use_div_damp) return
 

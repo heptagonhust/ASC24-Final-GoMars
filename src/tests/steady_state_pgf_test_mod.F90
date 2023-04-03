@@ -5,7 +5,6 @@ module steady_state_pgf_test_mod
   use namelist_mod, only: nlev, ptop
   use parallel_mod
   use block_mod
-  use vert_coord_mod
   use formula_mod
   use operators_mod
 
@@ -25,27 +24,13 @@ module steady_state_pgf_test_mod
   real(r8), parameter :: Rm    = 3 * pi / 4
   real(r8), parameter :: gamma = 0.0065d0
   real(r8), parameter :: osm   = pi / 16.0d0
-  real(r8), parameter :: c     = 1.0_r8      ! Adjust hybrid coordinate (1-2)
 
 contains
 
   subroutine steady_state_pgf_test_set_params()
 
-    integer k
-    real(r8) dz, z, p, eta, eta_top
-
     omega = 0.0
     ptop  = p0 * (1 - gamma / T0 * ztop)**(g / rd / gamma)
-
-    dz = ztop / nlev
-    eta_top = ptop / p0
-    do k = 1, nlev + 1
-      z = ztop - (k - 1) * dz
-      p = p0 * (1 - gamma / T0 * z)**(g / rd / gamma)
-      eta = p / p0
-      hybi(k) = ((eta - eta_top) / (1 - eta_top))**c
-      hyai(k) = eta - hybi(k)
-    end do
 
   end subroutine steady_state_pgf_test_set_params
 

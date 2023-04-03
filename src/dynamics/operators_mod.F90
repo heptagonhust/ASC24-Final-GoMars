@@ -143,7 +143,7 @@ contains
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
+          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j), block%static%ref_ps_perb(i,j))
         end do
       end do
     end do
@@ -629,8 +629,8 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          mfx_lat(i,j,k) = mesh%half_tangent_wgt(1,j) * (mfx_lon(i-1,j  ,k) + mfx_lon(i,j  ,k)) + &
-                           mesh%half_tangent_wgt(2,j) * (mfx_lon(i-1,j+1,k) + mfx_lon(i,j+1,k))
+          mfx_lat(i,j,k) = block%static%half_tangent_wgt(1,j) * (mfx_lon(i-1,j  ,k) + mfx_lon(i,j  ,k)) + &
+                           block%static%half_tangent_wgt(2,j) * (mfx_lon(i-1,j+1,k) + mfx_lon(i,j+1,k))
           u_lat(i,j,k) = mfx_lat(i,j,k) / dmg_lat(i,j,k)
         end do
       end do
@@ -640,8 +640,8 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          mfy_lon(i,j,k) = mesh%full_tangent_wgt(1,j) * (mfy_lat(i,j-1,k) + mfy_lat(i+1,j-1,k)) + &
-                           mesh%full_tangent_wgt(2,j) * (mfy_lat(i,j  ,k) + mfy_lat(i+1,j  ,k))
+          mfy_lon(i,j,k) = block%static%full_tangent_wgt(1,j) * (mfy_lat(i,j-1,k) + mfy_lat(i+1,j-1,k)) + &
+                           block%static%full_tangent_wgt(2,j) * (mfy_lat(i,j  ,k) + mfy_lat(i+1,j  ,k))
           v_lon(i,j,k) = mfy_lon(i,j,k) / dmg_lon(i,j,k)
         end do
       end do
@@ -729,7 +729,7 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%half_ids, mesh%half_ide
-          pv(i,j,k) = (vor(i,j,k) + mesh%half_f(j)) / dmg_vtx(i,j,k)
+          pv(i,j,k) = (vor(i,j,k) + block%static%half_f(j)) / dmg_vtx(i,j,k)
         end do
       end do
     end do
@@ -764,8 +764,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., east_halo=.false., north_halo=.false.)
-    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
     end associate
 
   end subroutine interp_pv_midpoint
@@ -888,11 +888,11 @@ contains
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             dv(i,j,k) = dv(i,j,k) - (                                      &
-              mesh%half_tangent_wgt(1,j) * (                               &
+              block%static%half_tangent_wgt(1,j) * (                       &
                 mfx_lon(i-1,j  ,k) * (pv_lat(i,j,k) + pv_lon(i-1,j  ,k)) + &
                 mfx_lon(i  ,j  ,k) * (pv_lat(i,j,k) + pv_lon(i  ,j  ,k))   &
               ) +                                                          &
-              mesh%half_tangent_wgt(2,j) * (                               &
+              block%static%half_tangent_wgt(2,j) * (                       &
                 mfx_lon(i-1,j+1,k) * (pv_lat(i,j,k) + pv_lon(i-1,j+1,k)) + &
                 mfx_lon(i  ,j+1,k) * (pv_lat(i,j,k) + pv_lon(i  ,j+1,k))   &
               )                                                            &
@@ -904,11 +904,11 @@ contains
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
             du(i,j,k) = du(i,j,k) + (                                      &
-              mesh%full_tangent_wgt(1,j) * (                               &
+              block%static%full_tangent_wgt(1,j) * (                       &
                 mfy_lat(i  ,j-1,k) * (pv_lon(i,j,k) + pv_lat(i  ,j-1,k)) + &
                 mfy_lat(i+1,j-1,k) * (pv_lon(i,j,k) + pv_lat(i+1,j-1,k))   &
               ) +                                                          &
-              mesh%full_tangent_wgt(2,j) * (                               &
+              block%static%full_tangent_wgt(2,j) * (                       &
                 mfy_lat(i  ,j  ,k) * (pv_lon(i,j,k) + pv_lat(i  ,j  ,k)) + &
                 mfy_lat(i+1,j  ,k) * (pv_lon(i,j,k) + pv_lat(i+1,j  ,k))   &
               )                                                            &

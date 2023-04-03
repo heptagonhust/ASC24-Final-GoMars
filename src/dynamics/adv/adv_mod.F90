@@ -378,9 +378,7 @@ contains
 
   end subroutine adv_allocate_tracers_1
 
-  subroutine adv_allocate_tracers_2(blocks)
-
-    type(block_type), intent(inout) :: blocks(:)
+  subroutine adv_allocate_tracers_2()
 
     integer iblk
 

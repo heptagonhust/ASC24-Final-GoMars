@@ -57,9 +57,9 @@ contains
       call fiona_add_var('i0', 'mgs' , long_name='surface dry-air weight'      , units='Pa'   , dtype=output_i0_dtype, dim_names=cell_dims_2d)
       call fiona_add_var('i0', 'u'   , long_name='u wind component'            , units='m s-1', dtype=output_i0_dtype, dim_names=lon_dims)
       call fiona_add_var('i0', 'v'   , long_name='v wind component'            , units='m s-1', dtype=output_i0_dtype, dim_names=lat_dims)
-    end if
-    if (nonhydrostatic) then
-      call fiona_add_var('i0', 'z', long_name='height', units='m', dtype=output_i0_dtype, dim_names=lev_dims)
+      call fiona_add_var('i0', 'z'   , long_name='height'                      , units='m'    , dtype=output_i0_dtype, dim_names=lev_dims)
+      call fiona_add_var('i0', 'ref_ps_smth', long_name='smoothed reference surface pressure', units='Pa', dtype=output_i0_dtype, dim_names=cell_dims_2d)
+      call fiona_add_var('i0', 'ref_ps_perb', long_name='perturbed reference surface pressure', units='Pa', dtype=output_i0_dtype, dim_names=cell_dims_2d)
     end if
     call fiona_add_var('i0', 'zs'    , long_name='surface height', units='m' , dtype=output_i0_dtype, dim_names=cell_dims_2d)
     call fiona_add_var('i0', 'zs_std', long_name='surface height subgrid standard deviation', units='m2' , dtype=output_i0_dtype, dim_names=cell_dims_2d)
@@ -93,6 +93,8 @@ contains
           call fiona_output('i0', 'qv' , dstate%qv (is:ie,js:je,ks:ke), start=start, count=count)
         end if
         call fiona_output('i0', 'mgs', dstate%mgs(is:ie,js:je      ), start=start, count=count)
+        call fiona_output('i0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je), start=start, count=count)
+        call fiona_output('i0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je), start=start, count=count)
       end if
       call fiona_output('i0', 'zs'      , static%gzs     (is:ie,js:je) / g, start=start, count=count)
       call fiona_output('i0', 'zs_std'  , static%zs_std  (is:ie,js:je)    , start=start, count=count)
@@ -122,9 +124,7 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%full_nlat,mesh%half_nlev]
 
-      if (nonhydrostatic) then
-        call fiona_output('i0', 'z', dstate%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
-      end if
+      call fiona_output('i0', 'z', dstate%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
       end associate
     end do
     call fiona_end_output('i0')

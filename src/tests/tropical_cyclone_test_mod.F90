@@ -149,7 +149,7 @@ CONTAINS
         call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,1), z(i,j,1), 1, &
           u(i,j,1), v(i,j,1), t(i,j,1), thetav, gzs(i,j), ps(i,j), rho, qv(i,j,1))
         do k = mesh%full_kds, mesh%full_kde
-          p(i,j,k) = vert_coord_calc_mg(k, ps(i,j))
+          p(i,j,k) = vert_coord_calc_mg(k, ps(i,j), block%static%ref_ps_perb(i,j))
           call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,k), z(i,j,k), 0, &
             u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, qv(i,j,k))
           qv(i,j,k) = mixing_ratio(qv(i,j,k))

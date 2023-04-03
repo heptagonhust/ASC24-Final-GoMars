@@ -22,11 +22,9 @@ module damp_mod
 
 contains
 
-  subroutine damp_init(blocks)
+  subroutine damp_init()
 
-    type(block_type), intent(in) :: blocks(:)
-
-    call div_damp_init(blocks)
+    call div_damp_init()
     call smag_damp_init()
     call laplace_damp_init()
 

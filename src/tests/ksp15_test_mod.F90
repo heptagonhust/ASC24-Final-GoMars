@@ -4,7 +4,6 @@ module ksp15_test_mod
   use const_mod
   use parallel_mod
   use block_mod
-  use vert_coord_mod
   use formula_mod
   use operators_mod
 
@@ -150,23 +149,7 @@ contains
       end do
       call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
 
-      do k = mesh%half_kds, mesh%half_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, phs(i,j))
-          end do
-        end do
-      end do
-      call fill_halo(block%halo, mg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            mg(i,j,k) = 0.5d0 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
-          end do
-        end do
-      end do
-      call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call calc_mg(block, block%dstate(1))
 
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde

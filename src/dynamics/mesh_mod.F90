@@ -87,12 +87,6 @@ module mesh_mod
     real(8), allocatable, dimension(:  ) :: de_lat
     real(8), allocatable, dimension(:  ) :: le_lat
     real(8), allocatable, dimension(:  ) :: le_lon
-    ! Coriolis parameters
-    real(8), allocatable, dimension(:  ) :: full_f
-    real(8), allocatable, dimension(:  ) :: half_f
-    ! Weight for constructing tangential wind
-    real(8), allocatable, dimension(:,:) :: full_tangent_wgt
-    real(8), allocatable, dimension(:,:) :: half_tangent_wgt
   contains
     procedure :: init_global                  => mesh_init_global
     procedure :: init_from_parent             => mesh_init_from_parent
@@ -391,56 +385,6 @@ contains
       this%de_lat(j) = 2.0d0 * this%area_lat(j) / this%le_lat(j)
     end do
 
-    !  ____________________                 ____________________                  ____________________                  ____________________                 
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |_____o____|____o____|   j           |_____o____|____*____|   j            |_____*____|____o____|   j            |_____o____|____o____|   j             
-    ! |          |////|////|               |          |////|    |                |/////|    |         |                |     |    |         |                
-    ! |          |/3//|/2//|               |          |////|    |                |/////|    |         |                |     |    |         |                
-    ! |          x---------|   j           |          x---------|   j            |-----|----x         |   j            |-----|----x         |   j            
-    ! |          |    |/1//|               |          |    |    |                |/////|////|         |                |     |////|         |                
-    ! |_____o____|____*____|   j - 1       |_____o____|____o____|   j - 1        |_____o____|____o____|   j - 1        |_____*____|____o____|   j - 1        
-    !       i    i   i+1                         i    i   i+1                          i    i   i+1                          i
-    !
-    !
-    !       [ 1    As_1 + As_2 + As_3]
-    ! w = - [--- - ------------------]
-    !       [ 2        A_{i+1,j}     ]
-    !
-    !
-
-    select case (tangent_wgt_scheme)
-    case ('classic')
-      do j = this%full_jds_no_pole, this%full_jde_no_pole
-        this%full_tangent_wgt(1,j) = this%le_lat(j-1) / this%de_lon(j) * 0.25d0
-        this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
-      end do
-
-      do j = this%half_jds, this%half_jde
-        this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
-        this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * 0.25d0
-      end do
-    case ('thuburn09')
-      do j = this%full_jds_no_pole, this%full_jde_no_pole
-        this%full_tangent_wgt(1,j) = this%le_lat(j-1) / this%de_lon(j) * this%area_subcell(2,j  ) / this%area_cell(j  )
-        this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * this%area_subcell(1,j  ) / this%area_cell(j  )
-      end do
-
-      do j = this%half_jds, this%half_jde
-        this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * this%area_subcell(1,j  ) / this%area_cell(j  )
-        this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * this%area_subcell(2,j+1) / this%area_cell(j+1)
-      end do
-    end select
-
-    do j = this%full_jds, this%full_jde
-      this%full_f(j) = 2 * omega * this%full_sin_lat(j)
-    end do
-    do j = this%half_jds, this%half_jde
-      this%half_f(j) = 2 * omega * this%half_sin_lat(j)
-    end do
-
   end subroutine mesh_init_global
 
   subroutine mesh_init_from_parent(this, parent, id, ids, ide, jds, jde, keep_lev)
@@ -522,8 +466,6 @@ contains
       this%area_lon(j)       = parent%area_lon(j)
       this%le_lon(j)         = parent%le_lon(j)
       this%de_lon(j)         = parent%de_lon(j)
-      this%full_tangent_wgt(:,j) = parent%full_tangent_wgt(:,j)
-      this%full_f(j)         = parent%full_f(j)
     end do
     do j = this%half_jms, this%half_jme
       this%half_lat(j)       = parent%half_lat(j)
@@ -538,8 +480,6 @@ contains
       this%area_lat(j)       = parent%area_lat(j)
       this%le_lat(j)         = parent%le_lat(j)
       this%de_lat(j)         = parent%de_lat(j)
-      this%half_tangent_wgt(:,j) = parent%half_tangent_wgt(:,j)
-      this%half_f(j)         = parent%half_f(j)
     end do
 
     this%full_lev = parent%full_lev
@@ -637,10 +577,6 @@ contains
     allocate(this%de_lat             (this%half_jms:this%half_jme)); this%de_lat              = 0
     allocate(this%le_lat             (this%half_jms:this%half_jme)); this%le_lat              = 0
     allocate(this%le_lon             (this%full_jms:this%full_jme)); this%le_lon              = 0
-    allocate(this%full_f             (this%full_jms:this%full_jme)); this%full_f              = inf
-    allocate(this%half_f             (this%half_jms:this%half_jme)); this%half_f              = inf
-    allocate(this%full_tangent_wgt (2,this%full_jms:this%full_jme)); this%full_tangent_wgt    = inf
-    allocate(this%half_tangent_wgt (2,this%half_jms:this%half_jme)); this%half_tangent_wgt    = inf
 
   end subroutine mesh_common_init
 
@@ -808,10 +744,6 @@ contains
     if (allocated(this%de_lat          )) deallocate(this%de_lat          )
     if (allocated(this%le_lat          )) deallocate(this%le_lat          )
     if (allocated(this%le_lon          )) deallocate(this%le_lon          )
-    if (allocated(this%full_f          )) deallocate(this%full_f          )
-    if (allocated(this%half_f          )) deallocate(this%half_f          )
-    if (allocated(this%full_tangent_wgt)) deallocate(this%full_tangent_wgt)
-    if (allocated(this%half_tangent_wgt)) deallocate(this%half_tangent_wgt)
 
   end subroutine mesh_clear
 

@@ -228,7 +228,9 @@ contains
     ! call fiona_add_var('h0', 'te_ke'  , long_name='total kinetic energy'        , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'te_ie'  , long_name='total internal energy'       , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'te_pe'  , long_name='total potential energy'      , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
-    ! call fiona_add_var('h0', 'ref_ps' , long_name='reference surface pressure'  , units='Pa'    , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'ref_ps' , long_name='reference surface pressure'  , units='Pa'    , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'ref_ps_smth' , long_name='smoothed reference surface pressure'  , units='Pa'    , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'ref_ps_perb' , long_name='reference surface pressure perturbation'  , units='Pa'    , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
     call fiona_add_var('h0', 'zs'     , long_name='surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
     call fiona_add_var('h0', 'dzsdlon', long_name='zonal zs gradient'           , units=''      , dim_names=['lon', 'lat'])
     call fiona_add_var('h0', 'dzsdlat', long_name='meridional zs gradient'      , units=''      , dim_names=['lon', 'lat'])
@@ -529,7 +531,9 @@ contains
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-      ! call fiona_output('h0', 'ref_ps'  , static%ref_ps (is:ie,js:je)           , start=start, count=count)
+      call fiona_output('h0', 'ref_ps'  , static%ref_ps (is:ie,js:je)           , start=start, count=count)
+      call fiona_output('h0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je)    , start=start, count=count)
+      call fiona_output('h0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je)    , start=start, count=count)
       call fiona_output('h0', 'zs'      , static%gzs    (is:ie,js:je) / g       , start=start, count=count)
       call fiona_output('h0', 'dzsdlon' , static%dzsdlon(is:ie,js:je)           , start=start, count=count)
       call fiona_output('h0', 'dzsdlat' , static%dzsdlat(is:ie,js:je)           , start=start, count=count)

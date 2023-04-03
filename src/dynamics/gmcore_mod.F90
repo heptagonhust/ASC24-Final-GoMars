@@ -51,35 +51,34 @@ contains
     character(*), intent(in) :: namelist_path
     integer, intent(in), optional :: comm
 
-    call gmcore_init_stage1(namelist_path)
-    call gmcore_init_stage2(namelist_path, comm)
+    call gmcore_init_stage1(namelist_path, comm)
+    call gmcore_init_stage2(namelist_path)
 
   end subroutine gmcore_init
 
-  subroutine gmcore_init_stage1(namelist_path)
+  subroutine gmcore_init_stage1(namelist_path, comm)
 
     character(*), intent(in) :: namelist_path
+    integer, intent(in), optional :: comm   
 
     call log_init()
     call gas_mixture_init(planet)
     call const_init(planet)
     call time_scheme_init()
     call time_init(dt_dyn)
-    call vert_coord_init_stage1(nlev, namelist_path)
+    call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=2)
+    call process_init(comm)
+    call process_create_blocks()
 
   end subroutine gmcore_init_stage1
 
-  subroutine gmcore_init_stage2(namelist_path, comm)
+  subroutine gmcore_init_stage2(namelist_path)
 
     character(*), intent(in) :: namelist_path
-    integer, intent(in), optional :: comm
 
     character(10) time_value, time_units
     integer iblk
     real(r8) seconds
-
-    call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=2)
-    call process_init(comm)
 
     if (proc%is_root()) then
       print *, ''
@@ -93,18 +92,17 @@ contains
       print *, ''
     end if
 
-    call vert_coord_init_stage2()
-    call process_create_blocks()
-    call diag_state_init(blocks)
+    call vert_coord_init(namelist_path)
+    call diag_state_init()
     call restart_init()
     call adv_init()
     call pgf_init()
     call interp_init()
     call operators_init()
     call physics_init()
-    call damp_init(blocks)
+    call damp_init()
     if (baroclinic) call moist_init()
-    call adv_allocate_tracers(blocks)
+    call adv_allocate_tracers()
     call history_init()
 
     operators => space_operators
@@ -130,6 +128,9 @@ contains
     if (proc%is_root()) call print_namelist()
 
     do iblk = 1, size(blocks)
+      blocks(iblk)%mesh%full_lev = global_mesh%full_lev
+      blocks(iblk)%mesh%half_lev = global_mesh%half_lev
+      call blocks(iblk)%static%init_stage2()
       if (baroclinic) call moist_link_state(blocks(iblk))
     end do
 

@@ -33,13 +33,6 @@ program gmcore_prepare
   call time_init(dt_dyn)
   call global_mesh%init_global(nlon, nlat, nlev, lon_hw=2, lat_hw=2)
   call process_init()
-  call vert_coord_init_stage1(nlev, scheme=vert_coord_scheme, template=vert_coord_template)
-  call vert_coord_init_stage2()
-  call process_create_blocks()
-  call adv_init()
-  call damp_init(blocks)
-  call moist_init()
-  call adv_allocate_tracers(blocks)
 
   if (proc%is_root()) then
     write(*, *) '=================== GMCORE Parameters ==================='
@@ -67,7 +60,14 @@ program gmcore_prepare
     write(*, *) '========================================================='
   end if
 
-  call prepare_run()
+  call process_create_blocks()
+  call damp_init()
+  call prepare_topo()
+  call vert_coord_init(scheme=vert_coord_scheme, template=vert_coord_template)
+  call adv_init()
+  call moist_init()
+  call adv_allocate_tracers()
+  call prepare_bkg()
 
   if (initial_file == 'N/A') then
     write(initial_file, '("gmcore.", A, "x", A, "x", A, ".i0.nc")') &

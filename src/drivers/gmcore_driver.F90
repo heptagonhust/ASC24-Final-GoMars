@@ -56,6 +56,8 @@ program gmcore_driver
     case ('tropical_cyclone')
       init_diag_state => tropical_cyclone_test_set_diag
     end select
+  else
+    call prepare_topo()
   end if
 
   call gmcore_init_stage2(namelist_path)
@@ -65,7 +67,7 @@ program gmcore_driver
   else if (initial_file /= 'N/A') then
     call initial_read()
   else if (topo_file /= 'N/A' .and. bkg_file /= 'N/A') then
-    call prepare_run()
+    call prepare_bkg()
     call prepare_final() ! Release memory for preparation.
   else
     select case (test_case)

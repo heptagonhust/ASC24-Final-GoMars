@@ -4,7 +4,7 @@ module baroclinic_wave_test_mod
   use formula_mod
   use parallel_mod
   use block_mod
-  use vert_coord_mod
+  use operators_mod
 
   implicit none
 
@@ -36,7 +36,6 @@ contains
                u      => block%dstate(1)%u_lon , &
                v      => block%dstate(1)%v_lat , &
                mgs    => block%dstate(1)%mgs   , &
-               mg_lev => block%dstate(1)%mg_lev, &
                mg     => block%dstate(1)%mg    , &
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
@@ -46,23 +45,7 @@ contains
     mgs = 1.0e5_r8
     v   = 0
 
-    do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
-        end do
-      end do
-    end do
-    call fill_halo(block%halo, mg_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          mg(i,j,k) = 0.5d0 * (mg_lev(i,j,k) + mg_lev(i,j,k+1))
-        end do
-      end do
-    end do
-    call fill_halo(block%halo, mg, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call calc_mg(block, block%dstate(1))
 
     do k = mesh%full_kds, mesh%full_kde
       eta = mesh%full_lev(k)
@@ -92,7 +75,7 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_ids, mesh%full_ide
-          t(i,j,k) = tbar + 3.0d0 / 4.0d0 * eta * pi * u0 / Rd * sin(etav) * sqrt(cos(etav)) * (               &
+          t(i,j,k) = tbar + 3.0d0 / 4.0d0 * eta * pi * u0 / rd * sin(etav) * sqrt(cos(etav)) * (               &
               (-2 * sin_lat**6 * (cos_lat**2 + 1.0d0 / 3.0d0) + 10.0d0 / 63.0d0) * 2 * u0 * cos(etav)**1.5d0 + &
               (8.0d0 / 5.0d0 * cos_lat**3 * (sin_lat**2 + 2.0d0 / 3.0d0) - pi / 4.0d0) * radius * omega        &
             )

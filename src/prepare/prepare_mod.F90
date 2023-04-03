@@ -14,35 +14,9 @@ module prepare_mod
 
 contains
 
-  subroutine prepare_static(block)
+  subroutine prepare_topo()
 
-    class(block_type), intent(inout) :: block
-
-    integer i, j
-
-    associate (mesh    => block%mesh          , &
-               gzs     => block%static%gzs    , & ! in
-               dzsdlon => block%static%dzsdlon, & ! out
-               dzsdlat => block%static%dzsdlat)   ! out
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
-        end do
-      end do
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
-        end do
-      end do
-      call fill_halo(block%halo, dzsdlon, full_lon=.false., full_lat=.true.)
-      call fill_halo(block%halo, dzsdlat, full_lon=.true., full_lat=.false.)
-    end associate
-
-  end subroutine prepare_static
-
-  subroutine prepare_run()
-
-    integer iblk, i
+    integer iblk, i, j
 
     call topo_read(topo_file)
     do iblk = 1, size(blocks)
@@ -53,6 +27,33 @@ contains
         call topo_smooth(blocks(iblk))
       end do
     end if
+    call ref_calc_ps()
+
+    do iblk = 1, size(blocks)
+      associate (mesh    => blocks(iblk)%mesh          , &
+                 gzs     => blocks(iblk)%static%gzs    , & ! in
+                 dzsdlon => blocks(iblk)%static%dzsdlon, & ! out
+                 dzsdlat => blocks(iblk)%static%dzsdlat)   ! out
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%half_ids, mesh%half_ide
+          dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
+        end do
+      end do
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
+          dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
+        end do
+      end do
+      call fill_halo(blocks(iblk)%halo, dzsdlon, full_lon=.false., full_lat=.true.)
+      call fill_halo(blocks(iblk)%halo, dzsdlat, full_lon=.true., full_lat=.false.)
+      end associate
+    end do
+
+  end subroutine prepare_topo
+
+  subroutine prepare_bkg()
+
+    integer iblk, i
 
     call bkg_read(bkg_type, bkg_file)
 
@@ -63,14 +64,12 @@ contains
     call bkg_regrid_pt()
     call bkg_regrid_u()
     call bkg_regrid_v()
-    ! call ref_calc_ps()
 
     do iblk = 1, size(blocks)
       call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(1))
-      call prepare_static(blocks(iblk))
     end do
 
-  end subroutine prepare_run
+  end subroutine prepare_bkg
 
   subroutine prepare_final()
 
