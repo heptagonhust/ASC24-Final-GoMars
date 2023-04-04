@@ -33,45 +33,45 @@ contains
                v_lat   => dstate%v_lat)
     if (use_pole_damp .and. baroclinic) then
       ! c = 1.0e12_r8
-      ! do k = mesh%full_kds, mesh%full_kde
-      !   do j = mesh%full_jds, mesh%full_jde
-      !     do i = mesh%full_ids, mesh%full_ide
-      !       pt(i,j,k) = pt(i,j,k) * dmg(i,j,k)
-      !     end do
-      !   end do
-      ! end do
-      ! call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-      ! ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, pt, lon_coef=decay_from_pole, coef=c)
-      ! call filter_on_cell(block%small_filter, pt)
-      ! do k = mesh%full_kds, mesh%full_kde
-      !   do j = mesh%full_jds, mesh%full_jde
-      !     do i = mesh%full_ids, mesh%full_ide
-      !       pt(i,j,k) = pt(i,j,k) / dmg(i,j,k)
-      !     end do
-      !   end do
-      ! end do
-      ! call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            pt(i,j,k) = pt(i,j,k) * dmg(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, pt, lon_coef=decay_from_pole, coef=c)
+      call filter_on_cell(block%small_filter, pt)
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            pt(i,j,k) = pt(i,j,k) / dmg(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! ----------------------------------------------------------------------
-      ! if (time_is_alerted('moist')) then
-      !   do k = mesh%full_kds, mesh%full_kde
-      !     do j = mesh%full_jds, mesh%full_jde
-      !       do i = mesh%full_ids, mesh%full_ide
-      !         qv(i,j,k) = qv(i,j,k) * dmg(i,j,k)
-      !       end do
-      !     end do
-      !   end do
-      !   call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
-      !   ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, qv, lon_coef=decay_from_pole, coef=c)
-      !   call filter_on_cell(block%small_filter, qv)
-      !   do k = mesh%full_kds, mesh%full_kde
-      !     do j = mesh%full_jds, mesh%full_jde
-      !       do i = mesh%full_ids, mesh%full_ide
-      !         qv(i,j,k) = qv(i,j,k) / dmg(i,j,k)
-      !       end do
-      !     end do
-      !   end do
-      !   call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-      ! end if
+      if (time_is_alerted('moist')) then
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qv(i,j,k) = qv(i,j,k) * dmg(i,j,k)
+            end do
+          end do
+        end do
+        call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+        ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, qv, lon_coef=decay_from_pole, coef=c)
+        call filter_on_cell(block%small_filter, qv)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qv(i,j,k) = qv(i,j,k) / dmg(i,j,k)
+            end do
+          end do
+        end do
+        call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      end if
       ! ----------------------------------------------------------------------
       ! call laplace_damp_on_lon_edge(block%filter_mesh, block%filter_halo, 4, u_lon, lon_coef=decay_from_pole, coef=c)
       ! call laplace_damp_on_lat_edge(block%filter_mesh, block%filter_halo, 4, v_lat, lon_coef=decay_from_pole, coef=c)
