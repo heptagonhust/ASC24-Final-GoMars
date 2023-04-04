@@ -501,11 +501,11 @@ contains
   subroutine hybrid_coord_dcmip_l60(p0, ptop, hyai, hybi)
     
     real(r8), intent(in) :: p0
-    real(r8), intent(in ) :: ptop
+    real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
     real(r8), parameter :: ztop = 12000.0_r8
-    real(r8), parameter :: T0   = 300.0_r8
+    real(r8), parameter :: t0   = 300.0_r8
     real(r8) eta_top, deta, eta
     integer k
 
@@ -513,7 +513,8 @@ contains
       call log_error('nlev should be 60 in namelist!')
     end if
 
-    eta_top = exp(-g * ztop / Rd / T0)
+    ptop = p0 * exp(-g * ztop / rd / t0)
+    eta_top = exp(-g * ztop / rd / t0)
     deta = (1 - eta_top) / global_mesh%full_nlev
     do k = 1, global_mesh%half_nlev
       eta = eta_top + (k - 1) * deta

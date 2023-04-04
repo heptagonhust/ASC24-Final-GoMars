@@ -28,6 +28,8 @@ module hybrid_coord_mod
   namelist /hybrid_coord/ &
     hyai, hybi, hyam, hybm
 
+  real(r8) :: local_ptop = 0
+
 contains
 
   subroutine hybrid_coord_init(namelist_file, template)
@@ -69,8 +71,10 @@ contains
         call hybrid_coord_ecmwf_l90(p0, ptop, hyai, hybi)
       case ('wrf_l32')
         call hybrid_coord_wrf_l32(p0, ptop, hyai, hybi)
+        local_ptop = ptop
       case ('wrf_l64')
         call hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
+        local_ptop = ptop
       case ('schar_l40')
         call hybrid_coord_schar_l40(p0, ptop, hyai, hybi)
       case ('dcmip21_l60')
@@ -127,7 +131,7 @@ contains
     real(r8), intent(in) :: mgs
     real(r8), intent(in), optional :: ref_ps_perb
 
-    res = hyam(k) * (p0 - ptop) + hybm(k) * (mgs - ptop) + ptop
+    res = hyam(k) * (p0 - local_ptop) + hybm(k) * (mgs - local_ptop) + local_ptop
 
   end function hybrid_coord_calc_mg
 
@@ -137,7 +141,7 @@ contains
     real(r8), intent(in) :: mgs
     real(r8), intent(in), optional :: ref_ps_perb
 
-    res = hyai(k) * (p0 - ptop) + hybi(k) * (mgs - ptop) + ptop
+    res = hyai(k) * (p0 - local_ptop) + hybi(k) * (mgs - local_ptop) + local_ptop
 
   end function hybrid_coord_calc_mg_lev
 
