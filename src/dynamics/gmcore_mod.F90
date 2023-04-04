@@ -213,6 +213,7 @@ contains
     call time_final()
     call interp_final()
     call gas_mixture_final()
+    call vert_coord_final()
     call adv_final()
     call damp_final()
     call diag_state_final()
