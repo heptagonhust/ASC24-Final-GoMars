@@ -128,8 +128,10 @@ contains
     if (proc%is_root()) call print_namelist()
 
     do iblk = 1, size(blocks)
-      blocks(iblk)%mesh%full_lev = global_mesh%full_lev
-      blocks(iblk)%mesh%half_lev = global_mesh%half_lev
+      blocks(iblk)%mesh%full_lev  = global_mesh%full_lev
+      blocks(iblk)%mesh%half_lev  = global_mesh%half_lev
+      blocks(iblk)%mesh%full_dlev = global_mesh%full_dlev
+      blocks(iblk)%mesh%half_dlev = global_mesh%half_dlev
       call blocks(iblk)%static%init_stage2()
       if (baroclinic) call moist_link_state(blocks(iblk))
     end do
