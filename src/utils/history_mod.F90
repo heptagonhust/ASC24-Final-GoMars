@@ -19,7 +19,8 @@ module history_mod
 
   private
 
-  public history_init
+  public history_init_stage1
+  public history_init_stage2
   public history_final
   public history_setup_h0_adv
   public history_write_h0
@@ -39,7 +40,7 @@ module history_mod
 
 contains
 
-  subroutine history_init()
+  subroutine history_init_stage1()
 
     character(10) time_value, time_units
     real(r8) seconds, months
@@ -104,6 +105,10 @@ contains
 
     call fiona_init(time_units, start_time_str)
 
+  end subroutine history_init_stage1
+
+  subroutine history_init_stage2()
+
     if (hydrostatic) then
       call history_setup_h0_hydrostatic()
       call history_setup_h1_hydrostatic()
@@ -115,7 +120,7 @@ contains
       call history_setup_h1_swm()
     end if
 
-  end subroutine history_init
+  end subroutine history_init_stage2
 
   subroutine history_final()
 

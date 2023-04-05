@@ -55,9 +55,9 @@ program gmcore_driver
       call dcmip31_test_set_params()
     case ('tropical_cyclone')
       init_diag_state => tropical_cyclone_test_set_diag
+    case default
+      call prepare_topo()
     end select
-  else
-    call prepare_topo()
   end if
 
   call gmcore_init_stage2(namelist_path)

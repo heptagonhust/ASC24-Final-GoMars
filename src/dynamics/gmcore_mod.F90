@@ -69,6 +69,8 @@ contains
     call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=2)
     call process_init(comm)
     call process_create_blocks()
+    call damp_init()
+    call history_init_stage1()
 
   end subroutine gmcore_init_stage1
 
@@ -100,10 +102,9 @@ contains
     call interp_init()
     call operators_init()
     call physics_init()
-    call damp_init()
     if (baroclinic) call moist_init()
     call adv_allocate_tracers()
-    call history_init()
+    call history_init_stage2()
 
     operators => space_operators
 
