@@ -77,7 +77,7 @@ contains
       ! call laplace_damp_on_lat_edge(block%filter_mesh, block%filter_halo, 4, v_lat, lon_coef=decay_from_pole, coef=c)
       ! ----------------------------------------------------------------------
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 80.0_r8, real(abs(mesh%full_lat_deg(j)), r8))
+        c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%full_lat_deg(j)), r8))
         do i = mesh%half_ids, mesh%half_ide
           tmp = u_lon(i,j,1:mesh%full_nlev)
           do k = mesh%full_kds + 1, mesh%full_kde - 1
@@ -87,7 +87,7 @@ contains
       end do
       call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       do j = mesh%half_jds, mesh%half_jde
-        c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 80.0_r8, real(abs(mesh%half_lat_deg(j)), r8))
+        c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%half_lat_deg(j)), r8))
         do i = mesh%full_ids, mesh%full_ide
           tmp = v_lat(i,j,1:mesh%full_nlev)
           do k = mesh%full_kds + 1, mesh%full_kde - 1
