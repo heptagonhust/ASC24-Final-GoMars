@@ -17,7 +17,12 @@ ax.set_xlabel('Longitude (deg)')
 ax.set_xlim(0, 360)
 ax.set_ylabel('Height (m)')
 ax.set_ylim(0, 50000)
-for k in range(f['ilev'].size):
-    ax.plot(f['lon'], f['z'].sel(time=0, lat=args.lat, ilev=f['ilev'][k], method='nearest'), linewidth=0.5, color='k')
+
+if 'lev' in f['z'].dims:
+	for k in range(f['lev'].size):
+		ax.plot(f['lon'], f['z'].sel(time=0, lat=args.lat, lev=f['lev'][k], method='nearest'), linewidth=0.5, color='k')
+else:
+	for k in range(f['ilev'].size):
+		ax.plot(f['lon'], f['z'].sel(time=0, lat=args.lat, ilev=f['ilev'][k], method='nearest'), linewidth=0.5, color='k')
 
 plt.show()
