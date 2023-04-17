@@ -61,6 +61,13 @@ module namelist_mod
   real(r8)        :: ptop                 = 2.194e2_r8
   real(r8)        :: hybrid_coord_p0      = 1.0e5_r8
 
+  ! Parameters for generating hybrid levels from WRF.
+  real(r8)        :: tiso                 = 300.0_r8  ! Isothermal temperature (K)
+  real(r8)        :: dzbot                = 10.0_r8   ! Bottom layer thickness (m)
+  real(r8)        :: dzmax                = 1000.0_r8 ! Maximum layer thickness (m)
+  real(r8)        :: dzstretch_s          = 1.3_r8    ! Stretching factor for surface layers
+  real(r8)        :: dzstretch_u          = 1.1_r8    ! Stretching factor for upper layers
+
   ! Parameters for generating hybrid levels from NCEP.
   real(r8)        :: hybrid_coord_ncep_psig   = 0
   real(r8)        :: hybrid_coord_ncep_ppre   = 0
@@ -186,6 +193,11 @@ module namelist_mod
     refer_state_scheme        , &
     ptop                      , &
     hybrid_coord_p0           , &
+    tiso                      , &
+    dzbot                     , &
+    dzmax                     , &
+    dzstretch_s               , &
+    dzstretch_u               , &
     hybrid_coord_ncep_psig    , &
     hybrid_coord_ncep_ppre    , &
     hybrid_coord_ncep_dpbot   , &

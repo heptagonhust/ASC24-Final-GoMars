@@ -8,7 +8,7 @@ module wrf_vert_coord_mod
 
   use flogger
   use const_mod
-  use namelist_mod, only: ptop
+  use namelist_mod, only: ptop, tiso, dzmax, dzbot, dzstretch_s, dzstretch_u
 
   implicit none
 
@@ -23,18 +23,12 @@ contains
     integer, intent(in) :: nlev
     real(r8), intent(out) :: eta_lev(nlev+1)
 
-    real(r8), parameter :: t0           = 288.0_r8    ! Isothermal temperature (K)
-    real(r8), parameter :: dzmax        = 3000.0_r8   ! Maximum layer thickness (m)
-    real(r8), parameter :: dzbot        = 50.0_r8     ! Bottom layer thickness (m)
-    real(r8), parameter :: dzstretch_s  = 1.3_r8      ! Stretching factor for surface layer
-    real(r8), parameter :: dzstretch_u  = 1.1_r8      ! Stretching factor for upper layers
-
     real(r8) ztop, pbot, dz
     real(r8) z_lev(nlev+1), p_lev(nlev+1)
     integer k, k0
 
-    ztop = rd * t0 / g * log(p0 / ptop)
-    pbot = p0 * exp(-g * dzbot / (rd * t0))
+    ztop = rd * tiso / g * log(p0 / ptop)
+    pbot = p0 * exp(-g * dzbot / (rd * tiso))
 
     eta_lev(1) = 1.0_r8
     eta_lev(2) = (pbot - ptop) / (p0 - ptop)
@@ -53,7 +47,7 @@ contains
         exit
       end if
       z_lev(k) = z_lev(k-1) + dz
-      p_lev(k) = p0 * exp(-g * z_lev(k) / (rd * t0))
+      p_lev(k) = p0 * exp(-g * z_lev(k) / (rd * tiso))
       eta_lev(k) = (p_lev(k) - ptop) / (p0 - ptop)
       if (k == nlev + 1) then
         call log_error('Too few vertical levels for given parameters. Increase nlev!', __FILE__, __LINE__)
@@ -67,7 +61,7 @@ contains
 
     do k = k0 + 1, nlev + 1
       z_lev(k) = z_lev(k-1) + dz
-      p_lev(k) = p0 * exp(-g * z_lev(k) / (rd * t0))
+      p_lev(k) = p0 * exp(-g * z_lev(k) / (rd * tiso))
       eta_lev(k) = (p_lev(k) - ptop) / (p0 - ptop)
     end do
     eta_lev(nlev+1) = 0.0_r8
