@@ -17,3 +17,9 @@
 [submodule "lib/string"]
 	path = lib/string
 	url = https://gitee.com/dongli85/fortran-string
+[submodule "src/physics/ccpp/framework"]
+	path = src/physics/ccpp/framework
+	url = https://github.com/NCAR/ccpp-framework
+[submodule "src/physics/ccpp/physics"]
+	path = src/physics/ccpp/physics
+	url = https://github.com/NCAR/ccpp-physics
