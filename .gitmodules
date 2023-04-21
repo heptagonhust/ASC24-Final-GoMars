@@ -22,4 +22,5 @@
 	url = https://github.com/NCAR/ccpp-framework
 [submodule "src/physics/ccpp/physics"]
 	path = src/physics/ccpp/physics
-	url = https://github.com/NCAR/ccpp-physics
+	url = https://github.com/ufs-community/ccpp-physics
+  branch = ufs/dev
