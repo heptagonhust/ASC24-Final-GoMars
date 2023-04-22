@@ -212,6 +212,13 @@ set(gmcore_files
   lib/quadpack.f90
 )
 
+if (EXISTS ${PROJECT_SOURCE_DIR}/src/physics/ccpp/host/CCPP_CAPS.cmake)
+  include(src/physics/ccpp/host/CCPP_CAPS.cmake)
+  include(src/physics/ccpp/host/CCPP_SCHEMES.cmake)
+  include(src/physics/ccpp/host/CCPP_STATIC_API.cmake)
+  list(APPEND gmcore_files ${CAPS} ${SCHEMES} ${API})
+endif ()
+
 add_library(gmcore ${gmcore_files})
 target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 
