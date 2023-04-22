@@ -24,7 +24,7 @@ if (ENSURE_ORDER)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -fno-range-check -fallow-argument-mismatch")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0 -fcheck=all -g -fbacktrace")
   else ()
