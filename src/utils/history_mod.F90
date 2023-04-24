@@ -661,7 +661,7 @@ contains
     js = mesh%full_jds; je = mesh%full_jde
     start = [is,js]
     count = [mesh%full_nlon,mesh%full_nlat]
-    call fiona_output('h1', 'dmf'     ,  dtend%dmf     (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'dmf'     ,    aux%dmf     (is:ie,js:je,1), start=start, count=count)
     call fiona_output('h1', 'ke'      ,    aux%ke      (is:ie,js:je,1), start=start, count=count)
     call fiona_output('h1', 'dgzdt'   ,  dtend%dgz     (is:ie,js:je,1), start=start, count=count)
 
@@ -717,7 +717,7 @@ contains
     ks = mesh%full_kds; ke = mesh%full_kde
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-    call fiona_output('h1', 'dmf'     ,  dtend%dmf      (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dmf'     ,    aux%dmf      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ke'      ,    aux%ke       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmg'     , dstate%dmg      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmgsdt'  ,  dtend%dmgs     (is:ie,js:je      ), start=start, count=count)
@@ -804,7 +804,7 @@ contains
     ks = mesh%full_kds; ke = mesh%full_kde
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-    call fiona_output('h1', 'dmf'     ,  dtend%dmf      (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dmf'     ,    aux%dmf      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ke'      ,    aux%ke       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmg'     , dstate%dmg      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmgsdt'  ,  dtend%dmgs     (is:ie,js:je      ), start=start, count=count)

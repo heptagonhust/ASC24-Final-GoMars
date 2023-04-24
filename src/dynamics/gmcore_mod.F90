@@ -451,7 +451,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz(i,j,k) = -tend1%dmf(i,j,k) * g
+              tend1%dgz(i,j,k) = -block%aux%dmf(i,j,k) * g
             end do
           end do
         end do
@@ -483,7 +483,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz(i,j,k) = -tend1%dmf(i,j,k) * g
+              tend1%dgz(i,j,k) = -block%aux%dmf(i,j,k) * g
             end do
           end do
         end do

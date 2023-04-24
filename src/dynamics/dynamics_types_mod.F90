@@ -97,7 +97,6 @@ module dynamics_types_mod
     logical :: copy_gz    = .false.
     logical :: copy_pt    = .false.
     logical :: copy_mgs   = .false.
-    real(r8), allocatable, dimension(:,:,:) :: dmf
     ! Nonhydrostatic tendencies
     real(r8), allocatable, dimension(:,:,:) :: adv_gz
     real(r8), allocatable, dimension(:,:,:) :: adv_w
@@ -165,6 +164,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: pv                ! Potential vorticity
     real(r8), allocatable, dimension(:,:,:) :: div               ! Divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
+    real(r8), allocatable, dimension(:,:,:) :: dmf
   contains
     procedure :: init  => aux_array_init
     procedure :: clear => aux_array_clear
@@ -422,8 +422,6 @@ contains
     call allocate_array(filter_mesh, this%dpt , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(filter_mesh, this%dmgs, full_lon=.true., full_lat=.true.                 )
 
-    call allocate_array(mesh, this%dmf, full_lon=.true., full_lat=.true., full_lev=.true.)
-
     if (nonhydrostatic .or. .not. baroclinic) then
       call allocate_array(filter_mesh, this%dgz , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
@@ -468,7 +466,6 @@ contains
     if (allocated(this%dgz     )) deallocate(this%dgz     )
     if (allocated(this%dpt     )) deallocate(this%dpt     )
     if (allocated(this%dmgs    )) deallocate(this%dmgs    )
-    if (allocated(this%dmf     )) deallocate(this%dmf     )
 
     if (allocated(this%adv_gz  )) deallocate(this%adv_gz  )
     if (allocated(this%adv_w   )) deallocate(this%adv_w   )
@@ -798,6 +795,7 @@ contains
     if (div_damp_order == 4) then
       call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
+    call allocate_array(mesh, this%dmf            , full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine aux_array_init
 
@@ -830,6 +828,7 @@ contains
     if (allocated(this%pv               )) deallocate(this%pv               )
     if (allocated(this%div              )) deallocate(this%div              )
     if (allocated(this%div2             )) deallocate(this%div2             )
+    if (allocated(this%dmf              )) deallocate(this%dmf              )
 
   end subroutine aux_array_clear
 

@@ -247,21 +247,21 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
-    real(r8) mf(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_jds:block%mesh%full_jde)
+    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_jds:block%mesh%full_jde)
 
     associate (mesh       => block%mesh          , &
-               dmf        => dtend%dmf           , & ! in
+               dmf        => block%aux%dmf       , & ! in
                dmgs       => dtend%dmgs          , & ! in
                dmg_lev    => dstate%dmg_lev      , & ! in
                we_lev     => dstate%we_lev       , & ! out
                we_lev_lon => block%aux%we_lev_lon, & ! out
                we_lev_lat => block%aux%we_lev_lat)   ! out
-    mf = 0
+    sum_dmf = 0
     do k = mesh%half_kds + 1, mesh%half_kde - 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          mf(i,j) = mf(i,j) + dmf(i,j,k-1)
-          we_lev(i,j,k) = - vert_coord_calc_dmgdt_lev(k, dmgs(i,j)) - mf(i,j)
+          sum_dmf(i,j) = sum_dmf(i,j) + dmf(i,j,k-1)
+          we_lev(i,j,k) = - vert_coord_calc_dmgdt_lev(k, dmgs(i,j)) - sum_dmf(i,j)
         end do
       end do
     end do
@@ -995,7 +995,7 @@ contains
     associate (mesh    => block%mesh    , &
                mfx_lon => dstate%mfx_lon, & ! in
                mfy_lat => dstate%mfy_lat, & ! in
-               dmf     => dtend%dmf     )   ! out
+               dmf     => block%aux%dmf )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
@@ -1135,9 +1135,9 @@ contains
 
     integer i, j, k
 
-    associate (mesh => block%mesh, &
-               dmf  => dtend%dmf , & ! in
-               dmgs => dtend%dmgs)   ! out
+    associate (mesh => block%mesh   , &
+               dmf  => block%aux%dmf, & ! in
+               dmgs => dtend%dmgs   )   ! out
     dtend%dmgs = 0
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde

@@ -228,6 +228,8 @@ contains
 
     integer i, j, k
 
+    if (.not. allocated(tracers)) return
+
     associate (mesh => block%mesh, &
                qm   => tracers(block%id)%qm)   ! out
     if (idx_qv > 0) then
