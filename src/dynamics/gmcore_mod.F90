@@ -14,7 +14,7 @@ module gmcore_mod
   use vert_coord_mod
   use time_schemes_mod
   use operators_mod
-  use moist_mod
+  use tracer_mod
   use interp_mod
   use debug_mod
   use gas_mod
@@ -97,13 +97,14 @@ contains
     call vert_coord_init(namelist_path)
     call diag_state_init()
     call restart_init()
-    call adv_init()
+    call tracer_init()
     call pgf_init()
     call interp_init()
     call operators_init()
     call physics_init()
-    if (baroclinic) call moist_init()
-    call adv_allocate_tracers()
+    if (baroclinic) call tracer_add_moist()
+    call tracer_allocate()
+    call adv_init()
     call history_init_stage2()
 
     operators => space_operators
@@ -134,7 +135,6 @@ contains
       blocks(iblk)%mesh%full_dlev = global_mesh%full_dlev
       blocks(iblk)%mesh%half_dlev = global_mesh%half_dlev
       call blocks(iblk)%static%init_stage2()
-      if (baroclinic) call moist_link_state(blocks(iblk))
     end do
 
   end subroutine gmcore_init_stage2
@@ -159,9 +159,6 @@ contains
         end do
       end if
       call dstate%c2a()
-      if (baroclinic) then
-        call moist_link_state(block)
-      end if
       call calc_div(block, dstate)
       end associate
     end do
@@ -187,15 +184,12 @@ contains
       call time_advance(dt_dyn)
       ! ------------------------------------------------------------------------
       !                            Tracer Advection
-      do iblk = 1, size(blocks)
-        call adv_run(blocks(iblk), old)
-      end do
+      call adv_run(old)
       ! ------------------------------------------------------------------------
       !                                Physics
       call test_forcing_run(dt_dyn, old)
       if (baroclinic) then
         do iblk = 1, size(blocks)
-          call moist_link_state(blocks(iblk))
           call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
         end do
       end if
@@ -217,6 +211,7 @@ contains
     call interp_final()
     call gas_mixture_final()
     call vert_coord_final()
+    call tracer_final()
     call adv_final()
     call damp_final()
     call diag_state_final()

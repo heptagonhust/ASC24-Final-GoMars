@@ -24,6 +24,7 @@ module time_mod
   public time_has_alert
   public time_is_alerted
 
+  public start_time
   public curr_time
   public start_time_str
   public curr_time_str

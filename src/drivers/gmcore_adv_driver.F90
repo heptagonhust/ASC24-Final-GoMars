@@ -17,15 +17,12 @@ program gmcore_adv_driver
   integer iblk
 
   interface
-    subroutine set_ic_interface(block)
-      import block_type
-      type(block_type), intent(inout) :: block
+    subroutine set_ic_interface()
     end subroutine set_ic_interface
-    subroutine set_uv_interface(block, dstate, time_in_seconds)
-      import block_type, dstate_type, r8
-      type(block_type), intent(inout) :: block
-      type(dstate_type), intent(inout) :: dstate
+    subroutine set_uv_interface(time_in_seconds, itime)
+      import r8
       real(r8), intent(in) :: time_in_seconds
+      integer, intent(in) :: itime
     end subroutine set_uv_interface
   end interface
   procedure(set_ic_interface), pointer :: set_ic
@@ -75,23 +72,19 @@ program gmcore_adv_driver
 
   call gmcore_init_stage2(namelist_path)
 
-  do iblk = 1, size(blocks)
-    call set_uv(blocks(iblk), blocks(iblk)%dstate(old), elapsed_seconds)
-    call set_ic(blocks(iblk))
-    call adv_accum_wind(blocks(iblk), old)
-  end do
+  call set_uv(elapsed_seconds, old)
+  call set_ic()
+  call adv_accum_wind(old)
 
   call history_setup_h0_adv(blocks)
   call output(old)
-  call diagnose(blocks)
+  call diagnose()
   if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
   do while (.not. time_is_finished())
-    do iblk = 1, size(blocks)
-      call set_uv(blocks(iblk), blocks(iblk)%dstate(new), elapsed_seconds + dt_adv)
-      call adv_run(blocks(iblk), new)
-    end do
-    call diagnose(blocks)
+    call set_uv(elapsed_seconds + dt_adv, new)
+    call adv_run(new)
+    call diagnose()
     if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call time_advance(dt_adv)
     call output(old)
@@ -101,23 +94,19 @@ program gmcore_adv_driver
 
 contains
 
-  subroutine diagnose(blocks)
-
-    type(block_type), intent(inout) :: blocks(:)
+  subroutine diagnose()
 
     integer i, j, k, l, iblk
     real(r8) qm
 
-    qm = 0
     do iblk = 1, size(blocks)
-      associate (mesh => blocks(iblk)%mesh              , &
-                 old  => blocks(iblk)%adv_batches(1)%old, &
-                 q    => blocks(iblk)%adv_batches(1)%q  )
-      do l = 1, size(blocks(iblk)%adv_batches(1)%tracer_names)
+      associate (mesh => blocks(iblk)%mesh)
+      do l = 1, ntracers
+        qm = 0
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              qm = qm + q(i,j,k,l,old) * mesh%area_cell(j)
+              qm = qm + tracers(iblk)%q(i,j,k,l) * mesh%area_cell(j)
             end do
           end do
         end do

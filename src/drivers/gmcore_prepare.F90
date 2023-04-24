@@ -12,7 +12,7 @@ program gmcore_prepare
   use initial_mod
   use namelist_mod
   use damp_mod
-  use moist_mod
+  use tracer_mod
   use adv_mod
   use prepare_mod
 
@@ -64,9 +64,10 @@ program gmcore_prepare
   call damp_init()
   call prepare_topo()
   call vert_coord_init(scheme=vert_coord_scheme, template=vert_coord_template)
+  call tracer_init()
+  call tracer_add_moist()
+  call tracer_allocate()
   call adv_init()
-  call moist_init()
-  call adv_allocate_tracers()
   call prepare_bkg()
 
   if (initial_file == 'N/A') then

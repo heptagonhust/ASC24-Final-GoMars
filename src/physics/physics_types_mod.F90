@@ -3,6 +3,7 @@ module physics_types_mod
   use const_mod
   use namelist_mod
   use mesh_mod
+  use tracer_types_mod
 
   implicit none
 
@@ -14,77 +15,90 @@ module physics_types_mod
   type pstate_type
     integer :: ncol   = 0
     integer :: nlev   = 0
-    integer , allocatable, dimension(:  ) :: i
-    integer , allocatable, dimension(:  ) :: j
-    real(r8), allocatable, dimension(:  ) :: lon
-    real(r8), allocatable, dimension(:  ) :: lat
+    integer , allocatable, dimension(:    ) :: i
+    integer , allocatable, dimension(:    ) :: j
+    real(r8), allocatable, dimension(:    ) :: lon
+    real(r8), allocatable, dimension(:    ) :: lat
+    real(r8), allocatable, dimension(:    ) :: area     ! Cell area (m2)
     ! Wind
-    real(r8), allocatable, dimension(:,:) :: u
-    real(r8), allocatable, dimension(:,:) :: v
-    real(r8), allocatable, dimension(:  ) :: wsb      ! Wind speed on lowest model level (m s-1)
-    real(r8), allocatable, dimension(:  ) :: u10      ! U-wind speed at 10m (m s-1)
-    real(r8), allocatable, dimension(:  ) :: v10      ! V-wind speed at 10m (m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: u        ! U-wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: u_new    ! Updated u-wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: v        ! V-wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: v_new    ! Updated v-wind speed (m s-1)
+    real(r8), allocatable, dimension(:    ) :: wsb      ! Wind speed on lowest model level (m s-1)
+    real(r8), allocatable, dimension(:    ) :: u10      ! U-wind speed at 10m (m s-1)
+    real(r8), allocatable, dimension(:    ) :: v10      ! V-wind speed at 10m (m s-1)
     ! Temperature
-    real(r8), allocatable, dimension(:,:) :: t        ! Temperature (K)
-    real(r8), allocatable, dimension(:,:) :: tv       ! Virtual temperature (K)
-    real(r8), allocatable, dimension(:,:) :: pt       ! Potential temperature (K)
-    real(r8), allocatable, dimension(:,:) :: ptv      ! Virtual potential temperature (K)
+    real(r8), allocatable, dimension(:,:  ) :: t        ! Temperature (K)
+    real(r8), allocatable, dimension(:,:  ) :: t_new    ! Temperature (K)
+    real(r8), allocatable, dimension(:,:  ) :: tv       ! Virtual temperature (K)
+    real(r8), allocatable, dimension(:,:  ) :: pt       ! Potential temperature (K)
+    real(r8), allocatable, dimension(:,:  ) :: ptv      ! Virtual potential temperature (K)
     ! Pressure
-    real(r8), allocatable, dimension(:,:) :: ph       ! Hydrostatic pressure on full levels (Pa)
-    real(r8), allocatable, dimension(:,:) :: ph_lev   ! Hydrostatic pressure on half levels (Pa)
-    real(r8), allocatable, dimension(:,:) :: pkh      ! Exner function of hydrostatic pressure
-    real(r8), allocatable, dimension(:,:) :: dph      ! Hydrostatic pressure difference (Pa)
-    real(r8), allocatable, dimension(:,:) :: lnph_lev ! Logrithm of hydrostatic pressure on half levels
-    real(r8), pointer    , dimension(:,:) :: p        ! Pressure on full levels
-    real(r8), pointer    , dimension(:,:) :: p_lev    ! Pressure on half levels
-    real(r8), pointer    , dimension(:,:) :: pk       ! Exner function of pressure
-    real(r8), pointer    , dimension(:,:) :: dp       ! Pressure difference
-    real(r8), allocatable, dimension(:,:) :: rdp      ! 1 / dp
+    real(r8), allocatable, dimension(:,:  ) :: ph       ! Hydrostatic pressure on full levels (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: ph_lev   ! Hydrostatic pressure on half levels (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: pkh      ! Exner function of hydrostatic pressure
+    real(r8), allocatable, dimension(:,:  ) :: dph      ! Hydrostatic pressure difference (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: lnph_lev ! Logrithm of hydrostatic pressure on half levels
+    real(r8), pointer    , dimension(:,:  ) :: p        ! Pressure on full levels
+    real(r8), pointer    , dimension(:,:  ) :: p_lev    ! Pressure on half levels
+    real(r8), pointer    , dimension(:,:  ) :: pk       ! Exner function of pressure
+    real(r8), pointer    , dimension(:,:  ) :: dp       ! Pressure difference
+    real(r8), allocatable, dimension(:,:  ) :: rdp      ! 1 / dp
     ! Height
-    real(r8), allocatable, dimension(:,:) :: z        ! Height on full levels
-    real(r8), allocatable, dimension(:,:) :: z_lev    ! Height on half levels
-    real(r8), allocatable, dimension(:,:) :: dz       ! Height difference on full levels
+    real(r8), allocatable, dimension(:,:  ) :: z        ! Height on full levels
+    real(r8), allocatable, dimension(:,:  ) :: z_lev    ! Height on half levels
+    real(r8), allocatable, dimension(:,:  ) :: dz       ! Height difference on full levels
+    ! Tracers
+    real(r8), allocatable, dimension(:,:,:) :: q        ! Tracer mixing ratio
     ! Moisture
-    real(r8), allocatable, dimension(:,:) :: sh       ! Specific humidity
-    real(r8), allocatable, dimension(:,:) :: qv       ! Water vapor mixing ratio
-    real(r8), allocatable, dimension(:,:) :: qc       ! Cloud water mixing ratio
-    real(r8), allocatable, dimension(:,:) :: qi       ! Cloud ice mixing ratio
+    real(r8), allocatable, dimension(:,:  ) :: sh       ! Specific humidity
+    real(r8), pointer    , dimension(:,:  ) :: qv       ! Water vapor mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qc       ! Cloud water mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qi       ! Cloud ice mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qr       ! Rain mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qs       ! Snow mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qg       ! Grauple mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qh       ! Hail mixing ratio
+    ! Ozone
+    real(r8), pointer    , dimension(:,:  ) :: qo3      ! Ozone mixing ratio
     ! Stability
-    real(r8), allocatable, dimension(:,:) :: n2_lev   ! Square of Brunt-Väisälä frequency (s-2) on half levels
-    real(r8), allocatable, dimension(:,:) :: ri_lev   ! Local Richardson number on half levels
+    real(r8), allocatable, dimension(:,:  ) :: n2_lev   ! Square of Brunt-Väisälä frequency (s-2) on half levels
+    real(r8), allocatable, dimension(:,:  ) :: ri_lev   ! Local Richardson number on half levels
     ! Surface layer
-    real(r8), allocatable, dimension(:  ) :: emis     ! Surface emissivity
-    real(r8), allocatable, dimension(:  ) :: alb      ! Surface albedo
-    real(r8), allocatable, dimension(:  ) :: ps       ! Surface pressure (Pa)
-    real(r8), allocatable, dimension(:  ) :: ts       ! Surface temperature (K)
-    real(r8), allocatable, dimension(:  ) :: land     ! Land mask (1 for land, 2 for water)
-    real(r8), allocatable, dimension(:  ) :: hfx      ! Upward heat flux at surface (W m-2)
-    real(r8), allocatable, dimension(:  ) :: qfx      ! Upward moisture flux at surface (kg s-1 m-2)
-    real(r8), allocatable, dimension(:  ) :: z0       ! Roughness height
-    real(r8), allocatable, dimension(:  ) :: ustar    ! u* in similarity theory (m s-1)
-    real(r8), allocatable, dimension(:  ) :: psim     ! Similarity stability function for momentum
-    real(r8), allocatable, dimension(:  ) :: psih     ! Similarity stability function for heat
-    real(r8), allocatable, dimension(:  ) :: rib      ! Bulk Richardson number in surface layer
-    real(r8), allocatable, dimension(:  ) :: uos      ! Sea surface zonal current (m s-1)
-    real(r8), allocatable, dimension(:  ) :: vos      ! Sea surface meridional current (m s-1)
+    real(r8), allocatable, dimension(:    ) :: emis     ! Surface emissivity
+    real(r8), allocatable, dimension(:    ) :: alb      ! Surface albedo
+    real(r8), allocatable, dimension(:    ) :: ps       ! Surface pressure (Pa)
+    real(r8), allocatable, dimension(:    ) :: ts       ! Surface temperature (K)
+    real(r8), allocatable, dimension(:    ) :: land     ! Land mask (1 for land, 2 for water)
+    real(r8), allocatable, dimension(:    ) :: hfx      ! Upward heat flux at surface (W m-2)
+    real(r8), allocatable, dimension(:    ) :: qfx      ! Upward moisture flux at surface (kg s-1 m-2)
+    real(r8), allocatable, dimension(:    ) :: z0       ! Roughness height
+    real(r8), allocatable, dimension(:    ) :: ustar    ! u* in similarity theory (m s-1)
+    real(r8), allocatable, dimension(:    ) :: psim     ! Similarity stability function for momentum
+    real(r8), allocatable, dimension(:    ) :: psih     ! Similarity stability function for heat
+    real(r8), allocatable, dimension(:    ) :: rib      ! Bulk Richardson number in surface layer
+    real(r8), allocatable, dimension(:    ) :: uos      ! Sea surface zonal current (m s-1)
+    real(r8), allocatable, dimension(:    ) :: vos      ! Sea surface meridional current (m s-1)
     ! Boundary layer
-    real(r8), allocatable, dimension(:  ) :: pblh     ! PBL height (m)
-    integer , allocatable, dimension(:  ) :: pblk     ! PBL level index
-    real(r8), allocatable, dimension(:  ) :: wstar    ! Mixed-layer velocity scale (m s-1)
-    real(r8), allocatable, dimension(:,:) :: exch_h   ! Exchange coefficient for heat (K m s-1)
-    real(r8), allocatable, dimension(:,:) :: delta    ! Entrainment layer depth (m)
+    real(r8), allocatable, dimension(:    ) :: pblh     ! PBL height (m)
+    integer , allocatable, dimension(:    ) :: pblk     ! PBL level index
+    real(r8), allocatable, dimension(:    ) :: wstar    ! Mixed-layer velocity scale (m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: exch_h   ! Exchange coefficient for heat (K m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: delta    ! Entrainment layer depth (m)
     ! Precipitation
-    real(r8), allocatable, dimension(:  ) :: precl    ! Large scale precipitation
+    real(r8), allocatable, dimension(:    ) :: precl    ! Large scale precipitation
     ! Mars
-    real(r8), allocatable, dimension(:  ) :: co2ice   ! CO2 ice on the surface (Kg m-2)
+    real(r8), allocatable, dimension(:    ) :: co2ice   ! CO2 ice on the surface (Kg m-2)
     !
-    real(r8), allocatable, dimension(:,:) :: rho      ! Air density
-    real(r8), allocatable, dimension(:,:) :: cp       ! Specific heat capacity of total air in constant pressure
-    real(r8), allocatable, dimension(:,:) :: cv       ! Specific heat capacity of total air in constant volume
-    real(r8), allocatable, dimension(:,:) :: tep      ! Total enery in cp * T + gz + K
-    real(r8), allocatable, dimension(:,:) :: tev      ! Total enery in cv * T + gz + K
+    real(r8), allocatable, dimension(:,:  ) :: rho      ! Air density
+    real(r8), allocatable, dimension(:,:  ) :: cp       ! Specific heat capacity of total air in constant pressure
+    real(r8), allocatable, dimension(:,:  ) :: cv       ! Specific heat capacity of total air in constant volume
+    real(r8), allocatable, dimension(:,:  ) :: tep      ! Total enery in cp * T + gz + K
+    real(r8), allocatable, dimension(:,:  ) :: tev      ! Total enery in cv * T + gz + K
   contains
-    procedure :: init  => pstate_init
+    procedure :: init => pstate_init
+    procedure :: init_tracers => pstate_init_tracers
     procedure :: clear => pstate_clear
     final :: pstate_final
   end type pstate_type
@@ -133,6 +147,7 @@ contains
     allocate(this%j         (this%ncol            ))
     allocate(this%lon       (this%ncol            ))
     allocate(this%lat       (this%ncol            ))
+    allocate(this%area      (this%ncol            ))
     ! Wind
     allocate(this%u         (this%ncol,this%nlev  ))
     allocate(this%v         (this%ncol,this%nlev  ))
@@ -166,11 +181,6 @@ contains
     allocate(this%z         (this%ncol,this%nlev  ))
     allocate(this%z_lev     (this%ncol,this%nlev+1))
     allocate(this%dz        (this%ncol,this%nlev  ))
-    ! Moisture
-    allocate(this%sh        (this%ncol,this%nlev  ))
-    allocate(this%qv        (this%ncol,this%nlev  ))
-    allocate(this%qc        (this%ncol,this%nlev  ))
-    allocate(this%qi        (this%ncol,this%nlev  ))
     ! Stability
     allocate(this%n2_lev    (this%ncol,this%nlev+1))
     allocate(this%ri_lev    (this%ncol,this%nlev+1))
@@ -213,14 +223,37 @@ contains
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         icol = icol + 1
-        this%i  (icol) = i
-        this%j  (icol) = j
-        this%lon(icol) = mesh%full_lon(i)
-        this%lat(icol) = mesh%full_lat(j)
+        this%i   (icol) = i
+        this%j   (icol) = j
+        this%lon (icol) = mesh%full_lon(i)
+        this%lat (icol) = mesh%full_lat(j)
+        this%area(icol) = mesh%area_cell(j)
       end do
     end do
 
   end subroutine pstate_init
+
+  subroutine pstate_init_tracers(this)
+
+    class(pstate_type), intent(inout), target :: this
+
+    ! Tracers
+  if (ntracers > 0) then
+    allocate(this%q         (this%ncol,this%nlev,ntracers))
+  end if
+    ! Moisture
+    allocate(this%sh        (this%ncol,this%nlev))
+    if (idx_qv /= 0) this%qv => this%q(:,:,idx_qv)
+    if (idx_qc /= 0) this%qc => this%q(:,:,idx_qc)
+    if (idx_qi /= 0) this%qi => this%q(:,:,idx_qi)
+    if (idx_qr /= 0) this%qr => this%q(:,:,idx_qr)
+    if (idx_qs /= 0) this%qs => this%q(:,:,idx_qs)
+    if (idx_qg /= 0) this%qg => this%q(:,:,idx_qg)
+    if (idx_qh /= 0) this%qh => this%q(:,:,idx_qh)
+    ! Ozone
+    if (idx_qo3 /= 0) this%qo3 => this%q(:,:,idx_qo3)
+
+  end subroutine pstate_init_tracers
 
   subroutine pstate_clear(this)
 
@@ -258,11 +291,10 @@ contains
     if (allocated(this%z        )) deallocate(this%z        )
     if (allocated(this%z_lev    )) deallocate(this%z_lev    )
     if (allocated(this%dz       )) deallocate(this%dz       )
+    ! Tracers
+    if (allocated(this%q        )) deallocate(this%q        )
     ! Moisture
     if (allocated(this%sh       )) deallocate(this%sh       )
-    if (allocated(this%qv       )) deallocate(this%qv       )
-    if (allocated(this%qc       )) deallocate(this%qc       )
-    if (allocated(this%qi       )) deallocate(this%qi       )
     ! Stability
     if (allocated(this%n2_lev   )) deallocate(this%n2_lev   )
     if (allocated(this%ri_lev   )) deallocate(this%ri_lev   )

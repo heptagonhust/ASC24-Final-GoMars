@@ -4,6 +4,7 @@ module pole_damp_mod
   use time_mod
   use math_mod
   use block_mod
+  use tracer_mod
   use filter_mod
   use laplace_damp_mod
   use operators_mod
@@ -23,12 +24,12 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+    real(r8), pointer :: qv(:,:,:)
     real(r8) c, tmp(global_mesh%full_nlev)
 
     associate (mesh    => block%mesh  , &
                dmg     => dstate%dmg  , &
                pt      => dstate%pt   , &
-               qv      => dstate%qv   , &
                u_lon   => dstate%u_lon, &
                v_lat   => dstate%v_lat)
     if (use_pole_damp .and. baroclinic) then
@@ -53,6 +54,7 @@ contains
       call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! ----------------------------------------------------------------------
       if (time_is_alerted('moist')) then
+        call tracer_get_array(block%id, idx_qv, qv)
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide

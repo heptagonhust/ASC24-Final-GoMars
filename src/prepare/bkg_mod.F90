@@ -14,7 +14,7 @@ module bkg_mod
   use openmars_reader_mod
   use latlon_interp_mod
   use vert_interp_mod
-  use moist_mod
+  use tracer_mod
   use operators_mod
 
   implicit none
@@ -148,6 +148,7 @@ contains
 
   subroutine bkg_regrid_pt()
 
+    real(r8), pointer :: qv(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: t1, pt1, p1
     integer iblk, i, j, k
 
@@ -158,10 +159,10 @@ contains
                  mesh  => blocks(iblk)%mesh        , &
                  mg    => blocks(iblk)%dstate(1)%mg, & ! in
                  ph    => blocks(iblk)%dstate(1)%ph, & ! in
-                 qv    => blocks(iblk)%dstate(1)%qv, & ! in
                  t     => blocks(iblk)%dstate(1)%t , & ! out
                  tv    => blocks(iblk)%dstate(1)%tv, & ! out
                  pt    => blocks(iblk)%dstate(1)%pt)   ! out
+        call tracer_get_array(iblk, idx_qv, qv)
         select case (bkg_type)
         case ('era5')
           allocate(t1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -374,17 +375,17 @@ contains
 
   subroutine bkg_regrid_qv()
 
+    real(r8), pointer :: qv(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: q1, p1
     integer iblk, i, j, k
 
     if (proc%is_root()) call log_notice('Regrid water vapor mixing ratio.')
 
     do iblk = 1, size(blocks)
-      call moist_link_state(blocks(iblk))
       associate (block => blocks(iblk)             , &
-                 mesh  => blocks(iblk)%mesh        , &
-                 mg    => blocks(iblk)%dstate(1)%mg, & ! in
-                 qv    => blocks(iblk)%dstate(1)%qv)   ! out
+                 mesh  => blocks(iblk)%filter_mesh , &
+                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
+      call tracer_get_array(iblk, idx_qv, qv)
       select case (bkg_type)
       case ('era5')
         allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -414,7 +415,6 @@ contains
         deallocate(q1, p1)
       end select
       call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-      call calc_qm(block, 1)
       end associate
     end do
 

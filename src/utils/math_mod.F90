@@ -9,6 +9,7 @@ module math_mod
   public math_inv_matrix
   public tridiag_thomas
   public exp_two_values
+  public swap_two_values
 
   interface exp_two_values
     module procedure exp_two_values_r4
@@ -177,5 +178,18 @@ contains
     res = w * val1 + (1 - w) * val2
 
   end function exp_two_values_r8
+
+  subroutine swap_two_values(x, y)
+
+    integer, intent(inout) :: x
+    integer, intent(inout) :: y
+
+    integer tmp
+
+    tmp = x
+    x = y
+    y = tmp
+
+  end subroutine swap_two_values
 
 end module math_mod

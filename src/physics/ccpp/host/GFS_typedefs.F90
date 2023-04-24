@@ -45,9 +45,7 @@ module GFS_typedefs
 
   !--- parameter constants used for default initializations
   real(kind=kind_phys), parameter :: zero      = 0.0_kind_phys
-  !real(kind=kind_phys), parameter :: huge      = 9.9692099683868690E36 ! NetCDF float FillValue
   real(kind=kind_phys), parameter :: clear_val = zero
-  !real(kind=kind_phys), parameter :: clear_val = -9.9999e80
   real(kind=kind_phys), parameter :: rann_init = 0.6_kind_phys
   real(kind=kind_phys), parameter :: cn_one    = 1._kind_phys
   real(kind=kind_phys), parameter :: cn_100    = 100._kind_phys
@@ -61,7 +59,6 @@ module GFS_typedefs
   ! calculations previously in GFS_{physics,radiation}_driver.F90
   ! LTP=0: no extra top layer
   integer, parameter :: LTP = 0   ! no extra top layer
-  !integer, parameter :: LTP = 1   ! add an extra top layer
 
 !----------------
 ! Data Containers

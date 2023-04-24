@@ -8,6 +8,7 @@ module restart_mod
   use namelist_mod
   use time_mod
   use block_mod
+  use tracer_mod
   use parallel_mod
 
   implicit none
@@ -60,6 +61,7 @@ contains
     character(4) lon_dims_3d(4), lat_dims_3d(4), lev_dims_3d(4), cell_dims_3d(4)
     character(4) lon_dims_2d(3), lat_dims_2d(3),                 cell_dims_2d(3)
     real(8) time1, time2
+    real(r8), pointer, dimension(:,:,:) :: qv
 
     if (proc%is_root()) then
       call log_notice('Write restart.')
@@ -102,7 +104,7 @@ contains
   end if
     call fiona_add_var('r0', 'gzs' , long_name='surface geopotential height' , units='m2 s-2', dim_names=cell_dims_2d, dtype='r8')
 
-  if (associated(blocks(1)%dstate(itime)%qv)) then
+  if (idx_qv > 0) then
     call fiona_add_var('r0', 'qv'  , long_name='water vapor mixing ratio'    , units='kg kg-1', dim_names=cell_dims_3d, dtype='r8')
     call fiona_add_var('r0', 'moist_u0' , long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
     call fiona_add_var('r0', 'moist_v0' , long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
@@ -116,8 +118,8 @@ contains
     call fiona_output('r0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%half_nlon))
     call fiona_output('r0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%half_nlat))
     do iblk = 1, size(blocks)
-      associate (mesh   => blocks(iblk)%mesh        , &
-                 dstate  => blocks(iblk)%dstate(itime), &
+      associate (mesh   => blocks(iblk)%mesh         , &
+                 dstate => blocks(iblk)%dstate(itime), &
                  static => blocks(iblk)%static)
 
         is = mesh%full_ids; ie = mesh%full_ide
@@ -126,15 +128,16 @@ contains
         start = [is,js,ks]
         count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
 
-        call fiona_output('r0', 'gzs'   , static%gzs  (is:ie,js:je      ), start=start, count=count)
+        call fiona_output('r0', 'gzs'   , static%gzs   (is:ie,js:je      ), start=start, count=count)
       if (baroclinic) then
         call fiona_output('r0', 'mgs'   , dstate%mgs   (is:ie,js:je      ), start=start, count=count)
         call fiona_output('r0', 'pt'    , dstate%pt    (is:ie,js:je,ks:ke), start=start, count=count)
       else
         call fiona_output('r0', 'gz'    , dstate%gz    (is:ie,js:je,ks:ke), start=start, count=count)
       end if
-      if (associated(dstate%qv)) then
-        call fiona_output('r0', 'qv'    , dstate%qv    (is:ie,js:je,ks:ke), start=start, count=count)
+      if (idx_qv > 0) then
+        call tracer_get_array(iblk, idx_qv, qv)
+        call fiona_output('r0', 'qv'    , qv           (is:ie,js:je,ks:ke), start=start, count=count)
         associate (adv_batch => blocks(iblk)%adv_batches(1))
         is = mesh%half_ids; ie = mesh%half_ide
         js = mesh%full_jds; je = mesh%full_jde
@@ -210,6 +213,7 @@ contains
     integer iblk, time_step, is, ie, js, je, ks, ke
     integer start(3), count(3)
     real(r8) time_value, time1, time2
+    real(r8), pointer, dimension(:,:,:) :: qv
     character(50) time_units
 
     if (restart_file == 'N/A') then
@@ -252,9 +256,10 @@ contains
           call fill_halo(block%halo, dstate%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
         end if
 
-        if (associated(dstate%qv)) then
-          call fiona_input('r0', 'qv' , dstate%qv (is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-          call fill_halo(block%filter_halo, dstate%qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+        if (idx_qv > 0) then
+          call tracer_get_array(iblk, idx_qv, qv)
+          call fiona_input('r0', 'qv' , qv(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+          call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
           associate (adv_batch => block%adv_batches(1))
           is = mesh%half_ids; ie = mesh%half_ide
           js = mesh%full_jds; je = mesh%full_jde

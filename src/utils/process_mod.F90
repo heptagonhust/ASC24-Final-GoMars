@@ -220,7 +220,7 @@ contains
 
     if (.not. allocated(blocks)) allocate(blocks(1))
 
-    call blocks(1)%init_stage_1(proc%id, proc%ids, proc%ide, proc%jds, proc%jde)
+    call blocks(1)%init_stage_1(1, proc%ids, proc%ide, proc%jds, proc%jde)
 
     ! Each process calculate lon_hw from its big_filter%ngrid_lat(:) and big_filter%ngrid_lon(:).
     lon_hw = global_mesh%lon_hw

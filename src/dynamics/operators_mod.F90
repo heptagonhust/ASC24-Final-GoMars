@@ -6,6 +6,7 @@ module operators_mod
   use parallel_mod
   use formula_mod
   use namelist_mod
+  use tracer_mod
   use log_mod
   use pgf_mod
   use adv_mod
@@ -88,6 +89,7 @@ contains
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       if (hydrostatic) call calc_gz_lev   (blocks(iblk), blocks(iblk)%dstate(itime))
       call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
+      call tracer_calc_qm                 (blocks(iblk))
     end do
 
   end subroutine operators_prepare_1
@@ -166,22 +168,22 @@ contains
 
     integer i, j, k
 
-    associate (mesh    => block%mesh    , &
-               mg_lev  => dstate%mg_lev , & ! in
-               dmg     => dstate%dmg    , & ! in
-               qv      => dstate%qv     , & ! in FIXME: Should we use qm here?
-               ph_lev  => dstate%ph_lev , & ! out
-               pkh_lev => block%aux%pkh_lev, & ! out
-               ph      => dstate%ph     , & ! out
-               phs     => dstate%phs    , & ! pointer
-               ps      => dstate%ps     )   ! out
+    associate (mesh    => block%mesh          , &
+               mg_lev  => dstate%mg_lev       , & ! in
+               dmg     => dstate%dmg          , & ! in
+               qm      => tracers(block%id)%qm, & ! in
+               ph_lev  => dstate%ph_lev       , & ! out
+               pkh_lev => block%aux%pkh_lev   , & ! out
+               ph      => dstate%ph           , & ! out
+               phs     => dstate%phs          , & ! pointer
+               ps      => dstate%ps           )   ! out
     k = mesh%half_kds
     ph_lev(:,:,k) = mg_lev(:,:,k)
     pkh_lev(:,:,k) = ph_lev(:,:,k)**rd_o_cpd
     do k = mesh%half_kds + 1, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ph_lev(i,j,k) = ph_lev(i,j,k-1) + dmg(i,j,k-1) * (1 + qv(i,j,k-1))
+          ph_lev(i,j,k) = ph_lev(i,j,k-1) + dmg(i,j,k-1) * (1 + qm(i,j,k-1))
           pkh_lev(i,j,k) = ph_lev(i,j,k)**rd_o_cpd
         end do
       end do
@@ -205,22 +207,34 @@ contains
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
 
+    real(r8), pointer :: qv(:,:,:)
     integer i, j, k
 
     associate (mesh => block%mesh, &
                pt   => dstate%pt , & ! in
                ph   => dstate%ph , & ! in
-               qv   => dstate%qv , & ! in
                t    => dstate%t  , & ! out
                tv   => dstate%tv )   ! out
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k), qv(i,j,k))
-          tv(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt(i,j,k), ph(i,j,k)**rd_o_cpd, qv(i,j,k))
+    if (idx_qv > 0) then
+      call tracer_get_array(block%id, 'qv', qv)
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k), qv(i,j,k))
+            tv(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt(i,j,k), ph(i,j,k)**rd_o_cpd, qv(i,j,k))
+          end do
         end do
       end do
-    end do
+    else
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k), 0.0_r8)
+            tv(i,j,k) = t(i,j,k)
+          end do
+        end do
+      end do
+    end if
     end associate
 
   end subroutine calc_t

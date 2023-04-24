@@ -5,6 +5,7 @@ module pgf_lin97_mod
   use namelist_mod
   use parallel_mod
   use block_mod
+  use tracer_mod
 
   implicit none
 
@@ -43,14 +44,14 @@ contains
     !          | /
     !          |/
     !          o
-    associate (mesh    => block%mesh    , & ! in
-               qm      => dstate%qm     , & ! in
-               pkh_lev => block%aux%pkh_lev, & ! in
-               ph_lev  => dstate%ph_lev , & ! in
-               gz_lev  => dstate%gz_lev , & ! in
-               p_lev   => dstate%p_lev  , & ! in
-               du      => dtend%du      , & ! out
-               dv      => dtend%dv      )   ! out
+    associate (mesh    => block%mesh          , & ! in
+               qm      => tracers(block%id)%qm, & ! in
+               pkh_lev => block%aux%pkh_lev   , & ! in
+               ph_lev  => dstate%ph_lev       , & ! in
+               gz_lev  => dstate%gz_lev       , & ! in
+               p_lev   => dstate%p_lev        , & ! in
+               du      => dtend%du            , & ! out
+               dv      => dtend%dv            )   ! out
     if (hydrostatic) then
       do k = mesh%full_kds, mesh%full_kde
         !

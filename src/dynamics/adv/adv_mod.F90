@@ -4,9 +4,11 @@ module adv_mod
   use string
   use const_mod
   use namelist_mod
+  use math_mod
   use time_mod
   use block_mod
   use parallel_mod
+  use tracer_mod
   use adv_batch_mod
   use ffsl_mod
   use upwind_mod
@@ -21,8 +23,6 @@ module adv_mod
   public adv_prepare
   public adv_run
   public adv_final
-  public adv_add_tracer
-  public adv_allocate_tracers
   public adv_accum_wind
   public adv_calc_mass_hflx
   public adv_calc_mass_vflx
@@ -79,27 +79,17 @@ module adv_mod
     end subroutine calc_vflx_lev_interface
   end interface
 
-  interface adv_allocate_tracers
-    module procedure adv_allocate_tracers_1
-    module procedure adv_allocate_tracers_2
-  end interface adv_allocate_tracers
-
   procedure(calc_hflx_interface    ), pointer :: adv_calc_mass_hflx       => null()
   procedure(calc_vflx_interface    ), pointer :: adv_calc_mass_vflx       => null()
   procedure(calc_hflx_interface    ), pointer :: adv_calc_tracer_hflx     => null()
   procedure(calc_vflx_interface    ), pointer :: adv_calc_tracer_vflx     => null()
   procedure(calc_vflx_lev_interface), pointer :: adv_calc_tracer_vflx_lev => null()
 
-  integer :: ntracer = 0
-  character(30), dimension(1000) :: batch_names
-  character(30), dimension(1000) :: tracer_names
-  character(30), dimension(1000) :: tracer_long_names
-  character(30), dimension(1000) :: tracer_units
-  real(r8), dimension(1000) :: tracer_dt
-
 contains
 
   subroutine adv_init()
+
+    integer iblk, ibat, itra, n, idx(1000)
 
     call adv_final()
 
@@ -115,9 +105,39 @@ contains
       call log_error('Invalid adv_scheme ' // trim(adv_scheme) // '!', pid=proc%id)
     end select
 
-    ntracer = 0
-
     call tvd_init()
+
+    ! Initialize advection batches.
+    do iblk = 1, size(blocks)
+      if (.not. advection) then
+        call blocks(iblk)%adv_batch_pt%init(           &
+          blocks(iblk)%filter_mesh, blocks(iblk)%mesh, &
+          'cell', 'pt', dt_dyn, dynamic=.true.)
+      end if
+    end do
+
+    do iblk = 1, size(blocks)
+      allocate(blocks(iblk)%adv_batches(nbatches))
+      do ibat = 1, nbatches
+        n = 0
+        do itra = 1, ntracers
+          if (batch_names(ibat) == tracer_batches(itra)) then
+            n = n + 1
+            idx(n) = itra
+          end if
+        end do
+        call blocks(iblk)%adv_batches(ibat)%init(    &
+          blocks(iblk)%filter_mesh, blocks(iblk)%mesh, &
+          'cell', batch_names(ibat), batch_dts(ibat), dynamic=.false., idx=idx(1:n))
+      end do
+    end do
+
+    if (proc%is_root()) then
+      call log_notice('There are ' // to_str(size(blocks(1)%adv_batches)) // ' advection batches.')
+      do ibat = 1, size(blocks(1)%adv_batches)
+        write(*, *) '- ', trim(blocks(1)%adv_batches(ibat)%name), int(blocks(1)%adv_batches(ibat)%dt)
+      end do
+    end if
 
   end subroutine adv_init
 
@@ -136,289 +156,201 @@ contains
         end do
       end if
       call block%adv_batch_pt%copy_old_m(dstate%dmg)
-      if (.not. restart) call adv_accum_wind(block, itime)
       end associate
     end do
+    if (.not. restart) call adv_accum_wind(itime)
 
   end subroutine adv_prepare
 
-  subroutine adv_run(block, itime)
+  subroutine adv_run(itime)
 
-    type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    integer i, j, k, l, m
-    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
-    real(r8) pole(block%mesh%full_nlev), qm0, qm1, qm2, qm0_half
+    integer iblk, i, j, k, l, m
+    real(r8), pointer :: q_new(:,:,:)
+    real(r8), allocatable :: q_old(:,:,:)
+    real(r8), allocatable :: work(:,:), pole(:)
+    real(r8) qm0, qm1, qm2, qm0_half
 
-    call adv_accum_wind(block, itime)
+    call adv_accum_wind(itime)
 
-    if (.not. allocated(block%adv_batches)) return
+    if (.not. allocated(blocks(1)%adv_batches)) return
 
-    do m = 1, size(block%adv_batches)
-      if (time_is_alerted(block%adv_batches(m)%name)) then
-        do l = 1, size(block%adv_batches(m)%tracer_names)
-          associate (mesh    => block%mesh                  , &
-                     old     => block%adv_batches(m)%old    , &
-                     new     => block%adv_batches(m)%new    , &
-                     old_m   => block%adv_batches(m)%old_m  , & ! inout
-                     q       => block%adv_batches(m)%q      , & ! inout
-                     qmf_lon => block%adv_batches(m)%qmf_lon, & ! working array
-                     qmf_lat => block%adv_batches(m)%qmf_lat, & ! working array
-                     qmf_lev => block%adv_batches(m)%qmf_lev)   ! working array
-          ! Calculate tracer mass flux.
-          call adv_calc_tracer_hflx(block, block%adv_batches(m), q(:,:,:,l,old), qmf_lon, qmf_lat)
-          call fill_halo(block%halo, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
-                         south_halo=.false., north_halo=.false., east_halo=.false.)
-          call fill_halo(block%halo, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
-                         north_halo=.false.,  west_halo=.false., east_halo=.false.)
-          ! Update tracer mixing ratio.
-          do k = mesh%full_kds, mesh%full_kde
-            do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-              do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) - ( &
-                  (                                                &
-                    qmf_lon(i  ,j,k) -                             &
-                    qmf_lon(i-1,j,k)                               &
-                  ) * mesh%le_lon(j) + (                           &
-                    qmf_lat(i,j  ,k) * mesh%le_lat(j  ) -          &
-                    qmf_lat(i,j-1,k) * mesh%le_lat(j-1)            &
-                  )                                                &
-                ) / mesh%area_cell(j) * dt_adv
-              end do
-            end do
-          end do
-          if (mesh%has_south_pole()) then
-            j = mesh%full_jds
+    do iblk = 1, size(blocks)
+      associate (block  => blocks(iblk)                  , &
+                 dstate => blocks(iblk)%dstate(itime)    , &
+                 mesh   => blocks(iblk)%filter_mesh      , &
+                 m_new  => blocks(iblk)%dstate(itime)%dmg)
+      allocate(q_old(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
+      allocate(work(mesh%full_ids:mesh%full_ide,mesh%full_nlev))
+      allocate(pole(mesh%full_nlev))
+      do m = 1, size(block%adv_batches)
+        if (time_is_alerted(block%adv_batches(m)%name)) then
+          associate (batch => block%adv_batches(m), &
+                     is    => mesh%full_ims       , &
+                     ie    => mesh%full_ime       , &
+                     js    => mesh%full_jms       , &
+                     je    => mesh%full_jme       , &
+                     ks    => mesh%full_kms       , &
+                     ke    => mesh%full_kme       )
+          do l = 1, block%adv_batches(m)%ntracers
+            q_old(is:ie,js:je,ks:ke) =  tracers(block%id)%q(:,:,:,batch%idx(l))
+            q_new(is:ie,js:je,ks:ke) => tracers(block%id)%q(:,:,:,batch%idx(l))
+            associate (m_old   => batch%old_m  , & ! inout
+                       qmf_lon => batch%qmf_lon, & ! working array
+                       qmf_lat => batch%qmf_lat, & ! working array
+                       qmf_lev => batch%qmf_lev)   ! working array
+            ! Calculate tracer mass flux.
+            call adv_calc_tracer_hflx(block, batch, q_old, qmf_lon, qmf_lat)
+            call fill_halo(block%halo, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
+                           south_halo=.false., north_halo=.false., east_halo=.false.)
+            call fill_halo(block%halo, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
+                           north_halo=.false.,  west_halo=.false., east_halo=.false.)
+            ! Update tracer mixing ratio.
             do k = mesh%full_kds, mesh%full_kde
-              do i = mesh%full_ids, mesh%full_ide
-                work(i,k) = qmf_lat(i,j,k)
+              do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = m_old(i,j,k) * q_old(i,j,k) - ( &
+                    (                                            &
+                      qmf_lon(i  ,j,k) -                         &
+                      qmf_lon(i-1,j,k)                           &
+                    ) * mesh%le_lon(j) + (                       &
+                      qmf_lat(i,j  ,k) * mesh%le_lat(j  ) -      &
+                      qmf_lat(i,j-1,k) * mesh%le_lat(j-1)        &
+                    )                                            &
+                  ) / mesh%area_cell(j) * dt_adv
+                end do
               end do
             end do
-            call zonal_sum(proc%zonal_circle, work, pole)
-            pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
+            if (mesh%has_south_pole()) then
+              j = mesh%full_jds
+              do k = mesh%full_kds, mesh%full_kde
+                do i = mesh%full_ids, mesh%full_ide
+                  work(i,k) = qmf_lat(i,j,k)
+                end do
+              end do
+              call zonal_sum(proc%zonal_circle, work, pole)
+              pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
+              do k = mesh%full_kds, mesh%full_kde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = m_old(i,j,k) * q_old(i,j,k) - pole(k)
+                end do
+              end do
+            end if
+            if (mesh%has_north_pole()) then
+              j = mesh%full_jde
+              do k = mesh%full_kds, mesh%full_kde
+                do i = mesh%full_ids, mesh%full_ide
+                  work(i,k) = qmf_lat(i,j-1,k)
+                end do
+              end do
+              call zonal_sum(proc%zonal_circle, work, pole)
+              pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
+              do k = mesh%full_kds, mesh%full_kde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = m_old(i,j,k) * q_old(i,j,k) + pole(k)
+                end do
+              end do
+            end if
             do k = mesh%full_kds, mesh%full_kde
-              do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) - pole(k)
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
+                end do
               end do
             end do
-          end if
-          if (mesh%has_north_pole()) then
-            j = mesh%full_jde
+            ! Set upper and lower boundary conditions.
+            do k = mesh%full_kms, mesh%full_kds - 1
+              q_new(:,:,k) = q_new(:,:,mesh%full_kds)
+            end do
+            do k = mesh%full_kde + 1, mesh%full_kme
+              q_new(:,:,k) = q_new(:,:,mesh%full_kde)
+            end do
+            call adv_calc_tracer_vflx(block, block%adv_batches(m), q_new, qmf_lev)
             do k = mesh%full_kds, mesh%full_kde
-              do i = mesh%full_ids, mesh%full_ide
-                work(i,k) = qmf_lat(i,j-1,k)
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
+                end do
               end do
             end do
-            call zonal_sum(proc%zonal_circle, work, pole)
-            pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
+            ! Fill possible negative values.
             do k = mesh%full_kds, mesh%full_kde
-              do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) + pole(k)
-              end do
-            end do
-          end if
-          do k = mesh%full_kds, mesh%full_kde
-            do j = mesh%full_jds, mesh%full_jde
-              do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%dmg(i,j,k)
-              end do
-            end do
-          end do
-          ! Set upper and lower boundary conditions.
-          do k = mesh%full_kms, mesh%full_kds - 1
-            q(:,:,k,l,new) = q(:,:,mesh%full_kds,l,new)
-          end do
-          do k = mesh%full_kde + 1, mesh%full_kme
-            q(:,:,k,l,new) = q(:,:,mesh%full_kde,l,new)
-          end do
-          call adv_calc_tracer_vflx(block, block%adv_batches(m), q(:,:,:,l,new), qmf_lev)
-          do k = mesh%full_kds, mesh%full_kde
-            do j = mesh%full_jds, mesh%full_jde
-              do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = q(i,j,k,l,new) * block%dstate(itime)%dmg(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
-              end do
-            end do
-          end do
-          ! Fill possible negative values.
-          do k = mesh%full_kds, mesh%full_kde
-            do j = mesh%full_jds, mesh%full_jde
-              do i = mesh%full_ids, mesh%full_ide
-                if (q(i,j,k,l,new) < 0) then
-                  qm0 = q(i,j,k  ,l,new)
-                  qm1 = merge(q(i,j,k-1,l,new), 0.0_r8, k > mesh%full_kds)
-                  qm2 = merge(q(i,j,k+1,l,new), 0.0_r8, k < mesh%full_kde)
-                  qm0_half = 0.5_r8 * qm0
-                  if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
-                    if (qm1 > 0) q(i,j,k-1,l,new) = qm1 - qm0_half
-                    if (qm2 > 0) q(i,j,k+1,l,new) = qm2 - qm0_half
-                  else if (qm1 > qm0) then
-                    if (qm1 > 0) q(i,j,k-1,l,new) = qm1 - qm0
-                  else if (qm2 > qm0) then
-                    if (qm2 > 0) q(i,j,k+1,l,new) = qm2 - qm0
-                  else
-                    call log_error('Negative tracer!')
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  if (q_new(i,j,k) < 0) then
+                    qm0 = q_new(i,j,k)
+                    qm1 = merge(q_new(i,j,k-1), 0.0_r8, k > mesh%full_kds)
+                    qm2 = merge(q_new(i,j,k+1), 0.0_r8, k < mesh%full_kde)
+                    qm0_half = 0.5_r8 * qm0
+                    if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
+                      if (qm1 > 0) q_new(i,j,k-1) = qm1 - qm0_half
+                      if (qm2 > 0) q_new(i,j,k+1) = qm2 - qm0_half
+                    else if (qm1 > qm0) then
+                      if (qm1 > 0) q_new(i,j,k-1) = qm1 - qm0
+                    else if (qm2 > qm0) then
+                      if (qm2 > 0) q_new(i,j,k+1) = qm2 - qm0
+                    else
+                      call log_error('Negative tracer!')
+                    end if
+                    q_new(i,j,k) = 0
                   end if
-                  q(i,j,k,l,new) = 0
-                end if
+                end do
               end do
             end do
-          end do
-          do k = mesh%full_kds, mesh%full_kde
-            do j = mesh%full_jds, mesh%full_jde
-              do i = mesh%full_ids, mesh%full_ide
-                q(i,j,k,l,new) = q(i,j,k,l,new) / block%dstate(itime)%dmg(i,j,k)
+            do k = mesh%full_kds, mesh%full_kde
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
+                end do
               end do
             end do
+            call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+            end associate
           end do
-          call fill_halo(block%filter_halo, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end associate
-        end do
-        i = block%adv_batches(m)%old
-        block%adv_batches(m)%old = block%adv_batches(m)%new
-        block%adv_batches(m)%new = i
-      end if
-      call block%adv_batches(m)%copy_old_m(block%dstate(itime)%dmg)
+          if (block%adv_batches(m)%name == 'moist') call tracer_calc_qm(block)
+        end if
+        call block%adv_batches(m)%copy_old_m(m_new)
+      end do
+      deallocate(q_old, work, pole)
+      end associate
     end do
 
   end subroutine adv_run
 
-  subroutine adv_add_tracer(batch_name, dt, name, long_name, units)
+  subroutine adv_accum_wind(itime)
 
-    character(*), intent(in) :: batch_name
-    real(r8), intent(in) :: dt
-    character(*), intent(in) :: name
-    character(*), intent(in), optional :: long_name
-    character(*), intent(in), optional :: units
-
-    ntracer = ntracer + 1
-    if (ntracer > size(batch_names)) then
-      call log_error('Insufficient character array!', __FILE__, __LINE__, pid=proc%id)
-    end if
-    batch_names (ntracer) = batch_name
-    tracer_names(ntracer) = name
-    tracer_dt   (ntracer) = dt
-    if (present(long_name)) tracer_long_names(ntracer) = long_name
-    if (present(units    )) tracer_units     (ntracer) = units
-
-  end subroutine adv_add_tracer
-
-  subroutine adv_allocate_tracers_1(block)
-
-    type(block_type), intent(inout) :: block
-
-    integer nbatch, nbatch_tracer, i, j, k
-    logical found
-    character(30) unique_batch_names(100)
-    real(r8) unique_tracer_dt(100)
-
-    if (.not. advection) then
-      call block%adv_batch_pt%init(block%filter_mesh, block%mesh, 'cell', 'pt', dt_dyn, dynamic=.true.)
-    end if
-
-    nbatch = 0
-    do i = 1, ntracer
-      found = .false.
-      do j = 1, i - 1
-        if (i /= j .and. batch_names(i) == batch_names(j)) then
-          found = .true.
-          exit
-        end if
-      end do
-      if (.not. found) then
-        nbatch = nbatch + 1
-        unique_batch_names(nbatch) = batch_names(i)
-        unique_tracer_dt  (nbatch) = tracer_dt  (i)
-      end if
-    end do
-    if (nbatch == 0) return
-    if (allocated(block%adv_batches)) then
-      call log_error('Advection batches have already been alllocated!', pid=proc%id)
-    end if
-    if (proc%is_root()) then
-      call log_notice('There are ' // to_str(nbatch) // ' advection batches.')
-      do i = 1, nbatch
-        write(*, *) '- ', trim(unique_batch_names(i)), real(unique_tracer_dt(i))
-      end do
-    end if
-
-    ! Initialize advection batches in block objects and allocate tracer arrays in dstate objects.
-    allocate(block%adv_batches(nbatch))
-    do i = 1, nbatch
-      call block%adv_batches(i)%init(block%filter_mesh, block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i), dynamic=.false.)
-    end do
-
-    ! Record tracer information in advection batches.
-    do i = 1, nbatch
-      nbatch_tracer = 0
-      do j = 1, ntracer
-        if (batch_names(j) == block%adv_batches(i)%name) then
-          nbatch_tracer = nbatch_tracer + 1
-        end if
-      end do
-      call block%adv_batches(i)%allocate_tracers(nbatch_tracer)
-      associate (filter_mesh => block%filter_mesh, mesh => block%mesh)
-      allocate(block%adv_batches(i)%q(filter_mesh%full_ims:filter_mesh%full_ime, &
-                                      filter_mesh%full_jms:filter_mesh%full_jme, &
-                                      filter_mesh%full_kms:filter_mesh%full_kme,nbatch_tracer,2))
-      allocate(block%adv_batches(i)%qmf_lon(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
-      allocate(block%adv_batches(i)%qmf_lat(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
-      allocate(block%adv_batches(i)%qmf_lev(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
-      end associate
-      k = 0
-      do j = 1, ntracer
-        if (batch_names(j) == block%adv_batches(i)%name) then
-          k = k + 1
-          block%adv_batches(i)%tracer_names     (k) = tracer_names     (j)
-          block%adv_batches(i)%tracer_long_names(k) = tracer_long_names(j)
-          block%adv_batches(i)%tracer_units     (k) = tracer_units     (j)
-        end if
-      end do
-    end do
-
-  end subroutine adv_allocate_tracers_1
-
-  subroutine adv_allocate_tracers_2()
-
-    integer iblk
-
-    do iblk = 1, size(blocks)
-      call adv_allocate_tracers_1(blocks(iblk))
-    end do
-
-  end subroutine adv_allocate_tracers_2
-
-  subroutine adv_accum_wind(block, itime)
-
-    type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    integer l
+    integer iblk, l
 
-    if (allocated(block%adv_batches)) then
-      do l = 1, size(block%adv_batches)
-        select case (block%adv_batches(l)%loc)
-        case ('cell')
-          call block%adv_batches(l)%accum_uv_cell( &
-            block%dstate(itime)%u_lon            , &
-            block%dstate(itime)%v_lat            )
-          call block%adv_batches(l)%accum_mf_cell( &
-            block%dstate(itime)%mfx_lon          , &
-            block%dstate(itime)%mfy_lat          )
-          if (global_mesh%full_nlev > 1) then
-            call block%adv_batches(l)%accum_we_lev( &
-              block%dstate(itime)%we_lev          , &
-              block%dstate(itime)%dmg_lev         )
-          end if
-        end select
-      end do
-    end if
+    do iblk = 1, size(blocks)
+      associate (block   => blocks(iblk)                      , &
+                 u_lon   => blocks(iblk)%dstate(itime)%u_lon  , &
+                 v_lat   => blocks(iblk)%dstate(itime)%v_lat  , &
+                 mfx_lon => blocks(iblk)%dstate(itime)%mfx_lon, &
+                 mfy_lat => blocks(iblk)%dstate(itime)%mfy_lat, &
+                 we_lev  => blocks(iblk)%dstate(itime)%we_lev , &
+                 dmg_lev => blocks(iblk)%dstate(itime)%dmg_lev)
+      if (allocated(block%adv_batches)) then
+        do l = 1, size(block%adv_batches)
+          select case (block%adv_batches(l)%loc)
+          case ('cell')
+            call block%adv_batches(l)%accum_uv_cell(u_lon, v_lat)
+            call block%adv_batches(l)%accum_mf_cell(mfx_lon, mfy_lat)
+            if (global_mesh%full_nlev > 1) then
+              call block%adv_batches(l)%accum_we_lev(we_lev, dmg_lev)
+            end if
+          end select
+        end do
+      end if
+      end associate
+    end do
 
   end subroutine adv_accum_wind
 
   subroutine adv_final()
-
-    ntracer = 0
 
   end subroutine adv_final
 

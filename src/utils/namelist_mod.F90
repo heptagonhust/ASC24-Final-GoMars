@@ -44,8 +44,9 @@ module namelist_mod
   logical         :: advection            = .false.
   logical         :: restart              = .false.
 
-  character(30)   :: physics_suite        = 'none'
-  character(30)   :: pbl_scheme           = 'ysu'
+  character(30)   :: physics_suite        = 'N/A'
+  character(30)   :: mp_scheme            = 'N/A'
+  character(30)   :: pbl_scheme           = 'N/A'
 
   integer         :: num_proc_lon(20)     = 0
   integer         :: num_proc_lat(20)     = 0
@@ -235,6 +236,7 @@ module namelist_mod
     coarse_pole_mul           , &
     coarse_pole_decay         , &
     physics_suite             , &
+    mp_scheme                 , &
     pbl_scheme                , &
     use_topo_smooth           , &
     topo_max_slope            , &
@@ -317,6 +319,7 @@ contains
       write(*, *) 'coarse_pole_decay   = ', to_str(coarse_pole_decay, 3)
     end if
       write(*, *) 'physics_suite       = ', trim(physics_suite)
+      write(*, *) 'mp_scheme           = ', trim(mp_scheme)
       write(*, *) 'pbl_scheme          = ', trim(pbl_scheme)
       write(*, *) 'hydrostatic         = ', to_str(hydrostatic)
       write(*, *) 'nonhydrostatic      = ', to_str(nonhydrostatic)

@@ -1,10 +1,12 @@
 module dp_coupling_mod
 
   use const_mod
+  use namelist_mod
   use block_mod
   use physics_types_mod
   use formula_mod
   use parallel_mod
+  use tracer_mod
 
   implicit none
 
@@ -20,25 +22,35 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
+    real(r8), pointer, dimension(:,:,:) :: qv, qc, qi, qr, qs, qg, qh
     real(r8) tmp
     integer i, j, k, icol
 
-    associate (mesh     => block%mesh                   , &
-               pstate   => block%pstate                 , & ! out
-               u        => block%dstate(itime)%u        , & ! in
-               v        => block%dstate(itime)%v        , & ! in
-               pt       => block%dstate(itime)%pt       , & ! in
-               t        => block%dstate(itime)%t        , & ! in
-               ph       => block%dstate(itime)%ph       , & ! in
-               ph_lev   => block%dstate(itime)%ph_lev   , & ! in
-               dph      => block%dstate(itime)%dmg      , & ! in
-               p        => block%dstate(itime)%p        , & ! in
-               p_lev    => block%dstate(itime)%p_lev    , & ! in
-               gz       => block%dstate(itime)%gz       , & ! in
-               gz_lev   => block%dstate(itime)%gz_lev   , & ! in
-               ps       => block%dstate(itime)%phs      , & ! in
-               qv       => block%dstate(itime)%qv       , & ! in
-               land     => block%static%landmask        )   ! in
+    if (physics_suite == 'N/A') return
+
+    if (idx_qv > 0) call tracer_get_array(block%id, idx_qv, qv)
+    if (idx_qc > 0) call tracer_get_array(block%id, idx_qc, qc)
+    if (idx_qi > 0) call tracer_get_array(block%id, idx_qi, qi)
+    if (idx_qr > 0) call tracer_get_array(block%id, idx_qr, qr)
+    if (idx_qs > 0) call tracer_get_array(block%id, idx_qs, qs)
+    if (idx_qg > 0) call tracer_get_array(block%id, idx_qg, qg)
+    if (idx_qh > 0) call tracer_get_array(block%id, idx_qh, qh)
+
+    associate (mesh        => block%mesh                   , &
+               pstate      => block%pstate                 , & ! out
+               u           => block%dstate(itime)%u        , & ! in
+               v           => block%dstate(itime)%v        , & ! in
+               pt          => block%dstate(itime)%pt       , & ! in
+               t           => block%dstate(itime)%t        , & ! in
+               ph          => block%dstate(itime)%ph       , & ! in
+               ph_lev      => block%dstate(itime)%ph_lev   , & ! in
+               dph         => block%dstate(itime)%dmg      , & ! in
+               p           => block%dstate(itime)%p        , & ! in
+               p_lev       => block%dstate(itime)%p_lev    , & ! in
+               gz          => block%dstate(itime)%gz       , & ! in
+               gz_lev      => block%dstate(itime)%gz_lev   , & ! in
+               ps          => block%dstate(itime)%phs      , & ! in
+               land        => block%static%landmask        )   ! in
     ! Full levels
     do k = mesh%full_kds, mesh%full_kde
       icol = 0
@@ -50,7 +62,6 @@ contains
           pstate%pt       (icol,k) = pt(i,j,k)
           pstate%t        (icol,k) = temperature(pt(i,j,k), p(i,j,k), qv(i,j,k))
           pstate%sh       (icol,k) = specific_humidity(qv(i,j,k))
-          pstate%qv       (icol,k) = qv(i,j,k)
           pstate%tv       (icol,k) = virtual_temperature(pstate%t(icol,k), qv(i,j,k), qv(i,j,k))
           pstate%ptv      (icol,k) = virtual_potential_temperature(pstate%tv(icol,k), p(i,j,k))
           pstate%ph       (icol,k) = ph(i,j,k)
@@ -67,6 +78,14 @@ contains
           tmp = gz(i,j,k) + 0.5_r8 * (u(i,j,k)**2 + v(i,j,k)**2)
           pstate%tep      (icol,k) = pstate%cp(icol,k) * pstate%t(icol,k) + tmp
           pstate%tev      (icol,k) = pstate%cv(icol,k) * pstate%t(icol,k) + tmp
+          ! Copy tracers.
+          if (idx_qv > 0) pstate%q(icol,k,idx_qv) = qv(i,j,k)
+          if (idx_qc > 0) pstate%q(icol,k,idx_qc) = qc(i,j,k)
+          if (idx_qi > 0) pstate%q(icol,k,idx_qi) = qi(i,j,k)
+          if (idx_qr > 0) pstate%q(icol,k,idx_qr) = qr(i,j,k)
+          if (idx_qs > 0) pstate%q(icol,k,idx_qs) = qs(i,j,k)
+          if (idx_qg > 0) pstate%q(icol,k,idx_qg) = qg(i,j,k)
+          if (idx_qh > 0) pstate%q(icol,k,idx_qh) = qh(i,j,k)
         end do
       end do
     end do

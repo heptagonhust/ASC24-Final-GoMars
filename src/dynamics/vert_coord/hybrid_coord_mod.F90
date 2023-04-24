@@ -19,6 +19,7 @@ module hybrid_coord_mod
   public hybrid_coord_calc_mg
   public hybrid_coord_calc_mg_lev
   public hybrid_coord_calc_dmgdt_lev
+  public hyai, hybi
 
   real(r8), allocatable, dimension(:) :: hyai
   real(r8), allocatable, dimension(:) :: hybi

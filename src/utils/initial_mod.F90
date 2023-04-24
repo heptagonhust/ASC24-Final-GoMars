@@ -8,6 +8,7 @@ module initial_mod
   use namelist_mod
   use time_mod
   use block_mod
+  use tracer_mod
   use parallel_mod
 
   implicit none
@@ -31,6 +32,7 @@ contains
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
     real(8) time1, time2
+    real(r8), pointer, dimension(:,:,:) :: qv
 
     cell_dims   (1) =  'lon';  cell_dims   (2) =  'lat';  cell_dims   (3) =  'lev';     cell_dims(4) = 'time'
      lon_dims   (1) = 'ilon';   lon_dims   (2) =  'lat';   lon_dims   (3) =  'lev';      lon_dims(4) = 'time'
@@ -88,9 +90,10 @@ contains
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
 
       if (baroclinic) then
-        call fiona_output('i0', 'pt' , dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
-        if (associated(dstate%qv)) then
-          call fiona_output('i0', 'qv' , dstate%qv (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('i0', 'pt', dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
+        if (idx_qv > 0) then
+          call tracer_get_array(iblk, idx_qv, qv)
+          call fiona_output('i0', 'qv', qv(is:ie,js:je,ks:ke), start=start, count=count)
         end if
         call fiona_output('i0', 'mgs', dstate%mgs(is:ie,js:je      ), start=start, count=count)
         call fiona_output('i0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je), start=start, count=count)
@@ -143,6 +146,7 @@ contains
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
     real(8) time1, time2
+    real(r8), pointer, dimension(:,:,:) :: qv
 
     if (proc%is_root()) call cpu_time(time1)
 
@@ -178,9 +182,10 @@ contains
         call fill_halo(block%halo, dstate%mgs, full_lon=.true., full_lat=.true.)
         call fiona_input('i0', 'pt' , dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
         call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-        if (associated(dstate%qv)) then
-          call fiona_input('i0', 'qv' , dstate%qv (is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(block%filter_halo, dstate%qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+        if (idx_qv > 0) then
+          call tracer_get_array(iblk, idx_qv, qv)
+          call fiona_input('i0', 'qv' , qv(is:ie,js:je,ks:ke), start=start, count=count)
+          call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
         end if
       else
         call fiona_input('i0', 'z' , dstate%gz (is:ie,js:je,ks:ke), start=start, count=count)

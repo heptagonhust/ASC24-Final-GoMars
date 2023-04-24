@@ -10,10 +10,9 @@ module history_mod
   use time_mod
   use parallel_mod
   use allocator_mod
-  use mesh_mod
   use block_mod
   use diag_state_mod
-  use adv_batch_mod
+  use tracer_mod
 
   implicit none
 
@@ -180,28 +179,9 @@ contains
     call fiona_add_dim('h0', 'ilat' , size=global_mesh%half_nlat, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilev' , size=global_mesh%half_nlev, add_var=.true., decomp=.false.)
     ! Variables
-    associate (adv_batches => blocks(1)%adv_batches)
-    do i = 1, size(adv_batches)
-      do j = 1, size(adv_batches(i)%tracer_names)
-        call fiona_add_var('h0', adv_batches(i)%tracer_names(j), &
-                           long_name=adv_batches(i)%tracer_long_names(j), &
-                           units=adv_batches(i)%tracer_units(j), &
-                           dim_names=cell_dims_3d, dtype=output_h0_dtype)
-      end do
-      call fiona_add_var('h0', 'u'   , long_name='', units='', dim_names= lon_dims_3d)
-      call fiona_add_var('h0', 'v'   , long_name='', units='', dim_names= lat_dims_3d)
-      call fiona_add_var('h0', 'cflx', long_name='', units='', dim_names= lon_dims_3d)
-      call fiona_add_var('h0', 'cfly', long_name='', units='', dim_names= lat_dims_3d)
-      call fiona_add_var('h0', 'divx', long_name='', units='', dim_names=cell_dims_3d)
-      call fiona_add_var('h0', 'divy', long_name='', units='', dim_names=cell_dims_3d)
-      if (global_mesh%full_nlev > 1) then
-        call fiona_add_var('h0', 'z'    , long_name='', units='', dim_names=cell_dims_3d)
-        call fiona_add_var('h0', 'z_lev', long_name='', units='', dim_names= lev_dims_3d)
-        call fiona_add_var('h0', 'w'    , long_name='', units='', dim_names= lev_dims_3d)
-        call fiona_add_var('h0', 'cflz' , long_name='', units='', dim_names= lev_dims_3d)
-      end if
+    do i = 1, ntracers
+      call fiona_add_var('h0', tracer_names(i), long_name=tracer_long_names(i), units=tracer_units(i), dim_names=cell_dims_3d, dtype=output_h0_dtype)
     end do
-    end associate
 
   end subroutine history_setup_h0_adv
 
@@ -441,7 +421,7 @@ contains
     type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime 
 
-    integer iblk, is, ie, js, je, ks, ke, i, j
+    integer iblk, is, ie, js, je, ks, ke, i
     integer start(3), count(3)
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%full_nlon))
@@ -452,57 +432,14 @@ contains
     call fiona_output('h0', 'ilev', global_mesh%half_lev(1:global_mesh%half_nlev))
 
     do iblk = 1, size(blocks)
-      associate (mesh        => blocks(iblk)%mesh       , &
-                 adv_batches => blocks(iblk)%adv_batches, &
-                 dstate       => blocks(iblk)%dstate(itime))
-      do i = 1, size(adv_batches)
-        do j = 1, size(adv_batches(i)%tracer_names)
-          is = mesh%full_ids; ie = mesh%full_ide
-          js = mesh%full_jds; je = mesh%full_jde
-          ks = mesh%full_kds; ke = mesh%full_kde
-          start = [is,js,ks]
-          count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-          call fiona_output('h0', adv_batches(i)%tracer_names(j), &
-                            adv_batches(i)%q(is:ie,js:je,ks:ke,j,adv_batches(i)%old), &
-                            start=start, count=count)
-        end do
-        is = mesh%full_ids; ie = mesh%full_ide
-        js = mesh%full_jds; je = mesh%full_jde
-        ks = mesh%full_kds; ke = mesh%full_kde
-        start = [is,js,ks]
-        count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-        call fiona_output('h0', 'divx', adv_batches(i)%divx(is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 'divy', adv_batches(i)%divy(is:ie,js:je,ks:ke), start=start, count=count)
-        is = mesh%half_ids; ie = mesh%half_ide
-        js = mesh%full_jds; je = mesh%full_jde
-        ks = mesh%full_kds; ke = mesh%full_kde
-        start = [is,js,ks]
-        count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
-        call fiona_output('h0', 'u'   , adv_batches(i)%u   (is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 'cflx', adv_batches(i)%cflx(is:ie,js:je,ks:ke), start=start, count=count)
-        is = mesh%full_ids; ie = mesh%full_ide
-        js = mesh%half_jds; je = mesh%half_jde
-        ks = mesh%full_kds; ke = mesh%full_kde
-        start = [is,js,ks]
-        count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
-        call fiona_output('h0', 'v'   , adv_batches(i)%v   (is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 'cfly', adv_batches(i)%cfly(is:ie,js:je,ks:ke), start=start, count=count)
-        if (global_mesh%full_nlev > 1) then
-          is = mesh%full_ids; ie = mesh%full_ide
-          js = mesh%full_jds; je = mesh%full_jde
-          ks = mesh%full_kds; ke = mesh%full_kde
-          start = [is,js,ks]
-          count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-          call fiona_output('h0', 'z' , dstate%gz    (is:ie,js:je,ks:ke) / g, start=start, count=count)
-          is = mesh%full_ids; ie = mesh%full_ide
-          js = mesh%full_jds; je = mesh%full_jde
-          ks = mesh%half_kds; ke = mesh%half_kde
-          start = [is,js,ks]
-          count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
-          call fiona_output('h0', 'z_lev', dstate%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
-          call fiona_output('h0', 'w'    , adv_batches(i)%we  (is:ie,js:je,ks:ke), start=start, count=count)
-          call fiona_output('h0', 'cflz' , adv_batches(i)%cflz(is:ie,js:je,ks:ke), start=start, count=count)
-        end if
+      associate (mesh => blocks(iblk)%mesh)
+      is = mesh%full_ids; ie = mesh%full_ide
+      js = mesh%full_jds; je = mesh%full_jde
+      ks = mesh%full_kds; ke = mesh%full_kde
+      start = [is,js,ks]
+      count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
+      do i = 1, ntracers
+        call fiona_output('h0', tracer_names(i), tracers(iblk)%q(is:ie,js:je,ks:ke,i), start=start, count=count)
       end do
       end associate
     end do
@@ -516,6 +453,7 @@ contains
 
     integer iblk, is, ie, js, je, ks, ke, k
     integer start(3), count(3)
+    real(r8), pointer :: qv(:,:,:)
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%full_nlon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%full_nlat))
@@ -551,7 +489,8 @@ contains
       call fiona_output('h0', 'pt'      , dstate%pt     (is:ie,js:je,ks:ke)     , start=start, count=count)
       ! call fiona_output('h0', 't'       , dstate%t      (is:ie,js:je,ks:ke)     , start=start, count=count)
       ! call fiona_output('h0', 'div'     , aux%div       (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call fiona_output('h0', 'qv'      , dstate%qm     (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call tracer_get_array(iblk, idx_qv, qv)
+      call fiona_output('h0', 'qv'      , qv            (is:ie,js:je,ks:ke)     , start=start, count=count)
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%half_jds; je = mesh%half_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -561,10 +500,6 @@ contains
       
       call fiona_output('h0', 'tm'   , dstate%tm)
       call fiona_output('h0', 'te'   , dstate%te)
-      ! call fiona_output('h0', 'tpe'  , dstate%tpe)
-      ! call fiona_output('h0', 'te_ke', dstate%te_ke)
-      ! call fiona_output('h0', 'te_ie', dstate%te_ie)
-      ! call fiona_output('h0', 'te_pe', dstate%te_pe)
 
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde

@@ -154,12 +154,13 @@ set(gmcore_files
   src/dynamics/operators_mod.F90
   src/dynamics/filter_types_mod.F90
   src/dynamics/filter_mod.F90
-  src/dynamics/moist_mod.F90
   src/dynamics/damp/div_damp_mod.F90
   src/dynamics/damp/laplace_damp_mod.F90
   src/dynamics/damp/smag_damp_mod.F90
   src/dynamics/damp/pole_damp_mod.F90
   src/dynamics/damp/damp_mod.F90
+  src/dynamics/tracer_types_mod.F90
+  src/dynamics/tracer_mod.F90
   src/dynamics/adv/adv_batch_mod.F90
   src/dynamics/adv/adv_mod.F90
   src/dynamics/adv/limiter_mod.F90
@@ -185,6 +186,7 @@ set(gmcore_files
   src/physics/physics_mod.F90
   src/physics/test_forcing_mod.F90
   src/physics/simple_physics_v6.f90
+  src/physics/ccpp/host/ccpp_driver_mod.F90
   src/physics/pbl/pbl_ysu_mod.F90
   src/physics/pbl/pbl_driver_mod.F90
   src/tests/adv/deform_test_mod.F90

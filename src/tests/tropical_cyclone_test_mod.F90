@@ -116,6 +116,7 @@ CONTAINS
 
     use const_mod, only: r8
     use block_mod
+    use tracer_mod
     use formula_mod
     use vert_coord_mod
     use parallel_mod
@@ -123,7 +124,7 @@ CONTAINS
     type(block_type), intent(inout), target :: block
 
     integer i, j, k
-    real(r8), pointer :: q(:,:,:)
+    real(r8), pointer :: qv(:,:,:)
     real(r8) rho, thetav
 
     associate (mesh  => block%mesh,            &
@@ -138,10 +139,10 @@ CONTAINS
                v     => block%dstate(1)%v    , &
                v_lat => block%dstate(1)%v_lat, &
                t     => block%dstate(1)%t    , &
-               qv    => block%dstate(1)%qv   , &
                pt    => block%dstate(1)%pt   , &
                mgs   => block%dstate(1)%mgs  , &
                gzs   => block%static%gzs     )
+    call tracer_get_array(block%id, idx_qv, qv)
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         ! Get surface pressure.

@@ -20,34 +20,31 @@ module adv_batch_mod
     type(mesh_type), pointer :: mesh => null()
     character(10) :: loc  = 'cell'
     character(30) :: name = ''
-    logical  :: dynamic = .false.
-    integer  :: nstep   = 0 ! Number of dynamic steps for one adv step
-    integer  :: uv_step = 0 ! Step counter for u and v
-    integer  :: we_step = 0 ! Step counter for we
-    integer  :: mf_step = 0 ! Step counter for mass flux
-    integer  :: old     = 1 ! Index for old time level
-    integer  :: new     = 2 ! Index for new time level
-    real(r8) :: dt          ! Advection time step size in seconds
-    character(10), allocatable, dimension(:) :: tracer_names
-    character(30), allocatable, dimension(:) :: tracer_long_names
-    character(10), allocatable, dimension(:) :: tracer_units
-    real(r8), allocatable, dimension(:,:,:    ) :: old_m ! Recorded old mass for converting mixing ratio
-    real(r8), allocatable, dimension(:,:,:,:,:) :: q
-    real(r8), allocatable, dimension(:,:,:    ) :: qmf_lon
-    real(r8), allocatable, dimension(:,:,:    ) :: qmf_lat
-    real(r8), allocatable, dimension(:,:,:    ) :: qmf_lev
-    real(r8), allocatable, dimension(:,:,:    ) :: mfx
-    real(r8), allocatable, dimension(:,:,:    ) :: mfy
-    real(r8), allocatable, dimension(:,:,:    ) :: m , m0
-    real(r8), allocatable, dimension(:,:,:    ) :: u , u0
-    real(r8), allocatable, dimension(:,:,:    ) :: v , v0
-    real(r8), allocatable, dimension(:,:,:    ) :: we, we0
-    real(r8), allocatable, dimension(:,:,:    ) :: cflx ! CFL number along x-axis
-    real(r8), allocatable, dimension(:,:,:    ) :: cfly ! CFL number along y-axis
-    real(r8), allocatable, dimension(:,:,:    ) :: cflz ! CFL number along z-axis
-    real(r8), allocatable, dimension(:,:,:    ) :: divx ! Divergence along x-axis
-    real(r8), allocatable, dimension(:,:,:    ) :: divy ! Divergence along y-axis
-    real(r8), allocatable, dimension(:,:,:    ) :: qx   ! Tracer mixing ratio due to advective operator along x axis
+    logical  :: dynamic   = .false.
+    integer  :: ntracers  = 1
+    integer  :: nstep     = 0 ! Number of dynamic steps for one adv step
+    integer  :: uv_step   = 0 ! Step counter for u and v
+    integer  :: we_step   = 0 ! Step counter for we
+    integer  :: mf_step   = 0 ! Step counter for mass flux
+    real(r8) :: dt            ! Advection time step size in seconds
+    integer , allocatable, dimension(:    ) :: idx   ! Index of tracers in this batch
+    real(r8), allocatable, dimension(:,:,:) :: old_m ! Recorded old mass for converting mixing ratio
+    real(r8), allocatable, dimension(:,:,:) :: mfx
+    real(r8), allocatable, dimension(:,:,:) :: mfy
+    real(r8), allocatable, dimension(:,:,:) :: m , m0
+    real(r8), allocatable, dimension(:,:,:) :: u , u0
+    real(r8), allocatable, dimension(:,:,:) :: v , v0
+    real(r8), allocatable, dimension(:,:,:) :: we, we0
+    real(r8), allocatable, dimension(:,:,:) :: cflx ! CFL number along x-axis
+    real(r8), allocatable, dimension(:,:,:) :: cfly ! CFL number along y-axis
+    real(r8), allocatable, dimension(:,:,:) :: cflz ! CFL number along z-axis
+    real(r8), allocatable, dimension(:,:,:) :: divx ! Divergence along x-axis
+    real(r8), allocatable, dimension(:,:,:) :: divy ! Divergence along y-axis
+    ! The following arrays could be reused by different batches.
+    real(r8), allocatable, dimension(:,:,:) :: qmf_lon
+    real(r8), allocatable, dimension(:,:,:) :: qmf_lat
+    real(r8), allocatable, dimension(:,:,:) :: qmf_lev
+    real(r8), allocatable, dimension(:,:,:) :: qx   ! Tracer mixing ratio due to advective operator along x axis
     real(r8), allocatable, dimension(:,:,:) :: qy   ! Tracer mixing ratio due to advective operator along y axis
     real(r8), allocatable, dimension(:,:,:) :: qlx  ! Tracer mixing ratio at left cell edge along x axis
     real(r8), allocatable, dimension(:,:,:) :: qly  ! Tracer mixing ratio at left cell edge along y axis
@@ -56,19 +53,18 @@ module adv_batch_mod
     real(r8), allocatable, dimension(:,:,:) :: q6x  ! PPM mismatch at cell center along x axis
     real(r8), allocatable, dimension(:,:,:) :: q6y  ! PPM mismatch at cell center along y axis
   contains
-    procedure :: init             => adv_batch_init
-    procedure :: clear            => adv_batch_clear
-    procedure :: allocate_tracers => adv_batch_allocate_tracers
-    procedure :: copy_old_m       => adv_batch_copy_old_m
-    procedure :: accum_uv_cell    => adv_batch_accum_uv_cell
-    procedure :: accum_mf_cell    => adv_batch_accum_mf_cell
-    procedure :: accum_we_lev     => adv_batch_accum_we_lev
+    procedure :: init          => adv_batch_init
+    procedure :: clear         => adv_batch_clear
+    procedure :: copy_old_m    => adv_batch_copy_old_m
+    procedure :: accum_uv_cell => adv_batch_accum_uv_cell
+    procedure :: accum_mf_cell => adv_batch_accum_mf_cell
+    procedure :: accum_we_lev  => adv_batch_accum_we_lev
     final :: adv_batch_final
   end type adv_batch_type
 
 contains
 
-  subroutine adv_batch_init(this, filter_mesh, mesh, loc, name, dt, dynamic)
+  subroutine adv_batch_init(this, filter_mesh, mesh, loc, name, dt, dynamic, idx)
 
     class(adv_batch_type), intent(inout) :: this
     type(mesh_type), intent(in), target :: filter_mesh
@@ -77,6 +73,7 @@ contains
     character(*), intent(in) :: name
     real(r8), intent(in) :: dt
     logical, intent(in) :: dynamic
+    integer, intent(in), optional :: idx(:)
 
     call this%clear()
 
@@ -109,6 +106,9 @@ contains
       call allocate_array(mesh, this%cflz   , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%divx   , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%divy   , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%qmf_lon, half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%qmf_lat, full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%qmf_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
       select case (adv_scheme)
       case ('ffsl')
         call allocate_array(filter_mesh, this%qx, full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -126,6 +126,12 @@ contains
       call log_error('Invalid grid location ' // trim(loc) // '!', __FILE__, __LINE__)
     end select
 
+    if (present(idx)) then
+      this%ntracers = size(idx)
+      allocate(this%idx(this%ntracers))
+      this%idx = idx
+    end if
+
     call time_add_alert(name, seconds=dt/time_scale)
 
   end subroutine adv_batch_init
@@ -139,20 +145,14 @@ contains
     this%name      = ''
     this%dt        = 0
     this%dynamic   = .false.
+    this%ntracers  = 0
     this%nstep     = 0
     this%uv_step   = 0
     this%we_step   = 0
     this%mf_step   = 0
 
-    if (allocated(this%tracer_names     )) deallocate(this%tracer_names     )
-    if (allocated(this%tracer_long_names)) deallocate(this%tracer_long_names)
-    if (allocated(this%tracer_units     )) deallocate(this%tracer_units     )
-
+    if (allocated(this%idx    )) deallocate(this%idx    )
     if (allocated(this%old_m  )) deallocate(this%old_m  )
-    if (allocated(this%q      )) deallocate(this%q      )
-    if (allocated(this%qmf_lon)) deallocate(this%qmf_lon)
-    if (allocated(this%qmf_lat)) deallocate(this%qmf_lat)
-    if (allocated(this%qmf_lev)) deallocate(this%qmf_lev)
     if (allocated(this%mfx    )) deallocate(this%mfx    )
     if (allocated(this%mfy    )) deallocate(this%mfy    )
     if (allocated(this%m      )) deallocate(this%m      )
@@ -164,6 +164,9 @@ contains
     if (allocated(this%cflz   )) deallocate(this%cflz   )
     if (allocated(this%divx   )) deallocate(this%divx   )
     if (allocated(this%divy   )) deallocate(this%divy   )
+    if (allocated(this%qmf_lon)) deallocate(this%qmf_lon)
+    if (allocated(this%qmf_lat)) deallocate(this%qmf_lat)
+    if (allocated(this%qmf_lev)) deallocate(this%qmf_lev)
     if (allocated(this%qx     )) deallocate(this%qx     )
     if (allocated(this%qy     )) deallocate(this%qy     )
     if (allocated(this%qlx    )) deallocate(this%qlx    )
@@ -174,17 +177,6 @@ contains
     if (allocated(this%q6y    )) deallocate(this%q6y    )
 
   end subroutine adv_batch_clear
-
-  subroutine adv_batch_allocate_tracers(this, ntracer)
-
-    class(adv_batch_type), intent(inout) :: this
-    integer, intent(in) :: ntracer
-
-    allocate(this%tracer_names     (ntracer))
-    allocate(this%tracer_long_names(ntracer))
-    allocate(this%tracer_units     (ntracer))
-
-  end subroutine adv_batch_allocate_tracers
 
   subroutine adv_batch_copy_old_m(this, m)
 

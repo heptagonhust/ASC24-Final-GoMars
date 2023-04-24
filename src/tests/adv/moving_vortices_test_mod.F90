@@ -7,6 +7,7 @@ module moving_vortices_test_mod
   use history_mod
   use block_mod
   use adv_mod
+  use tracer_mod
 
   implicit none
 
@@ -44,81 +45,81 @@ contains
 
   end subroutine moving_vortices_test_init
 
-  subroutine moving_vortices_test_set_ic(block)
+  subroutine moving_vortices_test_set_ic()
 
-    type(block_type), intent(inout) :: block
-
-    integer i, j
+    integer iblk, i, j
     real(8) lon, lat, lonr, latr
 
-    call adv_add_tracer('moving_vortices', dt, 'q0', 'background tracer')
-    call adv_add_tracer('moving_vortices', dt, 'q1', 'vortex tracer')
+    call tracer_add('moving_vortices', dt, 'q0', 'background tracer')
+    call tracer_add('moving_vortices', dt, 'q1', 'vortex tracer'    )
 
-    call adv_allocate_tracers(block)
+    call tracer_allocate()
 
-    associate (mesh => block%mesh              , &
-               old  => block%adv_batches(1)%old, &
-               q    => block%adv_batches(1)%q  )
-    ! Background tracer
-    q(:,:,:,1,old) = 1
-    ! Vortex tracer 
-    do j = mesh%full_jds, mesh%full_jde
-      lat = mesh%full_lat(j)
-      do i = mesh%full_ids, mesh%full_ide
-        lon = mesh%full_lon(i)
-        call rotation_transform(lonv0, latv0, lon, lat, lonr, latr)
-        q(i,j,1,2,old) = 1 - tanh(rho(latr) / gamma * sin(lonr))
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk), mesh => blocks(iblk)%mesh)
+      ! Background tracer
+      tracers(iblk)%q(:,:,:,1) = 1
+      ! Vortex tracer 
+      do j = mesh%full_jds, mesh%full_jde
+        lat = mesh%full_lat(j)
+        do i = mesh%full_ids, mesh%full_ide
+          lon = mesh%full_lon(i)
+          call rotation_transform(lonv0, latv0, lon, lat, lonr, latr)
+          tracers(iblk)%q(i,j,1,2) = 1 - tanh(rho(latr) / gamma * sin(lonr))
+        end do
       end do
+      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+      end associate
     end do
-    call fill_halo(block%filter_halo, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
-    end associate
 
   end subroutine moving_vortices_test_set_ic
 
-  subroutine moving_vortices_test_set_uv(block, dstate, time_in_seconds)
+  subroutine moving_vortices_test_set_uv(time_in_seconds, itime)
 
-    type(block_type), intent(inout) :: block
-    type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: time_in_seconds
+    integer, intent(in) :: itime
 
-    integer i, j
+    integer iblk, i, j
     real(8) lon, lat, dlon, latr
 
     lonvr = lonvr0 + u0 / radius * time_in_seconds
     if (lonvr > pi2) lonvr = lonvr - pi2
     call inverse_rotation_transform(lonp0, latp0, lonv, latv, lonvr, latvr)
 
-    associate (mesh => block%mesh    , &
-               dmg  => dstate%dmg    , &
-               u    => dstate%u_lon  , &
-               v    => dstate%v_lat  , &
-               mfx  => dstate%mfx_lon, &
-               mfy  => dstate%mfy_lat)
-    dmg = 1
-    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      lat = mesh%full_lat(j)
-      do i = mesh%half_ids, mesh%half_ide
-        lon = mesh%half_lon(i)
-        dlon = lon - lonv
-        call rotation_transform(lonv, latv, lon, lat, lat_r=latr)
-        u(i,j,1) = u0 * (cos(lat) * cos(alpha) + sin(lat) * cos(lon) * sin(alpha)) + &
-                   a_omg(latr) * (sin(latv) * cos(lat) - cos(latv) * cos(dlon) * sin(lat))
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)                      , &
+                 mesh  => blocks(iblk)%mesh                 , &
+                 dmg   => blocks(iblk)%dstate(itime)%dmg    , &
+                 u     => blocks(iblk)%dstate(itime)%u_lon  , &
+                 v     => blocks(iblk)%dstate(itime)%v_lat  , &
+                 mfx   => blocks(iblk)%dstate(itime)%mfx_lon, &
+                 mfy   => blocks(iblk)%dstate(itime)%mfy_lat)
+      dmg = 1
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        lat = mesh%full_lat(j)
+        do i = mesh%half_ids, mesh%half_ide
+          lon = mesh%half_lon(i)
+          dlon = lon - lonv
+          call rotation_transform(lonv, latv, lon, lat, lat_r=latr)
+          u(i,j,1) = u0 * (cos(lat) * cos(alpha) + sin(lat) * cos(lon) * sin(alpha)) + &
+                     a_omg(latr) * (sin(latv) * cos(lat) - cos(latv) * cos(dlon) * sin(lat))
+        end do
       end do
-    end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    mfx = u
-    do j = mesh%half_jds, mesh%half_jde
-      lat = mesh%half_lat(j)
-      do i = mesh%full_ids, mesh%full_ide
-        lon = mesh%full_lon(i)
-        dlon = lon - lonv
-        call rotation_transform(lonv, latv, lon, lat, lat_r=latr)
-        v(i,j,1) = -u0 * sin(lon) * sin(alpha) + a_omg(latr) * cos(latv) * sin(dlon)
+      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      mfx = u
+      do j = mesh%half_jds, mesh%half_jde
+        lat = mesh%half_lat(j)
+        do i = mesh%full_ids, mesh%full_ide
+          lon = mesh%full_lon(i)
+          dlon = lon - lonv
+          call rotation_transform(lonv, latv, lon, lat, lat_r=latr)
+          v(i,j,1) = -u0 * sin(lon) * sin(alpha) + a_omg(latr) * cos(latv) * sin(dlon)
+        end do
       end do
+      call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      mfy = v
+      end associate
     end do
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
-    mfy = v
-    end associate
 
   end subroutine moving_vortices_test_set_uv
 

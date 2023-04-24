@@ -4,11 +4,12 @@ module physics_mod
   use namelist_mod
   use time_mod
   use block_mod
+  use tracer_mod
   use physics_types_mod
-  use moist_mod
   use dp_coupling_mod
   use parallel_mod
   use formula_mod
+  use operators_mod
   use pbl_driver_mod
 
   implicit none
@@ -42,6 +43,7 @@ contains
     integer, intent(in) :: itime
     real(r8), intent(in) :: dt
 
+    real(r8), pointer, dimension(:,:,:) :: qv
     integer i, j, k
 
     if (.not. time_is_alerted('phys')) return
@@ -108,15 +110,16 @@ contains
     end if
 
     if (ptend%updated_sh) then
+      call tracer_get_array(block%id, idx_qv, qv)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            dstate%qv(i,j,k) = mixing_ratio(specific_humidity(dstate%qv(i,j,k)) + dt * dtend%dshdt_phys(i,j,k))
+            qv(i,j,k) = mixing_ratio(specific_humidity(qv(i,j,k)) + dt * dtend%dshdt_phys(i,j,k))
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, dstate%qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-      call calc_qm(block, itime)
+      call fill_halo(block%filter_halo, qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call tracer_calc_qm(block)
     end if
 
     if (ptend%updated_t) then
@@ -124,7 +127,7 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             dstate%t (i,j,k) = dstate%t(i,j,k) + dt * dtend%dtdt_phys(i,j,k)
-            dstate%pt(i,j,k) = potential_temperature(dstate%t(i,j,k), dstate%p(i,j,k), dstate%qv(i,j,k))
+            dstate%pt(i,j,k) = potential_temperature(dstate%t(i,j,k), dstate%p(i,j,k), qv(i,j,k))
           end do
         end do
       end do
