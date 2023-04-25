@@ -17,6 +17,7 @@ module tracer_mod
   public tracer_allocate
   public tracer_get_idx
   public tracer_get_array
+  public tracer_get_array_qm
   public tracer_calc_qm
   public ntracers
   public ntracers_water
@@ -50,13 +51,13 @@ contains
 
     call tracer_final()
 
-    allocate(batch_names      (10))
-    allocate(batch_dts        (10))
-    allocate(tracer_batches   (100))
-    allocate(tracer_names     (100))
-    allocate(tracer_long_names(100))
-    allocate(tracer_units     (100)); tracer_units = 'kg kg-1'
-    allocate(tracer_types     (100)); tracer_types = 0
+    allocate(batch_names      (10 )); batch_names       = 'N/A'
+    allocate(batch_dts        (10 )); batch_dts         = 0
+    allocate(tracer_batches   (100)); tracer_batches    = 'N/A'
+    allocate(tracer_names     (100)); tracer_names      = 'N/A'
+    allocate(tracer_long_names(100)); tracer_long_names = 'N/A'
+    allocate(tracer_units     (100)); tracer_units      = 'kg kg-1'
+    allocate(tracer_types     (100)); tracer_types      = 0
 
   end subroutine tracer_init
 
@@ -81,7 +82,7 @@ contains
     if (allocated(tracer_long_names)) deallocate(tracer_long_names)
     if (allocated(tracer_units     )) deallocate(tracer_units     )
     if (allocated(tracer_types     )) deallocate(tracer_types     )
-    if (allocated(tracers    )) deallocate(tracers    )
+    if (allocated(tracers          )) deallocate(tracers          )
 
   end subroutine tracer_final
 
@@ -135,38 +136,38 @@ contains
 
   subroutine tracer_allocate()
 
-    integer iblk, ibat, itra
+    integer iblk, ibat, i
 
     if (nbatches == 0) return
 
     ! Set tracer indices.
-    do itra = 1, ntracers
-      select case (tracer_names(itra))
+    do i = 1, ntracers
+      select case (tracer_names(i))
       case ('qv')
-        idx_qv    = itra; ntracers_water = ntracers_water + 1
+        idx_qv    = i; ntracers_water = ntracers_water + 1
       case ('qc')
-        idx_qc    = itra; ntracers_water = ntracers_water + 1
+        idx_qc    = i; ntracers_water = ntracers_water + 1
       case ('qi')
-        idx_qi    = itra; ntracers_water = ntracers_water + 1
+        idx_qi    = i; ntracers_water = ntracers_water + 1
       case ('qr')
-        idx_qr    = itra; ntracers_water = ntracers_water + 1
+        idx_qr    = i; ntracers_water = ntracers_water + 1
       case ('qs')
-        idx_qs    = itra; ntracers_water = ntracers_water + 1
+        idx_qs    = i; ntracers_water = ntracers_water + 1
       case ('qg')
-        idx_qg    = itra; ntracers_water = ntracers_water + 1
+        idx_qg    = i; ntracers_water = ntracers_water + 1
       case ('qh')
-        idx_qh    = itra; ntracers_water = ntracers_water + 1
+        idx_qh    = i; ntracers_water = ntracers_water + 1
       case ('qo3')
-        idx_qo3   = itra
+        idx_qo3   = i
       case ('qso2')
-        idx_qso2  = itra
+        idx_qso2  = i
       end select
     end do
 
     ! Allocate tracer arrays for each block.
     allocate(tracers(size(blocks)))
     do iblk = 1, size(blocks)
-      call tracers(iblk)%init(blocks(iblk)%filter_mesh)
+      call tracers(iblk)%init(blocks(iblk)%mesh, blocks(iblk)%filter_mesh)
     end do
 
     ! Allocate tracer arrays in physics state.
@@ -201,7 +202,8 @@ contains
     if (idx < 1) then
       call log_error('Failed to get tracer array!', __FILE__, __LINE__, pid=proc%id)
     end if
-    associate (mesh => tracers(iblk)%mesh)
+    associate (mesh => tracers(iblk)%filter_mesh)
+    ! NOTE: q is on filter_mesh.
     q(mesh%full_ims:mesh%full_ime, &
       mesh%full_jms:mesh%full_jme, &
       mesh%full_kms:mesh%full_kme) => tracers(iblk)%q(:,:,:,idx)
@@ -299,5 +301,19 @@ contains
     end associate
 
   end subroutine tracer_calc_qm
+
+  subroutine tracer_get_array_qm(iblk, qm)
+
+    integer, intent(in) :: iblk
+    real(r8), intent(out), pointer :: qm(:,:,:)
+
+    associate (mesh => tracers(iblk)%mesh)
+    ! NOTE: qm is on mesh. This is different from q which is on filter_mesh.
+    qm(mesh%full_ims:mesh%full_ime, &
+       mesh%full_jms:mesh%full_jme, &
+       mesh%full_kms:mesh%full_kme) => tracers(iblk)%qm
+    end associate
+
+  end subroutine tracer_get_array_qm
 
 end module tracer_mod

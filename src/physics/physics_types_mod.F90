@@ -13,8 +13,8 @@ module physics_types_mod
   public ptend_type
 
   type pstate_type
-    integer :: ncol   = 0
-    integer :: nlev   = 0
+    integer :: ncol = 0
+    integer :: nlev = 0
     integer , allocatable, dimension(:    ) :: i
     integer , allocatable, dimension(:    ) :: j
     real(r8), allocatable, dimension(:    ) :: lon
@@ -35,33 +35,31 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:  ) :: pt       ! Potential temperature (K)
     real(r8), allocatable, dimension(:,:  ) :: ptv      ! Virtual potential temperature (K)
     ! Pressure
-    real(r8), allocatable, dimension(:,:  ) :: ph       ! Hydrostatic pressure on full levels (Pa)
-    real(r8), allocatable, dimension(:,:  ) :: ph_lev   ! Hydrostatic pressure on half levels (Pa)
-    real(r8), allocatable, dimension(:,:  ) :: pkh      ! Exner function of hydrostatic pressure
-    real(r8), allocatable, dimension(:,:  ) :: dph      ! Hydrostatic pressure difference (Pa)
-    real(r8), allocatable, dimension(:,:  ) :: lnph_lev ! Logrithm of hydrostatic pressure on half levels
-    real(r8), pointer    , dimension(:,:  ) :: p        ! Pressure on full levels
-    real(r8), pointer    , dimension(:,:  ) :: p_lev    ! Pressure on half levels
-    real(r8), pointer    , dimension(:,:  ) :: pk       ! Exner function of pressure
-    real(r8), pointer    , dimension(:,:  ) :: dp       ! Pressure difference
+    real(r8), allocatable, dimension(:,:  ) :: p        ! Full pressure (hydrostatic) on full levels (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: p_lev    ! Full pressure (hydrostatic) on half levels (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: pk       ! Exner function of full pressure (hydrostatic) on full levels
+    real(r8), allocatable, dimension(:,:  ) :: pk_lev   ! Exner function of full pressure (hydrostatic) on half levels
+    real(r8), allocatable, dimension(:,:  ) :: dp       ! Full pressure thickness (Pa)
     real(r8), allocatable, dimension(:,:  ) :: rdp      ! 1 / dp
+    real(r8), allocatable, dimension(:,:  ) :: lnp_lev  ! Logrithm of full pressure on half levels
+    real(r8), allocatable, dimension(:,:  ) :: omg      ! Vertical pressure velocity (Pa s-1)
     ! Height
     real(r8), allocatable, dimension(:,:  ) :: z        ! Height on full levels
     real(r8), allocatable, dimension(:,:  ) :: z_lev    ! Height on half levels
-    real(r8), allocatable, dimension(:,:  ) :: dz       ! Height difference on full levels
+    real(r8), allocatable, dimension(:,:  ) :: dz       ! Height thickness on full levels
     ! Tracers
-    real(r8), allocatable, dimension(:,:,:) :: q        ! Tracer mixing ratio
+    ! NOTE: Dynamical core uses dry mixing ratios, but physics uses moist mixing ratios.
+    real(r8), allocatable, dimension(:,:,:) :: q        ! Tracer mixing ratio (moist)
     ! Moisture
-    real(r8), allocatable, dimension(:,:  ) :: sh       ! Specific humidity
-    real(r8), pointer    , dimension(:,:  ) :: qv       ! Water vapor mixing ratio
-    real(r8), pointer    , dimension(:,:  ) :: qc       ! Cloud water mixing ratio
-    real(r8), pointer    , dimension(:,:  ) :: qi       ! Cloud ice mixing ratio
-    real(r8), pointer    , dimension(:,:  ) :: qr       ! Rain mixing ratio
-    real(r8), pointer    , dimension(:,:  ) :: qs       ! Snow mixing ratio
-    real(r8), pointer    , dimension(:,:  ) :: qg       ! Grauple mixing ratio
-    real(r8), pointer    , dimension(:,:  ) :: qh       ! Hail mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qv       ! Water vapor mixing ratio (moist)
+    real(r8), pointer    , dimension(:,:  ) :: qc       ! Cloud water mixing ratio (moist)
+    real(r8), pointer    , dimension(:,:  ) :: qi       ! Cloud ice mixing ratio (moist)
+    real(r8), pointer    , dimension(:,:  ) :: qr       ! Rain mixing ratio (moist)
+    real(r8), pointer    , dimension(:,:  ) :: qs       ! Snow mixing ratio (moist)
+    real(r8), pointer    , dimension(:,:  ) :: qg       ! Grauple mixing ratio (moist)
+    real(r8), pointer    , dimension(:,:  ) :: qh       ! Hail mixing ratio (moist)
     ! Ozone
-    real(r8), pointer    , dimension(:,:  ) :: qo3      ! Ozone mixing ratio
+    real(r8), pointer    , dimension(:,:  ) :: qo3      ! Ozone mixing ratio (moist)
     ! Stability
     real(r8), allocatable, dimension(:,:  ) :: n2_lev   ! Square of Brunt-Väisälä frequency (s-2) on half levels
     real(r8), allocatable, dimension(:,:  ) :: ri_lev   ! Local Richardson number on half levels
@@ -111,7 +109,6 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:) :: dtdt
     real(r8), allocatable, dimension(:,:) :: dptdt
     real(r8), allocatable, dimension(:,:) :: dptdt_rad
-    real(r8), allocatable, dimension(:,:) :: dshdt
     real(r8), allocatable, dimension(:,:) :: dqvdt
     real(r8), allocatable, dimension(:,:) :: dqcdt
     real(r8), allocatable, dimension(:,:) :: dqidt
@@ -160,23 +157,14 @@ contains
     allocate(this%pt        (this%ncol,this%nlev  ))
     allocate(this%ptv       (this%ncol,this%nlev  ))
     ! Pressure
-    allocate(this%ph        (this%ncol,this%nlev  ))
-    allocate(this%ph_lev    (this%ncol,this%nlev+1))
-    allocate(this%pkh       (this%ncol,this%nlev  ))
-    allocate(this%dph       (this%ncol,this%nlev  ))
-    allocate(this%lnph_lev  (this%ncol,this%nlev+1))
-    allocate(this%rdp       (this%ncol,this%nlev  ))
-  if (hydrostatic) then
-    this%p     => this%ph
-    this%p_lev => this%ph_lev
-    this%pk    => this%pkh
-    this%dp    => this%dph
-  else
     allocate(this%p         (this%ncol,this%nlev  ))
     allocate(this%p_lev     (this%ncol,this%nlev+1))
     allocate(this%pk        (this%ncol,this%nlev  ))
+    allocate(this%pk_lev    (this%ncol,this%nlev+1))
     allocate(this%dp        (this%ncol,this%nlev  ))
-  end if
+    allocate(this%rdp       (this%ncol,this%nlev  ))
+    allocate(this%lnp_lev   (this%ncol,this%nlev+1))
+    allocate(this%omg       (this%ncol,this%nlev  ))
     ! Height
     allocate(this%z         (this%ncol,this%nlev  ))
     allocate(this%z_lev     (this%ncol,this%nlev+1))
@@ -239,10 +227,9 @@ contains
 
     ! Tracers
   if (ntracers > 0) then
-    allocate(this%q         (this%ncol,this%nlev,ntracers))
+    allocate(this%q(this%ncol,this%nlev,ntracers))
   end if
     ! Moisture
-    allocate(this%sh        (this%ncol,this%nlev))
     if (idx_qv /= 0) this%qv => this%q(:,:,idx_qv)
     if (idx_qc /= 0) this%qc => this%q(:,:,idx_qc)
     if (idx_qi /= 0) this%qi => this%q(:,:,idx_qi)
@@ -275,26 +262,19 @@ contains
     if (allocated(this%pt       )) deallocate(this%pt       )
     if (allocated(this%ptv      )) deallocate(this%ptv      )
     ! Pressure
-    if (allocated(this%ph       )) deallocate(this%ph       )
-    if (allocated(this%ph_lev   )) deallocate(this%ph_lev   )
-    if (allocated(this%pkh      )) deallocate(this%pkh      )
-    if (allocated(this%dph      )) deallocate(this%dph      )
-    if (allocated(this%lnph_lev )) deallocate(this%lnph_lev )
-  if (nonhydrostatic) then
-    if (associated(this%p       )) deallocate(this%p        )
-    if (associated(this%p_lev   )) deallocate(this%p_lev    )
-    if (associated(this%pk      )) deallocate(this%pk       )
-    if (associated(this%dp      )) deallocate(this%dp       )
-  end if
+    if (allocated(this%p        )) deallocate(this%p        )
+    if (allocated(this%p_lev    )) deallocate(this%p_lev    )
+    if (allocated(this%pk       )) deallocate(this%pk       )
+    if (allocated(this%pk_lev   )) deallocate(this%pk_lev   )
+    if (allocated(this%dp       )) deallocate(this%dp       )
     if (allocated(this%rdp      )) deallocate(this%rdp      )
+    if (allocated(this%lnp_lev  )) deallocate(this%lnp_lev  )
     ! Height
     if (allocated(this%z        )) deallocate(this%z        )
     if (allocated(this%z_lev    )) deallocate(this%z_lev    )
     if (allocated(this%dz       )) deallocate(this%dz       )
     ! Tracers
     if (allocated(this%q        )) deallocate(this%q        )
-    ! Moisture
-    if (allocated(this%sh       )) deallocate(this%sh       )
     ! Stability
     if (allocated(this%n2_lev   )) deallocate(this%n2_lev   )
     if (allocated(this%ri_lev   )) deallocate(this%ri_lev   )
@@ -354,7 +334,6 @@ contains
     allocate(this%dtdt      (this%ncol,this%nlev))
     allocate(this%dptdt     (this%ncol,this%nlev))
     allocate(this%dptdt_rad (this%ncol,this%nlev)); this%dptdt_rad = 0
-    allocate(this%dshdt     (this%ncol,this%nlev))
     allocate(this%dqvdt     (this%ncol,this%nlev))
     allocate(this%dqcdt     (this%ncol,this%nlev))
     allocate(this%dqidt     (this%ncol,this%nlev))
@@ -370,7 +349,6 @@ contains
     if (allocated(this%dtdt     )) deallocate(this%dtdt     )
     if (allocated(this%dptdt    )) deallocate(this%dptdt    )
     if (allocated(this%dptdt_rad)) deallocate(this%dptdt_rad)
-    if (allocated(this%dshdt    )) deallocate(this%dshdt    )
     if (allocated(this%dqvdt    )) deallocate(this%dqvdt    )
     if (allocated(this%dqcdt    )) deallocate(this%dqcdt    )
     if (allocated(this%dqidt    )) deallocate(this%dqidt    )
@@ -393,7 +371,6 @@ contains
     this%dvdt  = 0; this%updated_v  = .false.
     this%dtdt  = 0; this%updated_t  = .false.
     this%dptdt = 0; this%updated_pt = .false.
-    this%dshdt = 0; this%updated_sh = .false.
     this%dqvdt = 0; this%updated_qv = .false.
     this%dqcdt = 0; this%updated_qc = .false.
     this%dqidt = 0; this%updated_qi = .false.

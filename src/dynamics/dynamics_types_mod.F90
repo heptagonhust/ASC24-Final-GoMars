@@ -36,12 +36,12 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: pt                ! Potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: tv                ! Virtual temperature
-    real(r8), allocatable, dimension(:,:,:) :: mg                ! Dry-air weight on full levels
-    real(r8), allocatable, dimension(:,:,:) :: mg_lev            ! Dry-air weight on half levels
-    real(r8), allocatable, dimension(:,:  ) :: mgs               ! Surface dry-air weight
-    real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure on full levels
-    real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure on half levels
-    real(r8), pointer    , dimension(:,:  ) :: phs               ! Surface hydrostatic pressure
+    real(r8), allocatable, dimension(:,:,:) :: mg                ! Dry air weight on full levels
+    real(r8), allocatable, dimension(:,:,:) :: mg_lev            ! Dry air weight on half levels
+    real(r8), allocatable, dimension(:,:  ) :: mgs               ! Surface dry air weight
+    real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure (dry air and water vapor) on full levels
+    real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure (dry air and water vapor) on half levels
+    real(r8), pointer    , dimension(:,:  ) :: phs               ! Surface hydrostatic pressure (dry air and water vapor)
     ! Nonhydrostatic variables
     real(r8), allocatable, dimension(:,:,:) :: we
     real(r8), allocatable, dimension(:,:,:) :: w                 ! Vertical wind speed
@@ -51,11 +51,11 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lon        ! Geopotential
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lat        ! Geopotential
     real(r8), allocatable, dimension(:,:,:) :: rhod              ! Dry air density
-    real(r8), pointer    , dimension(:,:,:) :: p                 ! Pressure on full levels
-    real(r8), pointer    , dimension(:,:,:) :: p_lev             ! Pressure on half levels
-    real(r8), allocatable, dimension(:,:  ) :: ps                ! Surface pressure
-    real(r8), allocatable, dimension(:,:,:) :: p_lev_lon         ! Pressure on half levels
-    real(r8), allocatable, dimension(:,:,:) :: p_lev_lat         ! Pressure on half levels
+    real(r8), pointer    , dimension(:,:,:) :: p                 ! Full pressure on full levels
+    real(r8), pointer    , dimension(:,:,:) :: p_lev             ! Full pressure on half levels
+    real(r8), allocatable, dimension(:,:  ) :: ps                ! Surface full pressure
+    real(r8), allocatable, dimension(:,:,:) :: p_lev_lon         ! Full pressure on half levels
+    real(r8), allocatable, dimension(:,:,:) :: p_lev_lat         ! Full pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: u_lev_lon
     real(r8), allocatable, dimension(:,:,:) :: v_lev_lat
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lon_n      ! Mass flux on zonal edge and half level
@@ -88,7 +88,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: dudt_phys
     real(r8), allocatable, dimension(:,:,:) :: dvdt_phys
     real(r8), allocatable, dimension(:,:,:) :: dtdt_phys
-    real(r8), allocatable, dimension(:,:,:) :: dshdt_phys
+    real(r8), allocatable, dimension(:,:,:) :: dqvdt_phys
     logical :: update_u   = .false.
     logical :: update_v   = .false.
     logical :: update_gz  = .false.
@@ -165,6 +165,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: div               ! Divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: dmf
+    real(r8), allocatable, dimension(:,:,:) :: omg               ! Vertical pressure velocity (Pa s-1)
   contains
     procedure :: init  => aux_array_init
     procedure :: clear => aux_array_clear
@@ -434,7 +435,7 @@ contains
       call allocate_array(mesh, this%dudt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%dvdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%dtdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%dshdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dqvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
   end subroutine dtend_init
@@ -473,7 +474,7 @@ contains
     if (allocated(this%dudt_phys )) deallocate(this%dudt_phys )
     if (allocated(this%dvdt_phys )) deallocate(this%dvdt_phys )
     if (allocated(this%dtdt_phys )) deallocate(this%dtdt_phys )
-    if (allocated(this%dshdt_phys)) deallocate(this%dshdt_phys)
+    if (allocated(this%dqvdt_phys)) deallocate(this%dqvdt_phys)
 
   end subroutine dtend_clear
 
@@ -737,14 +738,14 @@ contains
 
     class(static_type), intent(inout) :: this
 
-    if (allocated(this%landmask)) deallocate(this%landmask)
-    if (allocated(this%gzs     )) deallocate(this%gzs     )
-    if (allocated(this%zs_std  )) deallocate(this%zs_std  )
-    if (allocated(this%dzsdlon )) deallocate(this%dzsdlon )
-    if (allocated(this%dzsdlat )) deallocate(this%dzsdlat )
-    if (allocated(this%ref_ps  )) deallocate(this%ref_ps  )
-    if (allocated(this%ref_ps_smth)) deallocate(this%ref_ps_smth)
-    if (allocated(this%ref_ps_perb)) deallocate(this%ref_ps_perb)
+    if (allocated(this%landmask        )) deallocate(this%landmask        )
+    if (allocated(this%gzs             )) deallocate(this%gzs             )
+    if (allocated(this%zs_std          )) deallocate(this%zs_std          )
+    if (allocated(this%dzsdlon         )) deallocate(this%dzsdlon         )
+    if (allocated(this%dzsdlat         )) deallocate(this%dzsdlat         )
+    if (allocated(this%ref_ps          )) deallocate(this%ref_ps          )
+    if (allocated(this%ref_ps_smth     )) deallocate(this%ref_ps_smth     )
+    if (allocated(this%ref_ps_perb     )) deallocate(this%ref_ps_perb     )
     if (allocated(this%full_f          )) deallocate(this%full_f          )
     if (allocated(this%half_f          )) deallocate(this%half_f          )
     if (allocated(this%full_tangent_wgt)) deallocate(this%full_tangent_wgt)
@@ -796,6 +797,7 @@ contains
       call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
     call allocate_array(mesh, this%dmf            , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%omg            , full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine aux_array_init
 
@@ -829,6 +831,7 @@ contains
     if (allocated(this%div              )) deallocate(this%div              )
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%dmf              )) deallocate(this%dmf              )
+    if (allocated(this%omg              )) deallocate(this%omg              )
 
   end subroutine aux_array_clear
 

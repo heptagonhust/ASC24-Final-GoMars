@@ -331,14 +331,15 @@ contains
     call fiona_add_var('h1', 'dptdt'        , long_name='potential temperature tendency'                , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'we_lev'       , long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'dmf'          , long_name='mass flux divergence'                          , units='', dim_names=cell_dims_3d)
+    call fiona_add_var('h1', 'omg'          , long_name='vertical pressure velocity'                    , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'mfx_lon'      , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'mfy_lat'      , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmg'          , long_name='dry-air weight on full levels'                 , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
-    call fiona_add_var('h1', 'n2'           , long_name='square of buoyancy frequency'                  , units='', dim_names= lev_dims_3d)
-    call fiona_add_var('h1', 'ri'           , long_name='local Richardson number'                       , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'n2_lev'       , long_name='square of buoyancy frequency'                  , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'ri_lev'       , long_name='local Richardson number'                       , units='', dim_names= lev_dims_3d)
 
-    if (physics_suite /= 'none') then
+    if (physics_suite /= 'N/A') then
       call fiona_add_var('h1', 'dudt_phys'  , long_name='physics tendency for u'                        , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'dvdt_phys'  , long_name='physics tendency for v'                        , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'dtdt_phys'  , long_name='physics tendency for t'                        , units='', dim_names=cell_dims_3d)
@@ -718,6 +719,7 @@ contains
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
     call fiona_output('h1', 'dmf'     ,    aux%dmf      (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'omg'     ,    aux%omg      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ke'      ,    aux%ke       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmg'     , dstate%dmg      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmgsdt'  ,  dtend%dmgs     (is:ie,js:je      ), start=start, count=count)
@@ -751,11 +753,10 @@ contains
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
     call fiona_output('h1', 'we_lev', dstate%we_lev(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'n2_lev', reshape(pstate%n2_lev, count), start=start, count=count)
+    call fiona_output('h1', 'ri_lev', reshape(pstate%ri_lev, count), start=start, count=count)
 
-    call fiona_output('h1', 'n2', pstate%n2_lev, start=start, count=count)
-    call fiona_output('h1', 'ri', pstate%ri_lev, start=start, count=count)
-
-    if (physics_suite /= 'none') then
+    if (physics_suite /= 'N/A') then
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -764,7 +765,7 @@ contains
       call fiona_output('h1', 'dudt_phys' , dtend%dudt_phys (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dvdt_phys' , dtend%dvdt_phys (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dtdt_phys' , dtend%dtdt_phys (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'dshdt_phys', dtend%dshdt_phys(is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'dqvdt_phys', dtend%dqvdt_phys(is:ie,js:je,ks:ke), start=start, count=count)
     end if
     end associate
     

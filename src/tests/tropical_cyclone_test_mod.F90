@@ -153,8 +153,8 @@ CONTAINS
           p(i,j,k) = vert_coord_calc_mg(k, ps(i,j), block%static%ref_ps_perb(i,j))
           call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,k), z(i,j,k), 0, &
             u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, qv(i,j,k))
-          qv(i,j,k) = mixing_ratio(qv(i,j,k))
-          pt(i,j,k) = potential_temperature(t(i,j,k), p(i,j,k), qv(i,j,k))
+          qv(i,j,k) = dry_mixing_ratio(qv(i,j,k), qv(i,j,k))
+          pt(i,j,k) = modified_potential_temperature(t(i,j,k), p(i,j,k), qv(i,j,k))
           gz(i,j,k) = g * z(i,j,k)
         end do
       end do

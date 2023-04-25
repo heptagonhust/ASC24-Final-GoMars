@@ -35,6 +35,7 @@ module tracer_types_mod
   type tracers_type
     logical :: is_initialized = .false.
     type(mesh_type), pointer :: mesh => null()
+    type(mesh_type), pointer :: filter_mesh => null()
     real(r8), allocatable :: q(:,:,:,:)
     ! Some diagnostics:
     real(r8), allocatable :: qm(:,:,:) ! Total moisture or water substances
@@ -48,16 +49,17 @@ module tracer_types_mod
 
 contains
 
-  subroutine tracers_init(this, mesh)
+  subroutine tracers_init(this, mesh, filter_mesh)
 
     class(tracers_type), intent(inout) :: this
     type(mesh_type), intent(in), target :: mesh
+    type(mesh_type), intent(in), target :: filter_mesh
 
     call this%clear()
 
     this%mesh => mesh
-    call allocate_array(mesh, this%q, extra_dim=ntracers, full_lon=.true., full_lat=.true., full_lev=.true.)
-
+    this%filter_mesh => filter_mesh
+    call allocate_array(filter_mesh, this%q, extra_dim=ntracers, full_lon=.true., full_lat=.true., full_lev=.true.)
     if (idx_qv > 0) then
       call allocate_array(mesh, this%qm, full_lon=.true., full_lat=.true., full_lev=.true.)
     end if

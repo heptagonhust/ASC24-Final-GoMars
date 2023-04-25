@@ -22,6 +22,7 @@ module operators_mod
   public operators_prepare
   public calc_mg
   public calc_ph
+  public calc_omg
   public calc_dmg
   public calc_t
   public calc_gz_lev
@@ -196,11 +197,46 @@ contains
         end do
       end do
     end do
+    call fill_halo(block%halo, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
     ! NOTE: Move this to other place?
     if (hydrostatic) ps = phs
     end associate
 
   end subroutine calc_ph
+
+  subroutine calc_omg(block, dstate)
+
+    type(block_type), intent(inout) :: block
+    type(dstate_type), intent(inout) :: dstate
+
+    integer i, j, k
+    real(r8) sum_dmf(dstate%mesh%full_ids:dstate%mesh%full_ide,dstate%mesh%full_jds:dstate%mesh%full_jde)
+
+    associate (mesh  => block%mesh   , &
+               ph    => dstate%ph    , &
+               u_lon => dstate%u_lon , &
+               v_lat => dstate%v_lat , &
+               dmf   => block%aux%dmf, &
+               div   => block%aux%div, &
+               omg   => block%aux%omg)
+    sum_dmf = 0
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          sum_dmf(i,j) = sum_dmf(i,j) + dmf(i,j,k)
+          omg(i,j,k) = 0.5_r8 * ((                                          &
+            u_lon(i  ,j,k) * (ph(i,j,k) + ph(i+1,j,k)) -                    &
+            u_lon(i-1,j,k) * (ph(i,j,k) + ph(i-1,j,k))                      &
+          ) * mesh%le_lon(j) - (                                            &
+            v_lat(i,j  ,k) * (ph(i,j,k) + ph(i,j+1,k)) * mesh%le_lat(j  ) - &
+            v_lat(i,j-1,k) * (ph(i,j,k) + ph(i,j-1,k)) * mesh%le_lat(j-1)   &
+          )) / mesh%area_cell(j) - ph(i,j,k) * div(i,j,k) - sum_dmf(i,j)
+        end do
+      end do
+    end do
+    end associate
+
+  end subroutine calc_omg
 
   subroutine calc_t(block, dstate)
 

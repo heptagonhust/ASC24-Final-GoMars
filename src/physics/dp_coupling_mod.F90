@@ -22,12 +22,13 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    real(r8), pointer, dimension(:,:,:) :: qv, qc, qi, qr, qs, qg, qh
+    real(r8), pointer, dimension(:,:,:) :: qv, qc, qi, qr, qs, qg, qh, qm
     real(r8) tmp
     integer i, j, k, icol
 
     if (physics_suite == 'N/A') return
 
+    ! Get pointers to dry mixing ratios of moist tracer species.
     if (idx_qv > 0) call tracer_get_array(block%id, idx_qv, qv)
     if (idx_qc > 0) call tracer_get_array(block%id, idx_qc, qc)
     if (idx_qi > 0) call tracer_get_array(block%id, idx_qi, qi)
@@ -35,21 +36,22 @@ contains
     if (idx_qs > 0) call tracer_get_array(block%id, idx_qs, qs)
     if (idx_qg > 0) call tracer_get_array(block%id, idx_qg, qg)
     if (idx_qh > 0) call tracer_get_array(block%id, idx_qh, qh)
+    call tracer_get_array_qm(block%id, qm)
 
     associate (mesh        => block%mesh                   , &
                pstate      => block%pstate                 , & ! out
                u           => block%dstate(itime)%u        , & ! in
                v           => block%dstate(itime)%v        , & ! in
-               pt          => block%dstate(itime)%pt       , & ! in
+               pt          => block%dstate(itime)%pt       , & ! in (modified potential temperature)
                t           => block%dstate(itime)%t        , & ! in
-               ph          => block%dstate(itime)%ph       , & ! in
-               ph_lev      => block%dstate(itime)%ph_lev   , & ! in
-               dph         => block%dstate(itime)%dmg      , & ! in
-               p           => block%dstate(itime)%p        , & ! in
-               p_lev       => block%dstate(itime)%p_lev    , & ! in
-               gz          => block%dstate(itime)%gz       , & ! in
+               tv          => block%dstate(itime)%tv       , & ! in (virtual temperature)
+               q           => tracers(block%id)%q          , & ! in (dry mixing ratios of all tracers)
+               p           => block%dstate(itime)%ph       , & ! in (hydrostatic full pressure)
+               p_lev       => block%dstate(itime)%ph_lev   , & ! in
+               dmg         => block%dstate(itime)%dmg      , & ! in (dry air weight within each layer)
+               omg         => block%aux%omg                , & ! in (vertical pressure velocity)
+               gz          => block%dstate(itime)%gz       , & ! in (geopotential)
                gz_lev      => block%dstate(itime)%gz_lev   , & ! in
-               ps          => block%dstate(itime)%phs      , & ! in
                land        => block%static%landmask        )   ! in
     ! Full levels
     do k = mesh%full_kds, mesh%full_kde
@@ -59,33 +61,27 @@ contains
           icol = icol + 1
           pstate%u        (icol,k) = u(i,j,k)
           pstate%v        (icol,k) = v(i,j,k)
-          pstate%pt       (icol,k) = pt(i,j,k)
-          pstate%t        (icol,k) = temperature(pt(i,j,k), p(i,j,k), qv(i,j,k))
-          pstate%sh       (icol,k) = specific_humidity(qv(i,j,k))
-          pstate%tv       (icol,k) = virtual_temperature(pstate%t(icol,k), qv(i,j,k), qv(i,j,k))
-          pstate%ptv      (icol,k) = virtual_potential_temperature(pstate%tv(icol,k), p(i,j,k))
-          pstate%ph       (icol,k) = ph(i,j,k)
-          pstate%pkh      (icol,k) = ph(i,j,k)**rd_o_cpd / pk0
-          pstate%dph      (icol,k) = dph(i,j,k)
+          pstate%pt       (icol,k) = pt(i,j,k) ! FIXME: What does physics need? Dry air potential temperature or just modified one?
+          pstate%t        (icol,k) = t(i,j,k)
+          pstate%tv       (icol,k) = tv(i,j,k)
+          pstate%ptv      (icol,k) = virtual_potential_temperature(tv(i,j,k), p(i,j,k))
           pstate%p        (icol,k) = p(i,j,k)
-          pstate%dp       (icol,k) = p(i,j,k+1) - p(i,j,k)
+          pstate%p_lev    (icol,k) = p_lev(i,j,k)
+          pstate%pk       (icol,k) = p(i,j,k)**rd_o_cpd / pk0
+          pstate%pk_lev   (icol,k) = p_lev(i,j,k)**rd_o_cpd / pk0
+          pstate%dp       (icol,k) = p_lev(i,j,k+1) - p_lev(i,j,k)
           pstate%rdp      (icol,k) = 1.0_r8 / pstate%dp(icol,k)
-          pstate%z        (icol,k) = gz    (i,j,k) / g
+          pstate%omg      (icol,k) = omg(i,j,k)
+          pstate%z        (icol,k) = gz(i,j,k) / g
           pstate%dz       (icol,k) = (gz_lev(i,j,k+1) - gz_lev(i,j,k)) / g
-          pstate%rho      (icol,k) = moist_air_density(t(i,j,k), p(i,j,k), qv(i,j,k), qv(i,j,k))
-          pstate%cp       (icol,k) = (1 - pstate%sh(icol,k)) * cpd + pstate%sh(icol,k) * cpv
-          pstate%cv       (icol,k) = (1 - pstate%sh(icol,k)) * cvd + pstate%sh(icol,k) * cvv
+          pstate%rho      (icol,k) = moist_air_density(t(i,j,k), p(i,j,k), qv(i,j,k), qm(i,j,k))
+          pstate%cp       (icol,k) = (1 - qv(i,j,k)) * cpd + qv(i,j,k) * cpv ! FIXME: Add specific heat capacities of other water species.
+          pstate%cv       (icol,k) = (1 - qv(i,j,k)) * cvd + qv(i,j,k) * cvv ! FIXME: Add specific heat capacities of other water species.
           tmp = gz(i,j,k) + 0.5_r8 * (u(i,j,k)**2 + v(i,j,k)**2)
           pstate%tep      (icol,k) = pstate%cp(icol,k) * pstate%t(icol,k) + tmp
           pstate%tev      (icol,k) = pstate%cv(icol,k) * pstate%t(icol,k) + tmp
-          ! Copy tracers.
-          if (idx_qv > 0) pstate%q(icol,k,idx_qv) = qv(i,j,k)
-          if (idx_qc > 0) pstate%q(icol,k,idx_qc) = qc(i,j,k)
-          if (idx_qi > 0) pstate%q(icol,k,idx_qi) = qi(i,j,k)
-          if (idx_qr > 0) pstate%q(icol,k,idx_qr) = qr(i,j,k)
-          if (idx_qs > 0) pstate%q(icol,k,idx_qs) = qs(i,j,k)
-          if (idx_qg > 0) pstate%q(icol,k,idx_qg) = qg(i,j,k)
-          if (idx_qh > 0) pstate%q(icol,k,idx_qh) = qh(i,j,k)
+          ! Convert dry mixing ratios of tracers to moist mixing ratios.
+          pstate%q        (icol,k,:) = q(i,j,k,:) * dmg(i,j,k) / pstate%dp(icol,k)
         end do
       end do
     end do
@@ -95,9 +91,9 @@ contains
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           icol = icol + 1
-          pstate%ph_lev   (icol,k) = ph_lev(i,j,k)
-          pstate%lnph_lev (icol,k) = log(ph_lev(i,j,k))
-          pstate%z_lev    (icol,k) = gz_lev(i,j,k) / g
+          pstate%p_lev   (icol,k) = p_lev(i,j,k)
+          pstate%lnp_lev (icol,k) = log(p_lev(i,j,k))
+          pstate%z_lev   (icol,k) = gz_lev(i,j,k) / g
           if (mesh%half_kds < k .and. k < mesh%half_kde) then
             pstate%n2_lev(icol,k) = buoyancy_frequency( &
               pstate%ptv(icol,k-1), pstate%ptv(icol,k), pstate%z(icol,k-1), pstate%z(icol,k))
@@ -112,7 +108,6 @@ contains
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         icol = icol + 1
-        pstate%ps  (icol) = ps(i,j)
         pstate%wsb (icol) = sqrt(u(i,j,mesh%full_kde)**2 + v(i,j,mesh%full_kde)**2)
         pstate%land(icol) = land(i,j)
       end do
@@ -133,7 +128,7 @@ contains
                dudt  => block%dtend(itime)%dudt_phys , & ! out
                dvdt  => block%dtend(itime)%dvdt_phys , & ! out
                dtdt  => block%dtend(itime)%dtdt_phys , & ! out
-               dshdt => block%dtend(itime)%dshdt_phys)   ! out
+               dqvdt => block%dtend(itime)%dqvdt_phys)   ! out
     if (ptend%updated_u .and. ptend%updated_v) then
       do k = mesh%full_kds, mesh%full_kde
         icol = 0
@@ -161,13 +156,13 @@ contains
         end do
       end do
     end if
-    if (ptend%updated_sh) then
+    if (ptend%updated_qv) then
       do k = mesh%full_kds, mesh%full_kde
         icol = 0
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
-            dshdt(i,j,k) = ptend%dshdt(icol,k)
+            dqvdt(i,j,k) = ptend%dqvdt(icol,k)
           end do
         end do
       end do

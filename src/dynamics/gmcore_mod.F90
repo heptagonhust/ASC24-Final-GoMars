@@ -372,6 +372,7 @@ contains
       blocks(iblk)%dstate(itime)%te_ie = te_ie
       blocks(iblk)%dstate(itime)%te_pe = te_pe
       if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(blocks(iblk)%dstate(itime))
+      call calc_omg(blocks(iblk), blocks(iblk)%dstate(itime))
     end do
 
     call log_add_diag('tm' , tm )

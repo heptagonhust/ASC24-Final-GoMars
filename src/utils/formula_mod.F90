@@ -6,9 +6,9 @@ module formula_mod
 
   private
 
-  public specific_humidity
-  public mixing_ratio
-  public potential_temperature
+  public wet_mixing_ratio
+  public dry_mixing_ratio
+  public modified_potential_temperature
   public temperature
   public virtual_temperature
   public virtual_temperature_from_modified_potential_temperature
@@ -20,37 +20,39 @@ module formula_mod
 
 contains
 
-  pure elemental real(r8) function specific_humidity(qv) result(res)
+  pure elemental real(r8) function wet_mixing_ratio(qv, qm) result(res)
 
-    real(r8), intent(in) :: qv  ! Mixing ratio
+    real(r8), intent(in) :: qv  ! Dry mixing ratio of water vapor (kg kg-1)
+    real(r8), intent(in) :: qm  ! Total dry mixing ratio of water vapor and its condensate (kg kg-1)
 
-    res = qv / (1 + qv)
+    res = qv / (1 + qm)
 
-  end function specific_humidity
+  end function wet_mixing_ratio
 
-  pure elemental real(r8) function mixing_ratio(sh) result(res)
+  pure elemental real(r8) function dry_mixing_ratio(qv, qm) result(res)
 
-    real(r8), intent(in) :: sh  ! Specific humidity
+    real(r8), intent(in) :: qv  ! Specific humidity or wet mixing ratio of water vapor (kg kg-1)
+    real(r8), intent(in) :: qm  ! Total wet mixing ratio of water vapor and its condensate (kg kg-1)
 
-    res = sh / (1 - sh)
+    res = qv / (1 - qm)
 
-  end function mixing_ratio
+  end function dry_mixing_ratio
 
-  pure elemental real(r8) function potential_temperature(t, p, qv) result(res)
+  pure elemental real(r8) function modified_potential_temperature(t, p, qv) result(res)
 
-    real(r8), intent(in) :: t   ! Temperature
-    real(r8), intent(in) :: p   ! Pressure
-    real(r8), intent(in) :: qv  ! Mixing ratio
+    real(r8), intent(in) :: t   ! Temperature (K)
+    real(r8), intent(in) :: p   ! Full pressure (Pa)
+    real(r8), intent(in) :: qv  ! Dry mixing ratio of water vapor (kg kg-1)
 
     res = t * (p0 / p)**rd_o_cpd * (1 + rv_o_rd * qv)
 
-  end function potential_temperature
+  end function modified_potential_temperature
 
   pure elemental real(r8) function temperature(pt, p, qv) result(res)
 
-    real(r8), intent(in) :: pt
-    real(r8), intent(in) :: p
-    real(r8), intent(in) :: qv
+    real(r8), intent(in) :: pt  ! Modified potential temperature (K)
+    real(r8), intent(in) :: p   ! Full pressure (Pa)
+    real(r8), intent(in) :: qv  ! Dry mixing ratio of water vapor (kg kg-1)
 
     res = pt * (p / p0)**rd_o_cpd / (1 + rv_o_rd * qv)
 
@@ -58,9 +60,9 @@ contains
 
   pure elemental real(r8) function virtual_temperature(t, qv, qm) result(res)
 
-    real(r8), intent(in) :: t   ! Temperature
-    real(r8), intent(in) :: qv  ! Water vapor mixing ratio
-    real(r8), intent(in) :: qm  ! Water vapor and its condensate mixing ratio
+    real(r8), intent(in) :: t   ! Temperature (K)
+    real(r8), intent(in) :: qv  ! Dry mixing ratio of water vapor (kg kg-1)
+    real(r8), intent(in) :: qm  ! Total dry mixing ratio of water vapor and its condensate (kg kg-1)
 
     res = t * (1 + rv_o_rd * qv) / (1 + qm)
 
@@ -68,9 +70,9 @@ contains
 
   pure elemental real(r8) function virtual_temperature_from_modified_potential_temperature(pt, pk, qm) result(res)
 
-    real(r8), intent(in) :: pt  ! Modified potential temperature
+    real(r8), intent(in) :: pt  ! Modified potential temperature (K)
     real(r8), intent(in) :: pk  ! p**(rd/cpd)
-    real(r8), intent(in) :: qm  ! Water vapor and its condensate mixing ratio
+    real(r8), intent(in) :: qm  ! Total dry mixing ratio of water vapor and its condensate (kg kg-1)
 
     res = pt * pk / pk0 / (1 + qm)
 
@@ -78,8 +80,8 @@ contains
 
   pure elemental real(r8) function virtual_potential_temperature(tv, p) result(res)
 
-    real(r8), intent(in) :: tv  ! Virtual temperature
-    real(r8), intent(in) :: p   ! Pressure
+    real(r8), intent(in) :: tv  ! Virtual temperature (K)
+    real(r8), intent(in) :: p   ! Full pressure (Pa)
 
     res = tv * (p0 / p)**rd_o_cpd
 
@@ -96,10 +98,10 @@ contains
 
   pure elemental real(r8) function moist_air_density(t, p, qv, qm) result(res)
 
-    real(r8), intent(in) :: t
-    real(r8), intent(in) :: p
-    real(r8), intent(in) :: qv  ! Water vapor mixing ratio
-    real(r8), intent(in) :: qm  ! Water vapor and its condensate mixing ratio
+    real(r8), intent(in) :: t   ! Temperature (K)
+    real(r8), intent(in) :: p   ! Full pressure (Pa)
+    real(r8), intent(in) :: qv  ! Dry mixing ratio of water vapor (kg kg-1)
+    real(r8), intent(in) :: qm  ! Total dry mixing ratio of water vapor and its condensate (kg kg-1)
 
     res = p / rd / virtual_temperature(t, qv, qm)
 

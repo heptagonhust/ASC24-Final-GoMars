@@ -43,7 +43,7 @@ contains
     integer, intent(in) :: itime
     real(r8), intent(in) :: dt
 
-    real(r8), pointer, dimension(:,:,:) :: qv
+    real(r8), pointer, dimension(:,:,:) :: qv, qm
     integer i, j, k
 
     if (.not. time_is_alerted('phys')) return
@@ -65,7 +65,7 @@ contains
         dt          , &
         pstate%lat  , &
         pstate%t    , &
-        pstate%sh   , &
+        pstate%qv   , &
         pstate%u    , &
         pstate%v    , &
         pstate%p    , &
@@ -76,7 +76,7 @@ contains
         ptend%dudt  , &
         ptend%dvdt  , &
         ptend%dtdt  , &
-        ptend%dshdt , &
+        ptend%dqvdt , &
         pstate%precl, &
         0           , & ! test
         .true.      , & ! RJ2012_precip
@@ -109,12 +109,14 @@ contains
       call fill_halo(block%halo, dstate%v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
     end if
 
-    if (ptend%updated_sh) then
+    if (ptend%updated_qv) then
       call tracer_get_array(block%id, idx_qv, qv)
+      call tracer_get_array_qm(block%id, qm)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qv(i,j,k) = mixing_ratio(specific_humidity(qv(i,j,k)) + dt * dtend%dshdt_phys(i,j,k))
+            ! FIXME: qm should be updated for calculating dry mixing ratio of water vapor.
+            qv(i,j,k) = dry_mixing_ratio(wet_mixing_ratio(qv(i,j,k), qm(i,j,k)) + dt * dtend%dqvdt_phys(i,j,k), qm(i,j,k))
           end do
         end do
       end do
@@ -123,11 +125,12 @@ contains
     end if
 
     if (ptend%updated_t) then
+      call tracer_get_array(block%id, idx_qv, qv)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             dstate%t (i,j,k) = dstate%t(i,j,k) + dt * dtend%dtdt_phys(i,j,k)
-            dstate%pt(i,j,k) = potential_temperature(dstate%t(i,j,k), dstate%p(i,j,k), qv(i,j,k))
+            dstate%pt(i,j,k) = modified_potential_temperature(dstate%t(i,j,k), dstate%p(i,j,k), qv(i,j,k))
           end do
         end do
       end do

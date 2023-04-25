@@ -175,7 +175,7 @@ contains
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
               tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:), qv(i,j,:))
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
+              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
             end do
           end do
           deallocate(t1, p1)
@@ -203,7 +203,7 @@ contains
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
               tv(i,j,:) = virtual_temperature(t(i,j,:), 0.0_r8, 0.0_r8)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
+              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
             end do
           end do
           deallocate(t1, p1)
@@ -218,7 +218,7 @@ contains
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
               tv(i,j,:) = virtual_temperature(t(i,j,:), 0.0_r8, 0.0_r8)
-              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
+              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
             end do
           end do
           deallocate(t1, p1)

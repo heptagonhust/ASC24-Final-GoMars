@@ -16,6 +16,11 @@ module ccpp_driver_mod
 
   private
 
+  public ccpp_driver_init
+  public ccpp_driver_final
+  public ccpp_driver_input_dynamics
+  public ccpp_driver_output_physics
+
 contains
 
   subroutine ccpp_driver_init(namelist_file)
@@ -132,5 +137,39 @@ contains
     if (allocated(GFS_interstitial)) deallocate(GFS_interstitial)
 
   end subroutine ccpp_driver_final
+
+  subroutine ccpp_driver_input_dynamics()
+
+    integer iblk, icol, ilev
+
+    do iblk = 1, size(blocks)
+      ! Full levels or layers
+      do ilev = 1, blocks(iblk)%pstate%nlev
+        do icol = 1, blocks(iblk)%pstate%ncol
+          GFS_data(iblk)%Statein%ugrs (icol,ilev  ) = blocks(iblk)%pstate%u  (icol,ilev)
+          GFS_data(iblk)%Statein%vgrs (icol,ilev  ) = blocks(iblk)%pstate%v  (icol,ilev)
+          GFS_data(iblk)%Statein%tgrs (icol,ilev  ) = blocks(iblk)%pstate%t  (icol,ilev)
+          GFS_data(iblk)%Statein%vvl  (icol,ilev  ) = blocks(iblk)%pstate%omg(icol,ilev)
+          GFS_data(iblk)%Statein%prsl (icol,ilev  ) = blocks(iblk)%pstate%p  (icol,ilev)
+          GFS_data(iblk)%Statein%prslk(icol,ilev  ) = blocks(iblk)%pstate%pk (icol,ilev)
+          GFS_data(iblk)%Statein%phil (icol,ilev  ) = blocks(iblk)%pstate%z  (icol,ilev) * g
+          GFS_data(iblk)%Statein%qgrs (icol,ilev,:) = blocks(iblk)%pstate%q  (icol,ilev,:)
+        end do
+      end do
+      ! Half levels or interfaces
+      do ilev = 1, blocks(iblk)%pstate%nlev + 1
+        do icol = 1, blocks(iblk)%pstate%ncol
+          GFS_data(iblk)%Statein%prsi (icol,ilev) = blocks(iblk)%pstate%p_lev (icol,ilev)
+          GFS_data(iblk)%Statein%prsik(icol,ilev) = blocks(iblk)%pstate%pk_lev(icol,ilev)
+          GFS_data(iblk)%Statein%phii (icol,ilev) = blocks(iblk)%pstate%z_lev (icol,ilev) * g
+        end do
+      end do
+    end do
+
+  end subroutine ccpp_driver_input_dynamics
+
+  subroutine ccpp_driver_output_physics()
+
+  end subroutine ccpp_driver_output_physics
 
 end module ccpp_driver_mod

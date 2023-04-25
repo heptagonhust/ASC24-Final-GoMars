@@ -87,7 +87,7 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             t(i,j,k) = teq
-            pt(i,j,k) = potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
+            pt(i,j,k) = modified_potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
           end do
         end do
       end do
@@ -155,7 +155,7 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             t(i,j,k) = teq
-            pt(i,j,k) = potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
+            pt(i,j,k) = modified_potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
           end do
         end do
       end do
