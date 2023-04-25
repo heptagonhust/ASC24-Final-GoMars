@@ -14,8 +14,7 @@ module CCPP_data
 
     private
 
-    public cdata_tile,             &
-           cdata_domain,           &
+    public cdata_domain,           &
            cdata_block,            &
            ccpp_suite,             &
            GFDL_interstitial,      &
@@ -41,7 +40,6 @@ module CCPP_data
     !  for the entire domain and for the individual blocks !
     !  with dimensions nblocks and nthreads                !
     !------------------------------------------------------!
-    type(ccpp_t),                                              save, target :: cdata_tile
     type(ccpp_t),                                              save, target :: cdata_domain
     type(ccpp_t),                 dimension(:,:), allocatable, save, target :: cdata_block
 

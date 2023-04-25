@@ -762,10 +762,10 @@ contains
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-      call fiona_output('h1', 'dudt_phys' , dtend%dudt_phys (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'dvdt_phys' , dtend%dvdt_phys (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'dtdt_phys' , dtend%dtdt_phys (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'dqvdt_phys', dtend%dqvdt_phys(is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'dudt_phys' , dtend%dudt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1', 'dvdt_phys' , dtend%dvdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1', 'dtdt_phys' , dtend%dtdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1', 'dqvdt_phys', dtend%dqdt_phys(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
     end if
     end associate
     

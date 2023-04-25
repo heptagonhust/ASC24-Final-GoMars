@@ -103,8 +103,6 @@ contains
         end do
       end if
       call this%static%init_stage1(this%filter_mesh, this%mesh)
-      call this%pstate%init(this%mesh)
-      call this%ptend%init(this%mesh)
       call this%aux%init(this%filter_mesh, this%mesh)
     end if
 

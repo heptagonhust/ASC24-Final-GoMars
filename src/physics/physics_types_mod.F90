@@ -96,7 +96,6 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:  ) :: tev      ! Total enery in cv * T + gz + K
   contains
     procedure :: init => pstate_init
-    procedure :: init_tracers => pstate_init_tracers
     procedure :: clear => pstate_clear
     final :: pstate_final
   end type pstate_type
@@ -104,19 +103,16 @@ module physics_types_mod
   type ptend_type
     integer :: ncol = 0
     integer :: nlev = 0
-    real(r8), allocatable, dimension(:,:) :: dudt
-    real(r8), allocatable, dimension(:,:) :: dvdt
-    real(r8), allocatable, dimension(:,:) :: dtdt
-    real(r8), allocatable, dimension(:,:) :: dptdt
-    real(r8), allocatable, dimension(:,:) :: dptdt_rad
-    real(r8), allocatable, dimension(:,:) :: dqvdt
-    real(r8), allocatable, dimension(:,:) :: dqcdt
-    real(r8), allocatable, dimension(:,:) :: dqidt
+    real(r8), allocatable, dimension(:,:  ) :: dudt
+    real(r8), allocatable, dimension(:,:  ) :: dvdt
+    real(r8), allocatable, dimension(:,:  ) :: dtdt
+    real(r8), allocatable, dimension(:,:,:) :: dqdt
+    real(r8), allocatable, dimension(:,:  ) :: dptdt
+    real(r8), allocatable, dimension(:,:  ) :: dptdt_rad
     logical :: updated_u  = .false.
     logical :: updated_v  = .false.
     logical :: updated_t  = .false.
     logical :: updated_pt = .false.
-    logical :: updated_sh = .false.
     logical :: updated_qv = .false.
     logical :: updated_qc = .false.
     logical :: updated_qi = .false.
@@ -169,6 +165,20 @@ contains
     allocate(this%z         (this%ncol,this%nlev  ))
     allocate(this%z_lev     (this%ncol,this%nlev+1))
     allocate(this%dz        (this%ncol,this%nlev  ))
+    ! Tracers
+  if (ntracers > 0) then
+    allocate(this%q(this%ncol,this%nlev,ntracers))
+  end if
+    ! Moisture
+    if (idx_qv /= 0) this%qv => this%q(:,:,idx_qv)
+    if (idx_qc /= 0) this%qc => this%q(:,:,idx_qc)
+    if (idx_qi /= 0) this%qi => this%q(:,:,idx_qi)
+    if (idx_qr /= 0) this%qr => this%q(:,:,idx_qr)
+    if (idx_qs /= 0) this%qs => this%q(:,:,idx_qs)
+    if (idx_qg /= 0) this%qg => this%q(:,:,idx_qg)
+    if (idx_qh /= 0) this%qh => this%q(:,:,idx_qh)
+    ! Ozone
+    if (idx_qo3 /= 0) this%qo3 => this%q(:,:,idx_qo3)
     ! Stability
     allocate(this%n2_lev    (this%ncol,this%nlev+1))
     allocate(this%ri_lev    (this%ncol,this%nlev+1))
@@ -220,27 +230,6 @@ contains
     end do
 
   end subroutine pstate_init
-
-  subroutine pstate_init_tracers(this)
-
-    class(pstate_type), intent(inout), target :: this
-
-    ! Tracers
-  if (ntracers > 0) then
-    allocate(this%q(this%ncol,this%nlev,ntracers))
-  end if
-    ! Moisture
-    if (idx_qv /= 0) this%qv => this%q(:,:,idx_qv)
-    if (idx_qc /= 0) this%qc => this%q(:,:,idx_qc)
-    if (idx_qi /= 0) this%qi => this%q(:,:,idx_qi)
-    if (idx_qr /= 0) this%qr => this%q(:,:,idx_qr)
-    if (idx_qs /= 0) this%qs => this%q(:,:,idx_qs)
-    if (idx_qg /= 0) this%qg => this%q(:,:,idx_qg)
-    if (idx_qh /= 0) this%qh => this%q(:,:,idx_qh)
-    ! Ozone
-    if (idx_qo3 /= 0) this%qo3 => this%q(:,:,idx_qo3)
-
-  end subroutine pstate_init_tracers
 
   subroutine pstate_clear(this)
 
@@ -332,11 +321,9 @@ contains
     allocate(this%dudt      (this%ncol,this%nlev))
     allocate(this%dvdt      (this%ncol,this%nlev))
     allocate(this%dtdt      (this%ncol,this%nlev))
+    allocate(this%dqdt      (this%ncol,this%nlev,ntracers))
     allocate(this%dptdt     (this%ncol,this%nlev))
     allocate(this%dptdt_rad (this%ncol,this%nlev)); this%dptdt_rad = 0
-    allocate(this%dqvdt     (this%ncol,this%nlev))
-    allocate(this%dqcdt     (this%ncol,this%nlev))
-    allocate(this%dqidt     (this%ncol,this%nlev))
 
   end subroutine ptend_init
 
@@ -347,11 +334,9 @@ contains
     if (allocated(this%dudt     )) deallocate(this%dudt     )
     if (allocated(this%dvdt     )) deallocate(this%dvdt     )
     if (allocated(this%dtdt     )) deallocate(this%dtdt     )
+    if (allocated(this%dqdt     )) deallocate(this%dqdt     )
     if (allocated(this%dptdt    )) deallocate(this%dptdt    )
     if (allocated(this%dptdt_rad)) deallocate(this%dptdt_rad)
-    if (allocated(this%dqvdt    )) deallocate(this%dqvdt    )
-    if (allocated(this%dqcdt    )) deallocate(this%dqcdt    )
-    if (allocated(this%dqidt    )) deallocate(this%dqidt    )
 
   end subroutine ptend_clear
 
@@ -371,9 +356,10 @@ contains
     this%dvdt  = 0; this%updated_v  = .false.
     this%dtdt  = 0; this%updated_t  = .false.
     this%dptdt = 0; this%updated_pt = .false.
-    this%dqvdt = 0; this%updated_qv = .false.
-    this%dqcdt = 0; this%updated_qc = .false.
-    this%dqidt = 0; this%updated_qi = .false.
+    this%dqdt  = 0
+    this%updated_qv = .false.
+    this%updated_qc = .false.
+    this%updated_qi = .false.
 
   end subroutine ptend_reset
 

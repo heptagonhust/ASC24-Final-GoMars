@@ -35,6 +35,8 @@ module const_mod
   real(r8)            :: cvd          = 0 ! J kg-1 K-1
   real(r8)            :: cpv          = 0 ! J kg-1 K-1
   real(r8)            :: cvv          = 0 ! J kg-1 K-1
+  real(r8), parameter :: c_liq        = 4.1855d3 ! J kg-1 K-1
+  real(r8), parameter :: c_ice        = 1.972d3  ! J kg-1 K-1
   real(r8)            :: lv           = 0 !
   real(r8)            :: rd_o_rv      = 0
   real(r8)            :: rv_o_rd      = 0

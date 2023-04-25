@@ -170,9 +170,14 @@ contains
       call tracers(iblk)%init(blocks(iblk)%mesh, blocks(iblk)%filter_mesh)
     end do
 
-    ! Allocate tracer arrays in physics state.
     do iblk = 1, size(blocks)
-      call blocks(iblk)%pstate%init_tracers()
+      ! Allocate tracer arrays in physics state and tendency.
+      call blocks(iblk)%pstate%init(blocks(iblk)%mesh)
+      call blocks(iblk)%ptend%init(blocks(iblk)%mesh)
+      ! Allocate tendency arrays in dynamics tendency.
+      do i = 1, size(blocks(iblk)%dtend)
+        call blocks(iblk)%dtend(i)%init_phys()
+      end do
     end do
 
   end subroutine tracer_allocate

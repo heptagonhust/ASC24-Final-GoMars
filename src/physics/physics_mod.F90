@@ -59,33 +59,35 @@ contains
 
     select case (physics_suite)
     case ('simple_physics')
-      call simple_physics( &
-        pstate%ncol , &
-        pstate%nlev , &
-        dt          , &
-        pstate%lat  , &
-        pstate%t    , &
-        pstate%qv   , &
-        pstate%u    , &
-        pstate%v    , &
-        pstate%p    , &
-        pstate%p_lev, &
-        pstate%dp   , &
-        pstate%rdp  , &
-        pstate%ps   , &
-        ptend%dudt  , &
-        ptend%dvdt  , &
-        ptend%dtdt  , &
-        ptend%dqvdt , &
-        pstate%precl, &
-        0           , & ! test
-        .true.      , & ! RJ2012_precip
-        .false.       & ! TC_PBL_mod
+      call simple_physics(      &
+        pstate%ncol           , &
+        pstate%nlev           , &
+        dt                    , &
+        pstate%lat            , &
+        pstate%t              , &
+        pstate%qv             , &
+        pstate%u              , &
+        pstate%v              , &
+        pstate%p              , &
+        pstate%p_lev          , &
+        pstate%dp             , &
+        pstate%rdp            , &
+        pstate%ps             , &
+        ptend%dudt            , &
+        ptend%dvdt            , &
+        ptend%dtdt            , &
+        ptend%dqdt(:,:,idx_qv), &
+        pstate%precl          , &
+        0                     , & ! test
+        .true.                , & ! RJ2012_precip
+        .false.                 & ! TC_PBL_mod
       )
       ptend%updated_u  = .true.
       ptend%updated_v  = .true.
       ptend%updated_t  = .true.
-      ptend%updated_sh = .true.
+      ptend%updated_qv = .true.
+    case ('ccpp')
+      ! call ccpp_driver_run()
     end select
 
     call dp_coupling_p2d(block, itime)
@@ -116,7 +118,7 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             ! FIXME: qm should be updated for calculating dry mixing ratio of water vapor.
-            qv(i,j,k) = dry_mixing_ratio(wet_mixing_ratio(qv(i,j,k), qm(i,j,k)) + dt * dtend%dqvdt_phys(i,j,k), qm(i,j,k))
+            qv(i,j,k) = dry_mixing_ratio(wet_mixing_ratio(qv(i,j,k), qm(i,j,k)) + dt * dtend%dqdt_phys(i,j,k,idx_qv), qm(i,j,k))
           end do
         end do
       end do

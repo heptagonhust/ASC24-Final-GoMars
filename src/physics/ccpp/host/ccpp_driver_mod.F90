@@ -3,7 +3,7 @@
 module ccpp_driver_mod
 
   use ccpp_static_api
-  use CCPP_data, only: GFS_control, GFS_data, GFS_interstitial
+  use CCPP_data, only: cdata_domain, cdata_block, ccpp_suite, GFS_control, GFS_data, GFS_interstitial
   use const_mod
   use namelist_mod, only: hydrostatic, restart, dt_dyn, dt_phys
   use block_mod
@@ -18,6 +18,7 @@ module ccpp_driver_mod
 
   public ccpp_driver_init
   public ccpp_driver_final
+  public ccpp_driver_run
   public ccpp_driver_input_dynamics
   public ccpp_driver_output_physics
 
@@ -27,7 +28,7 @@ contains
 
     character(*), intent(in) :: namelist_file
 
-    integer iblk, ithrd, icol
+    integer iblk, ithrd, icol, ierr
     integer, allocatable :: ncol(:)
     integer idat(8), jdat(8)
     character(:), allocatable, target :: input_nml_file(:)
@@ -129,14 +130,74 @@ contains
 
     deallocate(ncol)
 
+    ! Initialize cdata instances.
+    cdata_domain%blk_no = 1
+    cdata_domain%thrd_no = 1
+    allocate(cdata_block(size(blocks),1))
+    do iblk = 1, size(blocks)
+      cdata_block(iblk,1)%blk_no = iblk
+      cdata_block(iblk,1)%thrd_no = 1
+    end do
+
+    call ccpp_physics_init(cdata_domain, suite_name=trim(ccpp_suite), ierr=ierr)
+    if (ierr /= 0) then
+      call log_error('Failed to initialize CCPP physics suite! ' // trim(cdata_domain%errmsg), __FILE__, __LINE__, pid=proc%id)
+    end if
+
   end subroutine ccpp_driver_init
 
   subroutine ccpp_driver_final()
 
+    integer ierr
+
+    call ccpp_physics_finalize(cdata_domain, suite_name=trim(ccpp_suite), ierr=ierr)
+    if (ierr /= 0) then
+      call log_error('Failed to finalize CCPP physics suite! ' // trim(cdata_domain%errmsg), __FILE__, __LINE__, pid=proc%id)
+    end if
+
+    if (allocated(cdata_block     )) deallocate(cdata_block     )
     if (allocated(GFS_data        )) deallocate(GFS_data        )
     if (allocated(GFS_interstitial)) deallocate(GFS_interstitial)
 
   end subroutine ccpp_driver_final
+
+  subroutine ccpp_driver_run()
+
+    integer iblk, ierr
+
+    call ccpp_physics_timestep_init(cdata_domain, suite_name=trim(ccpp_suite), group_name='time_vary', ierr=ierr)
+    if (ierr /= 0) then
+      call log_error('Failed to run ccpp_physics_timestep_init with group time_vary! ' // trim(cdata_domain%errmsg), &
+                     __FILE__, __LINE__, pid=proc%id)
+    end if
+
+    call ccpp_driver_input_dynamics()
+
+    ! Radiation
+    do iblk = 1, size(blocks)
+      call ccpp_physics_run(cdata_block(iblk,1), suite_name=trim(ccpp_suite), group_name='radiation', ierr=ierr)
+      if (ierr /= 0) then
+        call log_error('Failed to run ccpp_physics_run with group radiation! ' // trim(cdata_block(iblk,1)%errmsg), &
+                       __FILE__, __LINE__, pid=proc%id)
+      end if
+    end do
+
+    ! Physics
+    do iblk = 1, size(blocks)
+      call ccpp_physics_run(cdata_block(iblk,1), suite_name=trim(ccpp_suite), group_name='physics', ierr=ierr)
+      if (ierr /= 0) then
+        call log_error('Failed to run ccpp_physics_run with group physics! ' // trim(cdata_block(iblk,1)%errmsg), &
+                       __FILE__, __LINE__, pid=proc%id)
+      end if
+    end do
+
+    call ccpp_physics_timestep_finalize(cdata_domain, suite_name=trim(ccpp_suite), group_name='time_vary', ierr=ierr)
+    if (ierr /= 0) then
+      call log_error('Failed to run ccpp_physics_timestep_finalize with group time_vary! ' // trim(cdata_domain%errmsg), &
+                     __FILE__, __LINE__, pid=proc%id)
+    end if
+
+  end subroutine ccpp_driver_run
 
   subroutine ccpp_driver_input_dynamics()
 

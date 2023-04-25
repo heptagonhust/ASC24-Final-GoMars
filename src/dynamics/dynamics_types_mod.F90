@@ -4,6 +4,7 @@ module dynamics_types_mod
   use namelist_mod
   use mesh_mod
   use allocator_mod
+  use tracer_types_mod
 
   implicit none
 
@@ -36,9 +37,9 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: pt                ! Potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: tv                ! Virtual temperature
-    real(r8), allocatable, dimension(:,:,:) :: mg                ! Dry air weight on full levels
-    real(r8), allocatable, dimension(:,:,:) :: mg_lev            ! Dry air weight on half levels
-    real(r8), allocatable, dimension(:,:  ) :: mgs               ! Surface dry air weight
+    real(r8), allocatable, dimension(:,:,:) :: mg                ! Dry air weight on full levels                                  
+    real(r8), allocatable, dimension(:,:,:) :: mg_lev            ! Dry air weight on half levels                                  
+    real(r8), allocatable, dimension(:,:  ) :: mgs               ! Surface dry air weight                                         
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure (dry air and water vapor) on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure (dry air and water vapor) on half levels
     real(r8), pointer    , dimension(:,:  ) :: phs               ! Surface hydrostatic pressure (dry air and water vapor)
@@ -85,10 +86,10 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: dpt
     real(r8), allocatable, dimension(:,:  ) :: dmgs
     ! Tendencies from physics
-    real(r8), allocatable, dimension(:,:,:) :: dudt_phys
-    real(r8), allocatable, dimension(:,:,:) :: dvdt_phys
-    real(r8), allocatable, dimension(:,:,:) :: dtdt_phys
-    real(r8), allocatable, dimension(:,:,:) :: dqvdt_phys
+    real(r8), allocatable, dimension(:,:,:  ) :: dudt_phys
+    real(r8), allocatable, dimension(:,:,:  ) :: dvdt_phys
+    real(r8), allocatable, dimension(:,:,:  ) :: dtdt_phys
+    real(r8), allocatable, dimension(:,:,:,:) :: dqdt_phys
     logical :: update_u   = .false.
     logical :: update_v   = .false.
     logical :: update_gz  = .false.
@@ -102,6 +103,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: adv_w
   contains
     procedure :: init         => dtend_init
+    procedure :: init_phys    => dtend_init_phys
     procedure :: reset_flags  => dtend_reset_flags
     procedure :: clear        => dtend_clear
     generic :: operator(+)    => dtend_add
@@ -431,14 +433,20 @@ contains
       call allocate_array(mesh, this%adv_w , full_lon=.true., full_lat=.true., half_lev=.true.)
     end if
 
+  end subroutine dtend_init
+
+  subroutine dtend_init_phys(this)
+
+    class(dtend_type), intent(inout) :: this
+
     if (trim(physics_suite) /= '') then
-      call allocate_array(mesh, this%dudt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%dvdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%dtdt_phys , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%dqvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
     end if
 
-  end subroutine dtend_init
+  end subroutine dtend_init_phys
 
   subroutine dtend_reset_flags(this)
 
@@ -471,10 +479,10 @@ contains
     if (allocated(this%adv_gz  )) deallocate(this%adv_gz  )
     if (allocated(this%adv_w   )) deallocate(this%adv_w   )
 
-    if (allocated(this%dudt_phys )) deallocate(this%dudt_phys )
-    if (allocated(this%dvdt_phys )) deallocate(this%dvdt_phys )
-    if (allocated(this%dtdt_phys )) deallocate(this%dtdt_phys )
-    if (allocated(this%dqvdt_phys)) deallocate(this%dqvdt_phys)
+    if (allocated(this%dudt_phys)) deallocate(this%dudt_phys)
+    if (allocated(this%dvdt_phys)) deallocate(this%dvdt_phys)
+    if (allocated(this%dtdt_phys)) deallocate(this%dtdt_phys)
+    if (allocated(this%dqdt_phys)) deallocate(this%dqdt_phys)
 
   end subroutine dtend_clear
 

@@ -48,6 +48,7 @@ contains
                q           => tracers(block%id)%q          , & ! in (dry mixing ratios of all tracers)
                p           => block%dstate(itime)%ph       , & ! in (hydrostatic full pressure)
                p_lev       => block%dstate(itime)%ph_lev   , & ! in
+               ps          => block%dstate(itime)%phs      , & ! in (surface hydrostatic pressure)
                dmg         => block%dstate(itime)%dmg      , & ! in (dry air weight within each layer)
                omg         => block%aux%omg                , & ! in (vertical pressure velocity)
                gz          => block%dstate(itime)%gz       , & ! in (geopotential)
@@ -108,6 +109,7 @@ contains
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         icol = icol + 1
+        pstate%ps  (icol) = ps(i,j)
         pstate%wsb (icol) = sqrt(u(i,j,mesh%full_kde)**2 + v(i,j,mesh%full_kde)**2)
         pstate%land(icol) = land(i,j)
       end do
@@ -128,7 +130,7 @@ contains
                dudt  => block%dtend(itime)%dudt_phys , & ! out
                dvdt  => block%dtend(itime)%dvdt_phys , & ! out
                dtdt  => block%dtend(itime)%dtdt_phys , & ! out
-               dqvdt => block%dtend(itime)%dqvdt_phys)   ! out
+               dqdt  => block%dtend(itime)%dqdt_phys)    ! out
     if (ptend%updated_u .and. ptend%updated_v) then
       do k = mesh%full_kds, mesh%full_kde
         icol = 0
@@ -162,7 +164,7 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
-            dqvdt(i,j,k) = ptend%dqvdt(icol,k)
+            dqdt(i,j,k,idx_qv) = ptend%dqdt(icol,k,idx_qv)
           end do
         end do
       end do
