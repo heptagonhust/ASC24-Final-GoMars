@@ -12,6 +12,10 @@ module mars_sfc_nasa_mod
 
   implicit none
 
+  private
+
+  public mars_sfc_nasa_run
+
   real(r8), parameter :: z0_pbl = 0.01_r8 ! FIXME: Put it in other place.
 
 contains
@@ -20,13 +24,13 @@ contains
 
     integer, intent(in) :: ncol
     integer, intent(in) :: nlev
-    real(r8), intent(in ), dimension(ncol     ) :: wsb
-    real(r8), intent(in ), dimension(ncol     ) :: t_sfc
-    real(r8), intent(in ), dimension(ncol     ) :: z0
-    real(r8), intent(in ), dimension(ncol,nlev) :: pt
-    real(r8), intent(in ), dimension(ncol,nlev) :: z
-    real(r8), intent(out), dimension(ncol     ) :: ustar
-    real(r8), intent(out), dimension(ncol     ) :: ptstar
+    real(r8), intent(in ), dimension(ncol     ) :: wsb    ! Wind speed of lowest full level (m/s)
+    real(r8), intent(in ), dimension(ncol     ) :: t_sfc  ! Surface temperature (K)
+    real(r8), intent(in ), dimension(ncol     ) :: z0     ! Roughness length (m)
+    real(r8), intent(in ), dimension(ncol,nlev) :: pt     ! Potential temperature (K)
+    real(r8), intent(in ), dimension(ncol,nlev) :: z      ! Geopotential height (m)
+    real(r8), intent(out), dimension(ncol     ) :: ustar  ! Friction velocity (m/s)
+    real(r8), intent(out), dimension(ncol     ) :: ptstar ! Friction temperature (K)
 
     real(r8) rib, fh, fm, cdh, cdm, rlnzz
     integer icol
