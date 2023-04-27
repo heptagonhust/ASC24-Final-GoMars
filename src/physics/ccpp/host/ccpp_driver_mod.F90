@@ -24,9 +24,9 @@ module ccpp_driver_mod
 
 contains
 
-  subroutine ccpp_driver_init(namelist_file)
+  subroutine ccpp_driver_init(namelist_path)
 
-    character(*), intent(in) :: namelist_file
+    character(*), intent(in) :: namelist_path
 
     integer iblk, ithrd, icol, ierr
     integer, allocatable :: ncol(:)
@@ -35,8 +35,11 @@ contains
 
     call ccpp_driver_final()
 
-    allocate(input_nml_file(1), mold=namelist_file)
-    input_nml_file(1) = namelist_file
+    print *, 'check 1'
+    stop 999
+
+    allocate(input_nml_file(1), mold=namelist_path)
+    input_nml_file(1) = namelist_path
 
     allocate(GFS_data(size(blocks)))
     allocate(GFS_interstitial(1)) ! Size 1 for now, will be increased later according to OpenMP thread count.
@@ -64,7 +67,7 @@ contains
 
     call GFS_control%init(            &
       nlunit=10                     , &
-      fn_nml=namelist_file          , &
+      fn_nml=namelist_path          , &
       me=proc%id                    , &
       master=0                      , &
       logunit=6                     , &
@@ -94,7 +97,7 @@ contains
       hydrostatic=hydrostatic       , &
       communicator=proc%comm        , &
       ntasks=proc%np                , &
-      nthreads=1                      &
+      nthreads=1                      & ! NOTE: We are not using OpenMP yet, so nthreads is always 1.
     )
 
     deallocate(input_nml_file)

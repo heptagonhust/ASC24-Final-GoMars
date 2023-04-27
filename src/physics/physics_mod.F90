@@ -11,6 +11,7 @@ module physics_mod
   use formula_mod
   use operators_mod
   use pbl_driver_mod
+  use ccpp_driver_mod
 
   implicit none
 
@@ -23,9 +24,16 @@ module physics_mod
 
 contains
 
-  subroutine physics_init()
+  subroutine physics_init(namelist_path)
+
+    character(*), intent(in) :: namelist_path
 
     call time_add_alert('phys', seconds=dt_phys)
+
+    select case (physics_suite)
+    case ('ccpp')
+      call ccpp_driver_init(namelist_path)
+    end select
 
   end subroutine physics_init
 
@@ -143,6 +151,11 @@ contains
   end subroutine physics_run_after_dynamics
 
   subroutine physics_final()
+
+    select case (physics_suite)
+    case ('ccpp')
+      call ccpp_driver_final()
+    end select
 
   end subroutine physics_final
 
