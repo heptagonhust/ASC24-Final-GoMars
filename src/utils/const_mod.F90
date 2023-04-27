@@ -37,7 +37,7 @@ module const_mod
   real(r8)            :: cvv          = 0 ! J kg-1 K-1
   real(r8), parameter :: c_liq        = 4.1855d3 ! J kg-1 K-1
   real(r8), parameter :: c_ice        = 1.972d3  ! J kg-1 K-1
-  real(r8)            :: lv           = 0 !
+  real(r8)            :: lv           = 0 ! Latent heat of vaporization (J kg-1)
   real(r8)            :: rd_o_rv      = 0
   real(r8)            :: rv_o_rd      = 0
   real(r8)            :: rd_o_cpd     = 0
@@ -94,6 +94,7 @@ contains
       apheli     = 249.22d0
       obliq      = 25.19d0
       g          = 3.72d0
+      lv         = 2.84d6
       lapse_rate = 5.06d-3
       p0         = 6.1d2 ! FIXME: Should we use 6 hPa?
     case default

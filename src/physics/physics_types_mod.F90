@@ -34,6 +34,7 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:  ) :: tv       ! Virtual temperature (K)
     real(r8), allocatable, dimension(:,:  ) :: pt       ! Potential temperature (K)
     real(r8), allocatable, dimension(:,:  ) :: ptv      ! Virtual potential temperature (K)
+    real(r8), allocatable, dimension(:    ) :: t_sfc    ! Surface or ground temperature (K)
     ! Pressure
     real(r8), allocatable, dimension(:,:  ) :: p        ! Full pressure (hydrostatic) on full levels (Pa)
     real(r8), allocatable, dimension(:,:  ) :: p_lev    ! Full pressure (hydrostatic) on half levels (Pa)
@@ -73,6 +74,7 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: qfx      ! Upward moisture flux at surface (kg s-1 m-2)
     real(r8), allocatable, dimension(:    ) :: z0       ! Roughness height
     real(r8), allocatable, dimension(:    ) :: ustar    ! u* in similarity theory (m s-1)
+    real(r8), allocatable, dimension(:    ) :: ptstar   ! pt* (K)
     real(r8), allocatable, dimension(:    ) :: psim     ! Similarity stability function for momentum
     real(r8), allocatable, dimension(:    ) :: psih     ! Similarity stability function for heat
     real(r8), allocatable, dimension(:    ) :: rib      ! Bulk Richardson number in surface layer
@@ -152,6 +154,7 @@ contains
     allocate(this%tv        (this%ncol,this%nlev  ))
     allocate(this%pt        (this%ncol,this%nlev  ))
     allocate(this%ptv       (this%ncol,this%nlev  ))
+    allocate(this%t_sfc     (this%ncol            ))
     ! Pressure
     allocate(this%p         (this%ncol,this%nlev  ))
     allocate(this%p_lev     (this%ncol,this%nlev+1))
@@ -192,6 +195,7 @@ contains
     allocate(this%qfx       (this%ncol            ))
     allocate(this%z0        (this%ncol            ))
     allocate(this%ustar     (this%ncol            ))
+    allocate(this%ptstar    (this%ncol            ))
     allocate(this%psim      (this%ncol            ))
     allocate(this%psih      (this%ncol            ))
     allocate(this%rib       (this%ncol            ))
@@ -250,6 +254,7 @@ contains
     if (allocated(this%tv       )) deallocate(this%tv       )
     if (allocated(this%pt       )) deallocate(this%pt       )
     if (allocated(this%ptv      )) deallocate(this%ptv      )
+    if (allocated(this%t_sfc    )) deallocate(this%t_sfc    )
     ! Pressure
     if (allocated(this%p        )) deallocate(this%p        )
     if (allocated(this%p_lev    )) deallocate(this%p_lev    )
@@ -277,6 +282,7 @@ contains
     if (allocated(this%qfx      )) deallocate(this%qfx      )
     if (allocated(this%z0       )) deallocate(this%z0       )
     if (allocated(this%ustar    )) deallocate(this%ustar    )
+    if (allocated(this%ptstar   )) deallocate(this%ptstar   )
     if (allocated(this%psim     )) deallocate(this%psim     )
     if (allocated(this%psih     )) deallocate(this%psih     )
     if (allocated(this%rib      )) deallocate(this%rib      )

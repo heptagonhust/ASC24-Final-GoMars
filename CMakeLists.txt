@@ -189,6 +189,7 @@ set(gmcore_files
   src/physics/ccpp/host/ccpp_driver_mod.F90
   src/physics/pbl/pbl_ysu_mod.F90
   src/physics/pbl/pbl_driver_mod.F90
+  src/physics/mars/mars_sfc_nasa_mod.F90
   src/tests/adv/deform_test_mod.F90
   src/tests/adv/solid_rotation_test_mod.F90
   src/tests/adv/moving_vortices_test_mod.F90
