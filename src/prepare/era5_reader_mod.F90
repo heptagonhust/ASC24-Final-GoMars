@@ -3,6 +3,7 @@ module era5_reader_mod
   use fiona
   use flogger
   use const_mod
+  use namelist_mod
   use formula_mod
   use process_mod
 
@@ -31,84 +32,47 @@ module era5_reader_mod
 
 contains
 
-  subroutine era5_reader_run(bkg_file)
+  subroutine era5_reader_run(min_lon, max_lon, min_lat, max_lat)
 
-    character(*), intent(in) :: bkg_file
+    use mpi
+
+    real(r8), intent(in) :: min_lon
+    real(r8), intent(in) :: max_lon
+    real(r8), intent(in) :: min_lat
+    real(r8), intent(in) :: max_lat
 
     integer i, j, k, k0
     real(r8) qm1, qm2, qm, tv1, tv2, sum_q_lev, dz, rho
-    real(r8), allocatable :: tmp(:,:)
 
     call era5_reader_final()
 
     if (proc%is_root()) call log_notice('Use ERA5 ' // trim(bkg_file) // ' as background.')
 
-    call fiona_open_dataset('era5', file_path=bkg_file)
-    call fiona_get_dim('era5', 'longitude', size=era5_nlon)
-    call fiona_get_dim('era5', 'latitude' , size=era5_nlat)
-    call fiona_get_dim('era5', 'level'    , size=era5_nlev)
-
-    allocate(era5_lon(era5_nlon))
-    allocate(era5_lat(era5_nlat))
+    call fiona_open_dataset('era5', file_path=bkg_file, mpi_comm=proc%comm, ngroup=input_ngroup)
+    call fiona_set_dim('era5', 'longitude', span=[0, 360], cyclic=.true.)
+    call fiona_set_dim('era5', 'latitude', span=[90, -90], flip=.true.)
+    call fiona_get_dim('era5', 'level', size=era5_nlev)
     allocate(era5_lev(era5_nlev))
-    allocate(era5_u  (era5_nlon,era5_nlat,era5_nlev))
-    allocate(era5_v  (era5_nlon,era5_nlat,era5_nlev))
-    allocate(era5_t  (era5_nlon,era5_nlat,era5_nlev))
-    allocate(era5_z  (era5_nlon,era5_nlat,era5_nlev))
-    allocate(era5_qv (era5_nlon,era5_nlat,era5_nlev))
-    allocate(era5_pd (era5_nlon,era5_nlat,era5_nlev))
-    allocate(era5_ps (era5_nlon,era5_nlat          ))
-    allocate(era5_psd(era5_nlon,era5_nlat          ))
-    allocate(era5_zs (era5_nlon,era5_nlat          ))
-
     call fiona_start_input('era5')
-    call fiona_input('era5', 'longitude', era5_lon)
-    call fiona_input('era5', 'latitude' , era5_lat)
-    call fiona_input('era5', 'level'    , era5_lev)
-    call fiona_input('era5', 'u'        , era5_u  )
-    call fiona_input('era5', 'v'        , era5_v  )
-    call fiona_input('era5', 't'        , era5_t  )
-    call fiona_input('era5', 'z'        , era5_z  )
-    call fiona_input('era5', 'q'        , era5_qv )
-    call fiona_input('era5', 'sp'       , era5_ps )
-    call fiona_input('era5', 'zs'       , era5_zs )
-    if (fiona_has_var('era5', 'clwc')) then
-      allocate(era5_ql(era5_nlon,era5_nlat,era5_nlev))
-      call fiona_input('era5', 'clwc', era5_ql)
-    end if
-    if (fiona_has_var('era5', 'ciwc')) then
-      allocate(era5_qi(era5_nlon,era5_nlat,era5_nlev))
-      call fiona_input('era5', 'ciwc', era5_qi)
-    end if
-    if (fiona_has_var('era5', 'crwc')) then
-      allocate(era5_qr(era5_nlon,era5_nlat,era5_nlev))
-      call fiona_input('era5', 'crwc', era5_qr)
-    end if
-    if (fiona_has_var('era5', 'cswc')) then
-      allocate(era5_qs(era5_nlon,era5_nlat,era5_nlev))
-      call fiona_input('era5', 'cswc', era5_qs)
-    end if
+    call fiona_input_range('era5', 'longitude', era5_lon, coord_range=[min_lon, max_lon]); era5_nlon = size(era5_lon)
+    call fiona_input_range('era5', 'latitude' , era5_lat, coord_range=[min_lat, max_lat]); era5_nlat = size(era5_lat)
+    call fiona_input      ('era5', 'level'    , era5_lev); era5_nlev = size(era5_lev)
+    call fiona_input_range('era5', 'u'        , era5_u  , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_input_range('era5', 'v'        , era5_v  , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_input_range('era5', 't'        , era5_t  , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_input_range('era5', 'z'        , era5_z  , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_input_range('era5', 'q'        , era5_qv , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_input_range('era5', 'sp'       , era5_ps , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_input_range('era5', 'zs'       , era5_zs , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+  if (fiona_has_var('era5', 'clwc')) &
+    call fiona_input_range('era5', 'clwc'     , era5_ql , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+  if (fiona_has_var('era5', 'ciwc')) &
+    call fiona_input_range('era5', 'ciwc'     , era5_qi , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+  if (fiona_has_var('era5', 'crwc')) &
+    call fiona_input_range('era5', 'crwc'     , era5_qr , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+  if (fiona_has_var('era5', 'cswc')) &
+    call fiona_input_range('era5', 'cswc'     , era5_qs , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
     call fiona_end_input('era5')
-
-    ! Reverse latitude order (from South Pole to North Pole).
-    allocate(tmp(era5_nlon,era5_nlat))
-    tmp(1,:) = era5_lat(era5_nlat:1:-1); era5_lat = tmp(1,:)
-    do k = 1, era5_nlev
-      tmp = era5_u (:,era5_nlat:1:-1,k); era5_u (:,:,k) = tmp
-      tmp = era5_v (:,era5_nlat:1:-1,k); era5_v (:,:,k) = tmp
-      tmp = era5_t (:,era5_nlat:1:-1,k); era5_t (:,:,k) = tmp
-      tmp = era5_z (:,era5_nlat:1:-1,k); era5_z (:,:,k) = tmp
-      tmp = era5_qv(:,era5_nlat:1:-1,k); era5_qv(:,:,k) = tmp
-      if (allocated(era5_ql)) then
-        tmp = era5_ql(:,era5_nlat:1:-1,k); era5_ql(:,:,k) = tmp
-      end if
-      tmp = era5_qi(:,era5_nlat:1:-1,k); era5_qi(:,:,k) = tmp
-      tmp = era5_qr(:,era5_nlat:1:-1,k); era5_qr(:,:,k) = tmp
-      tmp = era5_qs(:,era5_nlat:1:-1,k); era5_qs(:,:,k) = tmp
-    end do
-    tmp = era5_ps (:,era5_nlat:1:-1  ); era5_ps = tmp
-    tmp = era5_zs (:,era5_nlat:1:-1  ); era5_zs = tmp
-    deallocate(tmp)
 
     ! Change units.
     era5_lev = era5_lev * 100.0_r8
@@ -130,6 +94,8 @@ contains
     end do
 
     if (proc%is_root()) call log_notice('Calculate ERA5 dry-air pressure or weight.')
+    allocate(era5_pd (era5_nlon,era5_nlat,era5_nlev))
+    allocate(era5_psd(era5_nlon,era5_nlat))
     do j = 1, era5_nlat
       do i = 1, era5_nlon
         k0 = 1

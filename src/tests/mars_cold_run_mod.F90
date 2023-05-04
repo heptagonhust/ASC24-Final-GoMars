@@ -25,13 +25,8 @@ contains
 
     type(block_type), intent(inout), target :: block
 
+    real(r8) min_lon, max_lon, min_lat, max_lat
     integer i, j, k
-
-    call topo_read(topo_file)
-    call topo_regrid(block)
-    if (use_topo_smooth) then
-      call topo_smooth(block)
-    end if
 
     associate (mesh   => block%mesh            , &
                u      => block%dstate(1)%u_lon , &
@@ -42,6 +37,16 @@ contains
                mgs    => block%dstate(1)%mgs   , &
                phs    => block%dstate(1)%phs   , &
                gzs    => block%static%gzs)
+    min_lon = mesh%full_lon_deg(mesh%full_ids-1)
+    max_lon = mesh%full_lon_deg(mesh%full_ide+1)
+    min_lat = mesh%full_lat_deg(max(1, mesh%full_jds-1))
+    max_lat = mesh%full_lat_deg(min(global_mesh%full_nlat, mesh%full_jde+1))
+    call topo_read(min_lon, max_lon, min_lat, max_lat)
+    call topo_regrid(block)
+    if (use_topo_smooth) then
+      call topo_smooth(block)
+    end if
+
     u = 0
     v = 0
     t = t0

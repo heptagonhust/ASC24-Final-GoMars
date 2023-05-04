@@ -32,21 +32,21 @@ contains
     real(r8), intent(out), dimension(ncol     ) :: ustar  ! Friction velocity (m/s)
     real(r8), intent(out), dimension(ncol     ) :: ptstar ! Friction temperature (K)
 
-    real(r8) rib, fh, fm, cdh, cdm, rlnzz
+    real(r8) ri, fh, fm, cdh, cdm, lnz
     integer icol
 
     do icol = 1, ncol
-      rib = (g * z(icol,nlev) / (pt(icol,nlev)*wsb(icol)**2 + 1.0e-09_r8)) * (pt(icol,nlev) - t_sfc(icol))
-      if (rib >= 0) then
-        fh = 1.0_r8 / (1 + (15 * rib / sqrt(1 + 5 * rib)))
-        fm = 1.0_r8 / (1 + (10 * rib / sqrt(1 + 5 * rib)))
+      ri = (g * z(icol,nlev) * (pt(icol,nlev) - t_sfc(icol)) / (pt(icol,nlev) * wsb(icol)**2 + 1.0e-09_r8))
+      if (ri >= 0) then
+        fh = 1.0_r8 / (1 + (15 * ri / sqrt(1 + 5 * ri)))
+        fm = 1.0_r8 / (1 + (10 * ri / sqrt(1 + 5 * ri)))
       else
-        fh = sqrt(1 - 64 * rib)
-        fm = sqrt(1 - 16 * rib)
+        fh = sqrt(1 - 64 * ri)
+        fm = sqrt(1 - 16 * ri)
       end if
-      rlnzz = log(z(icol,nlev) / z0(icol))
-      cdh = sqrt(fh) * ka / rlnzz
-      cdm = fm * (ka / rlnzz)**2
+      lnz = log(z(icol,nlev) / z0(icol))
+      cdh = sqrt(fh) * ka / lnz
+      cdm = fm * (ka / lnz)**2
       ustar(icol) = sqrt(cdm) * wsb(icol)
       ptstar(icol) = cdh * (pt(icol,nlev) - t_sfc(icol))
     end do

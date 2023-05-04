@@ -33,16 +33,13 @@ module bkg_mod
 
 contains
 
-  subroutine bkg_read(bkg_type_, bkg_file)
+  subroutine bkg_read(min_lon, max_lon, min_lat, max_lat)
 
-    character(*), intent(in) :: bkg_type_
-    character(*), intent(in) :: bkg_file
-
-    bkg_type = bkg_type_
+    real(r8), intent(in) :: min_lon, max_lon, min_lat, max_lat
 
     select case (bkg_type)
     case ('era5')
-      call era5_reader_run(bkg_file)
+      call era5_reader_run(min_lon, max_lon, min_lat, max_lat)
     case ('mpas')
       call mpas_reader_run(bkg_file)
     case ('waccm')

@@ -23,9 +23,6 @@ program gmcore_driver
 
   implicit none
 
-  character(256) namelist_path
-  integer iblk
-
   interface
     subroutine set_ic_interface(block)
       import block_type
@@ -33,6 +30,9 @@ program gmcore_driver
     end subroutine set_ic_interface
   end interface
   procedure(set_ic_interface), pointer :: set_ic
+
+  character(256) namelist_path
+  integer iblk
 
   call get_command_argument(1, namelist_path)
   if (namelist_path == '') then

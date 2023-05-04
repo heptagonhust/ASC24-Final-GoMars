@@ -62,6 +62,11 @@ module const_mod
   integer, parameter :: south = 3
   integer, parameter :: north = 4
 
+  real(r8)           :: min_lon
+  real(r8)           :: max_lon
+  real(r8)           :: min_lat
+  real(r8)           :: max_lat
+
 contains
 
   subroutine const_init(planet)

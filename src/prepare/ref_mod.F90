@@ -24,10 +24,10 @@ contains
     select case (planet)
     case ('earth')
       do iblk = 1, size(blocks)
-        associate (block  => blocks(iblk)              , &
-                   mesh   => blocks(iblk)%mesh         , &
-                   gzs    => blocks(iblk)%static%gzs   , &
-                   ref_ps => blocks(iblk)%static%ref_ps, &
+        associate (block       => blocks(iblk)                   , &
+                   mesh        => blocks(iblk)%mesh              , &
+                   gzs         => blocks(iblk)%static%gzs        , &
+                   ref_ps      => blocks(iblk)%static%ref_ps     , &
                    ref_ps_smth => blocks(iblk)%static%ref_ps_smth, &
                    ref_ps_perb => blocks(iblk)%static%ref_ps_perb)
         p0 = 1.0e5_r8

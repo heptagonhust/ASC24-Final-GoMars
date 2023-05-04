@@ -48,6 +48,8 @@ module namelist_mod
   character(30)   :: mp_scheme            = 'N/A'
   character(30)   :: pbl_scheme           = 'N/A'
 
+  character(256)  :: gmcore_data_dir      = 'N/A'
+
   integer         :: num_proc_lon(20)     = 0
   integer         :: num_proc_lat(20)     = 0
   integer         :: lon_hw               = 2
@@ -238,6 +240,7 @@ module namelist_mod
     physics_suite             , &
     mp_scheme                 , &
     pbl_scheme                , &
+    gmcore_data_dir           , &
     use_topo_smooth           , &
     topo_max_slope            , &
     topo_smooth_cycles        , &

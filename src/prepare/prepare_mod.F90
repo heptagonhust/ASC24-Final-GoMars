@@ -18,7 +18,7 @@ contains
 
     integer iblk, i, j
 
-    call topo_read(topo_file)
+    call topo_read(min_lon, max_lon, min_lat, max_lat)
     do iblk = 1, size(blocks)
       call topo_regrid(blocks(iblk))
     end do
@@ -53,9 +53,9 @@ contains
 
   subroutine prepare_bkg()
 
-    integer iblk, i
+    integer iblk
 
-    call bkg_read(bkg_type, bkg_file)
+    call bkg_read(min_lon, max_lon, min_lat, max_lat)
 
     call bkg_regrid_mgs()
     call bkg_calc_mg()
