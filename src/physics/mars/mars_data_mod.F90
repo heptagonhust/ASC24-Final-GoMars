@@ -2,7 +2,7 @@ module mars_data_mod
 
   use fiona
   use const_mod
-  use block_mod
+  use block_mod, only: block_type
   use namelist_mod
   use parallel_mod
   use mars_nasa_mod
@@ -24,6 +24,7 @@ module mars_data_mod
     real(r8), allocatable, dimension(:,:) :: soil_rho   ! Soil density (kg m-3)
     real(r8), allocatable, dimension(:,:) :: soil_cp    ! Soil specific capacity (J kg-1 K-1)
     real(r8), allocatable, dimension(:,:) :: soil_cn    ! Soil thermal conductivity (W m-1 K-1)
+    real(r8), allocatable, dimension(:,:) :: soil_t     ! Soil temperature (K)
   end type mars_data_type
 
   type(mars_data_type), allocatable :: mars_data(:)
@@ -68,6 +69,7 @@ contains
       allocate(mars_data(iblk)%soil_rho(ncol,nlev_soil))
       allocate(mars_data(iblk)%soil_cp (ncol,nlev_soil))
       allocate(mars_data(iblk)%soil_cn (ncol,nlev_soil))
+      allocate(mars_data(iblk)%soil_t  (ncol,nlev_soil))
       end associate
     end do
 
@@ -88,6 +90,7 @@ contains
         if (allocated(mars_data(iblk)%soil_rho)) deallocate(mars_data(iblk)%soil_rho)
         if (allocated(mars_data(iblk)%soil_cp )) deallocate(mars_data(iblk)%soil_cp )
         if (allocated(mars_data(iblk)%soil_cn )) deallocate(mars_data(iblk)%soil_cn )
+        if (allocated(mars_data(iblk)%soil_t  )) deallocate(mars_data(iblk)%soil_t  )
       end do
       deallocate(mars_data)
     end if

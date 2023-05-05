@@ -193,7 +193,10 @@ set(gmcore_files
   src/physics/mars/mars_data_mod.F90
   src/physics/mars/mars_sfc_nasa_mod.F90
   src/physics/mars/mars_pbl_nasa_mod.F90
+  src/physics/mars/mars_cnv_nasa_mod.F90
   src/physics/mars/mars_lsm_nasa_mod.F90
+  src/physics/mars/mars_mp_nasa_mod.F90
+  src/physics/mars/mars_rad_nasa_mod.F90
   src/physics/mars/mars_rad_rrtmgp_mod.F90
   src/physics/mars/mars_co2cyc_nasa_mod.F90
   src/tests/adv/deform_test_mod.F90
