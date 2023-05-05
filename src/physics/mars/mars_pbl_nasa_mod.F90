@@ -1,7 +1,7 @@
 module mars_pbl_nasa_mod
 
   use const_mod
-  use mars_data_nasa_mod
+  use mars_nasa_mod
 
   implicit none
 
@@ -9,8 +9,7 @@ module mars_pbl_nasa_mod
 
   public mars_pbl_nasa_init
   public mars_pbl_nasa_run
-
-  real(r8), parameter :: ric_pbl    = 0.195_r8    ! Critical Richardson number for PBL
+  public mars_pbl_nasa_final
 
 contains
 
@@ -31,5 +30,9 @@ contains
 
 
   end subroutine mars_pbl_nasa_run
+
+  subroutine mars_pbl_nasa_final()
+
+  end subroutine mars_pbl_nasa_final
 
 end module mars_pbl_nasa_mod

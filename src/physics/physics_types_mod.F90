@@ -227,8 +227,8 @@ contains
         icol = icol + 1
         this%i   (icol) = i
         this%j   (icol) = j
-        this%lon (icol) = mesh%full_lon(i)
-        this%lat (icol) = mesh%full_lat(j)
+        this%lon (icol) = mesh%full_lon_deg(i)
+        this%lat (icol) = mesh%full_lat_deg(j)
         this%area(icol) = mesh%area_cell(j)
       end do
     end do
