@@ -186,7 +186,6 @@ set(gmcore_files
   src/physics/physics_mod.F90
   src/physics/test_forcing_mod.F90
   src/physics/simple_physics_v6.f90
-  src/physics/ccpp/host/ccpp_driver_mod.F90
   src/physics/pbl/pbl_ysu_mod.F90
   src/physics/pbl/pbl_driver_mod.F90
   src/physics/mars/mars_nasa_mod.F90
@@ -228,7 +227,7 @@ if (EXISTS ${PROJECT_SOURCE_DIR}/src/physics/ccpp/host/CCPP_CAPS.cmake)
   include(src/physics/ccpp/host/CCPP_CAPS.cmake)
   include(src/physics/ccpp/host/CCPP_SCHEMES.cmake)
   include(src/physics/ccpp/host/CCPP_STATIC_API.cmake)
-  list(APPEND gmcore_files ${CAPS} ${SCHEMES} ${API})
+  list(APPEND gmcore_files ${CAPS} ${SCHEMES} ${API} src/physics/ccpp/host/ccpp_driver_mod.F90)
   if (NOT DEFINED ENV{NCEPLIBS_ROOT})
     message(FATAL_ERROR "NCEPLIBS_ROOT environment variable was not defined!")
   endif ()
@@ -250,6 +249,7 @@ if (EXISTS ${PROJECT_SOURCE_DIR}/src/physics/ccpp/host/CCPP_CAPS.cmake)
   include_directories($ENV{NCEPLIBS_ROOT}/sp-2.3.3/include_4)
   link_directories($ENV{NCEPLIBS_ROOT}/sp-2.3.3/lib)
   list(APPEND EXTERNAL_LIBS sp_4)
+  add_definitions(-DHAS_CCPP)
 endif ()
 
 add_library(gmcore ${gmcore_files})

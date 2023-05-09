@@ -11,7 +11,9 @@ module physics_mod
   use formula_mod
   use operators_mod
   use pbl_driver_mod
+#ifdef HAS_CCPP
   use ccpp_driver_mod
+#endif
 
   implicit none
 
@@ -31,8 +33,10 @@ contains
     call time_add_alert('phys', seconds=dt_phys)
 
     select case (physics_suite)
+#ifdef HAS_CCPP
     case ('ccpp')
       call ccpp_driver_init(namelist_path)
+#endif
     end select
 
   end subroutine physics_init
@@ -153,8 +157,10 @@ contains
   subroutine physics_final()
 
     select case (physics_suite)
+#ifdef HAS_CCPP
     case ('ccpp')
       call ccpp_driver_final()
+#endif
     end select
 
   end subroutine physics_final
