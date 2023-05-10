@@ -18,7 +18,7 @@ module vert_coord_mod
   public vert_coord_calc_mg
   public vert_coord_calc_mg_lev
   public vert_coord_calc_dmgdt_lev
-  public hyai, hybi
+  public hyai, hybi, hyam, hybm
 
   interface
     pure real(r8) function vert_coord_calc_mg_interface(k, mgs, ref_ps_perb)
