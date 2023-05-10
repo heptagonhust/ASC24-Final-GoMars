@@ -25,6 +25,7 @@ module gmcore_mod
   use physics_mod
   use filter_mod
   use test_forcing_mod
+  use perf_mod
 
   implicit none
 
@@ -59,7 +60,7 @@ contains
   subroutine gmcore_init_stage1(namelist_path, comm)
 
     character(*), intent(in) :: namelist_path
-    integer, intent(in), optional :: comm   
+    integer, intent(in), optional :: comm
 
     call log_init()
     call gas_mixture_init(planet)
@@ -154,7 +155,7 @@ contains
       associate (block => blocks(iblk)     , &
                  mesh  => blocks(iblk)%mesh, &
                  dstate => blocks(iblk)%dstate(old))
-      if (baroclinic) then 
+      if (baroclinic) then
         call prepare_static(block)
         ! Ensure bottom gz_lev is the same as gzs.
         do itime = lbound(block%dstate, 1), ubound(block%dstate, 1)
@@ -224,6 +225,7 @@ contains
     call diag_state_final()
     call history_final()
     call process_final()
+    call perf_final()
 
   end subroutine gmcore_final
 

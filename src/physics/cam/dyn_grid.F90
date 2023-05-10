@@ -2,14 +2,18 @@ module dyn_grid
 
   use const_mod, only: rad
   use shr_kind_mod, only: r8 => shr_kind_r8
-  use pmgrid
+  use pmgrid, only: plon, plat, plev, plevp
+  use hycoef, only: hycoef_init, hycoef_final
+  use const_mod, only: p0
   use block_mod
+  use vert_coord_mod, only: hyai, hybi
 
   implicit none
 
   private
 
   public dyn_grid_init
+  public dyn_grid_final
   public dyn_grid_get_colndx
   public dyn_grid_get_elem_coords
   public get_block_bounds_d
@@ -38,15 +42,23 @@ contains
     plev  = blocks(1)%mesh%full_nlev
     plevp = blocks(1)%mesh%half_nlev
 
+    call hycoef_init(hyai, hybi, p0, p0)
+
   end subroutine dyn_grid_init
 
-  subroutine dyn_grid_get_colndx( igcol, nclosest, owners, indx, jndx )
+  subroutine dyn_grid_final()
+
+    call hycoef_final()
+
+  end subroutine dyn_grid_final
+
+  subroutine dyn_grid_get_colndx(igcol, nclosest, owners, indx, jndx)
   
-    integer, intent(in)  :: nclosest
-    integer, intent(in)  :: igcol(nclosest)
+    integer, intent(in ) :: nclosest
+    integer, intent(in ) :: igcol (nclosest)
     integer, intent(out) :: owners(nclosest)
-    integer, intent(out) :: indx(nclosest)
-    integer, intent(out) :: jndx(nclosest)
+    integer, intent(out) :: indx  (nclosest)
+    integer, intent(out) :: jndx  (nclosest)
 
   end subroutine dyn_grid_get_colndx
 
@@ -134,10 +146,12 @@ contains
 
   subroutine get_gcol_block_d(gcol, cnt, blockid, bcid, localblockid)
 
+    ! Purpose: Return global block index and local column index for global column index.
+
     integer, intent(in ) :: gcol            ! Global column index
     integer, intent(in ) :: cnt             ! Size of blockid and bcid arrays
     integer, intent(out) :: blockid(cnt)    ! Block index
-    integer, intent(out) :: bcid(cnt)       ! Column index within block
+    integer, intent(out) :: bcid   (cnt)    ! Column index within block
     integer, intent(out), optional :: localblockid(cnt)
 
   end subroutine get_gcol_block_d

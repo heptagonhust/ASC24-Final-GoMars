@@ -89,8 +89,6 @@ module phys_grid
    use physconst,        only: pi
    use ppgrid,           only: pcols, pver, begchunk, endchunk
 #if ( defined SPMD )
-   use spmd_dyn,         only: block_buf_nrecs, chunk_buf_nrecs, &
-                               local_dp_map
    use mpishorthand
 #endif
    use spmd_utils,       only: iam, masterproc, npes, proc_smp_map, nsmps
@@ -102,11 +100,9 @@ module phys_grid
    implicit none
    save
 
-#if ( ! defined SPMD )
-   integer, private :: block_buf_nrecs
-   integer, private :: chunk_buf_nrecs
-   logical, private :: local_dp_map=.true.
-#endif
+   integer, public :: block_buf_nrecs
+   integer, public :: chunk_buf_nrecs
+   logical, public :: local_dp_map=.true.
 
 ! The identifier for the physics grid
    integer, parameter, public :: phys_decomp = 100

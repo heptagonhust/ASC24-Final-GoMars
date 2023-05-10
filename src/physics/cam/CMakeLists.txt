@@ -1,6 +1,7 @@
 cmake_policy(SET CMP0076 NEW)
 
 target_sources(gmcore PRIVATE
+  cam_physics_driver_mod.F90
   cam_interp_mod.F90
   cam/aer_rad_props.F90
   cam/aoa_tracers.F90
@@ -249,4 +250,5 @@ target_sources(gmcore PRIVATE
   utils/time_manager.F90
   utils/units.F90
   utils/water_isotopes.F90
+  utils/wrap_mpi.F90
 )

@@ -14,6 +14,9 @@ module physics_mod
 #ifdef HAS_CCPP
   use ccpp_driver_mod
 #endif
+#ifdef HAS_CAM
+  use cam_physics_driver_mod
+#endif
 
   implicit none
 
@@ -36,6 +39,10 @@ contains
 #ifdef HAS_CCPP
     case ('ccpp')
       call ccpp_driver_init(namelist_path)
+#endif
+#ifdef HAS_CAM
+    case ('cam')
+      call cam_physics_driver_init(namelist_path)
 #endif
     end select
 
@@ -160,6 +167,10 @@ contains
 #ifdef HAS_CCPP
     case ('ccpp')
       call ccpp_driver_final()
+#endif
+#ifdef HAS_CAM
+    case ('cam')
+      call cam_physics_driver_final()
 #endif
     end select
 

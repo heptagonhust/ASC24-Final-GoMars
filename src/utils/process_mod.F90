@@ -7,6 +7,7 @@ module process_mod
   use namelist_mod
   use mesh_mod
   use block_mod
+  use perf_mod
   use parallel_types_mod
 
   implicit none
@@ -40,6 +41,7 @@ contains
       call MPI_INIT(ierr)
       proc%comm = MPI_COMM_WORLD
     end if
+    call perf_init()
     call MPI_COMM_GROUP(proc%comm, proc%group, ierr)
     call MPI_COMM_SIZE(proc%comm, proc%np, ierr)
     call MPI_COMM_RANK(proc%comm, proc%id, ierr)
