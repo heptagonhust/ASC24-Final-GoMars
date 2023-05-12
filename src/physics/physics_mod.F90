@@ -105,8 +105,14 @@ contains
       ptend%updated_v  = .true.
       ptend%updated_t  = .true.
       ptend%updated_qv = .true.
+#ifdef HAS_CCPP
     case ('ccpp')
-      ! call ccpp_driver_run()
+      call ccpp_driver_run()
+#endif
+#ifdef HAS_CAM
+    case ('cam')
+      call cam_physics_driver_run1()
+#endif
     end select
 
     call dp_coupling_p2d(block, itime)

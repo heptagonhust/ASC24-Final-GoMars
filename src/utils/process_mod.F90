@@ -84,7 +84,8 @@ contains
     end do
 
     if (allocated(proc%ngb)) deallocate(proc%ngb)
-    if (allocated(blocks  )) deallocate(blocks  )
+    if (allocated(proc%grid_proc_idmap)) deallocate(proc%grid_proc_idmap)
+    if (allocated(blocks)) deallocate(blocks)
     if (proc%group      /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%group     , ierr)
     if (proc%cart_group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%cart_group, ierr)
 
@@ -152,7 +153,8 @@ contains
 
   subroutine decompose_domains()
 
-    integer ierr, tmp_id(1), i, j
+    integer ierr, tmp_id(1), i
+    integer, allocatable :: all_ids(:), all_ide(:), all_jds(:), all_jde(:)
     logical correct, all_correct
 
     ! Set neighborhood of the process.
@@ -204,6 +206,19 @@ contains
     if (.not. all_correct) then
       call log_error('Decomposed grid size along latitude should be >= 2!', __FILE__, __LINE__, proc%id)
     end if
+
+    ! Set grid_proc_idmap for later use.
+    allocate(proc%grid_proc_idmap(nlon,nlat))
+    allocate(all_ids(proc%np), all_ide(proc%np))
+    allocate(all_jds(proc%np), all_jde(proc%np))
+    call MPI_ALLGATHER(proc%ids, 1, MPI_INTEGER, all_ids, 1, MPI_INTEGER, proc%cart_comm, ierr)
+    call MPI_ALLGATHER(proc%ide, 1, MPI_INTEGER, all_ide, 1, MPI_INTEGER, proc%cart_comm, ierr)
+    call MPI_ALLGATHER(proc%jds, 1, MPI_INTEGER, all_jds, 1, MPI_INTEGER, proc%cart_comm, ierr)
+    call MPI_ALLGATHER(proc%jde, 1, MPI_INTEGER, all_jde, 1, MPI_INTEGER, proc%cart_comm, ierr)
+    do i = 1, proc%np
+      proc%grid_proc_idmap(all_ids(i):all_ide(i), all_jds(i):all_jde(i)) = i - 1
+    end do
+    deallocate(all_ids, all_ide, all_jds, all_jde)
 
   end subroutine decompose_domains
 

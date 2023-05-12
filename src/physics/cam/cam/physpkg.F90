@@ -117,7 +117,6 @@ contains
     use clubb_intr,         only: clubb_register_cam
     use conv_water,         only: conv_water_register
     use physconst,          only: mwdry, cpair, mwh2o, cpwv
-    use tracers,            only: tracers_register
     use check_energy,       only: check_energy_register
     use carma_intr,         only: carma_register
     use cam3_aero_data,     only: cam3_aero_data_on, cam3_aero_data_register
@@ -317,9 +316,6 @@ contains
 
     ! Register age of air tracers
     call aoa_tracers_register()
-
-    ! Register test tracers
-    call tracers_register()
 
     call dyn_register()
 
@@ -723,7 +719,6 @@ contains
     use microp_aero,        only: microp_aero_init
     use macrop_driver,      only: macrop_driver_init
     use conv_water,         only: conv_water_init
-    use tracers,            only: tracers_init
     use aoa_tracers,        only: aoa_tracers_init
     use rayleigh_friction,  only: rayleigh_friction_init
     use pbl_utils,          only: pbl_utils_init
@@ -749,7 +744,6 @@ contains
     use solar_data,         only: solar_data_init
     use dadadj_cam,         only: dadadj_init
     use cam_abortutils,     only: endrun
-    use nudging,            only: Nudge_Model, nudging_init
     use cam_snapshot,       only: cam_snapshot_init
 
     ! Input/output arguments
@@ -790,8 +784,6 @@ contains
     call diag_init(pbuf2d)
 
     call check_energy_init()
-
-    call tracers_init()
 
     ! age of air tracers
     call aoa_tracers_init()
@@ -894,7 +886,7 @@ contains
     call qbo_init
 
     call lunar_tides_init()
-    
+
     call iondrag_init(pref_mid)
     ! Geomagnetic module -- after iondrag_init
     if (epp_ionization_active) then
@@ -916,10 +908,6 @@ contains
     dlfzm_idx = pbuf_get_index('DLFZM', ierr)
 
     call phys_getopts(prog_modal_aero_out=prog_modal_aero)
-
-    ! Initialize Nudging Parameters
-    !--------------------------------
-    if(Nudge_Model) call nudging_init
 
     if (clim_modal_aero) then
 
@@ -947,7 +935,7 @@ contains
   !-----------------------------------------------------------------------
   !
 
-  subroutine phys_run1(phys_state, ztodt, phys_tend, pbuf2d,  cam_in, cam_out)
+  subroutine phys_run1(ztodt, phys_state, phys_tend, pbuf2d,  cam_in, cam_out)
     !-----------------------------------------------------------------------
     !
     ! Purpose:
@@ -1258,7 +1246,6 @@ contains
     use cam_history,        only: hist_fld_active
     use qneg_module,        only: qneg4
     use co2_cycle,          only: co2_cycle_set_ptend
-    use nudging,            only: Nudge_Model,Nudge_ON,nudging_timestep_tend
     use cam_snapshot,       only: cam_snapshot_all_outfld_tphysac
     use cam_snapshot,       only: cam_snapshot_ptend_outfld
     use lunar_tides,        only: lunar_tides_tend
@@ -1660,14 +1647,6 @@ contains
     call check_energy_chng(state, tend, "iondrag", nstep, ztodt, zero, zero, zero, zero)
 
     call t_stopf  ( 'iondrag' )
-
-    ! Update Nudging values, if needed
-    !----------------------------------
-    if((Nudge_Model).and.(Nudge_ON)) then
-      call nudging_timestep_tend(state,ptend)
-      call physics_update(state,ptend,ztodt,tend)
-      call check_energy_chng(state, tend, "nudging", nstep, ztodt, zero, zero, zero, zero)
-    endif
 
     !-------------- Energy budget checks vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
@@ -2654,7 +2633,6 @@ subroutine phys_timestep_init(phys_state, cam_in, cam_out, pbuf2d)
   use prescribed_strataero,only: prescribed_strataero_adv
   use mo_apex,             only: mo_apex_init
   use epp_ionization,      only: epp_ionization_active
-  use nudging,             only: Nudge_Model, nudging_timestep_init
 
   implicit none
 
@@ -2717,10 +2695,6 @@ subroutine phys_timestep_init(phys_state, cam_in, cam_out, pbuf2d)
 
   ! age of air tracers
   call aoa_tracers_timestep_init(phys_state)
-
-  ! Update Nudging values, if needed
-  !----------------------------------
-  if(Nudge_Model) call nudging_timestep_init(phys_state)
 
 end subroutine phys_timestep_init
 

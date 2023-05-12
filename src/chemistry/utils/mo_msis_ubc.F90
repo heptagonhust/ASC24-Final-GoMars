@@ -35,6 +35,7 @@
 
       use ppgrid,        only : pcols, begchunk, endchunk
       use constituents,  only : cnst_get_ind, cnst_fixed_ubc
+      use physics_msis,  only : tselec
 
       implicit none
 
@@ -42,7 +43,7 @@
 !	... dummy args
 !------------------------------------------------------------------
       logical, intent(in) :: &
-        zonal_avg            ! zonal averaging switch        
+        zonal_avg            ! zonal averaging switch
 
 !------------------------------------------------------------------
 !	... local variables
@@ -120,7 +121,8 @@
       use physconst,    only : pi
       use cam_control_mod,only : lambm0, eccen, mvelpp, obliqr
       use shr_orb_mod,    only : shr_orb_decl
-      
+      use physics_msis, only: ghp7
+
       implicit none
 
 !--------------------------------------------------------------------
@@ -152,7 +154,7 @@
       real(r8) ::  pint(pcols)       ! top interface pressure (Pa)
       real(r8) ::  calday, delta, esfact
       real(r8) ::  f107p, f107a
-      
+
       !--------------------------------------------------------------------
       !	... get values from msis
       !--------------------------------------------------------------------
@@ -166,7 +168,7 @@
       msis_ap(:) = 0._r8
       msis_ap(1) = ap
       pint(:)    = ptop_ref
-      
+
       calday = get_curr_calday()
 
       esfact = 1._r8
@@ -174,7 +176,7 @@
 
       f107p = esfact*f107p_in
       f107a = esfact*f107a_in
-      
+
 #ifdef MSIS_DIAGS
       if( masterproc ) then
          write(iulog,*) '===================================='

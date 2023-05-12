@@ -379,7 +379,7 @@ contains
   subroutine history_write_h0_swm(blocks, itime)
 
     type(block_type), intent(in), target :: blocks(:)
-    integer, intent(in) :: itime 
+    integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je
     integer start(2), count(2)
@@ -408,7 +408,7 @@ contains
       start = [is,js]
       count = [mesh%half_nlon,mesh%half_nlat]
       call fiona_output('h0', 'pv' , aux%pv    (is:ie,js:je,1)    , start=start, count=count)
- 
+
       call fiona_output('h0', 'tm' , dstate %tm)
       call fiona_output('h0', 'te' , dstate %te)
       call fiona_output('h0', 'tpe', dstate %tpe)
@@ -420,7 +420,7 @@ contains
   subroutine history_write_h0_adv(blocks, itime)
 
     type(block_type), intent(in), target :: blocks(:)
-    integer, intent(in) :: itime 
+    integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je, ks, ke, i
     integer start(3), count(3)
@@ -450,7 +450,7 @@ contains
   subroutine history_write_h0_hydrostatic(blocks, itime)
 
     type(block_type), intent(in), target :: blocks(:)
-    integer, intent(in) :: itime 
+    integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je, ks, ke, k
     integer start(3), count(3)
@@ -498,7 +498,7 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%half_nlat,mesh%full_nlev]
       call fiona_output('h0', 'vor'     , aux%vor       (is:ie,js:je,ks:ke)     , start=start, count=count)
-      
+
       call fiona_output('h0', 'tm'   , dstate%tm)
       call fiona_output('h0', 'te'   , dstate%te)
 
@@ -533,7 +533,7 @@ contains
   subroutine history_write_h0_nonhydrostatic(blocks, itime)
 
     type(block_type), intent(in), target :: blocks(:)
-    integer, intent(in) :: itime 
+    integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
@@ -580,7 +580,7 @@ contains
       count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
       call fiona_output('h0', 'w'       , dstate%w_lev   (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'p'       , dstate%p_lev   (is:ie,js:je,ks:ke)     , start=start, count=count)
-      
+
       call fiona_output('h0', 'tm' , dstate %tm)
       call fiona_output('h0', 'te' , dstate %te)
       call fiona_output('h0', 'tpe', dstate %tpe)
@@ -768,7 +768,7 @@ contains
       call fiona_output('h1', 'dqvdt_phys', dtend%dqdt_phys(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
     end if
     end associate
-    
+
     call fiona_end_output('h1', keep_dataset=.true.)
 
   end subroutine history_write_h1_hydrostatic

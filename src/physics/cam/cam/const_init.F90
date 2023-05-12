@@ -32,7 +32,6 @@ CONTAINS
     use co2_cycle,     only: co2_implements_cnst,           co2_init_cnst
     use microp_driver, only: microp_driver_implements_cnst, microp_driver_init_cnst
     use rk_stratiform, only: rk_stratiform_implements_cnst, rk_stratiform_init_cnst
-    use tracers,       only: tracers_implements_cnst,       tracers_init_cnst
     use unicon_cam,    only: unicon_implements_cnst,        unicon_init_cnst
 
     !-----------------------------------------------------------------------
@@ -128,15 +127,6 @@ CONTAINS
       call rk_stratiform_init_cnst(trim(name), latvals, lonvals, mask_use, q)
       if(masterproc .and. verbose_use) then
         write(iulog,*) '          ', trim(name), ' initialized by "rk_stratiform_init_cnst"'
-      end if
-    else if (tracers_implements_cnst(trim(name))) then
-      if (present(z)) then
-        call tracers_init_cnst(trim(name), latvals, lonvals, mask_use, q,z=z)
-      else
-        call tracers_init_cnst(trim(name), latvals, lonvals, mask_use, q)
-      end if
-      if(masterproc .and. verbose_use) then
-        write(iulog,*) '          ', trim(name), ' initialized by "tracers_init_cnst"'
       end if
     else if (unicon_implements_cnst(trim(name))) then
       call unicon_init_cnst(trim(name), latvals, lonvals, mask_use, q)

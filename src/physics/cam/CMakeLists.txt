@@ -2,7 +2,6 @@ cmake_policy(SET CMP0076 NEW)
 
 target_sources(gmcore PRIVATE
   cam_physics_driver_mod.F90
-  cam_interp_mod.F90
   cam/aer_rad_props.F90
   cam/aoa_tracers.F90
   cam/beljaars_drag_cam.F90
@@ -32,6 +31,7 @@ target_sources(gmcore PRIVATE
   cam/convect_deep.F90
   cam/convect_shallow.F90
   cam/cospsimulator_intr.F90
+  cam/cpslec.F90
   cam/dadadj_cam.F90
   cam/dadadj.F90
   cam/diffusion_solver.F90
@@ -64,7 +64,6 @@ target_sources(gmcore PRIVATE
   cam/ndrop.F90
   cam/nucleate_ice_cam.F90
   cam/nucleate_ice.F90
-  cam/nudging.F90
   cam/pbl_utils.F90
   cam/phys_control.F90
   cam/phys_debug_util.F90
@@ -95,7 +94,6 @@ target_sources(gmcore PRIVATE
   cam/subcol.F90
   cam/tidal_diag.F90
   cam/tracers_suite.F90
-  cam/tracers.F90
   cam/trb_mtn_stress_cam.F90
   cam/trb_mtn_stress.F90
   cam/tropopause.F90
@@ -172,12 +170,14 @@ target_sources(gmcore PRIVATE
   rrtmg/aer_src/rrsw_tbl.F90
   rrtmg/aer_src/rrsw_wvn.F90
   rrtmg/aer_src/rrtmg_lw_init.f90
+  rrtmg/aer_src/rrtmg_lw_k_g.f90
   rrtmg/aer_src/rrtmg_lw_rad.f90
   rrtmg/aer_src/rrtmg_lw_rtrnmc.f90
   rrtmg/aer_src/rrtmg_lw_setcoef.f90
   rrtmg/aer_src/rrtmg_lw_taumol.f90
   rrtmg/aer_src/rrtmg_sw_cldprmc.f90
-  rrtmg/aer_src/rrtmg_sw_init.F90
+  rrtmg/aer_src/rrtmg_sw_init.f90
+  rrtmg/aer_src/rrtmg_sw_k_g.f90
   rrtmg/aer_src/rrtmg_sw_rad.f90
   rrtmg/aer_src/rrtmg_sw_reftra.f90
   rrtmg/aer_src/rrtmg_sw_setcoef.F90
@@ -195,6 +195,8 @@ target_sources(gmcore PRIVATE
   rrtmg/rrtmg_state.F90
   rrtmg/slingo.F90
   shr/dSFMT_interface.F90
+  shr/dSFMT.c
+  shr/dSFMT_utils.c
   shr/kissvec_mod.F90
   shr/mersennetwister_mod.F90
   shr/seq_drydep_mod.F90
@@ -217,23 +219,25 @@ target_sources(gmcore PRIVATE
   shr/shr_pio_mod.F90
   shr/shr_RandNum_mod.F90
   shr/shr_reprosum_mod.F90
+  shr/shr_reprosumx86.c
   shr/shr_spfn_mod.F90
   shr/shr_strconvert_mod.F90
   shr/shr_string_mod.F90
   shr/shr_sys_mod.F90
   shr/shr_timer_mod.F90
+  stepon.F90
   unit_drivers/drv_input_data.F90
   utils/bnddyi.F90
   utils/buffer.F90
   utils/cam_abortutils.F90
   utils/cam_datetime.F90
   utils/cam_grid_support.F90
+  utils/cam_interp_mod.F90
   utils/cam_map_utils.F90
   utils/cam_pio_utils.F90
   utils/coords_1d.F90
   utils/error_messages.F90
   utils/gmean_mod.F90
-  utils/hycoef.F90
   utils/infnan.F90
   utils/interpolate_data.F90
   utils/intp_util.F90

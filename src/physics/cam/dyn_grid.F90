@@ -1,12 +1,11 @@
 module dyn_grid
 
-  use const_mod, only: rad
+  use const_mod   , only: rad
   use shr_kind_mod, only: r8 => shr_kind_r8
-  use pmgrid, only: plon, plat, plev, plevp
-  use hycoef, only: hycoef_init, hycoef_final
-  use const_mod, only: p0
-  use block_mod
-  use vert_coord_mod, only: hyai, hybi
+  use pmgrid      , only: plon, plat, plev, plevp
+  use const_mod   , only: p0
+  use block_mod   , only: blocks
+  use process_mod , only: proc
 
   implicit none
 
@@ -20,7 +19,7 @@ module dyn_grid
   public get_block_gcol_d
   public get_block_gcol_cnt_d
   public get_block_levels_d
-  public get_block_lvl_cnt_d
+  public get_block_levels_cnt_d
   public get_block_owner_d
   public get_dyn_grid_parm
   public get_gcol_block_d
@@ -42,18 +41,14 @@ contains
     plev  = blocks(1)%mesh%full_nlev
     plevp = blocks(1)%mesh%half_nlev
 
-    call hycoef_init(hyai, hybi, p0, p0)
-
   end subroutine dyn_grid_init
 
   subroutine dyn_grid_final()
 
-    call hycoef_final()
-
   end subroutine dyn_grid_final
 
   subroutine dyn_grid_get_colndx(igcol, nclosest, owners, indx, jndx)
-  
+
     integer, intent(in ) :: nclosest
     integer, intent(in ) :: igcol (nclosest)
     integer, intent(out) :: owners(nclosest)
@@ -63,9 +58,9 @@ contains
   end subroutine dyn_grid_get_colndx
 
   subroutine dyn_grid_get_elem_coords( latndx, rlon, rlat, cdex )
-  
+
     integer, intent(in) :: latndx ! lat  index
-  
+
     real(r8),optional, intent(out) :: rlon(:) ! longitudes of the columns in the latndx slice
     real(r8),optional, intent(out) :: rlat(:) ! latitudes of the columns in the latndx slice
     integer, optional, intent(out) :: cdex(:) ! global column index
@@ -76,6 +71,9 @@ contains
 
     integer, intent(out) :: block_first
     integer, intent(out) :: block_last
+
+    block_first = 1
+    block_last = proc%np
 
   end subroutine get_block_bounds_d
 
@@ -91,6 +89,8 @@ contains
 
     integer, intent(in) :: blockid          ! Global block ID
 
+    res = count(proc%grid_proc_idmap == blockid)
+
   end function get_block_gcol_cnt_d
 
   subroutine get_block_levels_d(blockid, bcid, lvlsiz, levels)
@@ -102,14 +102,14 @@ contains
 
   end subroutine get_block_levels_d
 
-  integer function get_block_lvl_cnt_d(blockid, bcid) result(res)
+  integer function get_block_levels_cnt_d(blockid, bcid) result(res)
 
     integer, intent(in) :: blockid          ! Global block ID
     integer, intent(in) :: bcid             ! Column index within block
 
     res = plevp
 
-  end function get_block_lvl_cnt_d
+  end function get_block_levels_cnt_d
 
   integer function get_block_owner_d(blockid) result(res)
 
@@ -167,12 +167,22 @@ contains
   subroutine get_horiz_grid_d(size, clat_d_out, clon_d_out, area_d_out, wght_d_out, lat_d_out, lon_d_out)
 
     integer , intent(in ) :: size                       ! Array sizes
-    real(r8), intent(out), optional :: clat_d_out(size) ! Column latitudes
-    real(r8), intent(out), optional :: clon_d_out(size) ! Column longitudes
+    real(r8), intent(out), optional :: clat_d_out(size) ! Column latitudes (rad)
+    real(r8), intent(out), optional :: clon_d_out(size) ! Column longitudes (rad)
     real(r8), intent(out), optional :: area_d_out(size) ! Column surface
     real(r8), intent(out), optional :: wght_d_out(size) ! Column integration
-    real(r8), intent(out), optional :: lat_d_out(size)  ! Column deg latitudes
-    real(r8), intent(out), optional :: lon_d_out(size)  ! Column deg longitudes
+    real(r8), intent(out), optional ::  lat_d_out(size) ! Column latitudes (deg)
+    real(r8), intent(out), optional ::  lon_d_out(size) ! Column longitudes (deg)
+
+    integer i, j, icol
+
+    associate (lon => blocks(1)%pstate%lon, lat => blocks(1)%pstate%lat, area => blocks(1)%pstate%area)
+    if (present(clat_d_out)) clat_d_out = lat * rad
+    if (present(clon_d_out)) clon_d_out = lon * rad
+    if (present(area_d_out)) area_d_out = area
+    if (present( lat_d_out))  lat_d_out = lat
+    if (present( lon_d_out))  lon_d_out = lon
+    end associate
 
   end subroutine get_horiz_grid_d
 

@@ -446,7 +446,7 @@ end subroutine phys_grid_readnl
     use dycore, only: dycore_is
     use dyn_grid, only: get_block_bounds_d, &
          get_block_gcol_d, get_block_gcol_cnt_d, &
-         get_block_levels_d, get_block_lvl_cnt_d, &
+         get_block_levels_d, get_block_levels_cnt_d, &
          get_block_owner_d, &
          get_gcol_block_d, get_gcol_block_cnt_d, &
          get_horiz_grid_dim_d, get_horiz_grid_d, physgrid_copy_attributes_d
@@ -727,7 +727,7 @@ end subroutine phys_grid_readnl
           maxblksiz = max(maxblksiz,get_block_gcol_cnt_d(jb))
        enddo
        if (pcols < maxblksiz) then
-	  write(iulog,*) 'pcols = ',pcols, ' maxblksiz=',maxblksiz
+	       write(iulog,*) 'pcols = ',pcols, ' maxblksiz=',maxblksiz
           call endrun ('PHYS_GRID_INIT error: phys_loadbalance -1 specified but PCOLS < MAXBLKSIZ')
        endif
 
@@ -984,7 +984,7 @@ end subroutine phys_grid_readnl
              if (iam == owner_d) then
                 if (.not. associated(btofc_blk_offset(blockids(jb))%pter)) then
                    blksiz = get_block_gcol_cnt_d(blockids(jb))
-                   numlvl = get_block_lvl_cnt_d(blockids(jb),bcids(jb))
+                   numlvl = get_block_levels_cnt_d(blockids(jb),bcids(jb))
                    btofc_blk_offset(blockids(jb))%ncols = blksiz
                    btofc_blk_offset(blockids(jb))%nlvls = numlvl
                    allocate( btofc_blk_offset(blockids(jb))%pter(blksiz,numlvl) )
@@ -1025,7 +1025,7 @@ end subroutine phys_grid_readnl
                 do jb = 1,block_cnt
                    owner_d = get_block_owner_d(blockids(jb))
                    if (p == owner_d) then
-                      numlvl = get_block_lvl_cnt_d(blockids(jb),bcids(jb))
+                      numlvl = get_block_levels_cnt_d(blockids(jb),bcids(jb))
                       call get_block_levels_d(blockids(jb),bcids(jb),numlvl,levels)
                       do k=1,numlvl
                          btofc_chk_offset(lcid)%pter(i,levels(k)+1) = glbcnt

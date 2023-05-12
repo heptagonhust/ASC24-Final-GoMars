@@ -1,10 +1,17 @@
 module cam_physics_driver_mod
 
+  use shr_kind_mod  , only: r8 => shr_kind_r8
   use spmd_utils    , only: spmdinit
   use dyn_grid      , only: dyn_grid_init, dyn_grid_final
+  use dyn_comp      , only: dyn_init, dyn_final, dyn_import_t, dyn_export_t
   use phys_grid     , only: phys_grid_init
   use physics_types , only: physics_state, physics_tend
   use physics_buffer, only: physics_buffer_desc
+  use physpkg       , only: phys_register, phys_init, phys_run1, phys_run2
+  use ppgrid        , only: begchunk, endchunk
+  use chem_surfvals , only: chem_surfvals_init
+  use camsrfexch    , only: cam_out_t, cam_in_t, hub2atm_alloc, atm2hub_alloc
+  use stepon        , only: stepon_init, stepon_run1, stepon_run2
   use shr_cal_mod   , only: shr_cal_gregorian
   use time_manager  , only: timemgr_init
 
@@ -19,10 +26,18 @@ module cam_physics_driver_mod
 
   public cam_physics_driver_init
   public cam_physics_driver_final
+  public cam_physics_driver_run1
 
   type(physics_state), pointer :: phys_state(:) => null()
   type(physics_tend), pointer :: phys_tend(:) => null()
   type(physics_buffer_desc), pointer :: pbuf2d(:,:) => null()
+
+  type(dyn_import_t) dyn_in
+  type(dyn_export_t) dyn_out
+  type(cam_in_t), pointer :: cam_in(:) => null()
+  type(cam_out_t), pointer :: cam_out(:) => null()
+
+  real(r8) dtime_phys ! Time step for physics tendencies. Set by call to stepon_run1, then passed to phys_run*.
 
 contains
 
@@ -48,12 +63,33 @@ contains
     call spmdinit(proc%comm)
     call dyn_grid_init()
     call phys_grid_init()
+    call phys_register()
+    call dyn_init(dyn_in, dyn_out)
+    call chem_surfvals_init()
+
+    if (.not. restart) then
+      call hub2atm_alloc(cam_in)
+      call atm2hub_alloc(cam_out)
+    end if
+
+    call phys_init(phys_state, phys_tend, pbuf2d, cam_in, cam_out)
+
+    call stepon_init(dyn_in, dyn_out)
 
   end subroutine cam_physics_driver_init
+
+  subroutine cam_physics_driver_run1()
+
+    call stepon_run1(dtime_phys, phys_state, phys_tend, pbuf2d, dyn_in, dyn_out)
+
+    call phys_run1(dtime_phys, phys_state, phys_tend, pbuf2d, cam_in, cam_out)
+
+  end subroutine cam_physics_driver_run1
 
   subroutine cam_physics_driver_final()
 
     call dyn_grid_final()
+    call dyn_final()
 
   end subroutine cam_physics_driver_final
 

@@ -1,20 +1,20 @@
 
 module ppgrid
 
-!----------------------------------------------------------------------- 
-! 
-! Purpose: 
+!-----------------------------------------------------------------------
+!
+! Purpose:
 ! Initialize physics grid resolution parameters
 !  for a chunked data structure
-! 
-! Author: 
-! 
+!
+! Author:
+!
 !-----------------------------------------------------------------------
 
   implicit none
   private
   save
- 
+
   public begchunk
   public endchunk
   public pcols
@@ -38,7 +38,7 @@ module ppgrid
 ! start, end indices for chunks owned by a given MPI task
 ! (set in phys_grid_init).
 !
-   integer :: begchunk = 0            ! 
-   integer :: endchunk = -1           ! 
+   integer :: begchunk = 0            !
+   integer :: endchunk = -1           !
 
 end module ppgrid

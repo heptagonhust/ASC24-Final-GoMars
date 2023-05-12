@@ -109,11 +109,11 @@ contains
     call pgf_init()
     call interp_init()
     call operators_init()
-    call physics_init(namelist_path)
     if (baroclinic) call tracer_add_moist()
     call tracer_allocate()
     call adv_init()
     call history_init_stage2()
+    call physics_init(namelist_path)
 
     operators => space_operators
 

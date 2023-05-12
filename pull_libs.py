@@ -22,4 +22,5 @@ pull('lib/flogger')
 pull('lib/string')
 
 if 'ccpp' in args.libs:
-	pull('src/physics/ccpp', resursive=True)
+	pull('src/physics/ccpp/ccpp-framework')
+	pull('src/physics/ccpp/ccpp-physics', resursive=True)

@@ -49,7 +49,7 @@ module block_mod
     final :: block_final
   end type block_type
 
-  type(block_type), allocatable :: blocks(:)
+  type(block_type), allocatable, target :: blocks(:)
 
 contains
 

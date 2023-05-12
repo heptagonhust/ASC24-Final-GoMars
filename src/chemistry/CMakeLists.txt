@@ -105,6 +105,10 @@ target_sources(gmcore PRIVATE
   mozart/tracer_cnst.F90
   mozart/tracer_srcs.F90
   mozart/upper_bc.F90
+  msis/physics_constants.f90
+  msis/physics_msis.f90
+  msis/utils_constants.f90
+  msis/utils_spline.f90
   pp_trop_mam4/chem_mods.F90
   pp_trop_mam4/m_spc_id.F90
   pp_trop_mam4/mo_adjrxt.F90

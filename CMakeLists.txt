@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(gmcore LANGUAGES Fortran)
+project(gmcore LANGUAGES Fortran C)
 
 option(R4 "Use single precision" OFF)
 option(R16 "Use quadruple precision" OFF)
@@ -285,6 +285,16 @@ set(gmcore_files
 
 if (HAS_GPTL)
   list(APPEND gmcore_files src/utils/perf_mod.F90)
+endif ()
+if (HAS_MCT)
+  list(APPEND gmcore_files
+    src/coupler/atm_comp_mod.F90
+    src/coupler/lnd_comp_mod.F90
+    src/coupler/ocn_comp_mod.F90
+    src/coupler/ice_comp_mod.F90
+    src/coupler/comp_interface_mod.F90
+    src/coupler/cpl_comp_mod.F90
+  )
 endif ()
 
 if (EXISTS ${PROJECT_SOURCE_DIR}/src/physics/ccpp/host/CCPP_CAPS.cmake)

@@ -19,7 +19,7 @@
 
       use shr_kind_mod, only: r8 => shr_kind_r8
 
-!      use parkind, only : jpim, jprb 
+!      use parkind, only : jpim, jprb
       use rrsw_wvn
       use rrtmg_sw_setcoef, only: swatmref
 
@@ -54,7 +54,7 @@
 
 ! ------- Definitions -------
 !     Arrays for 10000-point look-up tables:
-!     TAU_TBL  Clear-sky optical depth 
+!     TAU_TBL  Clear-sky optical depth
 !     EXP_TBL  Exponential lookup table for transmittance
 !     PADE     Pade approximation constant (= 0.278)
 !     BPADE    Inverse of the Pade approximation constant
@@ -80,9 +80,9 @@
       call sw_kgb29
 
 ! Define exponential lookup tables for transmittance. Tau is
-! computed as a function of the tau transition function, and transmittance 
-! is calculated as a function of tau.  All tables are computed at intervals 
-! of 0.0001.  The inverse of the constant used in the Pade approximation to 
+! computed as a function of the tau transition function, and transmittance
+! is calculated as a function of tau.  All tables are computed at intervals
+! of 0.0001.  The inverse of the constant used in the Pade approximation to
 ! the tau transition function is set to bpade.
 
       exp_tbl(0) = 1.0_r8
@@ -151,13 +151,13 @@
 ! --------- Modules ----------
 
       use rrsw_con, only: heatfac, grav, planck, boltz, &
-                          clight, avogad, alosmt, gascon, radcn1, radcn2 
+                          clight, avogad, alosmt, gascon, radcn1, radcn2
       use rrsw_wvn, only: ng, nspa, nspb, wavenum1, wavenum2, delwave
       use shr_const_mod, only: shr_const_avogad
       use physconst,     only: cday, gravit, cpair
 
-      save 
- 
+      save
+
 ! Shortwave spectral band limits (wavenumbers)
       wavenum1(:) = (/2600._r8, 3250._r8, 4000._r8, 4650._r8, 5150._r8, 6150._r8, 7700._r8, &
                       8050._r8,12850._r8,16000._r8,22650._r8,29000._r8,38000._r8,  820._r8/)
@@ -175,9 +175,9 @@
       grav = gravit
       avogad = shr_const_avogad * 1.e-3_r8
 
-!     Heatfac is the factor by which one must multiply delta-flux/ 
-!     delta-pressure, with flux in w/m-2 and pressure in mbar, to get 
-!     the heating rate in units of degrees/day.  It is equal to 
+!     Heatfac is the factor by which one must multiply delta-flux/
+!     delta-pressure, with flux in w/m-2 and pressure in mbar, to get
+!     the heating rate in units of degrees/day.  It is equal to
 !           (g)x(#sec/day)x(1e-5)/(specific heat of air at const. p)
 !        =  (9.8066)(86400)(1e-5)/(1.004)
 !      heatfac = 8.4391_r8
@@ -218,10 +218,10 @@
       use rrsw_wvn, only: ngc, ngs, ngn, ngb, ngm, wt
 
       save
- 
+
 ! ------- Definitions -------
 !     Arrays for the g-point reduction from 224 to 112 for the 16 LW bands:
-!     This mapping from 224 to 112 points has been carefully selected to 
+!     This mapping from 224 to 112 points has been carefully selected to
 !     minimize the effect on the resulting fluxes and cooling rates, and
 !     caution should be used if the mapping is modified.  The full 224
 !     g-point set can be restored with ngpt=224, ngc=16*16, ngn=224*1., etc.
@@ -229,7 +229,7 @@
 !     ngc     The number of new g-points in each band
 !     ngs     The cumulative sum of new g-points for each band
 !     ngm     The index of each new g-point relative to the original
-!             16 g-points for each band.  
+!             16 g-points for each band.
 !     ngn     The number of original g-points that are combined to make
 !             each new g-point in each band.
 !     ngb     The band index for each new g-point.
@@ -351,7 +351,7 @@
 !  The subroutines CMBGB16->CMBGB29 input the absorption coefficient
 !  data for each band, which are defined for 16 g-points and 14 spectral
 !  bands. The data are combined with appropriate weighting following the
-!  g-point mapping arrays specified in RRTMG_SW_INIT.  Solar source 
+!  g-point mapping arrays specified in RRTMG_SW_INIT.  Solar source
 !  function data in array SFLUXREF are combined without weighting.  All
 !  g-point reduced data are put into new arrays for use in RRTMG_SW.
 !
@@ -1403,5 +1403,3 @@
 
 
       end module rrtmg_sw_init
-
-
