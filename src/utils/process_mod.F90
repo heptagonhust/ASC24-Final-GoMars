@@ -85,6 +85,8 @@ contains
 
     if (allocated(proc%ngb)) deallocate(proc%ngb)
     if (allocated(proc%grid_proc_idmap)) deallocate(proc%grid_proc_idmap)
+    if (allocated(proc%global_grid_id)) deallocate(proc%global_grid_id)
+    if (allocated(proc%local_grid_id)) deallocate(proc%local_grid_id)
     if (allocated(blocks)) deallocate(blocks)
     if (proc%group      /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%group     , ierr)
     if (proc%cart_group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%cart_group, ierr)
@@ -153,7 +155,7 @@ contains
 
   subroutine decompose_domains()
 
-    integer ierr, tmp_id(1), i
+    integer ierr, tmp_id(1), i, j, ip, global_ig, local_ig
     integer, allocatable :: all_ids(:), all_ide(:), all_jds(:), all_jde(:)
     logical correct, all_correct
 
@@ -209,14 +211,26 @@ contains
 
     ! Set grid_proc_idmap for later use.
     allocate(proc%grid_proc_idmap(nlon,nlat))
+    allocate(proc%global_grid_id (nlon,nlat))
+    allocate(proc%local_grid_id  (nlon,nlat))
     allocate(all_ids(proc%np), all_ide(proc%np))
     allocate(all_jds(proc%np), all_jde(proc%np))
     call MPI_ALLGATHER(proc%ids, 1, MPI_INTEGER, all_ids, 1, MPI_INTEGER, proc%cart_comm, ierr)
     call MPI_ALLGATHER(proc%ide, 1, MPI_INTEGER, all_ide, 1, MPI_INTEGER, proc%cart_comm, ierr)
     call MPI_ALLGATHER(proc%jds, 1, MPI_INTEGER, all_jds, 1, MPI_INTEGER, proc%cart_comm, ierr)
     call MPI_ALLGATHER(proc%jde, 1, MPI_INTEGER, all_jde, 1, MPI_INTEGER, proc%cart_comm, ierr)
-    do i = 1, proc%np
-      proc%grid_proc_idmap(all_ids(i):all_ide(i), all_jds(i):all_jde(i)) = i - 1
+    global_ig = 1
+    do ip = 1, proc%np
+      proc%grid_proc_idmap(all_ids(ip):all_ide(ip), all_jds(ip):all_jde(ip)) = ip
+      local_ig = 1
+      do j = all_jds(ip), all_jde(ip)
+        do i = all_ids(ip), all_ide(ip)
+          proc%global_grid_id(i,j) = global_ig
+          global_ig = global_ig + 1
+          proc%local_grid_id(i,j) = local_ig
+          local_ig = local_ig + 1
+        end do
+      end do
     end do
     deallocate(all_ids, all_ide, all_jds, all_jde)
 

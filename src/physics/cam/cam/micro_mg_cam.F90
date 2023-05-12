@@ -12,7 +12,7 @@ module micro_mg_cam
 ! for adding inputs is as follows:
 !
 ! 1) In addition to any variables you need to declare for the "unpacked"
-!    (CAM format) version, you must declare an array for the "packed" 
+!    (CAM format) version, you must declare an array for the "packed"
 !    (MG format) version.
 !
 ! 2) Add a call similar to the following line (look before the
@@ -32,14 +32,14 @@ module micro_mg_cam
 ! How to add new packed MG outputs to micro_mg_cam_tend:
 !
 ! 1) As with inputs, in addition to the unpacked outputs you must declare
-!    an array for packed data. The unpacked and packed arrays must *also* 
+!    an array for packed data. The unpacked and packed arrays must *also*
 !    be targets or pointers (but cannot be both).
 !
 ! 2) Add the field to post-processing as in the following line (again,
 !    there are many examples before the micro_mg_tend calls):
 !
 !      call post_proc%add_field(p(final_array),p(packed_array))
-!  
+!
 !    *** IMPORTANT ** If the fields are only being passed to a certain version of
 !    MG, you must only add them if that version is being called (see
 !    the "if (micro_mg_version >1)" sections below
@@ -258,7 +258,7 @@ integer :: &
    frzdep_idx = -1
 
 logical :: allow_sed_supersat  ! allow supersaturated conditions after sedimentation loop
-logical :: micro_do_sb_physics = .false. ! do SB 2001 autoconversion and accretion 
+logical :: micro_do_sb_physics = .false. ! do SB 2001 autoconversion and accretion
 
 integer :: bergso_idx = -1
 
@@ -970,8 +970,8 @@ subroutine micro_mg_cam_init(pbuf2d)
       call addfld('MPDLIQ_SCOL', (/'psubcols','lev     '/), 'I', 'kg/kg/s', &
            'Sub-column CLDLIQ tendency - Morrison microphysics', flag_xyfill=.true., fill_value=1.e30_r8)
    end if
-   
-   
+
+
    ! This is only if the coldpoint temperatures are being adjusted.
    ! NOTE: Some fields related to these and output later are added in tropopause.F90.
    if (micro_mg_adjust_cpt) then
@@ -1076,7 +1076,7 @@ subroutine micro_mg_cam_init(pbuf2d)
       call addfld ('ANGRAU',      (/ 'lev' /),  'A', 'm-3',      'Average graupel/hail number conc'               )
    end if
 
-   
+
    ! qc limiter (only output in versions 1.5 and later)
    if (.not. (micro_mg_version == 1 .and. micro_mg_sub_version == 0)) then
       call addfld('QCRAT', (/ 'lev' /), 'A', 'fraction', 'Qc Limiter: Fraction of qc tendency applied')
@@ -1287,16 +1287,16 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
    integer, allocatable :: mgcols(:) ! Columns with microphysics performed
 
    ! Find the number of levels used in the microphysics.
-   nlev  = pver - top_lev + 1 
+   nlev  = pver - top_lev + 1
    ncol  = state%ncol
-   
+
    select case (micro_mg_version)
    case (1)
       call micro_mg_get_cols1_0(ncol, nlev, top_lev, state%q(:,:,ixcldliq), &
            state%q(:,:,ixcldice), mgncol, mgcols)
    case (2:3)
 
-      if (micro_mg_do_hail .or. micro_mg_do_graupel) then 
+      if (micro_mg_do_hail .or. micro_mg_do_graupel) then
          call micro_mg_get_cols3_0(ncol, nlev, top_lev, mgncol, mgcols, state%q(:,:,ixcldliq), &
               state%q(:,:,ixcldice), state%q(:,:,ixrain), state%q(:,:,ixsnow), state%q(:,:,ixgraupel))
       else
@@ -1367,7 +1367,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
    real(r8), pointer :: relvar(:,:)       ! relative variance of cloud water
    real(r8), pointer :: accre_enhan(:,:)  ! optional accretion enhancement for experimentation
    real(r8), pointer :: prain(:,:)        ! Total precipitation (rain + snow)
-   real(r8), pointer :: dei(:,:)          ! Ice effective diameter (meters) 
+   real(r8), pointer :: dei(:,:)          ! Ice effective diameter (meters)
    real(r8), pointer :: mu(:,:)           ! Size distribution shape parameter for radiation
    real(r8), pointer :: lambdac(:,:)      ! Size distribution slope parameter for radiation
    real(r8), pointer :: des(:,:)          ! Snow effective diameter (m)
@@ -1460,29 +1460,29 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
    real(r8), target :: freqr(state%psetcols,pver)
    real(r8), target :: nfice(state%psetcols,pver)
    real(r8), target :: qcrat(state%psetcols,pver)   ! qc limiter ratio (1=no limit)
-!Hail/Graupel Output 
+!Hail/Graupel Output
    real(r8), target :: freqg(state%psetcols,pver)
-   real(r8), target :: qgout(state%psetcols,pver)   
-   real(r8), target :: ngout(state%psetcols,pver)   
-   real(r8), target :: dgout(state%psetcols,pver)                  
-   real(r8), target :: qgout2(state%psetcols,pver) 
-   real(r8), target :: ngout2(state%psetcols,pver) 
-   real(r8), target :: dgout2(state%psetcols,pver) 
-!Hail/Graupel Process Rates                
-   real(r8), target :: psacro(state%psetcols,pver)   
-   real(r8), target :: pracgo(state%psetcols,pver)   
-   real(r8), target :: psacwgo(state%psetcols,pver)  
+   real(r8), target :: qgout(state%psetcols,pver)
+   real(r8), target :: ngout(state%psetcols,pver)
+   real(r8), target :: dgout(state%psetcols,pver)
+   real(r8), target :: qgout2(state%psetcols,pver)
+   real(r8), target :: ngout2(state%psetcols,pver)
+   real(r8), target :: dgout2(state%psetcols,pver)
+!Hail/Graupel Process Rates
+   real(r8), target :: psacro(state%psetcols,pver)
+   real(r8), target :: pracgo(state%psetcols,pver)
+   real(r8), target :: psacwgo(state%psetcols,pver)
    real(r8), target :: pgsacwo(state%psetcols,pver)
-   real(r8), target :: pgracso(state%psetcols,pver) 
-   real(r8), target :: prdgo(state%psetcols,pver)   
-   real(r8), target :: qmultgo(state%psetcols,pver)  
-   real(r8), target :: qmultrgo(state%psetcols,pver)   
-   real(r8), target :: npracgo(state%psetcols,pver) 
-   real(r8), target :: nscngo(state%psetcols,pver) 
-   real(r8), target :: ngracso(state%psetcols,pver) 
-   real(r8), target :: nmultgo(state%psetcols,pver) 
-   real(r8), target :: nmultrgo(state%psetcols,pver) 
-   real(r8), target :: npsacwgo(state%psetcols,pver) 
+   real(r8), target :: pgracso(state%psetcols,pver)
+   real(r8), target :: prdgo(state%psetcols,pver)
+   real(r8), target :: qmultgo(state%psetcols,pver)
+   real(r8), target :: qmultrgo(state%psetcols,pver)
+   real(r8), target :: npracgo(state%psetcols,pver)
+   real(r8), target :: nscngo(state%psetcols,pver)
+   real(r8), target :: ngracso(state%psetcols,pver)
+   real(r8), target :: nmultgo(state%psetcols,pver)
+   real(r8), target :: nmultrgo(state%psetcols,pver)
+   real(r8), target :: npsacwgo(state%psetcols,pver)
 
    ! Object that packs columns with clouds/precip.
    type(MGPacker) :: packer
@@ -1499,7 +1499,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
    real(r8) :: packed_qs(mgncol,nlev)
    real(r8) :: packed_ns(mgncol,nlev)
    real(r8) :: packed_qg(mgncol,nlev)
-   real(r8) :: packed_ng(mgncol,nlev)   
+   real(r8) :: packed_ng(mgncol,nlev)
 
    real(r8) :: packed_relvar(mgncol,nlev)
    real(r8) :: packed_accre_enhan(mgncol,nlev)
@@ -1628,21 +1628,21 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
    real(r8), target :: packed_dei(mgncol,nlev)
 
 !Hail/Graupel Output
-   real(r8), target :: packed_qgout(mgncol,nlev)   
-   real(r8), target :: packed_ngout(mgncol,nlev)   
-   real(r8), target :: packed_dgout(mgncol,nlev)                  
-   real(r8), target :: packed_qgout2(mgncol,nlev) 
-   real(r8), target :: packed_ngout2(mgncol,nlev) 
-   real(r8), target :: packed_dgout2(mgncol,nlev) 
-!Hail/Graupel Process Rates                
-   real(r8), target :: packed_psacr(mgncol,nlev)   
-   real(r8), target :: packed_pracg(mgncol,nlev)   
-   real(r8), target :: packed_psacwg(mgncol,nlev)  
+   real(r8), target :: packed_qgout(mgncol,nlev)
+   real(r8), target :: packed_ngout(mgncol,nlev)
+   real(r8), target :: packed_dgout(mgncol,nlev)
+   real(r8), target :: packed_qgout2(mgncol,nlev)
+   real(r8), target :: packed_ngout2(mgncol,nlev)
+   real(r8), target :: packed_dgout2(mgncol,nlev)
+!Hail/Graupel Process Rates
+   real(r8), target :: packed_psacr(mgncol,nlev)
+   real(r8), target :: packed_pracg(mgncol,nlev)
+   real(r8), target :: packed_psacwg(mgncol,nlev)
    real(r8), target :: packed_pgsacw(mgncol,nlev)
-   real(r8), target :: packed_pgracs(mgncol,nlev) 
-   real(r8), target :: packed_prdg(mgncol,nlev)   
-   real(r8), target :: packed_qmultg(mgncol,nlev)  
-   real(r8), target :: packed_qmultrg(mgncol,nlev)   
+   real(r8), target :: packed_pgracs(mgncol,nlev)
+   real(r8), target :: packed_prdg(mgncol,nlev)
+   real(r8), target :: packed_qmultg(mgncol,nlev)
+   real(r8), target :: packed_qmultrg(mgncol,nlev)
    real(r8), target :: packed_npracg(mgncol,nlev)
    real(r8), target :: packed_nscng(mgncol,nlev)
    real(r8), target :: packed_ngracs(mgncol,nlev)
@@ -1836,7 +1836,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
    real(r8) :: praio_grid(pcols,pver)
    real(r8) :: psacro_grid(pcols,pver)
    real(r8) :: pracgo_grid(pcols,pver)
-   real(r8) :: psacwgo_grid(pcols,pver)          
+   real(r8) :: psacwgo_grid(pcols,pver)
    real(r8) :: pgsacwo_grid(pcols,pver)
    real(r8) :: pgracso_grid(pcols,pver)
    real(r8) :: prdgo_grid(pcols,pver)
@@ -1871,7 +1871,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
    real(r8) :: qgout_grid(pcols,pver)
    real(r8) :: dgout2_grid(pcols,pver)
    real(r8) :: ngout_grid(pcols,pver)
-   
+
    real(r8) :: cp_rh(pcols,pver)
    real(r8) :: cp_t(pcols)
    real(r8) :: cp_z(pcols)
@@ -2126,7 +2126,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
    call pbuf_get_field(pbuf, evprain_st_idx,  evprain_st_grid)
    call pbuf_get_field(pbuf, evpsnow_st_idx,  evpsnow_st_grid)
    call pbuf_get_field(pbuf, am_evp_st_idx,   am_evp_st_grid)
-   
+
    !-------------------------------------------------------------------------------------
    ! Microphysics assumes 'liquid stratus frac = ice stratus frac
    !                      = max( liquid stratus frac, ice stratus frac )'.
@@ -2498,7 +2498,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
               packed_pgracs,  packed_prdg,   &
               packed_qmultg,  packed_qmultrg, packed_psacr,   &
               packed_npracg,  packed_nscng,   packed_ngracs,  &
-              packed_nmultg,  packed_nmultrg, packed_npsacwg, & 
+              packed_nmultg,  packed_nmultrg, packed_npsacwg, &
               packed_nrout,           packed_nsout,           &
               packed_refl,    packed_arefl,   packed_areflz,  &
               packed_frefl,   packed_csrfl,   packed_acsrfl,  &
@@ -2610,7 +2610,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
       mgflxsnw(:ncol,top_lev:pverp) = mgflxsnw(:ncol,top_lev:pverp) + iflx(:ncol,top_lev:pverp)
    end if
 
-   !add graupel fluxes for MG3 to snow flux 
+   !add graupel fluxes for MG3 to snow flux
    if (micro_mg_version >= 3) then
       mgflxprc(:ncol,top_lev:pverp) = mgflxprc(:ncol,top_lev:pverp)+gflx(:ncol,top_lev:pverp)
       mgflxsnw(:ncol,top_lev:pverp) = mgflxsnw(:ncol,top_lev:pverp)+gflx(:ncol,top_lev:pverp)
@@ -2726,8 +2726,8 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
            end if
 
          ! Calculate in-cloud snow water path
-           icgrauwp(i,k) = qgout(i,k) / max( 1.e-2_r8, cldfgrau(i,k) ) * state_loc%pdel(i,k) / gravit 
-        end if 
+           icgrauwp(i,k) = qgout(i,k) / max( 1.e-2_r8, cldfgrau(i,k) ) * state_loc%pdel(i,k) / gravit
+        end if
 
       end do
    end do
@@ -2920,7 +2920,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
       psacwgo_grid = 0._r8
       pgsacwo_grid = 0._r8
       qmultgo_grid = 0._r8
- 
+
       if (micro_mg_version > 2) then
             qg_grid = state_loc%q(:,:,ixgraupel)
             ng_grid = state_loc%q(:,:,ixnumgraupel)
@@ -3105,7 +3105,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
               qg_grid(:ngrdcol,top_lev:), &
               ng_grid(:ngrdcol,top_lev:) * rho_grid(:ngrdcol,top_lev:), &
               rho_grid(:ngrdcol,top_lev:), rhog)
-      
+
          reff_grau_grid(:ngrdcol,top_lev:) = dgout2_grid(:ngrdcol,top_lev:) * &
               1.5_r8 * 1.e6_r8
          degrau_grid(:ngrdcol,top_lev:) = dgout2_grid(:ngrdcol,top_lev:) *&
@@ -3572,9 +3572,9 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, nle
       cp_rh(:ncol, :pver)  = 0._r8
 
       do i = 1, ncol
-      
+
          ! Calculate the RH including any T change that we make.
-         do k = top_lev, pver 
+         do k = top_lev, pver
            call qsat(state_loc%t(i,k), state_loc%pmid(i,k), es, qs)
            cp_rh(i,k) = state_loc%q(i, k, 1) / qs * 100._r8
          end do

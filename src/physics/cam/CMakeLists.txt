@@ -118,6 +118,7 @@ target_sources(gmcore PRIVATE
   control/camsrfexch.F90
   control/filenames.F90
   control/ncdio_atm.F90
+  control/runtime_opts.F90
   control/sat_hist.F90
   dycore.F90
   dyn_comp.F90

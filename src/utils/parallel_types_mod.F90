@@ -57,7 +57,10 @@ module parallel_types_mod
     logical :: at_north_pole = .false.
     type(zonal_circle_type) zonal_circle
     type(process_neighbor_type), allocatable :: ngb(:) ! Neighbor processes
+    ! Decomposition information
     integer, allocatable :: grid_proc_idmap(:,:) ! Map of grid points to process IDs
+    integer, allocatable :: global_grid_id(:,:)  ! Global grid point IDs
+    integer, allocatable :: local_grid_id(:,:)   ! Local grid point IDs
     character(30) :: hostname = ''
 
     integer decomp_type

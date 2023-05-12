@@ -11,6 +11,7 @@ module cam_physics_driver_mod
   use ppgrid        , only: begchunk, endchunk
   use chem_surfvals , only: chem_surfvals_init
   use camsrfexch    , only: cam_out_t, cam_in_t, hub2atm_alloc, atm2hub_alloc
+  use runtime_opts  , only: read_namelist
   use stepon        , only: stepon_init, stepon_run1, stepon_run2
   use shr_cal_mod   , only: shr_cal_gregorian
   use time_manager  , only: timemgr_init
@@ -45,6 +46,7 @@ contains
 
     character(*), intent(in) :: namelist_path
 
+    call spmdinit(proc%comm)
     call timemgr_init( &
       dtime_in=int(dt_phys), &
       calendar_in=shr_cal_gregorian, &
@@ -60,7 +62,7 @@ contains
       perpetual_ymd=20000101, &
       initial_run=.not. restart &
     )
-    call spmdinit(proc%comm)
+    call read_namelist(namelist_path)
     call dyn_grid_init()
     call phys_grid_init()
     call phys_register()
