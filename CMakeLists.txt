@@ -273,6 +273,7 @@ set(gmcore_files
   src/utils/parallel_mod.F90
   src/utils/parallel_types_mod.F90
   src/utils/parallel_zonal_mod.F90
+  src/utils/perf_mod.F90
   src/utils/process_mod.F90
   src/utils/restart_mod.F90
   src/utils/sphere_geometry_mod.F90
@@ -283,9 +284,6 @@ set(gmcore_files
   src/utils/tridiag_spk_mod.F90
 )
 
-if (HAS_GPTL)
-  list(APPEND gmcore_files src/utils/perf_mod.F90)
-endif ()
 if (HAS_MCT)
   list(APPEND gmcore_files
     src/coupler/atm_comp_mod.F90
@@ -319,6 +317,7 @@ if (EXISTS ${PROJECT_SOURCE_DIR}/src/physics/ccpp/host/CCPP_CAPS.cmake)
   list(APPEND EXTERNAL_LIBS w3nco_4)
   include_directories($ENV{NCEPLIBS_ROOT}/g2-3.4.5/include_4)
   link_directories($ENV{NCEPLIBS_ROOT}/g2-3.4.5/lib)
+  link_directories($ENV{NCEPLIBS_ROOT}/g2-3.4.5/lib64)
   list(APPEND EXTERNAL_LIBS g2_4)
   include_directories($ENV{NCEPLIBS_ROOT}/sp-2.3.3/include_4)
   link_directories($ENV{NCEPLIBS_ROOT}/sp-2.3.3/lib)
