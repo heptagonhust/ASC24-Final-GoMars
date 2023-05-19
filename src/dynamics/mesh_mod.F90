@@ -126,7 +126,7 @@ contains
 
     real(8) dlat0
     real(16) x(3), y(3), z(3)
-    integer i, j, j0, jj
+    integer i, j, ierr
 
     call this%clear(keep_lev)
 
@@ -271,10 +271,13 @@ contains
         !           \|
         !          1,j-1
         !
-        call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
-        call cartesian_transform(this%half_lon(1), this%half_lat(j-1), x(2), y(2), z(2))
-        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
-        this%area_lon_west(j) = calc_area(x, y, z)
+        call lonlat2xyz(radius, this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
+        call lonlat2xyz(radius, this%half_lon(1), this%half_lat(j-1), x(2), y(2), z(2))
+        call lonlat2xyz(radius, this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
+        this%area_lon_west(j) = spherical_area(radius, x, y, z, ierr)
+        if (ierr /= 0) then
+          call log_error(sphere_geometry_error_message(ierr), __FILE__, __LINE__)
+        end if
         this%area_lon_east(j) = this%area_lon_west(j)
         this%area_lon(j) = this%area_lon_west(j) + this%area_lon_east(j)
         !
@@ -285,10 +288,13 @@ contains
         !        /______\
         !    1,j          2,j
         !
-        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
-        call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(2), y(2), z(2))
-        call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(3), y(3), z(3))
-        this%area_lon_north(j) = calc_area_with_last_small_arc(x, y, z)
+        call lonlat2xyz(radius, this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
+        call lonlat2xyz(radius, this%full_lon(1), this%full_lat(j  ), x(2), y(2), z(2))
+        call lonlat2xyz(radius, this%full_lon(2), this%full_lat(j  ), x(3), y(3), z(3))
+        this%area_lon_north(j) = spherical_area_with_last_small_arc(radius, x, y, z, ierr)
+        if (ierr /= 0) then
+          call log_error(sphere_geometry_error_message(ierr), __FILE__, __LINE__)
+        end if
         !
         !    1,j          2,j
         !        --------
@@ -298,10 +304,13 @@ contains
         !           \/
         !         1,j-1
         !
-        call cartesian_transform(this%half_lon(1), this%half_lat(j-1), x(1), y(1), z(1))
-        call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
-        call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(3), y(3), z(3))
-        this%area_lon_south(j) = calc_area_with_last_small_arc(x, y, z)
+        call lonlat2xyz(radius, this%half_lon(1), this%half_lat(j-1), x(1), y(1), z(1))
+        call lonlat2xyz(radius, this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
+        call lonlat2xyz(radius, this%full_lon(1), this%full_lat(j  ), x(3), y(3), z(3))
+        this%area_lon_south(j) = spherical_area_with_last_small_arc(radius, x, y, z, ierr)
+        if (ierr /= 0) then
+          call log_error(sphere_geometry_error_message(ierr), __FILE__, __LINE__)
+        end if
       end if
     end do
 
@@ -318,10 +327,13 @@ contains
       !           \|
       !           2,j
       !
-      call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
-      call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
-      call cartesian_transform(this%full_lon(2), this%full_lat(j+1), x(3), y(3), z(3))
-      this%area_lat_west(j) = calc_area(x, y, z)
+      call lonlat2xyz(radius, this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
+      call lonlat2xyz(radius, this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
+      call lonlat2xyz(radius, this%full_lon(2), this%full_lat(j+1), x(3), y(3), z(3))
+      this%area_lat_west(j) = spherical_area(radius, x, y, z, ierr)
+      if (ierr /= 0) then
+        call log_error(sphere_geometry_error_message(ierr), __FILE__, __LINE__)
+      end if
       this%area_lat_east(j) = this%area_lat_west(j)
       !
       !         2,j+1
@@ -331,10 +343,13 @@ contains
       !        /______\
       !    1,j          2,j
       !
-      call cartesian_transform(this%full_lon(2), this%full_lat(j+1), x(1), y(1), z(1))
-      call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
-      call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
-      this%area_lat_north(j) = calc_area_with_last_small_arc(x, y, z)
+      call lonlat2xyz(radius, this%full_lon(2), this%full_lat(j+1), x(1), y(1), z(1))
+      call lonlat2xyz(radius, this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
+      call lonlat2xyz(radius, this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
+      this%area_lat_north(j) = spherical_area_with_last_small_arc(radius, x, y, z, ierr)
+      if (ierr /= 0) then
+        call log_error(sphere_geometry_error_message(ierr), __FILE__, __LINE__)
+      end if
       !
       !    1,j          2,j
       !        --------
@@ -344,10 +359,13 @@ contains
       !           \/
       !          2,j
       !
-      call cartesian_transform(this%full_lon(2), this%full_lat(j), x(1), y(1), z(1))
-      call cartesian_transform(this%half_lon(2), this%half_lat(j), x(2), y(2), z(2))
-      call cartesian_transform(this%half_lon(1), this%half_lat(j), x(3), y(3), z(3))
-      this%area_lat_south(j) = calc_area_with_last_small_arc(x, y, z)
+      call lonlat2xyz(radius, this%full_lon(2), this%full_lat(j), x(1), y(1), z(1))
+      call lonlat2xyz(radius, this%half_lon(2), this%half_lat(j), x(2), y(2), z(2))
+      call lonlat2xyz(radius, this%half_lon(1), this%half_lat(j), x(3), y(3), z(3))
+      this%area_lat_south(j) = spherical_area_with_last_small_arc(radius, x, y, z, ierr)
+      if (ierr /= 0) then
+        call log_error(sphere_geometry_error_message(ierr), __FILE__, __LINE__)
+      end if
       ! Reset up or down area to polar sector area.
       if (this%is_south_pole(j)) then
         this%area_lat_south(j) = this%area_cell(j)

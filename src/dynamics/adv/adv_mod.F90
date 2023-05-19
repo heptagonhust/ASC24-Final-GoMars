@@ -93,11 +93,6 @@ contains
 
     call adv_final()
 
-    if (nbatches == 0) then
-      call log_warning('No advection batches have been defined yet!', pid=proc%id)
-      return
-    end if
-
     select case (adv_scheme)
     case ('ffsl')
       call ffsl_init()
@@ -120,6 +115,11 @@ contains
           'cell', 'pt', dt_dyn, dynamic=.true.)
       end if
     end do
+
+    if (nbatches == 0) then
+      call log_warning('No advection batches have been defined yet!', pid=proc%id)
+      return
+    end if
 
     do iblk = 1, size(blocks)
       allocate(blocks(iblk)%adv_batches(nbatches))

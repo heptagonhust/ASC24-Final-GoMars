@@ -18,7 +18,7 @@ module moving_vortices_test_mod
   public moving_vortices_test_set_uv
 
   real(8), parameter :: period = 12 * 86400    ! Rotation period
-  real(8), parameter :: rho0   = 3             ! 
+  real(8), parameter :: rho0   = 3             !
   real(8), parameter :: gamma  = 5             ! Field stiffness parameter
   real(8), parameter :: alpha  = pi05          ! Angle between Rotation axis and the equator
   real(8), parameter :: lonp0  = pi            ! Rotation north pole longitude
@@ -37,8 +37,8 @@ contains
   subroutine moving_vortices_test_init()
 
     u0 = pi2 * radius / (12.0_r8 * 86400.0_r8)
-    
-    call rotation_transform(lonp0, latp0, lonv0, latv0, lonvr, latvr)
+
+    call rotate(lonp0, latp0, lonv0, latv0, lonvr, latvr)
     lonv = lonv0
     latv = latv0
     lonvr0 = lonvr
@@ -59,12 +59,12 @@ contains
       associate (block => blocks(iblk), mesh => blocks(iblk)%mesh)
       ! Background tracer
       tracers(iblk)%q(:,:,:,1) = 1
-      ! Vortex tracer 
+      ! Vortex tracer
       do j = mesh%full_jds, mesh%full_jde
         lat = mesh%full_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          call rotation_transform(lonv0, latv0, lon, lat, lonr, latr)
+          call rotate(lonv0, latv0, lon, lat, lonr, latr)
           tracers(iblk)%q(i,j,1,2) = 1 - tanh(rho(latr) / gamma * sin(lonr))
         end do
       end do
@@ -84,7 +84,7 @@ contains
 
     lonvr = lonvr0 + u0 / radius * time_in_seconds
     if (lonvr > pi2) lonvr = lonvr - pi2
-    call inverse_rotation_transform(lonp0, latp0, lonv, latv, lonvr, latvr)
+    call rotate_back(lonp0, latp0, lonv, latv, lonvr, latvr)
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)                      , &
@@ -100,7 +100,7 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           lon = mesh%half_lon(i)
           dlon = lon - lonv
-          call rotation_transform(lonv, latv, lon, lat, lat_r=latr)
+          call rotate(lonv, latv, lon, lat, lat_r=latr)
           u(i,j,1) = u0 * (cos(lat) * cos(alpha) + sin(lat) * cos(lon) * sin(alpha)) + &
                      a_omg(latr) * (sin(latv) * cos(lat) - cos(latv) * cos(dlon) * sin(lat))
         end do
@@ -112,7 +112,7 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
           dlon = lon - lonv
-          call rotation_transform(lonv, latv, lon, lat, lat_r=latr)
+          call rotate(lonv, latv, lon, lat, lat_r=latr)
           v(i,j,1) = -u0 * sin(lon) * sin(alpha) + a_omg(latr) * cos(latv) * sin(dlon)
         end do
       end do

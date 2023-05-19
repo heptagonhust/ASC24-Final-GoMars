@@ -62,8 +62,8 @@ contains
 
     call tracer_allocate()
 
-    call cartesian_transform(lon1, lat1, x1(1), x1(2), x1(3)); x1 = x1 / radius
-    call cartesian_transform(lon2, lat2, x2(1), x2(2), x2(3)); x2 = x2 / radius
+    call lonlat2xyz(radius, lon1, lat1, x1(1), x1(2), x1(3)); x1 = x1 / radius
+    call lonlat2xyz(radius, lon2, lat2, x2(1), x2(2), x2(3)); x2 = x2 / radius
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk), mesh => blocks(iblk)%mesh)
@@ -75,8 +75,8 @@ contains
         lat = mesh%full_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          r1 = calc_distance(lon1, lat1, lon, lat)
-          r2 = calc_distance(lon2, lat2, lon, lat)
+          r1 = great_circle(radius, lon1, lat1, lon, lat)
+          r2 = great_circle(radius, lon2, lat2, lon, lat)
           if (r1 < r) then
             tracers(iblk)%q(i,j,1,2) = qmin + c * qmax * 0.5_r8 * (1 + cos(pi * r1 / r))
           else if (r2 < r) then
@@ -93,8 +93,8 @@ contains
         lat = mesh%full_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          r1 = calc_distance(lon1, lat1, lon, lat)
-          r2 = calc_distance(lon2, lat2, lon, lat)
+          r1 = great_circle(radius, lon1, lat1, lon, lat)
+          r2 = great_circle(radius, lon2, lat2, lon, lat)
           if ((r1 <= r .and. abs(lon - lon1) >= r / radius / 6.0_r8) .or. &
               (r2 <= r .and. abs(lon - lon2) >= r / radius / 6.0_r8)) then
             tracers(iblk)%q(i,j,1,3) = qmax
@@ -114,7 +114,7 @@ contains
         lat = mesh%full_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          call cartesian_transform(lon, lat, x(1), x(2), x(3))
+          call lonlat2xyz(radius, lon, lat, x(1), x(2), x(3))
           x = x / radius
           tracers(iblk)%q(i,j,1,4) = qmax * (exp(-c * dot_product(x - x1, x - x1)) + exp(-c * dot_product(x - x2, x - x2)))
         end do

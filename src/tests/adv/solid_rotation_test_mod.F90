@@ -50,7 +50,7 @@ contains
         lat = mesh%full_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          r = calc_distance(lon0, lat0, lon, lat)
+          r = great_circle(radius, lon0, lat0, lon, lat)
           if (r < R0) then
             tracers(iblk)%q(i,j,1,2) = h0 / 2.0_r8 * (1 + cos(pi * r / R0))
           else
