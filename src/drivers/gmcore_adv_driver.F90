@@ -14,7 +14,6 @@ program gmcore_adv_driver
   implicit none
 
   character(256) namelist_path
-  integer iblk
 
   interface
     subroutine set_ic_interface()
@@ -74,6 +73,7 @@ program gmcore_adv_driver
 
   call set_uv(elapsed_seconds, old)
   call set_ic()
+  call adv_init()
   call adv_accum_wind(old)
 
   call history_setup_h0_adv(blocks)
