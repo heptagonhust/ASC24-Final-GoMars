@@ -23,8 +23,8 @@ module physics_mod
   private
 
   public physics_init
-  public physics_run_before_dynamics
-  public physics_run_after_dynamics
+  public physics_run
+  public physics_update_state
   public physics_final
 
 contains
@@ -48,30 +48,17 @@ contains
 
   end subroutine physics_init
 
-  subroutine physics_run_before_dynamics(block, itime, dt)
+  subroutine physics_run(block, itime, dt)
 
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
     real(r8), intent(in) :: dt
-
-  end subroutine physics_run_before_dynamics
-
-  subroutine physics_run_after_dynamics(block, itime, dt)
-
-    type(block_type), intent(inout) :: block
-    integer, intent(in) :: itime
-    real(r8), intent(in) :: dt
-
-    real(r8), pointer, dimension(:,:,:) :: qv, qm
-    integer i, j, k
 
     if (.not. time_is_alerted('phys')) return
 
-    associate (mesh   => block%mesh         , &
-               pstate => block%pstate       , &
-               ptend  => block%ptend        , &
-               dstate => block%dstate(itime), &
-               dtend   => block%dtend(itime))
+    associate (mesh   => block%mesh  , &
+               pstate => block%pstate, &
+               ptend  => block%ptend )
     call dp_coupling_d2p(block, itime)
 
     call ptend%reset()
@@ -112,11 +99,29 @@ contains
 #ifdef HAS_CAM
     case ('cam')
       call cam_physics_driver_run1()
+      call cam_physics_driver_run2()
 #endif
     end select
 
     call dp_coupling_p2d(block, itime)
+    end associate
 
+  end subroutine physics_run
+
+  subroutine physics_update_state(block, itime, dt)
+
+    type(block_type), intent(inout) :: block
+    integer, intent(in) :: itime
+    real(r8), intent(in) :: dt
+
+    real(r8), pointer, dimension(:,:,:) :: qv, qm
+    integer i, j, k
+
+    associate (mesh   => block%mesh         , &
+               pstate => block%pstate       , &
+               ptend  => block%ptend        , &
+               dstate => block%dstate(itime), &
+               dtend   => block%dtend(itime))
     if (ptend%updated_u .and. ptend%updated_v) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -165,7 +170,7 @@ contains
     end if
     end associate
 
-  end subroutine physics_run_after_dynamics
+  end subroutine physics_update_state
 
   subroutine physics_final()
 

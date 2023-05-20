@@ -198,7 +198,8 @@ contains
       call test_forcing_run(dt_dyn, old)
       if (baroclinic) then
         do iblk = 1, size(blocks)
-          call physics_run_after_dynamics(blocks(iblk), old, dt_phys)
+          call physics_run(blocks(iblk), old, dt_phys)
+          call physics_update_state(blocks(iblk), old, dt_phys)
         end do
       end if
       ! ------------------------------------------------------------------------

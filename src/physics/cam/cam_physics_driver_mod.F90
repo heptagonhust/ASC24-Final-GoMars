@@ -38,6 +38,7 @@ module cam_physics_driver_mod
   public cam_physics_driver_init
   public cam_physics_driver_final
   public cam_physics_driver_run1
+  public cam_physics_driver_run2
   public cam_physics_d2p
   public cam_physics_p2d
 
@@ -122,6 +123,12 @@ contains
 
   end subroutine cam_physics_driver_run1
 
+  subroutine cam_physics_driver_run2()
+
+    call phys_run2(phys_state, dtime_phys, phys_tend, pbuf2d,  cam_out, cam_in)
+
+  end subroutine cam_physics_driver_run2
+
   subroutine cam_physics_driver_final()
 
     call phys_final(phys_state, phys_tend , pbuf2d)
@@ -191,7 +198,6 @@ contains
             end do
           end if
         end do
-        stop
       end do
     else
       call log_error('cam_physics_d2p: Distributed physics columns are not supported yet!', __FILE__, __LINE__)
@@ -228,6 +234,9 @@ contains
     integer ilon(pcols), jlat(pcols)
 
     associate (ptend => block%ptend)
+    ptend%updated_u = .true.
+    ptend%updated_v = .true.
+    ptend%updated_t = .true.
     if (local_dp_map) then
       do lchnk = begchunk, endchunk
         ncol = phys_state(lchnk)%ncol
