@@ -14,7 +14,7 @@ module chem_surfvals
                              timemgr_datediff, get_curr_calday
    use cam_abortutils, only: endrun
    use netcdf
-   use error_messages, only: handle_ncerr  
+   use error_messages, only: handle_ncerr
    use cam_logfile,    only: iulog
    use m_types,        only: time_ramp
    use constituents,   only: pcnst
@@ -41,21 +41,21 @@ module chem_surfvals
    ! Default values for namelist variables -- now set by build-namelist
    real(r8) :: o2mmr = .23143_r8               ! o2 mass mixing ratio
    real(r8) :: co2vmr_rad = -1.0_r8            ! co2 vmr override for radiation
-   real(r8) :: co2vmr = -1.0_r8                ! co2   volume mixing ratio 
-   real(r8) :: n2ovmr = -1.0_r8                ! n2o   volume mixing ratio 
-   real(r8) :: ch4vmr = -1.0_r8                ! ch4   volume mixing ratio 
-   real(r8) :: f11vmr = -1.0_r8                ! cfc11 volume mixing ratio 
-   real(r8) :: f12vmr = -1.0_r8                ! cfc12 volume mixing ratio 
+   real(r8) :: co2vmr = -1.0_r8                ! co2   volume mixing ratio
+   real(r8) :: n2ovmr = -1.0_r8                ! n2o   volume mixing ratio
+   real(r8) :: ch4vmr = -1.0_r8                ! ch4   volume mixing ratio
+   real(r8) :: f11vmr = -1.0_r8                ! cfc11 volume mixing ratio
+   real(r8) :: f12vmr = -1.0_r8                ! cfc12 volume mixing ratio
    character(len=16) :: scenario_ghg = 'FIXED' ! 'FIXED','RAMPED', 'RAMP_CO2_ONLY', 'CHEM_LBC_FILE'
    integer  :: rampYear_ghg = 0                ! ramped gases fixed at this year (if > 0)
    character(len=256) :: bndtvghg = 'NONE'     ! filename for ramped data
    integer  :: ramp_co2_start_ymd = 0          ! start date for co2 ramping (yyyymmdd)
-   real(r8) :: ramp_co2_annual_rate = 1.0_r8      ! % amount of co2 ramping per yr; default is 1% 
-   real(r8) :: ramp_co2_cap = -9999.0_r8          ! co2 ramp cap if rate>0, floor otherwise 
+   real(r8) :: ramp_co2_annual_rate = 1.0_r8      ! % amount of co2 ramping per yr; default is 1%
+   real(r8) :: ramp_co2_cap = -9999.0_r8          ! co2 ramp cap if rate>0, floor otherwise
                                                ! as multiple or fraction of inital value
-                                               ! ex. 4.0 => cap at 4x initial co2 setting 
+                                               ! ex. 4.0 => cap at 4x initial co2 setting
    integer  :: ghg_yearStart_model = 0         ! model start year
-   integer  :: ghg_yearStart_data  = 0         ! data  start year   
+   integer  :: ghg_yearStart_data  = 0         ! data  start year
 
    logical  :: ghg_use_calendar                ! true => data year = model year
    logical :: doRamp_ghg    ! true => turn on ramping for ghg
@@ -67,15 +67,15 @@ module chem_surfvals
    real(r8) :: co2_base     ! initial co2 volume mixing ratio, before any ramping
    integer :: ntim = -1               ! number of yearly data values
    integer,  allocatable :: yrdata(:) ! yearly data values
-   real(r8), allocatable :: co2(:)    ! co2 mixing ratios in ppmv 
+   real(r8), allocatable :: co2(:)    ! co2 mixing ratios in ppmv
    real(r8), allocatable :: ch4(:)    ! ppbv
    real(r8), allocatable :: n2o(:)    ! ppbv
    real(r8), allocatable :: f11(:)    ! pptv
    real(r8), allocatable :: f12(:)    ! pptv
    real(r8), allocatable :: adj(:)    ! unitless adjustment factor for f11 & f12
-   
-   ! fixed lower boundary 
-   
+
+   ! fixed lower boundary
+
    character(len=256) :: flbc_file = 'NONE'
    character(len=16)  :: flbc_list(pcnst) = ''
    type(time_ramp)    :: flbc_timing     != time_ramp( "CYCLICAL",  19970101, 0 )
@@ -98,7 +98,7 @@ subroutine chem_surfvals_readnl(nlfile)
    ! Local variables
    integer :: unitn, ierr, i
    character(len=*), parameter :: sub = 'chem_surfvals_readnl'
-   
+
    character(len=8)   :: flbc_type = 'CYCLICAL'     ! 'CYCLICAL' | 'SERIAL' | 'FIXED'
    integer            :: flbc_cycle_yr = 0
    integer            :: flbc_fixed_ymd = 0
@@ -107,9 +107,8 @@ subroutine chem_surfvals_readnl(nlfile)
    namelist /chem_surfvals_nl/ co2vmr, n2ovmr, ch4vmr, f11vmr, f12vmr, &
                                co2vmr_rad, scenario_ghg, rampyear_ghg, bndtvghg, &
                                ramp_co2_start_ymd, ramp_co2_annual_rate, ramp_co2_cap, &
-                               ghg_yearStart_model, ghg_yearStart_data
-
-   namelist /chem_surfvals_nl/ flbc_type, flbc_cycle_yr, flbc_fixed_ymd, flbc_fixed_tod, flbc_list, flbc_file
+                               ghg_yearStart_model, ghg_yearStart_data, &
+                               flbc_type, flbc_cycle_yr, flbc_fixed_ymd, flbc_fixed_tod, flbc_list, flbc_file
 
    !-----------------------------------------------------------------------------
 
@@ -181,7 +180,7 @@ subroutine chem_surfvals_readnl(nlfile)
       write(iulog,*) ' '
       write(iulog,*) sub//': Settings for control of GHG surface values '
       write(iulog,*) '  scenario_ghg = '//trim(scenario_ghg)
-      
+
       if (scenario_ghg == 'FIXED' .or. scenario_ghg == 'RAMP_CO2_ONLY') then
 
          if (scenario_ghg == 'RAMP_CO2_ONLY') then
@@ -194,7 +193,7 @@ subroutine chem_surfvals_readnl(nlfile)
             else
                write(iulog,*) '    ramp_co2_start_ymd   = ', ramp_co2_start_ymd
             end if
- 
+
          else
             write(iulog,*) '  CO2 will be fixed:'
             write(iulog,*) '    co2vmr = ', co2vmr
@@ -249,16 +248,16 @@ end subroutine chem_surfvals_readnl
 
 subroutine chem_surfvals_init()
 
-!----------------------------------------------------------------------- 
-! 
-! Purpose: 
+!-----------------------------------------------------------------------
+!
+! Purpose:
 ! Initialize the ramp options that are controlled by namelist input.
 ! Set surface values at initial time.
 ! N.B. This routine must be called after the time manager has been initialized
 !      since chem_surfvals_set calls time manager methods.
-! 
+!
 ! Author: B. Eaton - merged code from parse_namelist and rampnl_ghg.
-! 
+!
 !-----------------------------------------------------------------------
 
    use infnan,       only: posinf, assignment(=)
@@ -301,11 +300,11 @@ subroutine chem_surfvals_init()
 
       doRamp_ghg = .true.
       ramp_just_co2 = .true.
-      co2_base = co2vmr        ! save initial setting 
+      co2_base = co2vmr        ! save initial setting
 
       co2_daily_factor = (ramp_co2_annual_rate*0.01_r8+1.0_r8)**(1.0_r8/365.0_r8)
 
-      if (ramp_co2_cap > 0.0_r8) then  
+      if (ramp_co2_cap > 0.0_r8) then
          co2_limit = ramp_co2_cap * co2_base
       else                                  ! if no cap/floor specified, provide default
          if (ramp_co2_annual_rate < 0.0_r8) then
@@ -348,13 +347,13 @@ end subroutine chem_surfvals_init
 
 subroutine ghg_ramp_read()
 
-!----------------------------------------------------------------------- 
-! 
-! Purpose: 
-! Read ramped greenhouse gas surface data.  
-! 
+!-----------------------------------------------------------------------
+!
+! Purpose:
+! Read ramped greenhouse gas surface data.
+!
 ! Author: T. Henderson
-! 
+!
 !-----------------------------------------------------------------------
 
    use ioFileMod, only: getfil
@@ -437,7 +436,7 @@ function chem_surfvals_get(name)
 
   character(len=*), intent(in) :: name
 
-  real(r8) :: rmwco2 
+  real(r8) :: rmwco2
   real(r8) :: chem_surfvals_get
 
   rmwco2 = mwco2/mwdry    ! ratio of molecular weights of co2 to dry air
@@ -466,7 +465,7 @@ end function chem_surfvals_get
 !=========================================================================================
 
 function chem_surfvals_co2_rad(vmr_in)
- 
+
    ! Return the value of CO2 (as mmr) that is radiatively active.
 
    ! This method is used by ghg_data to set the prescribed value of CO2 in
@@ -474,7 +473,7 @@ function chem_surfvals_co2_rad(vmr_in)
    ! variable then that value will override either the value set by the
    ! co2vmr namelist variable, or the values time interpolated from a
    ! dataset.
-   
+
    ! This method is also used by cam_history to write the radiatively active
    ! CO2 to the history file.  The optional argument allows returning the
    ! value as vmr.
@@ -500,8 +499,8 @@ function chem_surfvals_co2_rad(vmr_in)
 
    if (co2vmr_rad > 0._r8) then
       chem_surfvals_co2_rad = convert_vmr * co2vmr_rad
-   else                           
-      chem_surfvals_co2_rad = convert_vmr * co2vmr     
+   else
+      chem_surfvals_co2_rad = convert_vmr * co2vmr
    end if
 
 end function chem_surfvals_co2_rad
@@ -517,7 +516,7 @@ subroutine chem_surfvals_set()
 
    integer  :: yr, mon, day, ncsec ! components of a date
    integer  :: ncdate              ! current date in integer format [yyyymmdd]
-   
+
    if ( doRamp_ghg ) then
       if(ramp_just_co2) then
          call chem_surfvals_set_co2()
@@ -525,7 +524,7 @@ subroutine chem_surfvals_set()
          call chem_surfvals_set_all()
       end if
    elseif (scenario_ghg == 'CHEM_LBC_FILE') then
-      ! set mixing ratios from cam-chem/waccm lbc file 
+      ! set mixing ratios from cam-chem/waccm lbc file
       call flbc_chk()
       call flbc_gmean_vmr(co2vmr,ch4vmr,n2ovmr,f11vmr,f12vmr)
    endif
@@ -548,14 +547,14 @@ end subroutine chem_surfvals_set
 !=========================================================================================
 
 subroutine chem_surfvals_set_all()
-!----------------------------------------------------------------------- 
-! 
-! Purpose: 
+!-----------------------------------------------------------------------
+!
+! Purpose:
 ! Computes greenhouse gas volume mixing ratios via interpolation of
 ! yearly input data.
-! 
+!
 ! Author: B. Eaton - updated ramp_ghg for use in chem_surfvals module
-! 
+!
 !-----------------------------------------------------------------------
    use interpolate_data, only: get_timeinterp_factors
 
@@ -584,7 +583,7 @@ subroutine chem_surfvals_set_all()
    call get_curr_date(yr, mon, day, ncsec)
    ncdate = yr*10000 + mon*100 + day
 !
-! determine ghg_use_calendar      
+! determine ghg_use_calendar
 !
    if ( ghg_yearStart_model > 0 .and. ghg_yearStart_data > 0 ) then
       ghg_use_calendar = .false.
@@ -599,15 +598,15 @@ subroutine chem_surfvals_set_all()
       nyrm = fixYear_ghg - yrdata(1) + 1
    else
       if ( ghg_use_calendar) then
-         yrmodel  = yr          
+         yrmodel  = yr
          nyrm = yr - yrdata(1) + 1
-      else 
+      else
          yearRan_model = yr - ghg_yearStart_model
          if ( yearRan_model < 0 ) then
             call endrun('chem_surfvals_set_all: incorrect ghg_yearStart_model')
          endif
          yrmodel  = yearRan_model + ghg_yearStart_data
- 
+
          nyrm = ghg_yearStart_data + yearRan_model - yrdata(1) + 1
       end if
    end if
@@ -669,14 +668,14 @@ end subroutine chem_surfvals_set_all
 !=========================================================================================
 
 subroutine chem_surfvals_set_co2()
-!----------------------------------------------------------------------- 
-! 
-! Purpose: 
-! Computes co2 greenhouse gas volume mixing ratio via ramping info 
+!-----------------------------------------------------------------------
+!
+! Purpose:
+! Computes co2 greenhouse gas volume mixing ratio via ramping info
 ! provided in namelist var's
-! 
+!
 ! Author: B. Eaton - updated ramp_ghg for use in chem_surfvals module
-! 
+!
 !-----------------------------------------------------------------------
    use shr_kind_mod, only: r8 => shr_kind_r8
 

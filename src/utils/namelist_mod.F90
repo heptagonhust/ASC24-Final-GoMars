@@ -47,6 +47,7 @@ module namelist_mod
   character(30)   :: physics_suite        = 'N/A'
   character(30)   :: mp_scheme            = 'N/A'
   character(30)   :: pbl_scheme           = 'N/A'
+  character(256)  :: cam_namelist_path    = 'N/A'
 
   character(256)  :: gmcore_data_dir      = 'N/A'
 
@@ -240,6 +241,7 @@ module namelist_mod
     physics_suite             , &
     mp_scheme                 , &
     pbl_scheme                , &
+    cam_namelist_path         , &
     gmcore_data_dir           , &
     use_topo_smooth           , &
     topo_max_slope            , &

@@ -7,14 +7,8 @@ target_sources(gmcore PRIVATE
   aerosol/dust_sediment_mod.F90
   aerosol/mo_setsox.F90
   aerosol/soil_erod_mod.F90
+  aerosol/sslt_sections.F90
   aerosol/wetdep.F90
-  bulk_aero/aero_model.F90
-  bulk_aero/aerosol_depvel.F90
-  bulk_aero/dust_model.F90
-  bulk_aero/mo_aerosols.F90
-  bulk_aero/mo_setsoa.F90
-  bulk_aero/seasalt_model.F90
-  bulk_aero/sox_cldaero_mod.F90
   mozart/cfc11star.F90
   mozart/charge_neutrality.F90
   mozart/chem_prod_loss_diags.F90
@@ -151,3 +145,28 @@ target_sources(gmcore PRIVATE
   utils/time_utils.F90
   utils/tracer_data.F90
 )
+
+if (USE_BULK_AERO)
+  target_sources(gmcore PRIVATE
+    bulk_aero/aero_model.F90
+    bulk_aero/aerosol_depvel.F90
+    bulk_aero/dust_model.F90
+    bulk_aero/mo_aerosols.F90
+    bulk_aero/mo_setsoa.F90
+    bulk_aero/seasalt_model.F90
+    bulk_aero/sox_cldaero_mod.F90
+  )
+elseif (USE_MODAL_AERO)
+  target_sources(gmcore PRIVATE
+    modal_aero/aero_model.F90
+    modal_aero/dust_model.F90
+    modal_aero/modal_aero_coag.F90
+    modal_aero/modal_aero_convproc.F90
+    modal_aero/modal_aero_data.F90
+    modal_aero/modal_aero_gasaerexch.F90
+    modal_aero/modal_aero_newnuc.F90
+    modal_aero/modal_aero_rename.F90
+    modal_aero/seasalt_model.F90
+    modal_aero/sox_cldaero_mod.F90
+  )
+endif ()

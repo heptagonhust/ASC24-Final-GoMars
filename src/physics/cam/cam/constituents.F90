@@ -174,7 +174,7 @@ subroutine cnst_add (name, mwc, cpc, qminc, &
    padv = padv+1
    ind  = padv
    if (padv > pcnst) then
-      write(errmsg, *) sub//': FATAL: advected tracer index greater than pcnst=', pcnst
+      write(errmsg, *) sub//': FATAL: advected tracer index ', padv, ' greater than pcnst=', pcnst
       call endrun(errmsg)
    end if
 
@@ -207,7 +207,7 @@ subroutine cnst_add (name, mwc, cpc, qminc, &
       cnst_molec(ind) = 'minor'
    end if
 
-   ! set outfld type 
+   ! set outfld type
    ! (false: the module declaring the constituent is responsible for outfld calls)
    if (present(cam_outfld)) then
       cam_outfld_(ind) = cam_outfld
@@ -320,7 +320,7 @@ subroutine cnst_set_spec_class(ind, cnst_spec_class_in)
        write(iulog,*) subname//': illegal tracer index: padv, ind = ', padv, ind
        call endrun(subname//': illegal tracer index')
     end if
-    
+
     ! Check designator
     if (cnst_spec_class_in /= cnst_spec_class_undefined  .and. &
         cnst_spec_class_in /= cnst_spec_class_cldphysics .and. &
@@ -393,7 +393,7 @@ end subroutine cnst_get_ind
 
 character*3 function cnst_get_type_byind(ind)
 
-   ! Return the mixing ratio type of a constituent 
+   ! Return the mixing ratio type of a constituent
 
    !-----------------------------Arguments---------------------------------
    integer, intent(in)   :: ind    ! global constituent index (in q array)
@@ -417,7 +417,7 @@ end function cnst_get_type_byind
 
 character*5 function cnst_get_molec_byind (ind)
 
-   ! Return the molecular diffusion type of a constituent 
+   ! Return the molecular diffusion type of a constituent
 
    !-----------------------------Arguments---------------------------------
    integer, intent(in)   :: ind    ! global constituent index (in q array)
@@ -510,7 +510,7 @@ function cnst_cam_outfld(m)
 
    ! Query whether default CAM outfld calls should be made.
 
-   !----------------------------------------------------------------------- 
+   !-----------------------------------------------------------------------
    integer, intent(in) :: m                ! constituent index
 
    logical             :: cnst_cam_outfld  ! true => use default CAM outfld calls
@@ -535,7 +535,7 @@ pure logical function cnst_is_a_water_species(name)
 
    ! test whether the input name matches the name of a water species
 
-   character(len=*), intent(in) :: name  
+   character(len=*), intent(in) :: name
    !-------------------------------------------------------------------------
 
    cnst_is_a_water_species = .false.
@@ -546,7 +546,7 @@ pure logical function cnst_is_a_water_species(name)
        name == 'RAINQM' .or. &
        name == 'SNOWQM' .or. &
        name == 'GRAUQM'      ) cnst_is_a_water_species = .true.
-      
+
 end function cnst_is_a_water_species
 
 !==============================================================================

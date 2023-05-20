@@ -228,6 +228,7 @@ target_sources(gmcore PRIVATE
   shr/shr_timer_mod.F90
   stepon.F90
   unit_drivers/drv_input_data.F90
+  utils/air_composition.F90
   utils/bnddyi.F90
   utils/buffer.F90
   utils/cam_abortutils.F90
@@ -237,6 +238,7 @@ target_sources(gmcore PRIVATE
   utils/cam_map_utils.F90
   utils/cam_pio_utils.F90
   utils/coords_1d.F90
+  utils/dyn_tests_utils.F90
   utils/error_messages.F90
   utils/gmean_mod.F90
   utils/infnan.F90
@@ -257,3 +259,86 @@ target_sources(gmcore PRIVATE
   utils/water_isotopes.F90
   utils/wrap_mpi.F90
 )
+
+if (USE_CLUBB_SGS)
+  message(STATUS "Using CLUBB SGS")
+  target_sources(gmcore PRIVATE
+    clubb/adg1_adg2_3d_luhar_pdf.F90
+    clubb/advance_clubb_core_module.F90
+    clubb/advance_helper_module.F90
+    clubb/advance_windm_edsclrm_module.F90
+    clubb/advance_wp2_wp3_module.F90
+    clubb/advance_xm_wpxp_module.F90
+    clubb/advance_xp2_xpyp_module.F90
+    clubb/advance_xp3_module.F90
+    clubb/array_index.F90
+    clubb/calc_pressure.F90
+    clubb/calc_roots.F90
+    clubb/calendar.F90
+    clubb/clip_explicit.F90
+    clubb/clip_semi_implicit.F90
+    clubb/clubb_api_module.F90
+    clubb/clubb_precision.F90
+    clubb/constants_clubb.F90
+    clubb/corr_varnce_module.F90
+    clubb/diagnose_correlations_module.F90
+    clubb/diffusion.F90
+    clubb/endian.F90
+    clubb/error_code.F90
+    clubb/file_functions.F90
+    clubb/fill_holes.F90
+    clubb/grid_class.F90
+    clubb/hydromet_pdf_parameter_module.F90
+    clubb/index_mapping.F90
+    clubb/input_names.F90
+    clubb/input_reader.F90
+    clubb/interpolation.F90
+    clubb/lapack_interfaces.F90
+    clubb/lapack_wrap.F90
+    clubb/LY93_pdf.F90
+    clubb/matrix_operations.F90
+    clubb/mean_adv.F90
+    clubb/mixing_length.F90
+    clubb/model_flags.F90
+    clubb/mono_flux_limiter.F90
+    clubb/mt95.f90
+    clubb/Nc_Ncn_eqns.F90
+    clubb/new_hybrid_pdf_main.F90
+    clubb/new_hybrid_pdf.F90
+    clubb/new_pdf_main.F90
+    clubb/new_pdf.F90
+    clubb/new_tsdadg_pdf.F90
+    clubb/numerical_check.F90
+    clubb/output_grads.F90
+    clubb/parameter_indices.F90
+    clubb/parameters_model.F90
+    clubb/parameters_tunable.F90
+    clubb/pdf_closure_module.F90
+    clubb/pdf_parameter_module.F90
+    clubb/pdf_utilities.F90
+    clubb/pos_definite_module.F90
+    clubb/precipitation_fraction.F90
+    clubb/saturation.F90
+    clubb/setup_clubb_pdf_params.F90
+    clubb/sigma_sqd_w_module.F90
+    clubb/Skx_module.F90
+    clubb/sponge_layer_damping.F90
+    clubb/stat_file_module.F90
+    clubb/stats_clubb_utilities.F90
+    clubb/stats_lh_sfc_module.F90
+    clubb/stats_lh_zt_module.F90
+    clubb/stats_rad_zm_module.F90
+    clubb/stats_rad_zt_module.F90
+    clubb/stats_sfc_module.F90
+    clubb/stats_type_utilities.F90
+    clubb/stats_type.F90
+    clubb/stats_variables.F90
+    clubb/stats_zm_module.F90
+    clubb/stats_zt_module.F90
+    clubb/surface_varnce_module.F90
+    clubb/T_in_K_module.F90
+    clubb/turbulent_adv_pdf.F90
+    clubb/variables_diagnostic_module.F90
+    clubb/variables_prognostic_module.F90
+  )
+endif ()

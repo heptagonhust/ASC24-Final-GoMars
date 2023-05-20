@@ -88,6 +88,134 @@ module advance_clubb_core_module
 ! Joshua Fasching, Adam Smith, and Michael Falk).
 !-----------------------------------------------------------------------
 
+  use advance_xm_wpxp_module, only: &
+      advance_xm_wpxp          ! Compute mean/flux terms
+
+  use advance_xp2_xpyp_module, only: &
+      advance_xp2_xpyp         ! Computes variance terms
+
+  use surface_varnce_module, only:  &
+      calc_surface_varnce
+
+  use mixing_length, only: &
+      compute_mixing_length, &
+      calc_Lscale_directly
+
+  use advance_windm_edsclrm_module, only:  &
+      advance_windm_edsclrm
+
+  use saturation, only:  &
+      sat_mixrat_liq
+
+  use advance_wp2_wp3_module, only:  &
+      advance_wp2_wp3
+
+  use advance_xp3_module, only: &
+      advance_xp3
+
+  use calc_pressure, only: &
+      update_pressure, &
+      calculate_thvm
+
+  use clubb_precision, only:  &
+      core_rknd
+
+  use error_code, only: &
+      clubb_at_least_debug_level,  &
+      err_code,                    &
+      clubb_no_error, &
+      clubb_fatal_error
+
+  use Skx_module, only: &
+      Skx_func,         &
+      xp3_LG_2005_ansatz
+
+  use clip_explicit, only: &
+    clip_covars_denom
+
+  use T_in_K_module, only: &
+      ! Read values from namelist
+      thlm2T_in_K
+
+  use sigma_sqd_w_module, only: &
+      compute_sigma_sqd_w
+
+  use stats_clubb_utilities, only: &
+      stats_accumulate
+
+  use stats_type_utilities, only:   &
+      stat_update_var_pt,   &
+      stat_update_var,      &
+      stat_begin_update,    &
+      stat_begin_update_pt, &
+      stat_end_update,      &
+      stat_end_update_pt
+
+  use stats_variables, only: &
+      irtp2_bt,      &
+      ithlp2_bt,     &
+      irtpthlp_bt,   &
+      iwp2_bt,       &
+      iwp3_bt,       &
+      ivp2_bt,       &
+      iup2_bt,       &
+      iwprtp_bt,     &
+      iwpthlp_bt,    &
+      iupwp_bt,      &
+      ivpwp_bt,      &
+      irtm_bt,       &
+      ithlm_bt,      &
+      ivm_bt,        &
+      ium_bt,        &
+      irvm,          &
+      irel_humidity, &
+      iwpthlp_zt,    &
+      itau_no_N2_zm, &
+      itau_xp2_zm,   &
+      itau_wp2_zm,   &
+      itau_wp3_zm
+
+  use stats_variables, only: &
+      iwprtp_zt,     &
+      iup2_zt,       &
+      ivp2_zt,       &
+      iupwp_zt,      &
+      ivpwp_zt,      &
+      ithlp2_sf,     &
+      irtp2_sf,      &
+      irtpthlp_sf,   &
+      iup2_sf,       &
+      ivp2_sf,       &
+      iwp2_sf,       &
+      l_stats_samp,  &
+      l_stats,       &
+      stats_zt,      &
+      stats_zm,      &
+      stats_sfc,     &
+      irtm_spur_src, &
+      ithlm_spur_src
+
+  use stats_variables, only: &
+    irfrzm, &
+    istability_correction
+
+  use stats_variables, only: &
+    iLscale_pert_1, &
+    iLscale_pert_2
+
+  use fill_holes, only: &
+    vertical_integral, &
+    fill_holes_vertical
+
+  use advance_helper_module, only: &
+    calc_stability_correction, &
+    compute_Cx_fnc_Richardson, &
+    calc_brunt_vaisala_freq_sqd, &
+    term_wp2_splat, term_wp3_splat
+
+  use interpolation, only: &
+    pvertinterp
+
   implicit none
 
   public ::  &
@@ -215,7 +343,7 @@ module advance_clubb_core_module
         C5, C4, &
         C_wp2_splat, &
         C_invrs_tau_bkgnd, &
-        C_invrs_tau_sfc, & 
+        C_invrs_tau_sfc, &
         C_invrs_tau_shear, &
         C_invrs_tau_N2, &
         C_invrs_tau_N2_xp2, &
@@ -320,135 +448,6 @@ module advance_clubb_core_module
        advance_sclrm_Nd_upwind, &
        advance_sclrm_Nd_semi_implicit     ! h1g, 2010-06-16 end mod
 #endif
-
-    use advance_xm_wpxp_module, only: &
-        advance_xm_wpxp          ! Compute mean/flux terms
-
-    use advance_xp2_xpyp_module, only: &
-        advance_xp2_xpyp     ! Computes variance terms
-
-    use surface_varnce_module, only:  &
-        calc_surface_varnce ! Procedure
-
-    use mixing_length, only: &
-        compute_mixing_length, &    ! Procedure
-        calc_Lscale_directly  ! for Lscale
-
-    use advance_windm_edsclrm_module, only:  &
-        advance_windm_edsclrm  ! Procedure(s)
-
-    use saturation, only:  &
-        ! Procedure
-        sat_mixrat_liq ! Saturation mixing ratio
-
-    use advance_wp2_wp3_module, only:  &
-        advance_wp2_wp3 ! Procedure
-
-    use advance_xp3_module, only: &
-        advance_xp3    ! Procedure(s)
-
-    use calc_pressure, only: &
-        update_pressure, & ! Procedure(s)
-        calculate_thvm
-
-    use clubb_precision, only:  &
-        core_rknd ! Variable(s)
-
-    use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_no_error, &              ! Constant
-        clubb_fatal_error              ! Constant
-
-    use Skx_module, only: &
-        Skx_func,           & ! Procedure(s)
-        xp3_LG_2005_ansatz
-
-    use clip_explicit, only: &
-      clip_covars_denom ! Procedure(s)
-
-    use T_in_K_module, only: &
-        ! Read values from namelist
-        thlm2T_in_K ! Procedure
-
-    use sigma_sqd_w_module, only: &
-        compute_sigma_sqd_w    ! Procedure(s)
-
-    use stats_clubb_utilities, only: &
-        stats_accumulate ! Procedure
-
-    use stats_type_utilities, only:   &
-        stat_update_var_pt,   & ! Procedure(s)
-        stat_update_var,      &
-        stat_begin_update,    &
-        stat_begin_update_pt, &
-        stat_end_update,      &
-        stat_end_update_pt
-
-    use stats_variables, only: &
-        irtp2_bt,      & ! Variable(s)
-        ithlp2_bt,     &
-        irtpthlp_bt,   &
-        iwp2_bt,       &
-        iwp3_bt,       &
-        ivp2_bt,       &
-        iup2_bt,       &
-        iwprtp_bt,     &
-        iwpthlp_bt,    &
-        iupwp_bt,      &
-        ivpwp_bt,      &
-        irtm_bt,       &
-        ithlm_bt,      &
-        ivm_bt,        &
-        ium_bt,        &
-        irvm,          &
-        irel_humidity, &
-        iwpthlp_zt,    &
-        itau_no_N2_zm, &
-        itau_xp2_zm,   &
-        itau_wp2_zm,   &
-        itau_wp3_zm   
-
-    use stats_variables, only: &
-        iwprtp_zt,     &
-        iup2_zt,       &
-        ivp2_zt,       &
-        iupwp_zt,      &
-        ivpwp_zt,      &
-        ithlp2_sf,     &
-        irtp2_sf,      &
-        irtpthlp_sf,   &
-        iup2_sf,       &
-        ivp2_sf,       &
-        iwp2_sf,       &
-        l_stats_samp,  &
-        l_stats,       &
-        stats_zt,      &
-        stats_zm,      &
-        stats_sfc,     &
-        irtm_spur_src, &
-        ithlm_spur_src
-
-    use stats_variables, only: &
-      irfrzm, & ! Variable(s)
-      istability_correction
-
-    use stats_variables, only: &
-      iLscale_pert_1, & ! Variable(s)
-      iLscale_pert_2
-
-    use fill_holes, only: &
-      vertical_integral, & ! Procedure(s)
-      fill_holes_vertical
-
-    use advance_helper_module, only: &
-      calc_stability_correction, & ! Procedure(s)
-      compute_Cx_fnc_Richardson, &
-      calc_brunt_vaisala_freq_sqd, &
-      term_wp2_splat, term_wp3_splat
-
-    use interpolation, only: &
-      pvertinterp
 
     implicit none
 
@@ -753,19 +752,19 @@ module advance_clubb_core_module
        invrs_tau_wpxp_zm,            & ! One divided by tau_wpxp                      [s^-1]
        invrs_tau_wp3_zm,             & ! One divided by tau_wp3                       [s^-1]
        invrs_tau_N2_zm,              & ! One divided by tau with stability effects    [s^-1]
-       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
+       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1]
        ustar,                        & ! Friction velocity  [m/s]
        tau_no_N2_zm,                 & ! Tau without Brunt Freq
        tau_wp2_zm,                   & ! Tau values used for advance_wp2_wpxp
        tau_wp3_zm,                   & ! Tau values used for advance_wp3_wp2
        tau_xp2_zm,                   & ! Tau values used for advance_xp2_wpxp
-       tau_wpxp_zm,                  & ! tau_C6_zm = tau_wpxp_zm 
+       tau_wpxp_zm,                  & ! tau_C6_zm = tau_wpxp_zm
        tau_wp2_zt,                   & ! Tau wp2 at zt levels
        tau_wpxp_zt,                  & ! Tau wpxp at zt levels
        tau_wp3_zt,                   & ! Tau wp3 at zt levels
        tau_xp2_zt,                   & ! Tau xp2 at zt levels
-       tau_no_N2_zt                    ! 
- 
+       tau_no_N2_zt                    !
+
 
 
     real( kind = core_rknd ), parameter :: &
@@ -792,12 +791,12 @@ module advance_clubb_core_module
     !  Km_Skw_thresh = zero_threshold, &  ! Value of Skw at which Skw correction kicks in
     !  Km_Skw_factor_efold = 0.5_core_rknd, & ! E-folding rate of exponential Skw correction
     !  Km_Skw_factor_min   = 0.2_core_rknd    ! Minimum value of Km_Skw_factor
-    
+
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
     !----- Begin Code -----
-    
+
     err_code_out = clubb_no_error  ! Initialize to no error value
 
     ! Determine the maximum allowable value for Lscale (in meters).
@@ -1108,7 +1107,7 @@ module advance_clubb_core_module
                                                                   ! buoyant parcel calc
 
 
-        call calc_Lscale_directly ( l_implemented, p_in_Pa, exner, & 
+        call calc_Lscale_directly ( l_implemented, p_in_Pa, exner, &
                   rtm, thlm, thvm, &
                   newmu, rtm_frz, thlm_frz, rtp2,  thlp2,  rtpthlp, &
                   pdf_params, pdf_params_frz, em, &
@@ -1116,7 +1115,7 @@ module advance_clubb_core_module
                   clubb_config_flags%l_Lscale_plume_centered, &
                   clubb_config_flags%l_use_ice_latent, &
                   Lscale, Lscale_up, Lscale_down )
-                  
+
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
@@ -1136,11 +1135,11 @@ module advance_clubb_core_module
       tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  &
                      / SQRT( MAX( em_min, em ) ) ), taumax )
 
-      tau_xp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp  
-      tau_wp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp 
+      tau_xp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp
+      tau_wp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp
       tau_wpxp_zm= tau_zm
-      tau_xp2_zt = tau_zt   ! Not be used currently 
-      tau_wp2_zt = tau_zt   ! 
+      tau_xp2_zt = tau_zt   ! Not be used currently
+      tau_wp2_zt = tau_zt   !
       tau_wpxp_zt= tau_zt
       tau_wp3_zt = tau_zt
 
@@ -1178,7 +1177,7 @@ module advance_clubb_core_module
               * min(one, max(zero_threshold,&
               one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
 
-        invrs_tau_zm = invrs_tau_no_N2_zm & 
+        invrs_tau_zm = invrs_tau_no_N2_zm &
               + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
               brunt_vaisala_freq_sqd_smth ) )
 
@@ -1188,7 +1187,7 @@ module advance_clubb_core_module
 
         invrs_tau_xp2_zm =  0.1 * C_invrs_tau_bkgnd  / tau_const &
               + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
-              + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )& 
+              + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )&
               + C_invrs_tau_N2_xp2 &
               * sqrt( max( zero_threshold, &
               brunt_vaisala_freq_sqd_smth ) )!,0.002_core_rknd )
@@ -1197,8 +1196,8 @@ module advance_clubb_core_module
               zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
               .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
 
-        invrs_tau_wpxp_zm = invrs_tau_zm & 
-              + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud 
+        invrs_tau_wpxp_zm = invrs_tau_zm &
+              + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
 
         invrs_tau_wp3_zm = invrs_tau_wp2_zm &
               + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
@@ -1208,7 +1207,7 @@ module advance_clubb_core_module
              stop  "Lowest zm grid level is below ground in CLUBB."
         end if
 
-        tau_no_N2_zm = one / invrs_tau_no_N2_zm  
+        tau_no_N2_zm = one / invrs_tau_no_N2_zm
         tau_zm       = one / invrs_tau_zm
         tau_wp2_zm   = one / invrs_tau_wp2_zm
         tau_xp2_zm   = one / invrs_tau_xp2_zm
@@ -1222,7 +1221,7 @@ module advance_clubb_core_module
         tau_xp2_zt   = zm2zt( tau_xp2_zm )
         tau_wpxp_zt  = zm2zt( tau_wpxp_zm )
         tau_wp3_zt   = zm2zt( tau_wp3_zm )
-        
+
 
 !        invrs_tau_N2_zm = invrs_tau_zm  &
 !                          + C_invrs_tau_N2 * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
@@ -1427,7 +1426,7 @@ module advance_clubb_core_module
 
       else
         tau_N2_zm = unused_var
-        tau_C6_zm = tau_wpxp_zm   !   
+        tau_C6_zm = tau_wpxp_zm   !
         tau_C1_zm = tau_wp2_zm   ! Note, we let tau_C4 = tau_C1= tau_wp2_zm in advance_wp2_wp3
 
       end if ! l_stability_correction
@@ -3265,7 +3264,7 @@ module advance_clubb_core_module
 
       use parameter_indices, only:  &
           nparams, & ! Variable(s)
-          iC1,     & ! Constant(s)  
+          iC1,     & ! Constant(s)
           iC14
 
       use parameters_tunable, only: &
@@ -3289,7 +3288,7 @@ module advance_clubb_core_module
           err_code,                    & ! Error Indicator
           clubb_no_error, &              ! Constant
           clubb_fatal_error              ! Constant
-          
+
       use model_flags, only: &
           clubb_config_flags_type, & ! Type
           setup_model_flags, & ! Subroutine
@@ -3395,7 +3394,7 @@ module advance_clubb_core_module
         l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
         l_damp_wp2_using_em,     &
         l_stability_correct_tau_zm
-        
+
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
          I_sat_sphum
@@ -3406,15 +3405,15 @@ module advance_clubb_core_module
 
       ! Local variables
       integer :: begin_height, end_height
-      
+
       integer, intent(out) :: &
         err_code_out  ! Error code indicator
 
       !----- Begin Code -----
-      
+
       err_code_out = clubb_no_error ! Initialize to no error value
       call initialize_error_headers
-      
+
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
@@ -3610,7 +3609,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           err_code_out = err_code
-          
+
           write(fstderr,*) "Error in setup_clubb_core"
 
           write(fstderr,*) "Intent(in)"
@@ -4705,7 +4704,7 @@ module advance_clubb_core_module
     rc_tol
 
   use parameters_tunable, only: &
-    thlp2_rad_coef    
+    thlp2_rad_coef
 
   implicit none
 

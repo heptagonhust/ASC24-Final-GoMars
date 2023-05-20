@@ -14,11 +14,13 @@ module smooth_coord_mod
   public smooth_coord_calc_mg
   public smooth_coord_calc_mg_lev
   public smooth_coord_calc_dmgdt_lev
+  public nlevp
 
   real(r8), parameter :: eta_b = 0.2_r8
   real(r8), parameter :: eta_c = 0.8_r8
   real(r8), allocatable :: bi(:), ci(:)
   real(r8), allocatable :: bm(:), cm(:)
+  integer :: nlevp = 0
 
 contains
 
@@ -62,6 +64,11 @@ contains
 
     do k = 1, nlev
       global_mesh%full_lev(k) = (global_mesh%half_lev(k) + global_mesh%half_lev(k+1)) * 0.5_r8
+    end do
+
+    nlevp = 0
+    do k = 1, nlev
+      if (bm(k) == 0 .and. cm(k) == 0) nlevp = nlevp + 1
     end do
 
   end subroutine smooth_coord_init

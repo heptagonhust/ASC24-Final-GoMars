@@ -7,6 +7,7 @@ module dp_coupling_mod
   use formula_mod
   use parallel_mod
   use tracer_mod
+  use cam_physics_driver_mod, only: cam_physics_d2p, cam_physics_p2d
 
   implicit none
 
@@ -38,83 +39,90 @@ contains
     if (idx_qh > 0) call tracer_get_array(block%id, idx_qh, qh, __FILE__, __LINE__)
     call tracer_get_array_qm(block%id, qm)
 
-    associate (mesh        => block%mesh                   , &
-               pstate      => block%pstate                 , & ! out
-               u           => block%dstate(itime)%u        , & ! in
-               v           => block%dstate(itime)%v        , & ! in
-               pt          => block%dstate(itime)%pt       , & ! in (modified potential temperature)
-               t           => block%dstate(itime)%t        , & ! in
-               tv          => block%dstate(itime)%tv       , & ! in (virtual temperature)
-               q           => tracers(block%id)%q          , & ! in (dry mixing ratios of all tracers)
-               p           => block%dstate(itime)%ph       , & ! in (hydrostatic full pressure)
-               p_lev       => block%dstate(itime)%ph_lev   , & ! in
-               ps          => block%dstate(itime)%phs      , & ! in (surface hydrostatic pressure)
-               dmg         => block%dstate(itime)%dmg      , & ! in (dry air weight within each layer)
-               omg         => block%aux%omg                , & ! in (vertical pressure velocity)
-               gz          => block%dstate(itime)%gz       , & ! in (geopotential)
-               gz_lev      => block%dstate(itime)%gz_lev   , & ! in
-               land        => block%static%landmask        )   ! in
-    ! Full levels
-    do k = mesh%full_kds, mesh%full_kde
+    select case (physics_suite)
+#ifdef HAS_CAM
+    case ('cam')
+      call cam_physics_d2p(block, itime)
+#endif
+    case default
+      associate (mesh        => block%mesh                   , &
+                 pstate      => block%pstate                 , & ! out
+                 u           => block%dstate(itime)%u        , & ! in
+                 v           => block%dstate(itime)%v        , & ! in
+                 pt          => block%dstate(itime)%pt       , & ! in (modified potential temperature)
+                 t           => block%dstate(itime)%t        , & ! in
+                 tv          => block%dstate(itime)%tv       , & ! in (virtual temperature)
+                 q           => tracers(block%id)%q          , & ! in (dry mixing ratios of all tracers)
+                 p           => block%dstate(itime)%ph       , & ! in (hydrostatic full pressure)
+                 p_lev       => block%dstate(itime)%ph_lev   , & ! in
+                 ps          => block%dstate(itime)%phs      , & ! in (surface hydrostatic pressure)
+                 dmg         => block%dstate(itime)%dmg      , & ! in (dry air weight within each layer)
+                 omg         => block%aux%omg                , & ! in (vertical pressure velocity)
+                 gz          => block%dstate(itime)%gz       , & ! in (geopotential)
+                 gz_lev      => block%dstate(itime)%gz_lev   , & ! in
+                 land        => block%static%landmask        )   ! in
+      ! Full levels
+      do k = mesh%full_kds, mesh%full_kde
+        icol = 0
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            icol = icol + 1
+            pstate%u        (icol,k) = u(i,j,k)
+            pstate%v        (icol,k) = v(i,j,k)
+            pstate%pt       (icol,k) = pt(i,j,k) ! FIXME: What does physics need? Dry air potential temperature or just modified one?
+            pstate%t        (icol,k) = t(i,j,k)
+            pstate%tv       (icol,k) = tv(i,j,k)
+            pstate%ptv      (icol,k) = virtual_potential_temperature(tv(i,j,k), p(i,j,k))
+            pstate%p        (icol,k) = p(i,j,k)
+            pstate%p_lev    (icol,k) = p_lev(i,j,k)
+            pstate%pk       (icol,k) = p(i,j,k)**rd_o_cpd / pk0
+            pstate%pk_lev   (icol,k) = p_lev(i,j,k)**rd_o_cpd / pk0
+            pstate%dp       (icol,k) = p_lev(i,j,k+1) - p_lev(i,j,k)
+            pstate%rdp      (icol,k) = 1.0_r8 / pstate%dp(icol,k)
+            pstate%omg      (icol,k) = omg(i,j,k)
+            pstate%z        (icol,k) = gz(i,j,k) / g
+            pstate%dz       (icol,k) = (gz_lev(i,j,k+1) - gz_lev(i,j,k)) / g
+            pstate%rho      (icol,k) = moist_air_density(t(i,j,k), p(i,j,k), qv(i,j,k), qm(i,j,k))
+            pstate%cp       (icol,k) = (1 - qv(i,j,k)) * cpd + qv(i,j,k) * cpv ! FIXME: Add specific heat capacities of other water species.
+            pstate%cv       (icol,k) = (1 - qv(i,j,k)) * cvd + qv(i,j,k) * cvv ! FIXME: Add specific heat capacities of other water species.
+            tmp = gz(i,j,k) + 0.5_r8 * (u(i,j,k)**2 + v(i,j,k)**2)
+            pstate%tep      (icol,k) = pstate%cp(icol,k) * pstate%t(icol,k) + tmp
+            pstate%tev      (icol,k) = pstate%cv(icol,k) * pstate%t(icol,k) + tmp
+            ! Convert dry mixing ratios of tracers to moist mixing ratios.
+            pstate%q        (icol,k,:) = q(i,j,k,:) * dmg(i,j,k) / pstate%dp(icol,k)
+          end do
+        end do
+      end do
+      ! Half levels
+      do k = mesh%half_kds, mesh%half_kde
+        icol = 0
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            icol = icol + 1
+            pstate%p_lev   (icol,k) = p_lev(i,j,k)
+            pstate%lnp_lev (icol,k) = log(p_lev(i,j,k))
+            pstate%z_lev   (icol,k) = gz_lev(i,j,k) / g
+            if (mesh%half_kds < k .and. k < mesh%half_kde) then
+              pstate%n2_lev(icol,k) = buoyancy_frequency( &
+                pstate%ptv(icol,k-1), pstate%ptv(icol,k), pstate%z(icol,k-1), pstate%z(icol,k))
+              pstate%ri_lev(icol,k) = local_richardson_number( &
+                pstate%N2_lev(icol,k), pstate%z(icol,k-1), pstate%z(icol,k), u(i,j,k-1), u(i,j,k), v(i,j,k-1), v(i,j,k))
+            end if
+          end do
+        end do
+      end do
+      ! Surface
       icol = 0
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           icol = icol + 1
-          pstate%u        (icol,k) = u(i,j,k)
-          pstate%v        (icol,k) = v(i,j,k)
-          pstate%pt       (icol,k) = pt(i,j,k) ! FIXME: What does physics need? Dry air potential temperature or just modified one?
-          pstate%t        (icol,k) = t(i,j,k)
-          pstate%tv       (icol,k) = tv(i,j,k)
-          pstate%ptv      (icol,k) = virtual_potential_temperature(tv(i,j,k), p(i,j,k))
-          pstate%p        (icol,k) = p(i,j,k)
-          pstate%p_lev    (icol,k) = p_lev(i,j,k)
-          pstate%pk       (icol,k) = p(i,j,k)**rd_o_cpd / pk0
-          pstate%pk_lev   (icol,k) = p_lev(i,j,k)**rd_o_cpd / pk0
-          pstate%dp       (icol,k) = p_lev(i,j,k+1) - p_lev(i,j,k)
-          pstate%rdp      (icol,k) = 1.0_r8 / pstate%dp(icol,k)
-          pstate%omg      (icol,k) = omg(i,j,k)
-          pstate%z        (icol,k) = gz(i,j,k) / g
-          pstate%dz       (icol,k) = (gz_lev(i,j,k+1) - gz_lev(i,j,k)) / g
-          pstate%rho      (icol,k) = moist_air_density(t(i,j,k), p(i,j,k), qv(i,j,k), qm(i,j,k))
-          pstate%cp       (icol,k) = (1 - qv(i,j,k)) * cpd + qv(i,j,k) * cpv ! FIXME: Add specific heat capacities of other water species.
-          pstate%cv       (icol,k) = (1 - qv(i,j,k)) * cvd + qv(i,j,k) * cvv ! FIXME: Add specific heat capacities of other water species.
-          tmp = gz(i,j,k) + 0.5_r8 * (u(i,j,k)**2 + v(i,j,k)**2)
-          pstate%tep      (icol,k) = pstate%cp(icol,k) * pstate%t(icol,k) + tmp
-          pstate%tev      (icol,k) = pstate%cv(icol,k) * pstate%t(icol,k) + tmp
-          ! Convert dry mixing ratios of tracers to moist mixing ratios.
-          pstate%q        (icol,k,:) = q(i,j,k,:) * dmg(i,j,k) / pstate%dp(icol,k)
+          pstate%ps  (icol) = ps(i,j)
+          pstate%wsb (icol) = sqrt(u(i,j,mesh%full_kde)**2 + v(i,j,mesh%full_kde)**2)
+          pstate%land(icol) = land(i,j)
         end do
       end do
-    end do
-    ! Half levels
-    do k = mesh%half_kds, mesh%half_kde
-      icol = 0
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          icol = icol + 1
-          pstate%p_lev   (icol,k) = p_lev(i,j,k)
-          pstate%lnp_lev (icol,k) = log(p_lev(i,j,k))
-          pstate%z_lev   (icol,k) = gz_lev(i,j,k) / g
-          if (mesh%half_kds < k .and. k < mesh%half_kde) then
-            pstate%n2_lev(icol,k) = buoyancy_frequency( &
-              pstate%ptv(icol,k-1), pstate%ptv(icol,k), pstate%z(icol,k-1), pstate%z(icol,k))
-            pstate%ri_lev(icol,k) = local_richardson_number( &
-              pstate%N2_lev(icol,k), pstate%z(icol,k-1), pstate%z(icol,k), u(i,j,k-1), u(i,j,k), v(i,j,k-1), v(i,j,k))
-          end if
-        end do
-      end do
-    end do
-    ! Surface
-    icol = 0
-    do j = mesh%full_jds, mesh%full_jde
-      do i = mesh%full_ids, mesh%full_ide
-        icol = icol + 1
-        pstate%ps  (icol) = ps(i,j)
-        pstate%wsb (icol) = sqrt(u(i,j,mesh%full_kde)**2 + v(i,j,mesh%full_kde)**2)
-        pstate%land(icol) = land(i,j)
-      end do
-    end do
-    end associate
+      end associate
+    end select
 
   end subroutine dp_coupling_d2p
 
@@ -125,51 +133,58 @@ contains
 
     integer i, j, k, icol
 
-    associate (mesh  => block%mesh                   , &
-               ptend => block%ptend                  , & ! in
-               dudt  => block%dtend(itime)%dudt_phys , & ! out
-               dvdt  => block%dtend(itime)%dvdt_phys , & ! out
-               dtdt  => block%dtend(itime)%dtdt_phys , & ! out
-               dqdt  => block%dtend(itime)%dqdt_phys)    ! out
-    if (ptend%updated_u .and. ptend%updated_v) then
-      do k = mesh%full_kds, mesh%full_kde
-        icol = 0
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            icol = icol + 1
-            dudt(i,j,k) = ptend%dudt(icol,k)
-            dvdt(i,j,k) = ptend%dvdt(icol,k)
+    select case (physics_suite)
+#ifdef HAS_CAM
+    case ('cam')
+      call cam_physics_p2d(block, itime)
+#endif
+    case default
+      associate (mesh  => block%mesh                   , &
+                ptend => block%ptend                  , & ! in
+                dudt  => block%dtend(itime)%dudt_phys , & ! out
+                dvdt  => block%dtend(itime)%dvdt_phys , & ! out
+                dtdt  => block%dtend(itime)%dtdt_phys , & ! out
+                dqdt  => block%dtend(itime)%dqdt_phys)    ! out
+      if (ptend%updated_u .and. ptend%updated_v) then
+        do k = mesh%full_kds, mesh%full_kde
+          icol = 0
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              icol = icol + 1
+              dudt(i,j,k) = ptend%dudt(icol,k)
+              dvdt(i,j,k) = ptend%dvdt(icol,k)
+            end do
           end do
         end do
-      end do
-      call fill_halo(block%halo, dudt, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     west_halo=.false., south_halo=.false., north_halo=.false.)
-      call fill_halo(block%halo, dvdt, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     west_halo=.false.,  east_halo=.false., south_halo=.false.)
-    end if
-    if (ptend%updated_t) then
-      do k = mesh%full_kds, mesh%full_kde
-        icol = 0
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            icol = icol + 1
-            dtdt(i,j,k) = ptend%dtdt(icol,k)
+        call fill_halo(block%halo, dudt, full_lon=.true., full_lat=.true., full_lev=.true., &
+                      west_halo=.false., south_halo=.false., north_halo=.false.)
+        call fill_halo(block%halo, dvdt, full_lon=.true., full_lat=.true., full_lev=.true., &
+                      west_halo=.false.,  east_halo=.false., south_halo=.false.)
+      end if
+      if (ptend%updated_t) then
+        do k = mesh%full_kds, mesh%full_kde
+          icol = 0
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              icol = icol + 1
+              dtdt(i,j,k) = ptend%dtdt(icol,k)
+            end do
           end do
         end do
-      end do
-    end if
-    if (ptend%updated_qv) then
-      do k = mesh%full_kds, mesh%full_kde
-        icol = 0
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            icol = icol + 1
-            dqdt(i,j,k,idx_qv) = ptend%dqdt(icol,k,idx_qv)
+      end if
+      if (ptend%updated_qv) then
+        do k = mesh%full_kds, mesh%full_kde
+          icol = 0
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              icol = icol + 1
+              dqdt(i,j,k,idx_qv) = ptend%dqdt(icol,k,idx_qv)
+            end do
           end do
         end do
-      end do
-    end if
-    end associate
+      end if
+      end associate
+    end select
 
   end subroutine dp_coupling_p2d
 

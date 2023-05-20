@@ -1,14 +1,14 @@
 module ref_pres
 !--------------------------------------------------------------------------
-! 
+!
 ! Provides access to reference pressures for use by the physics
 ! parameterizations.  The pressures are provided by the dynamical core
 ! since it determines the grid used by the physics.
-! 
+!
 ! Note that the init method for this module is called before the init
 ! method in physpkg; therefore, most physics modules can use these
 ! reference pressures during their init phases.
-! 
+!
 !--------------------------------------------------------------------------
 
 use shr_kind_mod, only: r8=>shr_kind_r8
@@ -123,12 +123,10 @@ subroutine ref_pres_init(pref_edge_in, pref_mid_in, num_pr_lev_in)
    pref_mid_norm = pref_mid/psurf_ref
 
    ! Find level corresponding to the top of troposphere clouds.
-   trop_cloud_top_lev = press_lim_idx(trop_cloud_top_press, &
-      top=.true.)
+   trop_cloud_top_lev = press_lim_idx(trop_cloud_top_press, top=.true.)
 
    ! Find level corresponding to the top for MAM processes.
-   clim_modal_aero_top_lev = press_lim_idx(clim_modal_aero_top_press, &
-      top=.true.)
+   clim_modal_aero_top_lev = press_lim_idx(clim_modal_aero_top_press, top=.true.)
 
    ! Find level corresponding to the molecular diffusion bottom.
    do_molec_diff = (ptop_ref < do_molec_press)

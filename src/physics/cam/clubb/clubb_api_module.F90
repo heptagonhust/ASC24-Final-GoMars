@@ -17,6 +17,17 @@
 !
 module clubb_api_module
 
+  use advance_clubb_core_module, only : advance_clubb_core
+
+  use setup_clubb_pdf_params, only : setup_pdf_parameters
+
+  use advance_windm_edsclrm_module, only: &
+    xpwp_fnc
+
+  use error_code, only : &
+      err_code, &         ! Error Indicator
+      clubb_fatal_error   ! Constant
+
   use mt95, only : &
     assignment( = ), &
     genrand_state, & ! Internal representation of the RNG state.
@@ -236,7 +247,7 @@ module clubb_api_module
         iC2rt, iC2thl, iC2rtthl, iC4, iC5, &
         iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
         iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
-        iC12, iC13, iC14, iC15, iC_wp2_splat, & 
+        iC12, iC13, iC14, iC15, iC_wp2_splat, &
         iC6rt_Lscale0, iC6thl_Lscale0, &
         iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, &
         ic_K2, inu2, ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, &
@@ -525,8 +536,6 @@ contains
     wprcp, ice_supersat_frac, &                             ! intent(out)
     rcm_in_layer, cloud_cover )                             ! intent(out)
 
-    use advance_clubb_core_module, only : advance_clubb_core
-
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
 
@@ -581,10 +590,10 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
-#ifdef CLUBBND_CAM 
-    real( kind = core_rknd ), intent(in) :: & 
-      varmu 
-#endif 
+#ifdef CLUBBND_CAM
+    real( kind = core_rknd ), intent(in) :: &
+      varmu
+#endif
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
@@ -704,7 +713,7 @@ contains
       thlprcp_out
 #endif
 
-    !!! Output Variable 
+    !!! Output Variable
     integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
 
 #ifdef GFDL
@@ -786,13 +795,13 @@ contains
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
-    err_code_api )                                        ! intent(out) 
+    err_code_api )                                        ! intent(out)
 
     use advance_clubb_core_module, only : setup_clubb_core
 
     use parameter_indices, only:  &
       nparams ! Variable(s)
-      
+
     use model_flags, only: &
         clubb_config_flags_type  ! Type
 
@@ -890,9 +899,9 @@ contains
          cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
 
-    ! Output variables 
-    integer, intent(out) :: & 
-    err_code_api   ! Diagnostic for a problem with the setup 
+    ! Output variables
+    integer, intent(out) :: &
+    err_code_api   ! Diagnostic for a problem with the setup
 
     call setup_clubb_core &
       ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
@@ -1082,7 +1091,7 @@ contains
 
   logical function clubb_at_least_debug_level_api( &
     level )
-    
+
     use error_code, only: &
         clubb_at_least_debug_level ! Procedure
 
@@ -1198,7 +1207,7 @@ contains
       nz              ! Number of vertical grid levels
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet    ! Mean of hydrometeor fields    [units vary] 
+      hydromet    ! Mean of hydrometeor fields    [units vary]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -1253,7 +1262,7 @@ contains
     thermodynamic_heights )
 
     use grid_class, only : setup_grid_heights
-    
+
     use error_code, only : &
         clubb_fatal_error       ! Constant
 
@@ -1445,9 +1454,9 @@ contains
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
-    ! Output Variables 
-    integer, intent(out) ::  & 	 	      
-      err_code_api ! Error condition 
+    ! Output Variables
+    integer, intent(out) ::  &
+      err_code_api ! Error condition
 
     call setup_parameters( &
       deltaz, params, nzmax, &
@@ -1528,20 +1537,20 @@ contains
     implicit none
 
     integer, intent(in) :: nz ! Num Vert Model Levs
-    
+
     ! Input a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(inout) :: pdf_params
 
     ! Output a two dimensional real array with all values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(inout) :: &
       r_param_array
-      
+
     integer, optional, intent(in) :: k_start, k_end
-      
+
     if( present( k_start ) .and. present( k_end ) ) then
         call pack_pdf_params( pdf_params, nz, r_param_array, &
                               k_start, k_end )
-    else 
+    else
         call pack_pdf_params( pdf_params, nz, r_param_array )
     end if
 
@@ -1557,36 +1566,36 @@ contains
     use pdf_parameter_module, only : unpack_pdf_params
 
     implicit none
-    
+
     integer, intent(in) :: nz ! Num Vert Model Levs
-    
+
     ! Input a two dimensional real array with pdf values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
       r_param_array
 
     ! Output a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(inout) :: pdf_params
-    
+
     integer, optional, intent(in) :: k_start, k_end
 
     if( present( k_start ) .and. present( k_end ) ) then
         call unpack_pdf_params( r_param_array, nz, pdf_params, &
                                 k_start, k_end )
-    else 
+    else
         call unpack_pdf_params( r_param_array, nz, pdf_params )
     end if
-    
-    
+
+
   end subroutine unpack_pdf_params_api
-  
+
 !#endif
   !================================================================================================
   ! init_pdf_params - allocates arrays for pdf_params
   !================================================================================================
   subroutine init_pdf_params_api( nz, pdf_params )
-  
+
     use pdf_parameter_module, only : init_pdf_params
-    
+
     implicit none
 
     ! Input Variable(s)
@@ -1596,11 +1605,11 @@ contains
     ! Output Variable(s)
     type(pdf_parameter), intent(out) :: &
       pdf_params    ! PDF parameters            [units vary]
-    
+
     call init_pdf_params( nz, pdf_params )
-    
+
   end subroutine init_pdf_params_api
-  
+
   !================================================================================================
   ! init_pdf_implicit_coefs_terms - allocates arrays for the PDF implicit
   ! coefficient and explicit terms.
@@ -1649,15 +1658,6 @@ contains
     corr_array_1_n, corr_array_2_n, &           ! Intent(out)
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
     hydromet_pdf_params )                       ! Intent(out)
-
-    use setup_clubb_pdf_params, only : setup_pdf_parameters
-
-    use advance_windm_edsclrm_module, only: &
-      xpwp_fnc
-
-    use error_code, only : &
-        err_code, &         ! Error Indicator
-        clubb_fatal_error   ! Constant
 
     implicit none
 
@@ -1828,7 +1828,7 @@ contains
       rlon, rlat, time_current, delt, l_silhs_out_in )
 
     if ( err_code == clubb_fatal_error ) stop
-    
+
   end subroutine stats_init_api
 
   !================================================================================================
@@ -2288,7 +2288,7 @@ contains
       rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
-      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
+      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
 
     call update_xp2_mc( nz, dt, cloud_frac, rcm, rvm, thlm,        &
@@ -2308,7 +2308,7 @@ contains
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  &
       p_in_Pa,  & ! Pressure    [Pa]
       T_in_K      ! Temperature [K]
 
@@ -2316,39 +2316,39 @@ contains
     return
   end function sat_mixrat_liq_api
 
-    
+
   !================================================================================================
   ! subroutine init_pdf_hydromet_arrays_api
-  ! 
-  ! DESCRIPTION: 
+  !
+  ! DESCRIPTION:
   !     This subroutine intializes the hydromet arrays(iirr, iiNr, etc.) to the values specified by
   !     the input arguements, this determines which hyrometeors are to be used by the microphysics
-  !     scheme. It also sets up the corresponding pdf and hydromet arrays, and calculates the 
+  !     scheme. It also sets up the corresponding pdf and hydromet arrays, and calculates the
   !     subgrid variance ratio for each hydrometeor.
-  ! 
+  !
   ! OPTIONAL FUNCTIONALITY:
-  !     The subgrid variance ratio for each hydrometeor is calculated based on the grid spacing 
+  !     The subgrid variance ratio for each hydrometeor is calculated based on the grid spacing
   !     defined by the host model. The calculation is a linear equation defined by a slope and
   !     intercept, each of which may or may not be passed in to this subroutine. If the slope
-  !     and/or intercept are not passed in through the arguement list the default values, which 
+  !     and/or intercept are not passed in through the arguement list the default values, which
   !     are set in the corresponding type definitions, will be used. Otherwise the values
   !     specified by the aruements will be used.
-  ! 
-  ! NOTES: 
+  !
+  ! NOTES:
   !     'hmp2_ip_on_hmm2_ip_slope_in' is of type 'hmp2_ip_on_hmm2_ip_slope_type' and
-  !     'hmp2_ip_on_hmm2_ip_intrcpt_in' is of type 'hmp2_ip_on_hmm2_ip_intrcpt_in', both of which 
+  !     'hmp2_ip_on_hmm2_ip_intrcpt_in' is of type 'hmp2_ip_on_hmm2_ip_intrcpt_in', both of which
   !     are deinfed in corr_vrnce_module.F90, and made public through this API.
-  ! 
+  !
   !     If full control over the hydrometeor variance ratios is desired, pass in slopes that are
   !     initialized to 0.0, this causes the ratios to no longer depend on the grid spacing. Then
   !     pass in the intercepts set to the values of the desired ratios.
-  ! 
+  !
   ! ARGUEMENTS:
   !     host_dx (real) - Horizontal grid spacings
   !     host_dy (real)
-  ! 
+  !
   !     hydromet_dim (integer) - Number of enabled hydrometeors
-  ! 
+  !
   !         Each of these is an index value corresponding to a hydrometeor,
   !         used to index the hydrometeor arrays. Each index has to be unqiue
   !         for each different hyrometeor that is enabled. Setting one of these
@@ -2361,10 +2361,10 @@ contains
   !     iiNi_in (integer) - Index of snow flake concentration
   !     iiNs_in (integer) - Index of graupel mixing ratio
   !     iiNg_in (integer) - Index of graupel concentration
-  ! 
+  !
   !     hmp2_ip_on_hmm2_ip_slope_in (hmp2_ip_on_hmm2_ip_slope_type) - Custom slope values
   !     hmp2_ip_on_hmm2_ip_intrcpt_in (hmp2_ip_on_hmm2_ip_intrcpt_type) - Custom intercept values
-  ! 
+  !
   !================================================================================================
   subroutine init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim_in,   & ! intent(in)
                                            iirr_in, iiri_in, iirs_in, iirg_in,  & ! intent(in)
@@ -2378,7 +2378,7 @@ contains
         iirs, &
         iiri, &
         iirg, &
-        iiNs, & 
+        iiNs, &
         iiNi, &
         iiNg
 
@@ -2415,7 +2415,7 @@ contains
     ! Used to overwrite default values of slope and intercept
     type( hmp2_ip_on_hmm2_ip_slope_type ), optional, intent(in) :: &
         hmp2_ip_on_hmm2_ip_slope_in     ! Custom slopes to overwrite defaults [1/m]
-      
+
     type( hmp2_ip_on_hmm2_ip_intrcpt_type ), optional, intent(in) :: &
         hmp2_ip_on_hmm2_ip_intrcpt_in   ! Custom intercepts to overwrite defaults [-]
 
@@ -2425,7 +2425,7 @@ contains
     ! Slope and intercept are initialized with default values
     type( hmp2_ip_on_hmm2_ip_slope_type ) :: &
         hmp2_ip_on_hmm2_ip_slope        ! Slopes used to calculated hydromet variance [1/m]
-      
+
     type( hmp2_ip_on_hmm2_ip_intrcpt_type ) :: &
         hmp2_ip_on_hmm2_ip_intrcpt      ! Intercepts used to calculated hydromet variance [-]
 
@@ -2500,7 +2500,7 @@ contains
                                iiri, iiNi, iirs, iiNs,      & ! intent(in)
                                iirg, iiNg )                   ! intent(in)
 
-    
+
     ! Initialize the PDF indices based on the hydromet indices
     call init_pdf_indices( hydromet_dim,iirr, iiNr, & ! intent(in)
                            iiri, iiNi, iirs, iiNs,  & ! intent(in)
@@ -2898,5 +2898,5 @@ contains
     call print_clubb_config_flags( iunit, clubb_config_flags ) ! In
 
   end subroutine print_clubb_config_flags_api
-    
+
 end module clubb_api_module

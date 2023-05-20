@@ -1,15 +1,18 @@
 module dyn_grid
 
-  use const_mod       , only: rad, radius
-  use shr_kind_mod    , only: r8 => shr_kind_r8
-  use pmgrid          , only: plon, plat, plev, plevp
-  use cam_grid_support, only: horiz_coord_t, iMap, horiz_coord_create, &
-                              cam_grid_register, cam_grid_attribute_register
+  use const_mod           , only: rad, radius
+  use shr_kind_mod        , only: r8 => shr_kind_r8
+  use pmgrid              , only: plon, plat, plev, plevp
+  use ref_pres            , only: ref_pres_init
+  use cam_grid_support    , only: horiz_coord_t, iMap, horiz_coord_create, &
+                                  cam_grid_register, cam_grid_attribute_register
+  use cam_history_support , only: add_vert_coord
   use flogger
   use string
-  use const_mod       , only: p0
-  use block_mod       , only: blocks, global_mesh
-  use process_mod     , only: proc
+  use const_mod           , only: p0
+  use block_mod           , only: blocks, global_mesh
+  use process_mod         , only: proc
+  use vert_coord_mod      , only: vert_coord_calc_mg, vert_coord_calc_mg_lev, nlevp
 
   implicit none
 
@@ -43,7 +46,8 @@ contains
     type(horiz_coord_t), pointer :: lat_coord
     type(horiz_coord_t), pointer :: lon_coord
     integer(iMap), pointer :: grid_map(:,:)
-    integer is, ie, js, je, i, j, ind
+    integer is, ie, js, je, i, j, k, ind
+    real(r8), allocatable :: p(:), p_lev(:)
 
     plon  = global_mesh%full_nlon
     plat  = global_mesh%full_nlat
@@ -52,6 +56,8 @@ contains
 
     lat_coord => horiz_coord_create('lat', '', plat, 'latitude',  'degree_north', 1, plat, global_mesh%full_lat_deg(1:plat))
     lon_coord => horiz_coord_create('lon', '', plon, 'longitude', 'degree_east', 1, plon, global_mesh%full_lon_deg(1:plon))
+    call add_vert_coord('lev', global_mesh%full_nlev, 'eta value on full level', '1', global_mesh%full_lev, positive='down')
+    call add_vert_coord('ilev', global_mesh%half_nlev, 'eta value on half level', '1', global_mesh%half_lev, positive='down')
 
     is = blocks(1)%mesh%full_ids
     ie = blocks(1)%mesh%full_ide
@@ -73,7 +79,17 @@ contains
 
     call cam_grid_attribute_register('latlon_grid', 'placeholder', 'what is this for?', 0)
 
-    deallocate(grid_map)
+    ! Set reference pressure profile.
+    allocate(p(plev), p_lev(plevp))
+    do k = 1, plev
+      p(k) = vert_coord_calc_mg(k, p0, 0.0_r8)
+    end do
+    do k = 1, plevp
+      p_lev(k) = vert_coord_calc_mg_lev(k, p0, 0.0_r8)
+    end do
+    call ref_pres_init(p_lev, p, nlevp)
+
+    deallocate(grid_map, p, p_lev)
 
   end subroutine dyn_grid_init
 
