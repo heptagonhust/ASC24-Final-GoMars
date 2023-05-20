@@ -3,7 +3,7 @@ module mars_vert_coord_mod
   use flogger
   use const_mod
   use process_mod
-  use mesh_mod
+  use latlon_mesh_mod
 
   implicit none
 

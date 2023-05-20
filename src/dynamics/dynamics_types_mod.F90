@@ -2,7 +2,7 @@ module dynamics_types_mod
 
   use const_mod
   use namelist_mod
-  use mesh_mod
+  use latlon_mesh_mod
   use allocator_mod
   use tracer_types_mod
 
@@ -19,7 +19,7 @@ module dynamics_types_mod
   !   Variables with '_lon', '_lat' and '_lev' are on the half grids on the corresponding direction,
   !   and '_p' indicates that the variable is perturbed.
   type dstate_type
-    type(mesh_type), pointer :: mesh => null()
+    type(latlon_mesh_type), pointer :: mesh => null()
     ! For nesting
     integer :: id = 0
     type(dstate_type), pointer :: parent => null()
@@ -37,9 +37,9 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: pt                ! Potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: tv                ! Virtual temperature
-    real(r8), allocatable, dimension(:,:,:) :: mg                ! Dry air weight on full levels                                  
-    real(r8), allocatable, dimension(:,:,:) :: mg_lev            ! Dry air weight on half levels                                  
-    real(r8), allocatable, dimension(:,:  ) :: mgs               ! Surface dry air weight                                         
+    real(r8), allocatable, dimension(:,:,:) :: mg                ! Dry air weight on full levels
+    real(r8), allocatable, dimension(:,:,:) :: mg_lev            ! Dry air weight on half levels
+    real(r8), allocatable, dimension(:,:  ) :: mgs               ! Surface dry air weight
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure (dry air and water vapor) on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure (dry air and water vapor) on half levels
     real(r8), pointer    , dimension(:,:  ) :: phs               ! Surface hydrostatic pressure (dry air and water vapor)
@@ -79,7 +79,7 @@ module dynamics_types_mod
   end type dstate_type
 
   type dtend_type
-    type(mesh_type), pointer :: mesh => null()
+    type(latlon_mesh_type), pointer :: mesh => null()
     real(r8), allocatable, dimension(:,:,:) :: du
     real(r8), allocatable, dimension(:,:,:) :: dv
     real(r8), allocatable, dimension(:,:,:) :: dgz
@@ -115,7 +115,7 @@ module dynamics_types_mod
   end type dtend_type
 
   type static_type
-    type(mesh_type), pointer :: mesh => null()
+    type(latlon_mesh_type), pointer :: mesh => null()
     real(r8), allocatable, dimension(:,:) :: landmask
     ! Topography
     real(r8), allocatable, dimension(:,:) :: gzs
@@ -179,8 +179,8 @@ contains
   subroutine dstate_init(this, filter_mesh, mesh)
 
     class(dstate_type), intent(inout), target :: this
-    type(mesh_type), intent(in) :: filter_mesh
-    type(mesh_type), intent(in), target :: mesh
+    type(latlon_mesh_type), intent(in) :: filter_mesh
+    type(latlon_mesh_type), intent(in), target :: mesh
 
     call this%clear()
 
@@ -413,8 +413,8 @@ contains
   subroutine dtend_init(this, filter_mesh, mesh)
 
     class(dtend_type), intent(inout) :: this
-    type(mesh_type), intent(in) :: filter_mesh
-    type(mesh_type), intent(in), target :: mesh
+    type(latlon_mesh_type), intent(in) :: filter_mesh
+    type(latlon_mesh_type), intent(in), target :: mesh
 
     call this%clear()
 
@@ -659,8 +659,8 @@ contains
   subroutine static_init_stage1(this, filter_mesh, mesh)
 
     class(static_type), intent(inout) :: this
-    type(mesh_type), intent(in) :: filter_mesh
-    type(mesh_type), intent(in), target :: mesh
+    type(latlon_mesh_type), intent(in) :: filter_mesh
+    type(latlon_mesh_type), intent(in), target :: mesh
 
     call this%clear()
 
@@ -697,17 +697,17 @@ contains
     end do
 
 
-    !  ____________________                 ____________________                  ____________________                  ____________________                 
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |          |         |               |          |         |                |          |         |                |          |         |                
-    ! |_____o____|____o____|   j           |_____o____|____*____|   j            |_____*____|____o____|   j            |_____o____|____o____|   j             
-    ! |          |////|////|               |          |////|    |                |/////|    |         |                |     |    |         |                
-    ! |          |/3//|/2//|               |          |////|    |                |/////|    |         |                |     |    |         |                
-    ! |          x---------|   j           |          x---------|   j            |-----|----x         |   j            |-----|----x         |   j            
-    ! |          |    |/1//|               |          |    |    |                |/////|////|         |                |     |////|         |                
-    ! |_____o____|____*____|   j - 1       |_____o____|____o____|   j - 1        |_____o____|____o____|   j - 1        |_____*____|____o____|   j - 1        
+    !  ____________________                 ____________________                  ____________________                  ____________________
+    ! |          |         |               |          |         |                |          |         |                |          |         |
+    ! |          |         |               |          |         |                |          |         |                |          |         |
+    ! |          |         |               |          |         |                |          |         |                |          |         |
+    ! |          |         |               |          |         |                |          |         |                |          |         |
+    ! |_____o____|____o____|   j           |_____o____|____*____|   j            |_____*____|____o____|   j            |_____o____|____o____|   j
+    ! |          |////|////|               |          |////|    |                |/////|    |         |                |     |    |         |
+    ! |          |/3//|/2//|               |          |////|    |                |/////|    |         |                |     |    |         |
+    ! |          x---------|   j           |          x---------|   j            |-----|----x         |   j            |-----|----x         |   j
+    ! |          |    |/1//|               |          |    |    |                |/////|////|         |                |     |////|         |
+    ! |_____o____|____*____|   j - 1       |_____o____|____o____|   j - 1        |_____o____|____o____|   j - 1        |_____*____|____o____|   j - 1
     !       i    i   i+1                         i    i   i+1                          i    i   i+1                          i
     !
     !
@@ -772,8 +772,8 @@ contains
   subroutine aux_array_init(this, filter_mesh, mesh)
 
     class(aux_array_type), intent(inout) :: this
-    type(mesh_type), intent(in) :: filter_mesh
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: filter_mesh
+    type(latlon_mesh_type), intent(in) :: mesh
 
     if (use_smag_damp) then
       call allocate_array(mesh, this%smag_t       , full_lon=.true., full_lat=.true., full_lev=.true.)

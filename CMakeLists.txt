@@ -190,7 +190,6 @@ set(gmcore_files
   src/dynamics/filter_types_mod.F90
   src/dynamics/gmcore_mod.F90
   src/dynamics/interp_mod.F90
-  src/dynamics/mesh_mod.F90
   src/dynamics/nh_mod.F90
   src/dynamics/operators_mod.F90
   src/dynamics/pgf/pgf_lin97_mod.F90
@@ -208,6 +207,10 @@ set(gmcore_files
   src/dynamics/vert_coord/smooth_coord_mod.F90
   src/dynamics/vert_coord/vert_coord_mod.F90
   src/dynamics/vert_coord/wrf_vert_coord_mod.F90
+  src/meshes/cubed_sphere/cubed_sphere_panel_mod.F90
+  src/meshes/cubed_sphere/cubed_sphere_mesh_mod.F90
+  src/meshes/cubed_sphere/cubed_sphere_array_mod.F90
+  src/meshes/latlon/latlon_mesh_mod.F90
   src/physics/dp_coupling_mod.F90
   src/physics/mars/mars_cnv_nasa_mod.F90
   src/physics/mars/mars_co2cyc_nasa_mod.F90

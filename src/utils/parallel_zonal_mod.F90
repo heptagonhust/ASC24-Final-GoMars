@@ -1,7 +1,7 @@
 module parallel_zonal_mod
 
   use mpi
-  use mesh_mod
+  use latlon_mesh_mod
   use parallel_types_mod
 
   implicit none

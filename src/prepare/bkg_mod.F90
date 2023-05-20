@@ -159,7 +159,7 @@ contains
                  t     => blocks(iblk)%dstate(1)%t , & ! out
                  tv    => blocks(iblk)%dstate(1)%tv, & ! out
                  pt    => blocks(iblk)%dstate(1)%pt)   ! out
-        call tracer_get_array(iblk, idx_qv, qv)
+        call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
         select case (bkg_type)
         case ('era5')
           allocate(t1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -382,7 +382,7 @@ contains
       associate (block => blocks(iblk)             , &
                  mesh  => blocks(iblk)%filter_mesh , &
                  mg    => blocks(iblk)%dstate(1)%mg)   ! in
-      call tracer_get_array(iblk, idx_qv, qv)
+      call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
       select case (bkg_type)
       case ('era5')
         allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))

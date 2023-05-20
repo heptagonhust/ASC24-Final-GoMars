@@ -2,7 +2,7 @@ module parallel_types_mod
 
   use mpi
   use const_mod
-  use mesh_mod
+  use latlon_mesh_mod
 
   implicit none
 

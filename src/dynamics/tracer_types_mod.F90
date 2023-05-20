@@ -2,7 +2,7 @@ module tracer_types_mod
 
   use const_mod
   use allocator_mod
-  use mesh_mod
+  use latlon_mesh_mod
 
   implicit none
 
@@ -34,8 +34,8 @@ module tracer_types_mod
 
   type tracers_type
     logical :: is_initialized = .false.
-    type(mesh_type), pointer :: mesh => null()
-    type(mesh_type), pointer :: filter_mesh => null()
+    type(latlon_mesh_type), pointer :: mesh => null()
+    type(latlon_mesh_type), pointer :: filter_mesh => null()
     real(r8), allocatable :: q(:,:,:,:)
     ! Some diagnostics:
     real(r8), allocatable :: qm(:,:,:) ! Total moisture or water substances
@@ -52,8 +52,8 @@ contains
   subroutine tracers_init(this, mesh, filter_mesh)
 
     class(tracers_type), intent(inout) :: this
-    type(mesh_type), intent(in), target :: mesh
-    type(mesh_type), intent(in), target :: filter_mesh
+    type(latlon_mesh_type), intent(in), target :: mesh
+    type(latlon_mesh_type), intent(in), target :: filter_mesh
 
     call this%clear()
 

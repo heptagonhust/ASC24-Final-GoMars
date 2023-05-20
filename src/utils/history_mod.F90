@@ -490,7 +490,7 @@ contains
       call fiona_output('h0', 'pt'      , dstate%pt     (is:ie,js:je,ks:ke)     , start=start, count=count)
       ! call fiona_output('h0', 't'       , dstate%t      (is:ie,js:je,ks:ke)     , start=start, count=count)
       ! call fiona_output('h0', 'div'     , aux%div       (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call tracer_get_array(iblk, idx_qv, qv)
+      call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
       call fiona_output('h0', 'qv'      , qv            (is:ie,js:je,ks:ke)     , start=start, count=count)
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%half_jds; je = mesh%half_jde

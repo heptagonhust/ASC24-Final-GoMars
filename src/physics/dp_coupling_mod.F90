@@ -29,13 +29,13 @@ contains
     if (physics_suite == 'N/A') return
 
     ! Get pointers to dry mixing ratios of moist tracer species.
-    if (idx_qv > 0) call tracer_get_array(block%id, idx_qv, qv)
-    if (idx_qc > 0) call tracer_get_array(block%id, idx_qc, qc)
-    if (idx_qi > 0) call tracer_get_array(block%id, idx_qi, qi)
-    if (idx_qr > 0) call tracer_get_array(block%id, idx_qr, qr)
-    if (idx_qs > 0) call tracer_get_array(block%id, idx_qs, qs)
-    if (idx_qg > 0) call tracer_get_array(block%id, idx_qg, qg)
-    if (idx_qh > 0) call tracer_get_array(block%id, idx_qh, qh)
+    if (idx_qv > 0) call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
+    if (idx_qc > 0) call tracer_get_array(block%id, idx_qc, qc, __FILE__, __LINE__)
+    if (idx_qi > 0) call tracer_get_array(block%id, idx_qi, qi, __FILE__, __LINE__)
+    if (idx_qr > 0) call tracer_get_array(block%id, idx_qr, qr, __FILE__, __LINE__)
+    if (idx_qs > 0) call tracer_get_array(block%id, idx_qs, qs, __FILE__, __LINE__)
+    if (idx_qg > 0) call tracer_get_array(block%id, idx_qg, qg, __FILE__, __LINE__)
+    if (idx_qh > 0) call tracer_get_array(block%id, idx_qh, qh, __FILE__, __LINE__)
     call tracer_get_array_qm(block%id, qm)
 
     associate (mesh        => block%mesh                   , &
@@ -103,7 +103,7 @@ contains
           end if
         end do
       end do
-    end do 
+    end do
     ! Surface
     icol = 0
     do j = mesh%full_jds, mesh%full_jde
@@ -120,7 +120,7 @@ contains
 
   subroutine dp_coupling_p2d(block, itime)
 
-    type(block_type), intent(inout) :: block    
+    type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
     integer i, j, k, icol

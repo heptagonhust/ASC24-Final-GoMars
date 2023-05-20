@@ -68,7 +68,7 @@ contains
     case default
       call log_error('Invalid pv_scheme ' // trim(pv_scheme) // '!', pid=proc%id)
     end select
-    
+
   end subroutine operators_init
 
   subroutine operators_prepare_1(blocks, itime, dt)
@@ -252,7 +252,7 @@ contains
                t    => dstate%t  , & ! out
                tv   => dstate%tv )   ! out
     if (idx_qv > 0) then
-      call tracer_get_array(block%id, 'qv', qv)
+      call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide

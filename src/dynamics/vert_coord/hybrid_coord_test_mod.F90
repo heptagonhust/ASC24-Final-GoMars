@@ -3,7 +3,7 @@ module hybrid_coord_test_mod
   use flogger
   use const_mod
   use process_mod
-  use mesh_mod
+  use latlon_mesh_mod
 
   implicit none
 
@@ -122,7 +122,7 @@ contains
       0.47888929114296075    , & ! 13
       0.61935110153721351    , & ! 14
       0.79120902599557263    , & ! 15
-      1.00000000000000000      & ! 16      
+      1.00000000000000000      & ! 16
     ]
 
     ptop = p0 * hyai(1)
@@ -499,7 +499,7 @@ contains
   end subroutine hybrid_coord_wrf_l60
 
   subroutine hybrid_coord_dcmip_l60(p0, ptop, hyai, hybi)
-    
+
     real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(61)
@@ -1096,7 +1096,7 @@ contains
       0.000000000000000000, &
       0.000000000000000000, &
       0.000000000000000000, &
-      0.0393548272550106  , & 
+      0.0393548272550106  , &
       0.0856537595391273  , &
       0.140122056007385   , &
       0.204201176762581   , &

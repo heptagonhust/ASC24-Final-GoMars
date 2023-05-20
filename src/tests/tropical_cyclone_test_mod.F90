@@ -9,9 +9,9 @@ MODULE tropical_cyclone_test_mod
 !  SUBROUTINE tropical_cyclone_sample(
 !    lon,lat,p,z,zcoords,u,v,t,thetav,phis,ps,rho,q)
 !
-!  Given a point specified by: 
-!      lon    longitude (radians) 
-!      lat    latitude (radians) 
+!  Given a point specified by:
+!      lon    longitude (radians)
+!      lat    latitude (radians)
 !      p/z    pressure (Pa) / height (m)
 !  zcoords    1 if z is specified, 0 if p is specified
 !
@@ -31,7 +31,7 @@ MODULE tropical_cyclone_test_mod
 !
 !       Reed, K. A., and C. Jablonowski, 2011: An analytic
 !       vortex initialization technique for idealized tropical
-!       cyclone studies in AGCMs. Mon. Wea. Rev., 139, 689-710. 
+!       cyclone studies in AGCMs. Mon. Wea. Rev., 139, 689-710.
 !
 !  Author: Kevin A. Reed
 !          Stony Brook University
@@ -94,7 +94,7 @@ MODULE tropical_cyclone_test_mod
        Ttrop = T0 - gamma*ztrop,                  & ! Tropopause temp
        ptrop = p00*(Ttrop/T0)**(1.d0/exponent)      ! Tropopause pressure
 
-CONTAINS 
+CONTAINS
 
   subroutine tropical_cyclone_test_set_diag(blocks)
 
@@ -142,7 +142,7 @@ CONTAINS
                pt    => block%dstate(1)%pt   , &
                mgs   => block%dstate(1)%mgs  , &
                gzs   => block%static%gzs     )
-    call tracer_get_array(block%id, idx_qv, qv)
+    call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         ! Get surface pressure.
@@ -239,7 +239,7 @@ CONTAINS
     !------------------------------------------------
     !   Initialize PS (surface pressure)
     !------------------------------------------------
-    ps = p00-dp*exp(-(gr/rp)**exppr) 
+    ps = p00-dp*exp(-(gr/rp)**exppr)
 
     !------------------------------------------------
     !   Initialize altitude (z) if pressure provided
@@ -248,14 +248,14 @@ CONTAINS
     if (zcoords .eq. 1) then
 
        height = z
- 
+
        if (height > ztrop) then
           p = ptrop*exp(-(g*(height-ztrop))/(Rd*Ttrop))
        else
           p = (p00-dp*exp(-(gr/rp)**exppr)*exp(-(height/zp)**exppz)) &
               * ((T0-gamma*height)/T0)**(1/exponent)
        end if
- 
+
     else
 
        height = (T0/gamma)*(1.d0-(p/ps)**exponent)
@@ -265,7 +265,7 @@ CONTAINS
        ! more accurately
 
        if (gr < rfpi ) then
-          zhere = height 
+          zhere = height
           n = 1
           20 continue
           n = n+1
@@ -289,7 +289,7 @@ CONTAINS
     d  = max(epsilon, sqrt(d1**2.d0 + d2**2.d0))
     ufac = d1/d
     vfac = d2/d
-    
+
     if (height > ztrop) then
         u = 0.d0
         v = 0.d0
@@ -355,7 +355,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Second function for fixed point iterations
 !-----------------------------------------------------------------------
-  REAL(r8) FUNCTION fpidFdz(gr, zhere) 
+  REAL(r8) FUNCTION fpidFdz(gr, zhere)
     IMPLICIT NONE
     REAL(r8), INTENT(IN) :: gr, zhere
 

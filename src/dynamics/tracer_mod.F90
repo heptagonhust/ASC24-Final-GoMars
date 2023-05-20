@@ -143,15 +143,15 @@ contains
     ! Set tracer indices.
     do i = 1, ntracers
       select case (tracer_names(i))
-      case ('qv')
+      case ('qv', 'Q')
         idx_qv    = i; ntracers_water = ntracers_water + 1
-      case ('qc')
+      case ('qc', 'CLDLIQ')
         idx_qc    = i; ntracers_water = ntracers_water + 1
-      case ('qi')
+      case ('qi', 'CLDICE')
         idx_qi    = i; ntracers_water = ntracers_water + 1
-      case ('qr')
+      case ('qr', 'RAINQM')
         idx_qr    = i; ntracers_water = ntracers_water + 1
-      case ('qs')
+      case ('qs', 'SNOWQM')
         idx_qs    = i; ntracers_water = ntracers_water + 1
       case ('qg')
         idx_qg    = i; ntracers_water = ntracers_water + 1
@@ -159,7 +159,7 @@ contains
         idx_qh    = i; ntracers_water = ntracers_water + 1
       case ('qo3')
         idx_qo3   = i
-      case ('qso2')
+      case ('qso2', 'SO2')
         idx_qso2  = i
       end select
     end do
@@ -198,14 +198,16 @@ contains
 
   end function tracer_get_idx
 
-  subroutine tracer_get_array_idx(iblk, idx, q)
+  subroutine tracer_get_array_idx(iblk, idx, q, file, line)
 
     integer, intent(in) :: iblk
     integer, intent(in) :: idx
     real(r8), intent(out), pointer :: q(:,:,:)
+    character(*), intent(in) :: file
+    integer, intent(in) :: line
 
     if (idx < 1) then
-      call log_error('Failed to get tracer array!', __FILE__, __LINE__, pid=proc%id)
+      call log_error('Failed to get tracer array!', file, line, pid=proc%id)
     end if
     associate (mesh => tracers(iblk)%filter_mesh)
     ! NOTE: q is on filter_mesh.
@@ -216,16 +218,18 @@ contains
 
   end subroutine tracer_get_array_idx
 
-  subroutine tracer_get_array_name(iblk, name, q)
+  subroutine tracer_get_array_name(iblk, name, q, file, line)
 
     integer, intent(in) :: iblk
     character(*), intent(in) :: name
     real(r8), intent(out), pointer :: q(:,:,:)
+    character(*), intent(in) :: file
+    integer, intent(in) :: line
 
     integer idx
 
     idx = tracer_get_idx(name)
-    call tracer_get_array(iblk, idx, q)
+    call tracer_get_array(iblk, idx, q, file, line)
 
   end subroutine tracer_get_array_name
 

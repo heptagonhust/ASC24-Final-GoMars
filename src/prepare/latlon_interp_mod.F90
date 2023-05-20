@@ -2,7 +2,7 @@ module latlon_interp_mod
 
   use flogger
   use const_mod
-  use mesh_mod
+  use latlon_mesh_mod
   use process_mod
   use parallel_mod
 
@@ -22,7 +22,7 @@ contains
     real(r8), intent(in) :: src_lon(:)
     real(r8), intent(in) :: src_lat(:)
     real(r8), intent(in) :: src_data(:,:)
-    type(mesh_type), intent(in) :: dst_mesh
+    type(latlon_mesh_type), intent(in) :: dst_mesh
     real(r8), intent(out) :: dst_data(dst_mesh%full_ims:dst_mesh%full_ime, &
                                       dst_mesh%full_jms:dst_mesh%full_jme)
     logical, intent(in), optional :: extrap
@@ -162,7 +162,7 @@ contains
     real(r8), intent(in) :: src_lon(:)
     real(r8), intent(in) :: src_lat(:)
     real(r8), intent(in) :: src_data(:,:)
-    type(mesh_type), intent(in) :: dst_mesh
+    type(latlon_mesh_type), intent(in) :: dst_mesh
     real(r8), intent(out) :: dst_data(dst_mesh%half_ims:dst_mesh%half_ime, &
                                       dst_mesh%full_jms:dst_mesh%full_jme)
     logical, intent(in), optional :: extrap
@@ -312,7 +312,7 @@ contains
     real(r8), intent(in) :: src_lon(:)
     real(r8), intent(in) :: src_lat(:)
     real(r8), intent(in) :: src_data(:,:)
-    type(mesh_type), intent(in) :: dst_mesh
+    type(latlon_mesh_type), intent(in) :: dst_mesh
     real(r8), intent(out) :: dst_data(dst_mesh%full_ims:dst_mesh%full_ime, &
                                       dst_mesh%half_jms:dst_mesh%half_jme)
     logical, intent(in), optional :: extrap

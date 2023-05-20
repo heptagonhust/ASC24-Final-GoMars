@@ -54,7 +54,7 @@ contains
       call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! ----------------------------------------------------------------------
       if (time_is_alerted('moist')) then
-        call tracer_get_array(block%id, idx_qv, qv)
+        call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide

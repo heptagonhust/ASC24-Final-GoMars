@@ -92,7 +92,7 @@ contains
       if (baroclinic) then
         call fiona_output('i0', 'pt', dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
         if (idx_qv > 0) then
-          call tracer_get_array(iblk, idx_qv, qv)
+          call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
           call fiona_output('i0', 'qv', qv(is:ie,js:je,ks:ke), start=start, count=count)
         end if
         call fiona_output('i0', 'mgs', dstate%mgs(is:ie,js:je      ), start=start, count=count)
@@ -183,7 +183,7 @@ contains
         call fiona_input('i0', 'pt' , dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
         call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
         if (idx_qv > 0) then
-          call tracer_get_array(iblk, idx_qv, qv)
+          call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
           call fiona_input('i0', 'qv' , qv(is:ie,js:je,ks:ke), start=start, count=count)
           call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
         end if

@@ -3,7 +3,7 @@ module filter_types_mod
   use const_mod
   use namelist_mod
   use math_mod
-  use mesh_mod
+  use latlon_mesh_mod
 
   implicit none
 
@@ -12,7 +12,7 @@ module filter_types_mod
   public filter_type
 
   type filter_type
-    type(mesh_type), pointer :: mesh => null()
+    type(latlon_mesh_type), pointer :: mesh => null()
     real(8), allocatable :: width_lon(:)
     integer, allocatable :: ngrid_lon(:)
     real(8), allocatable :: wgt_lon(:,:)
@@ -48,7 +48,7 @@ contains
   subroutine filter_init(this, mesh, type)
 
     class(filter_type), intent(inout) :: this
-    type(mesh_type), intent(in), target :: mesh
+    type(latlon_mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: type
 
     real(8) dx, dt, cfl, w

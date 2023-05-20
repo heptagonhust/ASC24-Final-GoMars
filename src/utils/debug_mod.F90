@@ -4,7 +4,7 @@ module debug_mod
   use flogger
   use const_mod
   use namelist_mod
-  use mesh_mod
+  use latlon_mesh_mod
   use block_mod
   use parallel_mod
 
@@ -33,7 +33,7 @@ contains
 
   subroutine debug_check_areas()
 
-    type(mesh_type), pointer :: mesh
+    type(latlon_mesh_type), pointer :: mesh
     real(8) total_area
     integer j
 
@@ -140,7 +140,7 @@ contains
 
   subroutine debug_print_min_max_cell(mesh, array, label)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: array(mesh%full_ims:mesh%full_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%full_kms:mesh%full_kme)
@@ -157,7 +157,7 @@ contains
 
   subroutine debug_print_min_max_lev_edge(mesh, array, label)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: array(mesh%full_ims:mesh%full_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%half_kms:mesh%half_kme)
@@ -174,7 +174,7 @@ contains
 
   subroutine debug_print_min_max_lon_edge(mesh, array, label)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: array(mesh%half_ims:mesh%half_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%full_kms:mesh%full_kme)
@@ -191,7 +191,7 @@ contains
 
   subroutine debug_print_min_max_lat_edge(mesh, array, label)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: array(mesh%full_ims:mesh%full_ime, &
                                   mesh%half_jms:mesh%half_jme, &
                                   mesh%full_kms:mesh%full_kme)

@@ -5,7 +5,7 @@ module process_mod
   use string
   use const_mod
   use namelist_mod
-  use mesh_mod
+  use latlon_mesh_mod
   use block_mod
   use perf_mod
   use parallel_types_mod

@@ -74,7 +74,7 @@ contains
 
   subroutine laplace_damp_on_cell_2d(mesh, halo, order, f, coef, lon_coef, lat_coef, fill)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &
@@ -224,7 +224,7 @@ contains
 
   subroutine laplace_damp_on_cell_3d(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &
@@ -255,7 +255,7 @@ contains
 
   subroutine laplace_damp_on_lon_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%half_ims:mesh%half_ime, &
@@ -390,7 +390,7 @@ contains
 
   subroutine laplace_damp_on_lat_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
 
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &

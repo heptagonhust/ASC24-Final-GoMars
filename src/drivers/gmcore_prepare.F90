@@ -5,7 +5,6 @@ program gmcore_prepare
   use topo_mod
   use bkg_mod
   use time_mod
-  use mesh_mod
   use process_mod
   use block_mod
   use vert_coord_mod

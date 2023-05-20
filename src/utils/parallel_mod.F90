@@ -3,7 +3,7 @@ module parallel_mod
   use mpi
   use flogger
   use const_mod
-  use mesh_mod
+  use latlon_mesh_mod
   use halo_mod
   use process_mod
   use parallel_zonal_mod

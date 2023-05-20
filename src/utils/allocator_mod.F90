@@ -1,7 +1,7 @@
 module allocator_mod
 
   use flogger
-  use mesh_mod
+  use latlon_mesh_mod
 
   implicit none
 
@@ -34,7 +34,7 @@ contains
 
   subroutine allocate_array_1d_r4(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(4)        , intent(out), allocatable :: array(:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -61,7 +61,7 @@ contains
 
   subroutine allocate_array_1d_r4_extra_dim(mesh, array, extra_dim, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(4)        , intent(out), allocatable :: array(:,:)
     integer        , intent(in )              :: extra_dim
     logical        , intent(in ), optional    :: full_lon
@@ -89,7 +89,7 @@ contains
 
   subroutine allocate_array_2d_r4(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(4)        , intent(out), allocatable :: array(:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -114,7 +114,7 @@ contains
 
   subroutine allocate_array_2d_r4_extra_dim(mesh, array, extra_dim, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(4)        , intent(out), allocatable :: array(:,:,:)
     integer        , intent(in )              :: extra_dim
     logical        , intent(in ), optional    :: full_lon
@@ -140,7 +140,7 @@ contains
 
   subroutine allocate_array_3d_r4(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(4)        , intent(out), allocatable :: array(:,:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -175,7 +175,7 @@ contains
 
   subroutine allocate_array_3d_r4_extra_dim(mesh, array, extra_dim, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(4)        , intent(out), allocatable :: array(:,:,:,:)
     integer        , intent(in )              :: extra_dim
     logical        , intent(in ), optional    :: full_lon
@@ -211,7 +211,7 @@ contains
 
   subroutine allocate_array_1d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(8)        , intent(out), allocatable :: array(:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -238,7 +238,7 @@ contains
 
   subroutine allocate_array_1d_r8_extra_dim(mesh, array, extra_dim, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(8)        , intent(out), allocatable :: array(:,:)
     integer        , intent(in )              :: extra_dim
     logical        , intent(in ), optional    :: full_lon
@@ -266,7 +266,7 @@ contains
 
   subroutine allocate_array_2d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(8)        , intent(out), allocatable :: array(:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -291,7 +291,7 @@ contains
 
   subroutine allocate_array_2d_r8_extra_dim(mesh, array, extra_dim, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(8)        , intent(out), allocatable :: array(:,:,:)
     integer        , intent(in )              :: extra_dim
     logical        , intent(in ), optional    :: full_lon
@@ -317,7 +317,7 @@ contains
 
   subroutine allocate_array_3d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(8)        , intent(out), allocatable :: array(:,:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -352,7 +352,7 @@ contains
 
   subroutine allocate_array_3d_r8_extra_dim(mesh, array, extra_dim, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(8)        , intent(out), allocatable :: array(:,:,:,:)
     integer        , intent(in )              :: extra_dim
     logical        , intent(in ), optional    :: full_lon
@@ -388,7 +388,7 @@ contains
 
   subroutine allocate_array_3d_i4(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     integer(4)     , intent(out), allocatable :: array(:,:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -423,7 +423,7 @@ contains
 
   subroutine allocate_array_pointer_3d_r4(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(4)        , intent(out), pointer     :: array(:,:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -458,7 +458,7 @@ contains
 
   subroutine allocate_array_pointer_3d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(8)        , intent(out), pointer     :: array(:,:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -493,7 +493,7 @@ contains
 
   subroutine allocate_array_1d_r16(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(16)        , intent(out), allocatable :: array(:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -520,7 +520,7 @@ contains
 
   subroutine allocate_array_2d_r16(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(16)        , intent(out), allocatable :: array(:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon
@@ -545,7 +545,7 @@ contains
 
   subroutine allocate_array_3d_r16(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
 
-    type(mesh_type), intent(in )              :: mesh
+    type(latlon_mesh_type), intent(in )              :: mesh
     real(16)        , intent(out), allocatable :: array(:,:,:)
     logical        , intent(in ), optional    :: full_lon
     logical        , intent(in ), optional    :: half_lon

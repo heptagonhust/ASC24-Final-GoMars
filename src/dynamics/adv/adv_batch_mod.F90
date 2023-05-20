@@ -3,7 +3,7 @@ module adv_batch_mod
   use flogger
   use const_mod
   use namelist_mod
-  use mesh_mod
+  use latlon_mesh_mod
   use time_mod
   use allocator_mod
   use parallel_zonal_mod
@@ -16,8 +16,8 @@ module adv_batch_mod
 
   ! Different tracers can be combined into one batch, and adved in different frequencfly.
   type adv_batch_type
-    type(mesh_type), pointer :: filter_mesh => null()
-    type(mesh_type), pointer :: mesh => null()
+    type(latlon_mesh_type), pointer :: filter_mesh => null()
+    type(latlon_mesh_type), pointer :: mesh => null()
     character(10) :: loc  = 'cell'
     character(30) :: name = ''
     logical  :: dynamic   = .false.
@@ -67,8 +67,8 @@ contains
   subroutine adv_batch_init(this, filter_mesh, mesh, loc, name, dt, dynamic, idx)
 
     class(adv_batch_type), intent(inout) :: this
-    type(mesh_type), intent(in), target :: filter_mesh
-    type(mesh_type), intent(in), target :: mesh
+    type(latlon_mesh_type), intent(in), target :: filter_mesh
+    type(latlon_mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: loc
     character(*), intent(in) :: name
     real(r8), intent(in) :: dt

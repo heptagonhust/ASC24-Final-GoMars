@@ -136,7 +136,7 @@ contains
         call fiona_output('r0', 'gz'    , dstate%gz    (is:ie,js:je,ks:ke), start=start, count=count)
       end if
       if (idx_qv > 0) then
-        call tracer_get_array(iblk, idx_qv, qv)
+        call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
         call fiona_output('r0', 'qv'    , qv           (is:ie,js:je,ks:ke), start=start, count=count)
         associate (adv_batch => blocks(iblk)%adv_batches(1))
         is = mesh%half_ids; ie = mesh%half_ide
@@ -206,7 +206,7 @@ contains
   subroutine restart_read()
 
     type(block_type), pointer :: block
-    type(mesh_type), pointer :: mesh
+    type(latlon_mesh_type), pointer :: mesh
     type(dstate_type), pointer :: dstate
     type(static_type), pointer :: static
     type(datetime_type) time
@@ -257,7 +257,7 @@ contains
         end if
 
         if (idx_qv > 0) then
-          call tracer_get_array(iblk, idx_qv, qv)
+          call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
           call fiona_input('r0', 'qv' , qv(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
           call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
           associate (adv_batch => block%adv_batches(1))

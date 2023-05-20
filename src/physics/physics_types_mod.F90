@@ -2,7 +2,7 @@ module physics_types_mod
 
   use const_mod
   use namelist_mod
-  use mesh_mod
+  use latlon_mesh_mod
   use tracer_types_mod
 
   implicit none
@@ -130,7 +130,7 @@ contains
   subroutine pstate_init(this, mesh)
 
     class(pstate_type), intent(inout), target :: this
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
 
     integer i, j, icol
 
@@ -318,7 +318,7 @@ contains
   subroutine ptend_init(this, mesh)
 
     class(ptend_type), intent(inout) :: this
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
 
     call this%clear()
 

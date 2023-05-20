@@ -3,7 +3,7 @@ module halo_mod
   use mpi
   use flogger
   use const_mod
-  use mesh_mod
+  use latlon_mesh_mod
 
   implicit none
 
@@ -50,7 +50,7 @@ contains
                        lat_hw, jds, jde, at_south_pole, at_north_pole)
 
     class(halo_type), intent(out) :: this
-    type(mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
     integer, intent(in) :: orient
     integer, intent(in) :: dtype
     integer, intent(in) :: host_id
@@ -115,10 +115,10 @@ contains
     half_jds = merge(full_jds - 1, full_jds, mesh%has_north_pole() .and. orient == north)
     half_jde = merge(full_jde - 1, full_jde, mesh%has_north_pole() .and. orient == north)
 
-    !                          wx                          nx                          wx      
+    !                          wx                          nx                          wx
     !                          |                           |                           |
     !                  |---------------|---------------------------------------|---------------|
-    !                  |_______________|_______________________________________|_______________|__ 
+    !                  |_______________|_______________________________________|_______________|__
     !                  |\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|  |
     !         wy + ny -|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|  |- wy
     !                  |\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|\\\\\\\|  |
@@ -284,7 +284,7 @@ contains
   subroutine halo_init_nest(this, parent_mesh, parent_proc_id)
 
     class(halo_type), intent(inout) :: this
-    type(mesh_type), intent(in) :: parent_mesh
+    type(latlon_mesh_type), intent(in) :: parent_mesh
     integer, intent(in) :: parent_proc_id
 
   end subroutine halo_init_nest

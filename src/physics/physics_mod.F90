@@ -137,7 +137,7 @@ contains
     end if
 
     if (ptend%updated_qv) then
-      call tracer_get_array(block%id, idx_qv, qv)
+      call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
       call tracer_get_array_qm(block%id, qm)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
@@ -152,7 +152,7 @@ contains
     end if
 
     if (ptend%updated_t) then
-      call tracer_get_array(block%id, idx_qv, qv)
+      call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
