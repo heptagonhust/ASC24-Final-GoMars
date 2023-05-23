@@ -7,7 +7,9 @@ module dp_coupling_mod
   use formula_mod
   use parallel_mod
   use tracer_mod
+#ifdef HAS_CAM
   use cam_physics_driver_mod, only: cam_physics_d2p, cam_physics_p2d
+#endif
 
   implicit none
 
