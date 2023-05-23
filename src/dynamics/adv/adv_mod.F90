@@ -176,6 +176,7 @@ contains
     real(r8), allocatable :: q_old(:,:,:)
     real(r8), allocatable :: work(:,:), pole(:)
     real(r8) qm0, qm1, qm2, qm0_half
+    real(r8), dimension(nlev) :: a, b, c, r
 
     call adv_accum_wind(itime)
 
@@ -202,6 +203,7 @@ contains
             q_old(is:ie,js:je,ks:ke) =  tracers(block%id)%q(:,:,:,batch%idx(l))
             q_new(is:ie,js:je,ks:ke) => tracers(block%id)%q(:,:,:,batch%idx(l))
             associate (m_old   => batch%old_m  , & ! inout
+                       we_imp  => batch%we_imp , & ! in
                        qmf_lon => batch%qmf_lon, & ! working array
                        qmf_lat => batch%qmf_lat, & ! working array
                        qmf_lev => batch%qmf_lev)   ! working array
@@ -257,28 +259,6 @@ contains
                 end do
               end do
             end if
-            do k = mesh%full_kds, mesh%full_kde
-              do j = mesh%full_jds, mesh%full_jde
-                do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
-                end do
-              end do
-            end do
-            ! Set upper and lower boundary conditions.
-            do k = mesh%full_kms, mesh%full_kds - 1
-              q_new(:,:,k) = q_new(:,:,mesh%full_kds)
-            end do
-            do k = mesh%full_kde + 1, mesh%full_kme
-              q_new(:,:,k) = q_new(:,:,mesh%full_kde)
-            end do
-            call adv_calc_tracer_vflx(block, block%adv_batches(m), q_new, qmf_lev)
-            do k = mesh%full_kds, mesh%full_kde
-              do j = mesh%full_jds, mesh%full_jde
-                do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
-                end do
-              end do
-            end do
             ! Fill possible negative values.
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
@@ -310,6 +290,49 @@ contains
                 end do
               end do
             end do
+            ! Set upper and lower boundary conditions.
+            do k = mesh%full_kms, mesh%full_kds - 1
+              q_new(:,:,k) = q_new(:,:,mesh%full_kds)
+            end do
+            do k = mesh%full_kde + 1, mesh%full_kme
+              q_new(:,:,k) = q_new(:,:,mesh%full_kde)
+            end do
+            call adv_calc_tracer_vflx(block, block%adv_batches(m), q_new, qmf_lev)
+            do k = mesh%full_kds, mesh%full_kde
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
+                end do
+              end do
+            end do
+            if (use_ieva) then
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  a(1) = 0
+                  c(mesh%full_kde) = 0
+                  do k = mesh%full_kds + 1, mesh%full_kde
+                    a(k)   = -dt_adv * we_imp(i,j,k) * (1 + sign(1.0_r8, we_imp(i,j,k)))
+                    c(k-1) =  dt_adv * we_imp(i,j,k) * (1 - sign(1.0_r8, we_imp(i,j,k)))
+                  end do
+                  do k = mesh%full_kds, mesh%full_kde
+                    b(k) = dt_adv * we_imp(i,j,k+1) * (1 + sign(1.0_r8, we_imp(i,j,k+1))) - &
+                           dt_adv * we_imp(i,j,k  ) * (1 - sign(1.0_r8, we_imp(i,j,k  ))) + &
+                           2 * m_new(i,j,k)
+                    r(k) = 2 * q_new(i,j,k)
+                  end do
+                  call triiag_thomas(a, b, c, r, q_new(i,j,mesh%full_kds:mesh%full_kde))
+                end do
+              end do
+            end if
+            if (.not. use_ieva) then
+              do k = mesh%full_kds, mesh%full_kde
+                do j = mesh%full_jds, mesh%full_jde
+                  do i = mesh%full_ids, mesh%full_ide
+                    q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
+                  end do
+                end do
+              end do
+            end if
             call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
             end associate
           end do

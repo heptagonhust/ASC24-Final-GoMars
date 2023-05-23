@@ -35,6 +35,7 @@ module adv_batch_mod
     real(r8), allocatable, dimension(:,:,:) :: u , u0
     real(r8), allocatable, dimension(:,:,:) :: v , v0
     real(r8), allocatable, dimension(:,:,:) :: we, we0
+    real(r8), allocatable, dimension(:,:,:) :: we_imp
     real(r8), allocatable, dimension(:,:,:) :: cflx ! CFL number along x-axis
     real(r8), allocatable, dimension(:,:,:) :: cfly ! CFL number along y-axis
     real(r8), allocatable, dimension(:,:,:) :: cflz ! CFL number along z-axis
@@ -125,6 +126,9 @@ contains
     case default
       call log_error('Invalid grid location ' // trim(loc) // '!', __FILE__, __LINE__)
     end select
+    if (use_ieva) then
+      call allocate_array(mesh, this%we_imp , full_lon=.true., full_lat=.true., half_lev=.true.)
+    end if
 
     if (present(idx)) then
       this%ntracers = size(idx)
@@ -157,8 +161,12 @@ contains
     if (allocated(this%mfy    )) deallocate(this%mfy    )
     if (allocated(this%m      )) deallocate(this%m      )
     if (allocated(this%u      )) deallocate(this%u      )
+    if (allocated(this%u0     )) deallocate(this%u0     )
     if (allocated(this%v      )) deallocate(this%v      )
+    if (allocated(this%v0     )) deallocate(this%v0     )
     if (allocated(this%we     )) deallocate(this%we     )
+    if (allocated(this%we0    )) deallocate(this%we0    )
+    if (allocated(this%we_imp )) deallocate(this%we_imp )
     if (allocated(this%cflx   )) deallocate(this%cflx   )
     if (allocated(this%cfly   )) deallocate(this%cfly   )
     if (allocated(this%cflz   )) deallocate(this%cflz   )
@@ -422,6 +430,12 @@ contains
     real(r8) dt_
     real(r8) z0, z1, z2, z3, w1, w2, w3, w4, deta
     integer i, j, k, l, ks, ke, s
+    real(r8), parameter :: alpha_max = 1.1, &
+                           alpha_min = 0.8, &
+                           kesi      = 0.9
+    real(r8) alpha_h, alpha_v, alpha_star_max, alpha_star_min, beta
+    real(r8) work(this%mesh%full_ids:this%mesh%full_ide,this%mesh%full_nlev)
+    real(r8) pole(this%mesh%full_nlev)
 
     dt_ = merge(dt, this%dt, present(dt))
 
@@ -560,6 +574,106 @@ contains
           end do
         end do
       end select
+      if (use_ieva) then
+        do k = mesh%half_kds + 1, mesh%half_kde - 1
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              if (this%we(i,j,k) >= 0.0) then
+                alpha_h = dt_ * ((max(this%u(i,j  ,k-1), 0.) - min(this%u(i-1,j,k-1), 0.)) * mesh%le_lon(j) + &
+                                 (max(this%v(i,j  ,k-1), 0.) * mesh%le_lat(j  ) - &
+                                  min(this%v(i,j-1,k-1), 0.) * mesh%le_lat(j-1))) / mesh%area_cell(j)
+              else
+                alpha_h = dt_ * ((max(this%u(i,j  ,k), 0.) - min(this%u(i-1,j,k), 0.)) * mesh%le_lon(j) + &
+                                 (max(this%v(i,j  ,k), 0.) * mesh%le_lat(j  ) - &
+                                  min(this%v(i,j-1,k), 0.) * mesh%le_lat(j-1))) / mesh%area_cell(j)
+              end if
+              alpha_star_max = alpha_max - kesi * alpha_h
+              alpha_star_min = alpha_min * alpha_star_max / alpha_max
+              alpha_v = dt_ * abs(this%we(i,j,k) / this%m(i,j,k))
+              if (alpha_v <= alpha_star_min) then
+                beta = 1
+              else if (alpha_v > alpha_star_min .and. alpha_v <= 2 * alpha_star_max - alpha_star_min) then
+                beta = 1 / (1 + (alpha_v - alpha_star_min)**2 / (4 * alpha_star_max * (alpha_star_max - alpha_star_min)))
+              else
+                beta = alpha_star_max / alpha_v
+              end if
+              if (beta < 0 .or. beta > 1) then
+                call log_error('Vertical velocity split weight is out range from 0 to 1!',__FILE__, __LINE__)
+              end if
+              this%we_imp(i,j,k) = (1 - beta) * this%we(i,j,k)
+              this%we    (i,j,k) = beta * this%we(i,j,k)
+            end do
+          end do
+        end do
+        if (mesh%has_south_pole()) then
+          j = mesh%full_jds
+          do k = mesh%half_kds + 1, mesh%half_kde - 1
+            if (this%we(mesh%full_ids,j,k) >= 0) then
+              do i = mesh%full_ids, mesh%full_ide
+                work(i,k) = max(this%v(i,j,k-1), 0.)
+              end do
+            else
+              do i = mesh%full_ids, mesh%full_ide
+                work(i,k) = max(this%v(i,j,k), 0.)
+              end do
+            end if
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          do k = mesh%half_kds + 1, mesh%half_kde - 1
+            alpha_h = dt_ * pole(k) * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+            alpha_star_max = alpha_max - kesi * alpha_h
+            alpha_star_min = alpha_min * alpha_star_max / alpha_max
+            alpha_v = dt_ * abs(this%we(mesh%full_ids,j,k) / this%m(mesh%full_ids,j,k))
+            if (alpha_v <= alpha_star_min) then
+              beta = 1
+            else if (alpha_v > alpha_star_min .and. alpha_v <= 2 * alpha_star_max - alpha_star_min) then
+              beta = 1 / (1 + (alpha_v - alpha_star_min)**2 / (4 * alpha_star_max * (alpha_star_max - alpha_star_min)))
+            else
+              beta = alpha_star_max / alpha_v
+            end if
+            if (beta < 0 .or. beta > 1) then
+              call log_error('Vertial velocity split weight is out of 0 to 1!', __FILE__, __LINE__)
+            end if
+            this%we_imp(:,j,k) = (1 - beta) * this%we(mesh%full_ids,j,k)
+            this%we    (:,j,k) = beta * this%we(mesh%full_ids,j,k)
+          end do
+        end if
+        if (mesh%has_north_pole()) then
+          j = mesh%full_jde
+          do k = mesh%half_kds + 1, mesh%half_kde - 1
+            if (this%we(mesh%full_ids,j,k) >= 0) then
+              do i = mesh%full_ids, mesh%full_ide
+                work(i,k) = -min(this%v(i,j,k-1), 0.)
+              end do
+            else
+              do i = mesh%full_ids, mesh%full_ide
+                work(i,k) = -min(this%v(i,j,k), 0.)
+              end do
+            end if
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          do k = mesh%half_kds + 1, mesh%half_kde - 1
+            alpha_h = dt_ * pole(k) * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+            alpha_star_max = alpha_max - kesi * alpha_h
+            alpha_star_min = alpha_min * alpha_star_max / alpha_max
+            alpha_v = dt_ * abs(this%we(mesh%full_ids,j,k) / this%m(mesh%full_ids,j,k))
+            if (alpha_v <= alpha_star_min) then
+              beta = 1
+            else if (alpha_v > alpha_star_min .and. alpha_v <= 2 * alpha_star_max - alpha_star_min) then
+              beta = 1 / (1 + (alpha_v - alpha_star_min)**2 / (4 * alpha_star_max * (alpha_star_max - alpha_star_min)))
+            else
+              beta = alpha_star_max / alpha_v
+            end if
+            if (beta < 0 .or. beta > 1) then
+              call log_error('Vertical velocity split weight is out of 0 to 1!', __FILE__, __LINE__)
+            end if
+            this%we_imp(:,j,k) = (1 - beta) * this%we(mesh%full_ids,j,k)
+            this%we    (:,j,k) = beta * this%we(mesh%full_ids,j,k)
+          end do
+        end if
+        this%we    (:,:,mesh%half_kds) = 0; this%we    (:,:,mesh%half_kde) = 0
+        this%we_imp(:,:,mesh%half_kds) = 0; this%we_imp(:,:,mesh%half_kde) = 0
+      end if
     end if
     end associate
 

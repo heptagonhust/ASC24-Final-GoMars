@@ -96,6 +96,7 @@ module namelist_mod
   character(8)    :: limiter_type         = 'mono'
   character(8)    :: ffsl_flux_type       = 'ppm'
   character(8)    :: tvd_limiter_type     = 'van_leer'
+  logical         :: use_ieva             = .false.
 
   character(8)    :: zonal_tridiag_solver = 'spk' ! mkl, spk
 
@@ -221,6 +222,7 @@ module namelist_mod
     limiter_type              , &
     ffsl_flux_type            , &
     tvd_limiter_type          , &
+    use_ieva                  , &
     zonal_tridiag_solver      , &
     weno_order                , &
     upwind_order              , &
@@ -348,6 +350,7 @@ contains
     if (adv_scheme == 'ffsl') then
       write(*, *) 'ffsl_flux_type      = ', trim(ffsl_flux_type)
     end if
+      write(*, *) 'use_ieva            = ', to_str(use_ieva)
       write(*, *) 'ke_scheme           = ', to_str(ke_scheme)
     if (ke_scheme == 2) then
       write(*, *) 'ke_cell_wgt         = ', to_str(ke_cell_wgt, 2)
