@@ -1,5 +1,6 @@
 program gmcore_adv_driver
 
+  use mpi
   use flogger
   use namelist_mod
   use gmcore_mod
@@ -14,6 +15,7 @@ program gmcore_adv_driver
   implicit none
 
   character(256) namelist_path
+  real(8) time1, time2
 
   interface
     subroutine set_ic_interface()
@@ -81,6 +83,7 @@ program gmcore_adv_driver
   call diagnose()
   if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
+  time1 = MPI_WTIME()
   do while (.not. time_is_finished())
     call set_uv(elapsed_seconds + dt_adv, new)
     call adv_run(new)
@@ -89,6 +92,8 @@ program gmcore_adv_driver
     call time_advance(dt_adv)
     call output(old)
   end do
+  time2 = MPI_WTIME()
+  if (proc%is_root()) call log_notice('Total time cost ' // to_str(time2 - time1, 5) // ' seconds.')
 
   call gmcore_final()
 

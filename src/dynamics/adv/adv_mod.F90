@@ -320,7 +320,7 @@ contains
                            2 * m_new(i,j,k)
                     r(k) = 2 * q_new(i,j,k)
                   end do
-                  call triiag_thomas(a, b, c, r, q_new(i,j,mesh%full_kds:mesh%full_kde))
+                  call tridiag_thomas(a, b, c, r, q_new(i,j,mesh%full_kds:mesh%full_kde))
                 end do
               end do
             end if
