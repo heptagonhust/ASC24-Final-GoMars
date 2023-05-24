@@ -118,13 +118,9 @@ contains
 
     if (nproc_lon(1) * nproc_lat(1) /= proc%np) then
       nproc_lat(1) = global_mesh%full_nlat / 2
-      if (nproc_lat(1) < proc%np) then
-        if (mod(proc%np, nproc_lat(1)) == 0) then
-          nproc_lon(1) = proc%np / nproc_lat(1)
-        end if
-        call log_notice('Set process layout to ' // to_str(nproc_lon(1)) // ' x ' // to_str(nproc_lat(1)) // '.', pid=proc%id)
-      end if
+      nproc_lon(1) = proc%np / nproc_lat(1)
     end if
+    call log_notice('Set process layout to ' // to_str(nproc_lon(1)) // ' x ' // to_str(nproc_lat(1)) // '.', pid=proc%id)
 
     if (nproc_lon(1) * nproc_lat(1) == proc%np) then
       ! Check if process topology in namelist is compatible with MPI runtime.
