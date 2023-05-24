@@ -7,6 +7,7 @@ module process_mod
   use namelist_mod
   use latlon_mesh_mod
   use block_mod
+  use math_mod
   use perf_mod
   use parallel_types_mod
 
@@ -22,8 +23,7 @@ module process_mod
   public proc
   public zonal_circle_type
 
-  integer, public, parameter :: decomp_1d_lat        = 1
-  integer, public, parameter :: decomp_2d_simple     = 2
+  integer, public, parameter :: decomp_2d_simple     = 1
 
   integer, public, parameter :: decomp_normal_region = 5
 
@@ -50,6 +50,19 @@ contains
     call setup_mpi_simple()
     call decompose_domains()
     call setup_zonal_comm()
+
+    select case (proc_layout)
+    case ('lon>lat')
+      cart_dim_lon = 2
+      cart_dim_lat = 1
+      call log_notice('Process layout: lon > lat', pid=proc%id)
+    case ('lat>lon')
+      cart_dim_lon = 1
+      cart_dim_lat = 2
+      call log_notice('Process layout: lat > lon', pid=proc%id)
+    case default
+      call log_error('Invalid proc_layout ' // trim(proc_layout) // '!', pid=proc%id)
+    end select
 
   end subroutine process_init
 
@@ -88,7 +101,7 @@ contains
     if (allocated(proc%global_grid_id)) deallocate(proc%global_grid_id)
     if (allocated(proc%local_grid_id)) deallocate(proc%local_grid_id)
     if (allocated(blocks)) deallocate(blocks)
-    if (proc%group      /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%group     , ierr)
+    if (proc%group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%group, ierr)
     if (proc%cart_group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%cart_group, ierr)
 
     call MPI_FINALIZE(ierr)
@@ -100,50 +113,50 @@ contains
     integer ierr, np, tmp_comm, i
     logical periods(2)
 
-    proc%decomp_type = decomp_1d_lat
+    proc%decomp_type = decomp_2d_simple
     proc%decomp_loc  = decomp_normal_region
 
-    if (num_proc_lon(1) * num_proc_lat(1) /= proc%np) then
-      num_proc_lat(1) = global_mesh%full_nlat / 2
-      if (num_proc_lat(1) < proc%np) then
-        if (mod(proc%np, num_proc_lat(1)) == 0) then
-          num_proc_lon(1) = proc%np / num_proc_lat(1)
+    if (nproc_lon(1) * nproc_lat(1) /= proc%np) then
+      nproc_lat(1) = global_mesh%full_nlat / 2
+      if (nproc_lat(1) < proc%np) then
+        if (mod(proc%np, nproc_lat(1)) == 0) then
+          nproc_lon(1) = proc%np / nproc_lat(1)
         end if
-        call log_notice('Set process layout to ' // to_str(num_proc_lon(1)) // ' x ' // to_str(num_proc_lat(1)) // '.', pid=proc%id)
+        call log_notice('Set process layout to ' // to_str(nproc_lon(1)) // ' x ' // to_str(nproc_lat(1)) // '.', pid=proc%id)
       end if
     end if
 
-    if (num_proc_lon(1) * num_proc_lat(1) == proc%np) then
+    if (nproc_lon(1) * nproc_lat(1) == proc%np) then
       ! Check if process topology in namelist is compatible with MPI runtime.
       np = 0
       do i = 1, 1
-        np = np + num_proc_lon(i) * num_proc_lat(i)
+        np = np + nproc_lon(i) * nproc_lat(i)
       end do
       if (proc%np /= np .and. proc%is_root()) then
-        call log_notice('Namelist num_proc_lon and num_proc_lat are not compatible with MPI runtime. Reset to MPI runtime.')
-        num_proc_lat(1) = proc%np
+        call log_notice('Namelist nproc_lon and nproc_lat are not compatible with MPI runtime. Reset to MPI runtime.')
+        nproc_lat(1) = proc%np
       end if
       ! Set the process topology into proc object.
       np = 0
       do i = 1, 1
-        np = np + num_proc_lon(i) * num_proc_lat(i)
+        np = np + nproc_lon(i) * nproc_lat(i)
         if (proc%id + 1 <= np) then
-          proc%cart_dims(1) = num_proc_lon(i)
-          proc%cart_dims(2) = num_proc_lat(i)
+          proc%cart_dims(cart_dim_lon) = nproc_lon(i)
+          proc%cart_dims(cart_dim_lat) = nproc_lat(i)
           proc%idom = i
           exit
         end if
       end do
     else
-      proc%cart_dims = [1, proc%np]
+      proc%cart_dims = [merge(1, proc%np, cart_dim_lon == 1), merge(proc%np, 1, cart_dim_lat == 2)]
       proc%idom = 1
     end if
     ! Check decomposition dimensions.
-    if (proc%cart_dims(1) /= 1 .and. mod(proc%cart_dims(1), 2) /= 0) then
-      call process_stop(1, 'num_proc_lon should be an even number!')
+    if (proc%cart_dims(cart_dim_lon) /= 1 .and. mod(proc%cart_dims(cart_dim_lon), 2) /= 0) then
+      call process_stop(1, 'nproc_lon should be an even number!')
     end if
     ! Set MPI process topology.
-    periods = [.true.,.false.]
+    periods = [cart_dim_lon==1,cart_dim_lon==2]
     call MPI_COMM_SPLIT(proc%comm, proc%idom, proc%id, tmp_comm, ierr)
     call MPI_CART_CREATE(tmp_comm, 2, proc%cart_dims, periods, .true., proc%cart_comm, ierr)
     call MPI_COMM_GROUP(proc%cart_comm, proc%cart_group, ierr)
@@ -164,8 +177,8 @@ contains
     select case (proc%decomp_loc)
     case (decomp_normal_region)
       allocate(proc%ngb(4))
-      call MPI_CART_SHIFT(proc%cart_comm, 0, 1, proc%ngb(west )%cart_id, proc%ngb(east )%cart_id, ierr)
-      call MPI_CART_SHIFT(proc%cart_comm, 1, 1, proc%ngb(south)%cart_id, proc%ngb(north)%cart_id, ierr)
+      call MPI_CART_SHIFT(proc%cart_comm, cart_dim_lon-1, 1, proc%ngb(west )%cart_id, proc%ngb(east )%cart_id, ierr)
+      call MPI_CART_SHIFT(proc%cart_comm, cart_dim_lat-1, 1, proc%ngb(south)%cart_id, proc%ngb(north)%cart_id, ierr)
     end select
 
     ! Translate Cartesian ID of neighbors to global ID.
@@ -178,14 +191,24 @@ contains
 
     ! Handle processes at poles.
     if (proc%ngb(south)%id == MPI_PROC_NULL) then
-      i = proc%id + proc%cart_dims(1) / 2 * proc%cart_dims(2)
-      if (i >= proc%np) i = i - proc%np
+      if (cart_dim_lon == 1) then
+        i = proc%id + proc%cart_dims(cart_dim_lon) / 2 * proc%cart_dims(cart_dim_lat)
+        if (i >= proc%np) i = i - proc%np
+      else
+        i = proc%id + proc%cart_dims(cart_dim_lon) / 2
+        if (i >= proc%cart_dims(cart_dim_lon)) i = i - proc%cart_dims(cart_dim_lon)
+      end if
       proc%ngb(south)%id = i
       proc%at_south_pole = .true.
     end if
     if (proc%ngb(north)%id == MPI_PROC_NULL) then
-      i = proc%id + proc%cart_dims(1) / 2 * proc%cart_dims(2)
-      if (i >= proc%np) i = i - proc%np
+      if (cart_dim_lon == 1) then
+        i = proc%id + proc%cart_dims(cart_dim_lon) / 2 * proc%cart_dims(cart_dim_lat)
+        if (i >= proc%np) i = i - proc%np
+      else
+        i = proc%id + proc%cart_dims(cart_dim_lat) / 2
+        if (i >= proc%np) i = i - proc%cart_dims(cart_dim_lon)
+      end if
       proc%ngb(north)%id = i
       proc%at_north_pole = .true.
     end if
@@ -197,8 +220,8 @@ contains
       proc%nlat = global_mesh%full_nlat
     end select
 
-    call round_robin(proc%cart_dims(1), proc%cart_coords(1), proc%nlon, proc%ids, proc%ide)
-    call round_robin(proc%cart_dims(2), proc%cart_coords(2), proc%nlat, proc%jds, proc%jde)
+    call round_robin(proc%cart_dims(cart_dim_lon), proc%cart_coords(cart_dim_lon), proc%nlon, proc%ids, proc%ide)
+    call round_robin(proc%cart_dims(cart_dim_lat), proc%cart_coords(cart_dim_lat), proc%nlat, proc%jds, proc%jde)
 
     correct = .true.
     if (proc%nlat < 2) then

@@ -12,6 +12,7 @@ module math_mod
   public tridiag_thomas
   public exp_two_values
   public swap_two_values
+  public round_robin
 
   interface cross_product
     module procedure cross_product_r8
@@ -275,5 +276,34 @@ contains
     y = tmp
 
   end subroutine swap_two_values
+
+  subroutine round_robin(dim, coord, num, ibeg, iend)
+
+    integer, intent(in) :: dim
+    integer, intent(in) :: coord
+    integer, intent(inout) :: num
+    integer, intent(out) :: ibeg ! Start from 1.
+    integer, intent(out) :: iend ! Start from 1.
+
+    integer res_num, tmp_num, i
+
+    res_num = mod(num, dim)
+    ibeg = 1
+    do i = 0, coord - 1
+      if (res_num /= 0 .and. i < res_num) then
+        tmp_num = num / dim + 1
+      else
+        tmp_num = num / dim
+      end if
+      ibeg = ibeg + tmp_num
+    end do
+    if (res_num /= 0 .and. coord < res_num) then
+      num = num / dim + 1
+    else
+      num = num / dim
+    end if
+    iend = ibeg + num - 1
+
+  end subroutine round_robin
 
 end module math_mod

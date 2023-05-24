@@ -51,9 +51,10 @@ module namelist_mod
 
   character(256)  :: gmcore_data_dir      = 'N/A'
 
-  integer         :: num_proc_lon(20)     = 0
-  integer         :: num_proc_lat(20)     = 0
+  integer         :: nproc_lon(20)        = 0
+  integer         :: nproc_lat(20)        = 0
   integer         :: lon_hw               = 2
+  character(30)   :: proc_layout          = 'lon>lat' ! or 'lat>lon'
 
   character(30)   :: tangent_wgt_scheme   = 'classic'
 
@@ -166,9 +167,10 @@ module namelist_mod
     nlev                      , &
     nonhydrostatic            , &
     advection                 , &
-    num_proc_lon              , &
-    num_proc_lat              , &
+    nproc_lon                 , &
+    nproc_lat                 , &
     lon_hw                    , &
+    proc_layout               , &
     initial_time              , &
     start_time                , &
     end_time                  , &

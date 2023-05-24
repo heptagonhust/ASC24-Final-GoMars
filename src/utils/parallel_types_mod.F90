@@ -2,6 +2,7 @@ module parallel_types_mod
 
   use mpi
   use const_mod
+  use math_mod
   use latlon_mesh_mod
 
   implicit none
@@ -10,8 +11,10 @@ module parallel_types_mod
 
   public zonal_circle_type
   public process_type
-  public round_robin
   public proc
+
+  integer, public :: cart_dim_lon = 1
+  integer, public :: cart_dim_lat = 2
 
   type zonal_circle_type
     integer :: group       = MPI_GROUP_NULL
@@ -79,12 +82,14 @@ contains
     type(process_type), intent(in) :: proc
 
     integer ierr, i, nlon, ibeg, iend
-    integer west_cart_id, east_cart_id, tmp_id(1)
+    integer cart_coords(2), west_cart_id, east_cart_id, tmp_id(1)
     integer, allocatable :: zonal_proc_id(:)
 
-    allocate(zonal_proc_id(proc%cart_dims(1)))
-    do i = 1, proc%cart_dims(1)
-      call MPI_CART_RANK(proc%cart_comm, [i-1,proc%cart_coords(2)], zonal_proc_id(i), ierr)
+    allocate(zonal_proc_id(proc%cart_dims(cart_dim_lon)))
+    do i = 1, proc%cart_dims(cart_dim_lon)
+      cart_coords = proc%cart_coords
+      cart_coords(cart_dim_lon) = i - 1
+      call MPI_CART_RANK(proc%cart_comm, cart_coords, zonal_proc_id(i), ierr)
     end do
     call MPI_GROUP_INCL(proc%cart_group, size(zonal_proc_id), zonal_proc_id, this%group, ierr)
     call MPI_COMM_CREATE_GROUP(proc%cart_comm, this%group, sum(zonal_proc_id), this%comm, ierr)
@@ -93,7 +98,7 @@ contains
     deallocate(zonal_proc_id)
 
     ! Get IDs of the west and east neighbors in zonal circle comm.
-    call MPI_CART_SHIFT(proc%cart_comm, 0, 1, west_cart_id, east_cart_id, ierr)
+    call MPI_CART_SHIFT(proc%cart_comm, cart_dim_lon-1, 1, west_cart_id, east_cart_id, ierr)
     call MPI_GROUP_TRANSLATE_RANKS(proc%cart_group, 1, [west_cart_id], this%group, tmp_id, ierr); this%west_ngb_id = tmp_id(1)
     call MPI_GROUP_TRANSLATE_RANKS(proc%cart_group, 1, [east_cart_id], this%group, tmp_id, ierr); this%east_ngb_id = tmp_id(1)
 
@@ -209,35 +214,6 @@ contains
     call this%clear()
 
   end subroutine zonal_circle_final
-
-  subroutine round_robin(dim, coord, num, ibeg, iend)
-
-    integer, intent(in) :: dim
-    integer, intent(in) :: coord
-    integer, intent(inout) :: num
-    integer, intent(out) :: ibeg ! Start from 1.
-    integer, intent(out) :: iend ! Start from 1.
-
-    integer res_num, tmp_num, i
-
-    res_num = mod(num, dim)
-    ibeg = 1
-    do i = 0, coord - 1
-      if (res_num /= 0 .and. i < res_num) then
-        tmp_num = num / dim + 1
-      else
-        tmp_num = num / dim
-      end if
-      ibeg = ibeg + tmp_num
-    end do
-    if (res_num /= 0 .and. coord < res_num) then
-      num = num / dim + 1
-    else
-      num = num / dim
-    end if
-    iend = ibeg + num - 1
-
-  end subroutine round_robin
 
   pure logical function process_is_root(this) result(res)
 
