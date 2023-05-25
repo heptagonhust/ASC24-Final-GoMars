@@ -61,7 +61,7 @@ module cubed_sphere_panel_mod
 
 contains
 
-  subroutine cubed_sphere_panel_init(this, proj_type, nc, nz, hw, ids, jds, ndx, ndy, active)
+  recursive subroutine cubed_sphere_panel_init(this, proj_type, nc, nz, hw, ids, jds, ndx, ndy, active)
 
     class(cubed_sphere_panel_type), intent(inout) :: this
     integer, intent(in) :: proj_type      ! Projection type: 1 - equiangular; 2 - equi-edge

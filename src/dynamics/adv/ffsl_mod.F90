@@ -128,8 +128,8 @@ contains
                my   => batch%qy)     ! work array
     ! Run inner advective operators.
     call hflx(block, batch, u, v, m, m, mfx, mfy)
-    call fill_halo(block%halo, mfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%halo, mfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block%halo, mfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false., east_halo=.false.)
+    call fill_halo(block%halo, mfy, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false., north_halo=.false.)
     ! Calculate intermediate tracer density due to advective operators.
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -465,31 +465,11 @@ contains
                                  block%mesh%full_kms:block%mesh%full_kme)
 
     integer i, j, k, iu, ju, ci
-    real(r8) cf, s1, s2, ds1, ds2, ds3
+    real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
 
     associate (mesh => block%mesh, &
                cflx => batch%cflx, & ! in
-               cfly => batch%cfly, & ! in
-               mlx  => batch%qlx , & ! work array
-               mly  => batch%qly , & ! work array
-               dmx  => batch%dqx , & ! work array
-               dmy  => batch%dqy , & ! work array
-               m6x  => batch%q6x , & ! work array
-               m6y  => batch%q6y )   ! work array
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          call ppm(mx(i-2,j,k), mx(i-1,j,k), mx(i,j,k), mx(i+1,j,k), mx(i+2,j,k), mlx(i,j,k), dmx(i,j,k), m6x(i,j,k))
-          call ppm(my(i,j-2,k), my(i,j-1,k), my(i,j,k), my(i,j+1,k), my(i,j+2,k), mly(i,j,k), dmy(i,j,k), m6y(i,j,k))
-        end do
-      end do
-    end do
-    call fill_halo(block%filter_halo, mlx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%filter_halo, dmx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%filter_halo, m6x, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%halo, mly, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
-    call fill_halo(block%halo, dmy, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
-    call fill_halo(block%halo, m6y, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
+               cfly => batch%cfly)   ! in
     do k = mesh%full_kds, mesh%full_kde
       ! Along x-axis
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -498,20 +478,22 @@ contains
           cf = cflx(i,j,k) - ci
           if (cflx(i,j,k) > 0) then
             iu = i - ci
+            call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
             s1 = 1 - cf
             s2 = 1
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
           else if (cflx(i,j,k) < 0) then
             iu = i - ci + 1
+            call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
             s1 = 0
             s2 = -cf
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
           end if
@@ -522,20 +504,22 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           if (cfly(i,j,k) > 0) then
             ju = j
+            call ppm(my(i,ju-2,k), my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k), my(i,ju+2,k), ml, dm, m6)
             s1 = 1 - cfly(i,j,k)
             s2 = 1
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfy(i,j,k) =  v(i,j,k) * (mly(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + m6y(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+            mfy(i,j,k) =  v(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
           else if (cfly(i,j,k) < 0) then
             ju = j + 1
+            call ppm(my(i,ju-2,k), my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k), my(i,ju+2,k), ml, dm, m6)
             s1 = 0
             s2 = -cfly(i,j,k)
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfy(i,j,k) = -v(i,j,k) * (mly(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + m6y(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+            mfy(i,j,k) = -v(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
           else
             mfy(i,j,k) = 0
           end if
@@ -561,20 +545,10 @@ contains
                                  block%mesh%half_kms:block%mesh%half_kme)
 
     integer i, j, k, ku, ci
-    real(r8) cf, s1, s2, ds1, ds2, ds3
+    real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
 
     associate (mesh => block%mesh, &
-               cflz => batch%cflz, & ! in
-               mlz  => batch%qlx , & ! work array
-               dmz  => batch%dqx , & ! work array
-               m6z  => batch%q6x )   ! work array
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          call ppm(m(i,j,k-2), m(i,j,k-1), m(i,j,k), m(i,j,k+1), m(i,j,k+2), mlz(i,j,k), dmz(i,j,k), m6z(i,j,k))
-        end do
-      end do
-    end do
+               cflz => batch%cflz)   ! in
     do k = mesh%half_kds + 1, mesh%half_kde - 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -582,20 +556,22 @@ contains
           cf = cflz(i,j,k) - ci
           if (cflz(i,j,k) > 0) then
             ku = k - ci - 1
+            call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 1 - cf
             s2 = 1
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci:k-1)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+            mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci:k-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
           else if (cflz(i,j,k) < 0) then
             ku = k - ci
+            call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 0
             s2 = -cf
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k:k-ci-1)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+            mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k:k-ci-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
           else
             mfz(i,j,k) = 0
           end if
@@ -621,17 +597,13 @@ contains
                                  block%mesh%full_kms:block%mesh%full_kme)
 
     integer i, j, k, ku, ci
-    real(r8) cf, s1, s2, ds1, ds2, ds3
+    real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
 
     associate (mesh => block%mesh, &
-               cflz => batch%cflz, & ! in
-               mlz  => batch%qlx , & ! work array
-               dmz  => batch%dqx , & ! work array
-               m6z  => batch%q6x )   ! work array
+               cflz => batch%cflz)   ! in
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          call ppm(m(i,j,k-2), m(i,j,k-1), m(i,j,k), m(i,j,k+1), m(i,j,k+2), mlz(i,j,k), dmz(i,j,k), m6z(i,j,k))
         end do
       end do
     end do
@@ -642,20 +614,22 @@ contains
           cf = cflz(i,j,k) - ci
           if (cflz(i,j,k) > 0) then
             ku = k - ci
+            call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 1 - cf
             s2 = 1
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci+1:k)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+            mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci+1:k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
           else if (cflz(i,j,k) < 0) then
             ku = k - ci + 1
+            call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 0
             s2 = -cf
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k+1:k-ci)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+            mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k+1:k-ci)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
           else
             mfz(i,j,k) = (m(i,j,k) + m(i,j,k+1)) * 0.5_r8
           end if
