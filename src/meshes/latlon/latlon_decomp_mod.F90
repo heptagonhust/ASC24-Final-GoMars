@@ -39,7 +39,7 @@ contains
     proc%decomp_type = decomp_2d_simple
     proc%decomp_loc  = decomp_normal_region
 
-    if (nproc_lon(1) * nproc_lat(1) == 0) then
+    if (nproc_lon(1) * nproc_lat(1) /= proc%np) then
       ! User does not set process dimensions in the namelist, so we set them here.
       if (proc%np < global_mesh%full_nlon / 2) then
         nproc_lat(1) = proc%np
