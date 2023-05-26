@@ -4,7 +4,7 @@ module damp_mod
   use string
   use const_mod
   use namelist_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use filter_mod
   use div_damp_mod

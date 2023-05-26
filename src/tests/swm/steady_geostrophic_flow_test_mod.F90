@@ -2,7 +2,7 @@ module steady_geostrophic_flow_test_mod
 
   use flogger
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
 
   implicit none

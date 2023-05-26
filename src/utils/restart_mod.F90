@@ -9,7 +9,8 @@ module restart_mod
   use time_mod
   use block_mod
   use tracer_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
 
   implicit none
 
@@ -195,7 +196,6 @@ contains
       end associate
     end do
     call fiona_end_output('r0')
-    call process_barrier()
     if (proc%is_root()) then
       call MPI_WTIME(time2, ierr)
       call log_notice('Done write restart cost ' // to_str(time2 - time1, 5) // ' seconds.')
@@ -206,7 +206,7 @@ contains
   subroutine restart_read()
 
     type(block_type), pointer :: block
-    type(latlon_mesh_type), pointer :: mesh
+    type(mesh_type), pointer :: mesh
     type(dstate_type), pointer :: dstate
     type(static_type), pointer :: static
     type(datetime_type) time
@@ -331,7 +331,6 @@ contains
     call fiona_end_input('r0')
 
     call time_fast_forward(time_value, time_units)
-    call process_barrier()
     if (proc%is_root()) then
       call cpu_time(time2)
       call log_notice('Restart to ' // trim(curr_time_str) // ' cost ' // to_str(time2 - time1, 5) // ' seconds.')

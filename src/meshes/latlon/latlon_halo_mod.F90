@@ -1,22 +1,23 @@
-module halo_mod
+module latlon_halo_mod
 
   use mpi
   use flogger
   use const_mod
   use latlon_mesh_mod
+  use latlon_parallel_types_mod
 
   implicit none
 
   private
 
-  public halo_type
+  public latlon_halo_type
 
   integer, parameter :: cross_proc_halo = 1
   integer, parameter :: cross_comm_halo = 2
   integer, parameter :: inner_halo = 3
   integer, parameter :: nest_halo = 4
 
-  type halo_type
+  type latlon_halo_type
     integer :: comm     = MPI_COMM_NULL
     integer :: host_id  = MPI_PROC_NULL
     integer :: proc_id  = MPI_PROC_NULL
@@ -37,19 +38,19 @@ module halo_mod
     integer :: send_type_3d(2,2,2) = MPI_DATATYPE_NULL
     integer :: recv_type_3d(2,2,2) = MPI_DATATYPE_NULL
   contains
-    procedure :: init => halo_init
-    procedure :: init_nest => halo_init_nest
-    procedure :: clear => halo_clear
-    final :: halo_final
-  end type halo_type
+    procedure :: init => latlon_halo_init
+    procedure :: init_nest => latlon_halo_init_nest
+    procedure :: clear => latlon_halo_clear
+    final :: latlon_halo_final
+  end type latlon_halo_type
 
 contains
 
-  subroutine halo_init(this, mesh, orient, dtype, host_id, ngb_proc_id, iblk, &
+  subroutine latlon_halo_init(this, mesh, orient, dtype, host_id, ngb_proc_id, iblk, &
                        lon_hw, ids, ide, &
                        lat_hw, jds, jde, at_south_pole, at_north_pole)
 
-    class(halo_type), intent(out) :: this
+    class(latlon_halo_type), intent(out) :: this
     type(latlon_mesh_type), intent(in) :: mesh
     integer, intent(in) :: orient
     integer, intent(in) :: dtype
@@ -279,19 +280,19 @@ contains
       end do
     end do
 
-  end subroutine halo_init
+  end subroutine latlon_halo_init
 
-  subroutine halo_init_nest(this, parent_mesh, parent_proc_id)
+  subroutine latlon_halo_init_nest(this, parent_mesh, parent_proc_id)
 
-    class(halo_type), intent(inout) :: this
+    class(latlon_halo_type), intent(inout) :: this
     type(latlon_mesh_type), intent(in) :: parent_mesh
     integer, intent(in) :: parent_proc_id
 
-  end subroutine halo_init_nest
+  end subroutine latlon_halo_init_nest
 
-  subroutine halo_clear(this)
+  subroutine latlon_halo_clear(this)
 
-    class(halo_type), intent(inout) :: this
+    class(latlon_halo_type), intent(inout) :: this
 
     integer i, j, k
     integer ierr
@@ -312,14 +313,14 @@ contains
       end do
     end do
 
-  end subroutine halo_clear
+  end subroutine latlon_halo_clear
 
-  subroutine halo_final(this)
+  subroutine latlon_halo_final(this)
 
-    type(halo_type), intent(inout) :: this
+    type(latlon_halo_type), intent(inout) :: this
 
     call this%clear()
 
-  end subroutine halo_final
+  end subroutine latlon_halo_final
 
-end module halo_mod
+end module latlon_halo_mod

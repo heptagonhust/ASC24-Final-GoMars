@@ -3,7 +3,8 @@ module operators_mod
   use const_mod
   use vert_coord_mod
   use block_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc, process_stop
   use formula_mod
   use namelist_mod
   use tracer_mod

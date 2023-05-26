@@ -3,7 +3,8 @@ module tracer_mod
   use const_mod, only: r8
   use namelist_mod, only: mp_scheme, dt_adv
   use block_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use tracer_types_mod
 
   implicit none

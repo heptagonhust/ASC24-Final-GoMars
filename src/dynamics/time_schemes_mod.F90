@@ -5,7 +5,8 @@ module time_schemes_mod
   use namelist_mod
   use block_mod
   use operators_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use filter_mod
 
   implicit none

@@ -3,7 +3,7 @@ module mountain_wave_test_mod
   use flogger
   use namelist_mod
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use formula_mod
   use operators_mod
@@ -18,7 +18,7 @@ module mountain_wave_test_mod
 
   real(r8), parameter :: T0   = 288.d0      ! K
   real(r8), parameter :: h0   = 2000.d0     ! m
-  real(r8), parameter :: d    = 1.5e6 
+  real(r8), parameter :: d    = 1.5e6
   real(r8), parameter :: u0   = 20.d0       ! m s-1
   real(r8), parameter :: lonc = pi05
   real(r8), parameter :: latc = pi / 6.0
@@ -103,7 +103,7 @@ contains
       call calc_gz_lev(block, block%dstate(1))
     end if
     end associate
-  
+
   end subroutine mountain_wave_test_set_ic
-  
+
 end module mountain_wave_test_mod

@@ -1,8 +1,7 @@
-module parallel_types_mod
+module latlon_parallel_types_mod
 
   use mpi
-  use const_mod
-  use math_mod
+  use math_mod, only: round_robin
   use latlon_mesh_mod
 
   implicit none
@@ -15,6 +14,10 @@ module parallel_types_mod
 
   integer, public :: cart_dim_lon = 1
   integer, public :: cart_dim_lat = 2
+  integer, public, parameter :: west  = 1
+  integer, public, parameter :: east  = 2
+  integer, public, parameter :: south = 3
+  integer, public, parameter :: north = 4
 
   type zonal_circle_type
     integer :: group       = MPI_GROUP_NULL
@@ -223,4 +226,4 @@ contains
 
   end function process_is_root
 
-end module parallel_types_mod
+end module latlon_parallel_types_mod

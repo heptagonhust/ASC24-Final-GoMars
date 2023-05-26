@@ -3,7 +3,7 @@ module solid_rotation_test_mod
   use const_mod
   use namelist_mod, dt => dt_adv
   use sphere_geometry_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use adv_mod
   use tracer_mod

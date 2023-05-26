@@ -1,6 +1,7 @@
 module pgf_mod
 
   use flogger
+  use process_mod, only: proc
   use pgf_swm_mod
   use pgf_lin97_mod
 

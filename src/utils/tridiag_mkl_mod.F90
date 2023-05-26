@@ -7,7 +7,8 @@ module tridiag_mkl_mod
   use mkl_dss
   use flogger
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use block_mod
 
   implicit none

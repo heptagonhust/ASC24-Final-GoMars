@@ -1,8 +1,7 @@
 module latlon_mesh_mod
 
   use flogger
-  use const_mod
-  use namelist_mod
+  use const_mod, only: pi, pi2, pi05, radius, inf, deg
   use sphere_geometry_mod
 
   implicit none
@@ -113,7 +112,7 @@ module latlon_mesh_mod
 
 contains
 
-  subroutine latlon_mesh_init_global(this, nlon, nlat, nlev, id, lon_hw, lat_hw, keep_lev)
+  subroutine latlon_mesh_init_global(this, nlon, nlat, nlev, id, lon_hw, lat_hw, coarse_pole_decay, coarse_pole_mul, keep_lev)
 
     class(latlon_mesh_type), intent(inout) :: this
     integer, intent(in)           :: nlon
@@ -122,6 +121,8 @@ contains
     integer, intent(in), optional :: id
     integer, intent(in), optional :: lon_hw
     integer, intent(in), optional :: lat_hw
+    real(8), intent(in), optional :: coarse_pole_decay
+    real(8), intent(in), optional :: coarse_pole_mul
     logical, intent(in), optional :: keep_lev
 
     real(8) dlat0
@@ -174,7 +175,7 @@ contains
       if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0
     end do
 
-    if (coarse_pole_mul /= 0) then
+    if (merge(coarse_pole_mul, 0.0d0, present(coarse_pole_mul)) /= 0) then
       ! Calculate real dlat which is large at polar region.
       dlat0 = this%dlon
       do j = 1, this%half_nlat

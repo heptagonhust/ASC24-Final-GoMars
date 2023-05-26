@@ -1,7 +1,7 @@
 module splash_test_mod
 
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
 
   implicit none

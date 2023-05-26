@@ -3,7 +3,7 @@ module nh_mod
   use const_mod
   use namelist_mod
   use block_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use process_mod
   use interp_mod
   use math_mod
@@ -203,9 +203,9 @@ contains
     !
     ! ϕ¹ = ϕⁿ - Δt adv_ϕ* + g Δt (1 - β) w*
     !
-    !                                                   
+    !
     ! w¹ = wⁿ - Δt adv_w* - g Δt + g Δt (1 - β) (∂p/∂π)*
-    !                                                   
+    !
     ! Linearized dstate of ideal gas
     !
     ! 𝜹pⁿ⁺¹ ≈ 𝜹pⁿ + 𝜹(𝜸 pⁿ (𝜹𝜋 θ)ⁿ⁺¹ / (𝜹𝜋 θ)ⁿ) - 𝜹(𝜸 pⁿ 𝜹ϕ¹ / 𝜹ϕⁿ) - 𝜹(𝜸 pⁿ g Δt β 𝜹wⁿ⁺¹ / 𝜹φⁿ)

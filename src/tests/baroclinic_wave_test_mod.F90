@@ -2,7 +2,7 @@ module baroclinic_wave_test_mod
 
   use const_mod
   use formula_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use operators_mod
 
@@ -21,7 +21,7 @@ module baroclinic_wave_test_mod
   real(r8), parameter :: etat  = 0.2       ! Tropopause level
   real(r8), parameter :: lonc  = pi / 9.0
   real(r8), parameter :: latc  = pi2 / 9.0
-  real(r8), parameter :: up    = 1.0       ! m s-1 
+  real(r8), parameter :: up    = 1.0       ! m s-1
 
 contains
 

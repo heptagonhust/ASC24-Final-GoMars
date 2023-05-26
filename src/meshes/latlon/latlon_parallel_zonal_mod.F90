@@ -1,8 +1,8 @@
-module parallel_zonal_mod
+module latlon_parallel_zonal_mod
 
   use mpi
   use latlon_mesh_mod
-  use parallel_types_mod
+  use latlon_parallel_types_mod
 
   implicit none
 
@@ -365,4 +365,4 @@ contains
 
   end subroutine scatter_zonal_array_2d_r8
 
-end module parallel_zonal_mod
+end module latlon_parallel_zonal_mod

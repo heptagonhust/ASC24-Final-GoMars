@@ -1,22 +1,17 @@
-module parallel_mod
+module latlon_parallel_mod
 
   use mpi
   use flogger
-  use const_mod
+  ! use const_mod
   use latlon_mesh_mod
-  use halo_mod
-  use process_mod
-  use parallel_zonal_mod
+  use latlon_halo_mod
+  use latlon_parallel_types_mod, only: proc
+  use latlon_parallel_zonal_mod
 
   implicit none
 
   private
 
-  public proc
-  public process_init
-  public process_barrier
-  public process_stop
-  public process_final
   public fill_halo
   public zonal_sum
   public zonal_max
@@ -45,7 +40,7 @@ contains
 
   subroutine fill_halo_2d_r4(halo, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
-    type(halo_type), intent(in) :: halo(:)
+    type(latlon_halo_type), intent(in) :: halo(:)
     real(4), intent(inout) :: array(:,:)
     logical, intent(in) :: full_lon
     logical, intent(in) :: full_lat
@@ -150,7 +145,7 @@ contains
 
   subroutine fill_halo_2d_r8(halo, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
-    type(halo_type), intent(in) :: halo(:)
+    type(latlon_halo_type), intent(in) :: halo(:)
     real(8), intent(inout) :: array(:,:)
     logical, intent(in) :: full_lon
     logical, intent(in) :: full_lat
@@ -255,7 +250,7 @@ contains
 
   subroutine fill_halo_3d_r4(halo, array, full_lon, full_lat, full_lev, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
-    type(halo_type), intent(in) :: halo(:)
+    type(latlon_halo_type), intent(in) :: halo(:)
     real(4), intent(inout) :: array(:,:,:)
     logical, intent(in) :: full_lon
     logical, intent(in) :: full_lat
@@ -361,7 +356,7 @@ contains
 
   subroutine fill_halo_3d_r8(halo, array, full_lon, full_lat, full_lev, west_halo, east_halo, south_halo, north_halo, cross_pole)
 
-    type(halo_type), intent(in) :: halo(:)
+    type(latlon_halo_type), intent(in) :: halo(:)
     real(8), intent(inout) :: array(:,:,:)
     logical, intent(in) :: full_lon
     logical, intent(in) :: full_lat
@@ -530,4 +525,4 @@ contains
 
   end subroutine global_max_0d_i4
 
-end module parallel_mod
+end module latlon_parallel_mod

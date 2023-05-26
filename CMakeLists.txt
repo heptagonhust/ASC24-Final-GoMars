@@ -213,6 +213,12 @@ set(gmcore_files
   src/meshes/cubed_sphere/cubed_sphere_mesh_mod.F90
   src/meshes/cubed_sphere/cubed_sphere_array_mod.F90
   src/meshes/latlon/latlon_mesh_mod.F90
+  src/meshes/latlon/latlon_halo_mod.F90
+  src/meshes/latlon/latlon_parallel_types_mod.F90
+  src/meshes/latlon/latlon_parallel_zonal_mod.F90
+  src/meshes/latlon/latlon_parallel_mod.F90
+  src/meshes/latlon/latlon_decomp_mod.F90
+  src/meshes/latlon/latlon_interp_mod.F90
   src/physics/dp_coupling_mod.F90
   src/physics/mars/mars_cnv_nasa_mod.F90
   src/physics/mars/mars_co2cyc_nasa_mod.F90
@@ -233,7 +239,6 @@ set(gmcore_files
   src/prepare/bkg_mod.F90
   src/prepare/era5_reader_mod.F90
   src/prepare/fnl_reader_mod.F90
-  src/prepare/latlon_interp_mod.F90
   src/prepare/mpas_reader_mod.F90
   src/prepare/openmars_reader_mod.F90
   src/prepare/prepare_mod.F90
@@ -270,14 +275,10 @@ set(gmcore_files
   src/utils/diag_state_mod.F90
   src/utils/formula_mod.F90
   src/utils/gas_mod.F90
-  src/utils/halo_mod.F90
   src/utils/history_mod.F90
   src/utils/initial_mod.F90
   src/utils/math_mod.F90
   src/utils/namelist_mod.F90
-  src/utils/parallel_mod.F90
-  src/utils/parallel_types_mod.F90
-  src/utils/parallel_zonal_mod.F90
   src/utils/perf_mod.F90
   src/utils/process_mod.F90
   src/utils/restart_mod.F90

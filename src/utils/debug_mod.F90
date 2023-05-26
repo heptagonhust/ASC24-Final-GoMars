@@ -6,7 +6,7 @@ module debug_mod
   use namelist_mod
   use latlon_mesh_mod
   use block_mod
-  use parallel_mod
+  use latlon_parallel_mod
 
   private
 

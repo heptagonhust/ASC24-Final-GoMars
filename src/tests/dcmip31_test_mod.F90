@@ -3,7 +3,7 @@ module dcmip31_test_mod
   use flogger
   use namelist_mod
   use const_mod, only: r8, pi, Rd, Rd_o_cpd, cpd, g, radius, omega
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use formula_mod
   use operators_mod
@@ -112,7 +112,7 @@ contains
           do i = mesh%full_ids, mesh%full_ide
             ! Perturbation
             local_z = 0.5_r8 * (gz_lev(i,j,k+1) + gz_lev(i,j,k)) / g
-            local_ztop = gz_lev(i,j,mesh%half_kds) / g 
+            local_ztop = gz_lev(i,j,mesh%half_kds) / g
             r = radius * acos(sin(latc) * mesh%full_sin_lat(j) + cos(latc) * mesh%full_cos_lat(j) * cos(mesh%full_lon(i) - lonc))
             pt(i,j,k) = pt(i,j,k) + dpt * d**2 / (d**2 + r**2) * sin(pi * local_z / local_ztop)
           end do
@@ -120,7 +120,7 @@ contains
       end do
       call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
-  
+
   end subroutine dcmip31_test_set_ic
 
 end module dcmip31_test_mod

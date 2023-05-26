@@ -2,7 +2,7 @@ module ksp15_test_mod
 
   use namelist_mod
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use formula_mod
   use operators_mod

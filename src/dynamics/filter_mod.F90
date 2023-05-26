@@ -2,7 +2,6 @@ module filter_mod
 
   use const_mod
   use block_mod
-  use parallel_mod
   use filter_types_mod
 
   implicit none

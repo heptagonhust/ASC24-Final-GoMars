@@ -8,7 +8,7 @@ module pole_damp_mod
   use filter_mod
   use laplace_damp_mod
   use operators_mod
-  use parallel_mod
+  use latlon_parallel_mod
 
   implicit none
 

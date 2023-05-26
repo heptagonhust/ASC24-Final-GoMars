@@ -4,7 +4,8 @@ module mars_data_mod
   use const_mod
   use block_mod, only: block_type
   use namelist_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use mars_nasa_mod
 
   implicit none

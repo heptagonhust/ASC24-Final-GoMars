@@ -3,7 +3,7 @@ module pgf_lin97_mod
   use flogger
   use const_mod
   use namelist_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use tracer_mod
 

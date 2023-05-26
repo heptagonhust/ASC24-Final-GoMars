@@ -3,7 +3,8 @@ module tridiag_spk_mod
   use mpi
   use flogger
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use block_mod
 
   implicit none

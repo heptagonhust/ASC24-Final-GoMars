@@ -8,7 +8,8 @@ module history_mod
   use const_mod
   use namelist_mod, dt => dt_dyn
   use time_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use allocator_mod
   use block_mod
   use diag_state_mod

@@ -119,7 +119,7 @@ CONTAINS
     use tracer_mod
     use formula_mod
     use vert_coord_mod
-    use parallel_mod
+    use latlon_parallel_mod
 
     type(block_type), intent(inout), target :: block
 

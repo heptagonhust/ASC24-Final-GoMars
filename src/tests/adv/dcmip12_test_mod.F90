@@ -2,7 +2,7 @@ module dcmip12_test_mod
 
   use const_mod, only: r8, pi, pi2, rd, g, radius
   use namelist_mod, dt => dt_adv
-  use parallel_mod
+  use latlon_parallel_mod
   use history_mod
   use block_mod
   use vert_coord_mod

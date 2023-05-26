@@ -2,7 +2,7 @@ module tvd_mod
 
   use const_mod
   use namelist_mod
-  use parallel_mod
+  use process_mod
   use block_mod
   use adv_batch_mod
 

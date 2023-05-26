@@ -4,7 +4,7 @@ module latlon_interp_mod
   use const_mod
   use latlon_mesh_mod
   use process_mod
-  use parallel_mod
+  use latlon_parallel_mod
 
   implicit none
 

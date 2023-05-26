@@ -5,7 +5,7 @@ program gmcore_adv_driver
   use namelist_mod
   use gmcore_mod
   use history_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use solid_rotation_test_mod
   use deform_test_mod

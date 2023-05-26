@@ -7,7 +7,7 @@ module bkg_mod
   use vert_coord_mod
   use formula_mod
   use process_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use era5_reader_mod
   use mpas_reader_mod
   use waccm_reader_mod

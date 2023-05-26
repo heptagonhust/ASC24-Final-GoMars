@@ -7,7 +7,7 @@ module topo_mod
   use namelist_mod
   use block_mod
   use process_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use filter_mod
   use laplace_damp_mod
 

@@ -3,12 +3,12 @@ module block_mod
   use mpi
   use flogger
   use namelist_mod
-  use latlon_mesh_mod
+  use latlon_mesh_mod, mesh_type => latlon_mesh_type
+  use latlon_halo_mod, halo_type => latlon_halo_type
   use dynamics_types_mod
   use physics_types_mod
   use adv_batch_mod
   use filter_types_mod
-  use halo_mod
   use allocator_mod
 
   implicit none
@@ -18,7 +18,7 @@ module block_mod
   public block_type
   public blocks
   public global_mesh
-  public latlon_mesh_type
+  public mesh_type
   public halo_type
   public static_type
   public dstate_type
@@ -28,8 +28,8 @@ module block_mod
 
   type block_type
     integer id
-    type(latlon_mesh_type) filter_mesh
-    type(latlon_mesh_type) mesh
+    type(mesh_type) filter_mesh
+    type(mesh_type) mesh
     type(static_type) static
     type(dstate_type), allocatable :: dstate(:)
     type(pstate_type) pstate

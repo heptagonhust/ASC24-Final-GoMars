@@ -5,7 +5,7 @@ module gmcore_mod
   use string
   use const_mod
   use namelist_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use process_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use history_mod

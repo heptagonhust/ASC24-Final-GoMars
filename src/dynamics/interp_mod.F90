@@ -4,7 +4,7 @@ module interp_mod
   use namelist_mod
   use block_mod
   use process_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use upwind_mod
   use weno_mod
 
@@ -74,7 +74,7 @@ contains
 
   subroutine interp_cell_to_lon_edge(mesh, x, x_lon, reversed_area, u, upwind_wgt_)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -153,7 +153,7 @@ contains
 
   subroutine interp_cell_to_lat_edge(mesh, x, x_lat, reversed_area, v, upwind_wgt_)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -232,7 +232,7 @@ contains
 
   subroutine average_cell_to_lon_edge(mesh, x, x_lon)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in ) :: x    (mesh%full_ims:mesh%full_ime, &
                                    mesh%full_jms:mesh%full_jme, &
                                    mesh%full_kms:mesh%full_kme)
@@ -254,7 +254,7 @@ contains
 
   subroutine average_cell_to_lat_edge(mesh, x, x_lat)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in ) :: x    (mesh%full_ims:mesh%full_ime, &
                                    mesh%full_jms:mesh%full_jme, &
                                    mesh%full_kms:mesh%full_kme)
@@ -276,7 +276,7 @@ contains
 
   subroutine interp_lev_edge_to_cell(mesh, x_lev, x)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lev(mesh%full_ims:mesh%full_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%half_kms:mesh%half_kme)
@@ -307,7 +307,7 @@ contains
 
   subroutine interp_lev_edge_to_lev_lon_edge(mesh, x_lev, x_lev_lon, u, upwind_wgt_)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lev(mesh%full_ims:mesh%full_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%half_kms:mesh%half_kme)
@@ -372,7 +372,7 @@ contains
 
   subroutine interp_lev_edge_to_lev_lat_edge(mesh, x_lev, x_lev_lat, v, upwind_wgt_)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lev(mesh%full_ims:mesh%full_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%half_kms:mesh%half_kme)
@@ -437,7 +437,7 @@ contains
 
   subroutine interp_cell_to_vtx(mesh, x, x_vtx)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -462,7 +462,7 @@ contains
 
   subroutine interp_cell_to_lev_edge(mesh, x, x_lev)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in   ) :: x    (mesh%full_ims:mesh%full_ime, &
                                      mesh%full_jms:mesh%full_jme, &
                                      mesh%full_kms:mesh%full_kme)
@@ -520,7 +520,7 @@ contains
 
   subroutine interp_cell_to_height_level(mesh, z, x, zo, y)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: z(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -570,7 +570,7 @@ contains
 
   subroutine interp_lon_edge_to_height_level(mesh, z, x, zo, y)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: z(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -628,7 +628,7 @@ contains
 
   subroutine interp_lat_edge_to_height_level(mesh, z, x, zo, y)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: z(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -679,7 +679,7 @@ contains
 
   subroutine interp_lev_edge_to_height_level(mesh, z, x, zo, y)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: z(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%half_kms:mesh%half_kme)
@@ -724,7 +724,7 @@ contains
 
   subroutine interp_cell_to_pressure_level(mesh, p, x, po, y, logp)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: p(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -766,7 +766,7 @@ contains
 
   subroutine interp_lon_edge_to_pressure_level(mesh, p, x, po, y, logp)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: p(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -810,7 +810,7 @@ contains
 
   subroutine interp_lat_edge_to_pressure_level(mesh, p, x, po, y, logp)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: p(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%full_kms:mesh%full_kme)
@@ -854,7 +854,7 @@ contains
 
   subroutine interp_lev_edge_to_pressure_level(mesh, p, x, po, y, logp)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: p(mesh%full_ims:mesh%full_ime, &
                               mesh%full_jms:mesh%full_jme, &
                               mesh%half_kms:mesh%half_kme)
@@ -896,7 +896,7 @@ contains
 
   subroutine interp_lon_edge_to_cell(mesh, x_lon, x)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lon(mesh%half_ims:mesh%half_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%full_kms:mesh%full_kme)
@@ -920,7 +920,7 @@ contains
 
   subroutine interp_lat_edge_to_cell(mesh, x_lat, x)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lat(mesh%full_ims:mesh%full_ime, &
                                   mesh%half_jms:mesh%half_jme, &
                                   mesh%full_kms:mesh%full_kme)
@@ -944,7 +944,7 @@ contains
 
   subroutine interp_lon_edge_to_lev_lon_edge(mesh, x_lon, x_lev_lon, handle_top_bottom)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lon(mesh%half_ims:mesh%half_ime, &
                                   mesh%full_jms:mesh%full_jme, &
                                   mesh%full_kms:mesh%full_kme)
@@ -1028,7 +1028,7 @@ contains
 
   subroutine interp_lat_edge_to_lev_lat_edge(mesh, x_lat, x_lev_lat, handle_top_bottom)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lat(mesh%full_ims:mesh%full_ime, &
                                   mesh%half_jms:mesh%half_jme, &
                                   mesh%full_kms:mesh%full_kme)

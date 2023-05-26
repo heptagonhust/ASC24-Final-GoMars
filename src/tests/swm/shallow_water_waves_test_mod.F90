@@ -52,7 +52,8 @@ module shallow_water_waves_test_mod
   use flogger
   use string
   use const_mod, only: r8, inf
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use block_mod
 
   implicit none

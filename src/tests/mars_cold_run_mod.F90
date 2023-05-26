@@ -3,7 +3,7 @@ module mars_cold_run_mod
   use flogger
   use namelist_mod, only: topo_file, use_topo_smooth, ptop
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use vert_coord_mod
   use formula_mod

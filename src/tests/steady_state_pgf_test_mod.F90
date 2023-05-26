@@ -3,7 +3,7 @@ module steady_state_pgf_test_mod
   use flogger
   use const_mod, only: r8, pi, Rd, g, omega
   use namelist_mod, only: nlev, ptop
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
   use formula_mod
   use operators_mod
@@ -83,7 +83,7 @@ contains
     call fill_halo(block%halo, t, full_lon=.true., full_lat=.true., full_lev=.true.)
     call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
-  
+
   end subroutine steady_state_pgf_test_set_ic
 
 end module steady_state_pgf_test_mod

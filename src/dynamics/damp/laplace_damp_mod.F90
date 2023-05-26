@@ -7,7 +7,8 @@ module laplace_damp_mod
   use const_mod
   use namelist_mod
   use math_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use block_mod
 
   implicit none
@@ -74,7 +75,7 @@ contains
 
   subroutine laplace_damp_on_cell_2d(mesh, halo, order, f, coef, lon_coef, lat_coef, fill)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &
@@ -224,7 +225,7 @@ contains
 
   subroutine laplace_damp_on_cell_3d(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &
@@ -255,7 +256,7 @@ contains
 
   subroutine laplace_damp_on_lon_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%half_ims:mesh%half_ime, &
@@ -390,7 +391,7 @@ contains
 
   subroutine laplace_damp_on_lat_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
 
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
     integer, intent(in) :: order
     real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &

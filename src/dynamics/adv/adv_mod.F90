@@ -7,7 +7,8 @@ module adv_mod
   use math_mod
   use time_mod
   use block_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
   use tracer_mod
   use adv_batch_mod
   use ffsl_mod

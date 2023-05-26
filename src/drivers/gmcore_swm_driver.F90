@@ -4,7 +4,7 @@ program gmcore_swm_driver
   use const_mod
   use namelist_mod
   use block_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use restart_mod
   use gmcore_mod
   use mountain_zonal_flow_test_mod

@@ -9,7 +9,8 @@ module initial_mod
   use time_mod
   use block_mod
   use tracer_mod
-  use parallel_mod
+  use latlon_parallel_mod
+  use process_mod, only: proc
 
   implicit none
 

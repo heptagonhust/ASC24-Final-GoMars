@@ -5,7 +5,7 @@ program gmcore_driver
   use const_mod
   use block_mod
   use diag_state_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use initial_mod
   use restart_mod
   use gmcore_mod

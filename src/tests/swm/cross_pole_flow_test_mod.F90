@@ -1,8 +1,8 @@
 module cross_pole_flow_test_mod
-  
+
   use flogger
   use const_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use block_mod
 
   implicit none
@@ -15,7 +15,7 @@ module cross_pole_flow_test_mod
   real, parameter :: gz0 = 5.7684e4 ! m2 s-2
 
 contains
-  
+
   subroutine cross_pole_flow_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
@@ -44,9 +44,9 @@ contains
       sin_lat = mesh%half_sin_lat(j)
       do i = mesh%full_ids, mesh%full_ide
         cos_lon = mesh%full_cos_lon(i)
-        v(i,j,1) = v0 * sin_lat**2 * cos_lon 
-      end do 
-    end do 
+        v(i,j,1) = v0 * sin_lat**2 * cos_lon
+      end do
+    end do
     call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
 
     do j = mesh%full_jds, mesh%full_jde
@@ -54,9 +54,9 @@ contains
       sin_lat = mesh%full_sin_lat(j)
       do i = mesh%full_ids, mesh%full_ide
         sin_lon = mesh%full_sin_lon(i)
-        gz(i,j,1) = gz0 + 2 * radius * omega * v0 * sin_lat**3 * cos_lat * sin_lon 
-      end do 
-    end do 
+        gz(i,j,1) = gz0 + 2 * radius * omega * v0 * sin_lat**3 * cos_lat * sin_lon
+      end do
+    end do
     call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
     end associate
 

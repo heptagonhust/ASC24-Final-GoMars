@@ -57,11 +57,6 @@ module const_mod
   integer, parameter :: nh_pass_1     = 3
   integer, parameter :: nh_pass_2     = 4
 
-  integer, parameter :: west  = 1
-  integer, parameter :: east  = 2
-  integer, parameter :: south = 3
-  integer, parameter :: north = 4
-
   real(r8)           :: min_lon
   real(r8)           :: max_lon
   real(r8)           :: min_lat

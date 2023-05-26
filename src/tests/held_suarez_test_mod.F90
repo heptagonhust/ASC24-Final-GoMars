@@ -5,7 +5,7 @@ module held_suarez_test_mod
   use formula_mod
   use vert_coord_mod
   use block_mod
-  use parallel_mod
+  use latlon_parallel_mod
   use rossby_haurwitz_wave_3d_test_mod
 
   implicit none
