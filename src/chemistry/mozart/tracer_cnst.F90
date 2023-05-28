@@ -13,7 +13,7 @@ module tracer_cnst
   implicit none
 
   private  ! all unless made public
-  save 
+  save
 
   public :: tracer_cnst_init
   public :: num_tracer_cnst
@@ -94,7 +94,7 @@ contains
 
        call addfld(trim(fields(i)%fldnam), (/ 'lev' /), &
                    'I','mol/mol', 'prescribed tracer constituent' )
-    enddo 
+    enddo
 
     allocate(data_q(pcols,pver,num_tracer_cnst,begchunk:endchunk), stat=istat)
     call handle_err(istat, 'tracer_cnst_init: ERROR allocating data_q')
@@ -169,7 +169,7 @@ contains
        tracer_cnst_cycle_yr_out, &
        tracer_cnst_fixed_ymd_out,&
        tracer_cnst_fixed_tod_out &
-       ) 
+       )
 
     implicit none
 
@@ -231,7 +231,7 @@ contains
 
     implicit none
 
-    type(physics_state), intent(in):: state(begchunk:endchunk)                 
+    type(physics_state), intent(in):: state(begchunk:endchunk)
     type(physics_buffer_desc), pointer :: pbuf2d(:,:)
 
     integer :: i,ind,c,ncol
@@ -316,7 +316,7 @@ contains
     ncol  = state%ncol
 
     ! make sure the requested constituent can be provided
-    inv_id = get_inv_ndx(name) 
+    inv_id = get_inv_ndx(name)
     if (.not. inv_id > 0) then
        if (masterproc) then
           write(iulog,*) 'get_cnst_data_ptr: '//name//' is not a prescribed tracer constituent'

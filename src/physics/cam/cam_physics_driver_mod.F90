@@ -21,11 +21,13 @@ module cam_physics_driver_mod
   use shr_pio_mod     , only: shr_pio_init1, shr_pio_init2
   use cam_pio_utils   , only: init_pio_subsystem
   use cam_instance    , only: cam_instance_init
+  use cam_initfiles   , only: cam_initfiles_open
+  use cam_control_mod , only: cam_ctrl_init
   use time_manager    , only: timemgr_init
 
   use flogger
   use string          , only: to_int
-  use namelist_mod    , only: dt_phys, dt_adv, restart, cam_namelist_path
+  use namelist_mod    , only: dt_phys, dt_adv, restart, cam_namelist_path, case_name, case_desc
   use process_mod     , only: proc, process_barrier
   use time_mod        , only: start_time, end_time, curr_time
   use tracer_mod      , only: tracer_add, tracer_get_array_qm, tracers
@@ -50,8 +52,6 @@ module cam_physics_driver_mod
   type(dyn_export_t) dyn_out
   type(cam_in_t), pointer :: cam_in(:) => null()
   type(cam_out_t), pointer :: cam_out(:) => null()
-
-  real(r8) dtime_phys ! Time step for physics tendencies. Set by call to stepon_run1, then passed to phys_run*.
 
   integer, parameter :: atm_id = 1
   integer, parameter :: ncomps = 1
@@ -79,6 +79,15 @@ contains
     call shr_pio_init1(ncomps, merge(namelist_path, cam_namelist_path, cam_namelist_path == 'N/A'), proc%comm)
     call shr_pio_init2(comp_id, comp_name, comp_iamin, comp_comm, comp_comm_iam)
     call init_pio_subsystem()
+    call cam_ctrl_init(              &
+      caseid_in=case_name          , &
+      ctitle_in=case_desc          , &
+      initial_run_in=.not.restart  , &
+      restart_run_in=restart       , &
+      branch_run_in=.false.        , &
+      post_assim_in=.false.        , &
+      aqua_planet_in=.false.       , &
+      brnch_retain_casename_in=.true.)
     call timemgr_init( &
       dtime_in=int(dt_phys), &
       calendar_in=shr_cal_gregorian, &
@@ -95,6 +104,7 @@ contains
       initial_run=.not. restart &
     )
     call read_namelist(merge(namelist_path, cam_namelist_path, cam_namelist_path == 'N/A'))
+    call cam_initfiles_open()
     call dyn_grid_init()
     call phys_grid_init()
     call phys_register()
@@ -119,13 +129,13 @@ contains
 
   subroutine cam_physics_driver_run1()
 
-    call phys_run1(dtime_phys, phys_state, phys_tend, pbuf2d, cam_in, cam_out)
+    call phys_run1(dt_phys, phys_state, phys_tend, pbuf2d, cam_in, cam_out)
 
   end subroutine cam_physics_driver_run1
 
   subroutine cam_physics_driver_run2()
 
-    call phys_run2(phys_state, dtime_phys, phys_tend, pbuf2d,  cam_out, cam_in)
+    call phys_run2(phys_state, dt_phys, phys_tend, pbuf2d,  cam_out, cam_in)
 
   end subroutine cam_physics_driver_run2
 
@@ -208,7 +218,7 @@ contains
       ncol = phys_state(lchnk)%ncol
       ! Compute initial dry static energy, include surface geopotential
       do k = 1, pver
-        do i= 1, ncol
+        do i = 1, ncol
            phys_state(lchnk)%s(i,k) = cpair * phys_state(lchnk)%t(i,k) &
                                     + gravit * phys_state(lchnk)%zm(i,k) + phys_state(lchnk)%phis(i)
         end do

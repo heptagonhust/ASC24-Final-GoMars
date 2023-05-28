@@ -176,9 +176,11 @@ contains
       call blocks(iblk)%pstate%init(blocks(iblk)%mesh)
       call blocks(iblk)%ptend%init(blocks(iblk)%mesh)
       ! Allocate tendency arrays in dynamics tendency.
-      do i = 1, size(blocks(iblk)%dtend)
-        call blocks(iblk)%dtend(i)%init_phys()
-      end do
+      if (allocated(blocks(iblk)%dtend)) then
+        do i = 1, size(blocks(iblk)%dtend)
+          call blocks(iblk)%dtend(i)%init_phys()
+        end do
+      end if
     end do
 
   end subroutine tracer_allocate

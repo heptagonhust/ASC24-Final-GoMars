@@ -9,6 +9,7 @@ module sphere_geometry_mod
 
   public lonlat2xyz
   public xyz2lonlat
+  public orient
   public rotate
   public rotate_back
   public great_circle
@@ -47,6 +48,10 @@ module sphere_geometry_mod
     module procedure xyz2lonlat_2_r8
     module procedure xyz2lonlat_1_r16
   end interface xyz2lonlat
+
+  interface orient
+    module procedure orient_r8
+  end interface orient
 
   interface rotate
     module procedure rotate_r4
@@ -181,6 +186,28 @@ contains
     if (lon < 0.0d0) lon = lon + pi2
 
   end subroutine xyz2lonlat_1_r16
+
+  pure integer function orient_r8(p1, p2, p) result(res)
+
+    real(8), intent(in) :: p1(3)
+    real(8), intent(in) :: p2(3)
+    real(8), intent(in) :: p(3)
+
+    real(8), parameter :: eps = 1.0d-16
+    real(8) det
+
+    det = p1(1) * p2(2) * p(3) + p2(1) * p(2) * p1(3) + p(1) * p1(2) * p2(3) &
+        - p(1) * p2(2) * p1(3) - p2(1) * p1(2) * p(3) - p1(1) * p(2) * p2(3)
+
+    if (det > eps) then
+      res = ORIENT_LEFT
+    else if (det < -eps) then
+      res = ORIENT_RIGHT
+    else
+      res = ORIENT_ON
+    end if
+
+  end function orient_r8
 
   ! ************************************************************************** !
   ! Rotation transform                                                         !

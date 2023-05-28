@@ -40,7 +40,9 @@
 /
 
 &cam_initfiles_nl
-  use_topo_file = .false.
+  use_topo_file = .true.
+  bnd_topo      = '/Users/dongli/works/gmcore-data/earth/topo/topo_360x180_gmted2010_modis_bedmachine_nc1000_Laplace0100_noleak_20230526.nc'
+  ncdata        = 'gmcore.360x180x32.i0.nc'
 /
 
 &check_energy_nl

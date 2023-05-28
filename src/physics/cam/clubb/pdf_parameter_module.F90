@@ -75,7 +75,7 @@ module pdf_parameter_module
       ice_supersat_frac_2    ! Ice supersaturation fraction (2nd PDF comp.)  [-]
 
   end type pdf_parameter
-  
+
   ! The implicit coefficients, semi-implicit coefficients and terms, and
   ! explicit terms for turbulent advection of turbulent fields are calculated
   ! from the PDF and the resulting PDF parameters.
@@ -164,7 +164,7 @@ module pdf_parameter_module
 !#endif /* CLUBB_CAM */
 
   contains
-  
+
   !=============================================================================
   subroutine init_pdf_params( nz, pdf_params )
 
@@ -219,11 +219,11 @@ module pdf_parameter_module
               pdf_params%stdev_eta_2(nz), &
               pdf_params%covar_chi_eta_1(nz), &
               pdf_params%covar_chi_eta_2(nz), &
-              pdf_params%corr_w_chi_1(nz), & 
+              pdf_params%corr_w_chi_1(nz), &
               pdf_params%corr_w_chi_2(nz), &
-              pdf_params%corr_w_eta_1(nz), & 
-              pdf_params%corr_w_eta_2(nz), & 
-              pdf_params%corr_chi_eta_1(nz), & 
+              pdf_params%corr_w_eta_1(nz), &
+              pdf_params%corr_w_eta_2(nz), &
+              pdf_params%corr_chi_eta_1(nz), &
               pdf_params%corr_chi_eta_2(nz), &
               pdf_params%rsatl_1(nz), &
               pdf_params%rsatl_2(nz), &
@@ -267,12 +267,12 @@ module pdf_parameter_module
     pdf_params%stdev_eta_2 = zero
     pdf_params%covar_chi_eta_1 = zero
     pdf_params%covar_chi_eta_2 = zero
-    pdf_params%corr_w_chi_1 = zero 
-    pdf_params%corr_w_chi_2 = zero 
-    pdf_params%corr_w_eta_1 = zero 
-    pdf_params%corr_w_eta_2 = zero 
-    pdf_params%corr_chi_eta_1 = zero 
-    pdf_params%corr_chi_eta_2 = zero 
+    pdf_params%corr_w_chi_1 = zero
+    pdf_params%corr_w_chi_2 = zero
+    pdf_params%corr_w_eta_1 = zero
+    pdf_params%corr_w_eta_2 = zero
+    pdf_params%corr_chi_eta_1 = zero
+    pdf_params%corr_chi_eta_2 = zero
     pdf_params%rsatl_1 = zero
     pdf_params%rsatl_2 = zero
     pdf_params%rc_1 = zero
@@ -283,11 +283,10 @@ module pdf_parameter_module
     pdf_params%ice_supersat_frac_1 = zero
     pdf_params%ice_supersat_frac_2 = zero
 
-
     return
 
   end subroutine init_pdf_params
-  
+
   !=============================================================================
   subroutine init_pdf_implicit_coefs_terms( nz, sclr_dim, &
                                             pdf_implicit_coefs_terms )
@@ -392,20 +391,20 @@ module pdf_parameter_module
   subroutine pack_pdf_params(pdf_params, nz, r_param_array, &
                              k_start_in, k_end_in )
     implicit none
-    
+
     integer, intent(in) :: nz ! Num Vert Model Levs
-    
+
     ! Input a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(in) :: pdf_params
 
     ! Output a two dimensional real array with all values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(out) :: &
-       r_param_array  
+       r_param_array
 
     integer, optional, intent(in) :: k_start_in, k_end_in
-    
+
     integer :: k_start, k_end
-    
+
     if( present( k_start_in ) .and. present( k_end_in ) ) then
         k_start = k_start_in
         k_end = k_end_in
@@ -446,12 +445,12 @@ module pdf_parameter_module
     r_param_array(:,30) = pdf_params%stdev_eta_2(k_start:k_end)
     r_param_array(:,31) = pdf_params%covar_chi_eta_1(k_start:k_end)
     r_param_array(:,32) = pdf_params%covar_chi_eta_2(k_start:k_end)
-    r_param_array(:,33) = pdf_params%corr_w_chi_1(k_start:k_end) 
-    r_param_array(:,34) = pdf_params%corr_w_chi_2(k_start:k_end) 
-    r_param_array(:,35) = pdf_params%corr_w_eta_1(k_start:k_end) 
-    r_param_array(:,36) = pdf_params%corr_w_eta_2(k_start:k_end) 
-    r_param_array(:,37) = pdf_params%corr_chi_eta_1(k_start:k_end) 
-    r_param_array(:,38) = pdf_params%corr_chi_eta_2(k_start:k_end) 
+    r_param_array(:,33) = pdf_params%corr_w_chi_1(k_start:k_end)
+    r_param_array(:,34) = pdf_params%corr_w_chi_2(k_start:k_end)
+    r_param_array(:,35) = pdf_params%corr_w_eta_1(k_start:k_end)
+    r_param_array(:,36) = pdf_params%corr_w_eta_2(k_start:k_end)
+    r_param_array(:,37) = pdf_params%corr_chi_eta_1(k_start:k_end)
+    r_param_array(:,38) = pdf_params%corr_chi_eta_2(k_start:k_end)
     r_param_array(:,39) = pdf_params%rsatl_1(k_start:k_end)
     r_param_array(:,40) = pdf_params%rsatl_2(k_start:k_end)
     r_param_array(:,41) = pdf_params%rc_1(k_start:k_end)
@@ -467,20 +466,20 @@ module pdf_parameter_module
   subroutine unpack_pdf_params(r_param_array, nz, pdf_params, &
                                k_start_in, k_end_in )
     implicit none
-    
+
     integer, intent(in) :: nz ! Num Vert Model Levs
-    
+
     ! Input a two dimensional real array with pdf values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
-       r_param_array 
+       r_param_array
 
     ! Output a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(inout) :: pdf_params
-    
+
     integer, optional, intent(in) :: k_start_in, k_end_in
-    
+
     integer :: k_start, k_end
-    
+
     if( present( k_start_in ) .and. present( k_end_in ) ) then
         k_start = k_start_in
         k_end = k_end_in
@@ -488,7 +487,7 @@ module pdf_parameter_module
         k_start = 1
         k_end = nz
     end if
-    
+
     pdf_params%w_1(k_start:k_end) = r_param_array(:,1)
     pdf_params%w_2(k_start:k_end) = r_param_array(:,2)
     pdf_params%varnce_w_1(k_start:k_end) = r_param_array(:,3)

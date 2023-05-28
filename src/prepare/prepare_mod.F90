@@ -5,10 +5,12 @@ module prepare_mod
   use latlon_parallel_mod
   use process_mod
   use block_mod
-  use topo_mod
-  use bkg_mod
+  use topo_reader_mod
+  use latlon_topo_mod
+  use latlon_bkg_mod
   use ref_mod
   use operators_mod
+  use tracer_mod
 
   implicit none
 
@@ -18,13 +20,13 @@ contains
 
     integer iblk, i, j
 
-    call topo_read(min_lon, max_lon, min_lat, max_lat)
+    call topo_reader_run(topo_file, min_lon, max_lon, min_lat, max_lat)
     do iblk = 1, size(blocks)
-      call topo_regrid(blocks(iblk))
+      call latlon_topo_regrid(blocks(iblk))
     end do
     if (use_topo_smooth) then
       do iblk = 1, size(blocks)
-        call topo_smooth(blocks(iblk))
+        call latlon_topo_smooth(blocks(iblk))
       end do
     end if
     call ref_calc_ps()
@@ -55,26 +57,27 @@ contains
 
     integer iblk
 
-    call bkg_read(min_lon, max_lon, min_lat, max_lat)
+    call latlon_bkg_read(min_lon, max_lon, min_lat, max_lat)
 
-    call bkg_regrid_mgs()
-    call bkg_calc_mg()
-    call bkg_regrid_qv()
-    call bkg_calc_ph()
-    call bkg_regrid_pt()
-    call bkg_regrid_u()
-    call bkg_regrid_v()
+    call latlon_bkg_regrid_mgs()
+    call latlon_bkg_calc_mg()
+    call latlon_bkg_regrid_qv()
+    call latlon_bkg_calc_ph()
+    call latlon_bkg_regrid_pt()
+    call latlon_bkg_regrid_u()
+    call latlon_bkg_regrid_v()
 
     do iblk = 1, size(blocks)
       call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(1))
+      call tracer_calc_qm(blocks(iblk))
     end do
 
   end subroutine prepare_bkg
 
   subroutine prepare_final()
 
-    call topo_final()
-    call bkg_final()
+    call topo_reader_final()
+    call latlon_bkg_final()
 
   end subroutine prepare_final
 

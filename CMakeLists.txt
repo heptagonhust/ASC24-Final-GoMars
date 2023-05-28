@@ -236,16 +236,17 @@ set(gmcore_files
   src/physics/physics_types_mod.F90
   src/physics/simple_physics_v6.f90
   src/physics/test_forcing_mod.F90
-  src/prepare/bkg_mod.F90
-  src/prepare/era5_reader_mod.F90
-  src/prepare/fnl_reader_mod.F90
-  src/prepare/mpas_reader_mod.F90
-  src/prepare/openmars_reader_mod.F90
+  src/prepare/latlon/latlon_bkg_mod.F90
+  src/prepare/latlon/latlon_topo_mod.F90
   src/prepare/prepare_mod.F90
+  src/prepare/readers/era5_reader_mod.F90
+  src/prepare/readers/fnl_reader_mod.F90
+  src/prepare/readers/mpas_reader_mod.F90
+  src/prepare/readers/openmars_reader_mod.F90
+  src/prepare/readers/topo_reader_mod.F90
+  src/prepare/readers/waccm_reader_mod.F90
   src/prepare/ref_mod.F90
-  src/prepare/topo_mod.F90
   src/prepare/vert_interp_mod.F90
-  src/prepare/waccm_reader_mod.F90
   src/tests/adv/dcmip12_test_mod.F90
   src/tests/adv/deform_test_mod.F90
   src/tests/adv/moving_vortices_test_mod.F90
@@ -333,8 +334,8 @@ endif ()
 
 add_library(gmcore ${gmcore_files})
 target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
-if (HAS_GPTL AND HAS_PIO AND HAS_ESMF AND HAS_MCT)
-  message(STATUS "GPTL, PIO, ESMF, and MCT are found. Building CAM physics and chemistry.")
+if (HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)
+  message(STATUS "GPTL, PIO, LAPACK, ESMF, and MCT are found. Building CAM physics and chemistry.")
   include_directories(src/physics/cam/include)
   add_definitions(-DSPMD)
   add_definitions(-DUSE_CSM_SHARE)
@@ -354,7 +355,7 @@ if (HAS_GPTL AND HAS_PIO AND HAS_ESMF AND HAS_MCT)
   add_subdirectory(src/chemistry)
   add_definitions(-DHAS_CAM)
 else ()
-  message(WARNING "GPTL, PIO, ESMF, and/or MCT are not found. Skipping CAM physics and chemistry.")
+  message(WARNING "GPTL, PIO, LAPACK, ESMF, and/or MCT are not found. Skipping CAM physics and chemistry.")
 endif ()
 
 add_executable(gmcore_prepare.exe src/drivers/gmcore_prepare.F90)

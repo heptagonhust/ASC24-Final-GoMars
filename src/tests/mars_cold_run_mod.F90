@@ -7,7 +7,8 @@ module mars_cold_run_mod
   use block_mod
   use vert_coord_mod
   use formula_mod
-  use topo_mod
+  use topo_reader_mod
+  use latlon_topo_mod
   use operators_mod
 
   implicit none
@@ -41,10 +42,10 @@ contains
     max_lon = mesh%full_lon_deg(mesh%full_ide+1)
     min_lat = mesh%full_lat_deg(max(1, mesh%full_jds-1))
     max_lat = mesh%full_lat_deg(min(global_mesh%full_nlat, mesh%full_jde+1))
-    call topo_read(min_lon, max_lon, min_lat, max_lat)
-    call topo_regrid(block)
+    call topo_reader_run(topo_file, min_lon, max_lon, min_lat, max_lat)
+    call latlon_topo_regrid(block)
     if (use_topo_smooth) then
-      call topo_smooth(block)
+      call latlon_topo_smooth(block)
     end if
 
     u = 0

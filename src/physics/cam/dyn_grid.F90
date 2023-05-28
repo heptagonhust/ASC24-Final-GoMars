@@ -49,6 +49,10 @@ contains
     integer is, ie, js, je, i, j, k, ind
     real(r8), allocatable :: p(:), p_lev(:)
 
+    if (global_mesh%full_nlev /= PLEV) then
+      call log_error('Macro PLEV is not equal to ' // to_str(global_mesh%full_nlev) // '!', pid=proc%id)
+    end if
+
     plon  = global_mesh%full_nlon
     plat  = global_mesh%full_nlat
     plev  = global_mesh%full_nlev

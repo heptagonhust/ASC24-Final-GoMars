@@ -2211,7 +2211,6 @@ module advance_clubb_core_module
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
-!      rtm,       & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
       wprtp,     & ! w' r_t' (momentum levels)                      [(kg/kg)m/s]
       thlm,      & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       wpthlp,    & ! w' th_l' (momentum levels)                     [(m/s) K]

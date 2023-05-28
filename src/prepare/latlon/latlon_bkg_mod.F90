@@ -1,4 +1,4 @@
-module bkg_mod
+module latlon_bkg_mod
 
   use flogger
   use namelist_mod
@@ -21,19 +21,19 @@ module bkg_mod
 
   private
 
-  public bkg_read
-  public bkg_final
-  public bkg_regrid_mgs
-  public bkg_calc_mg
-  public bkg_calc_ph
-  public bkg_regrid_qv
-  public bkg_regrid_pt
-  public bkg_regrid_u
-  public bkg_regrid_v
+  public latlon_bkg_read
+  public latlon_bkg_final
+  public latlon_bkg_regrid_mgs
+  public latlon_bkg_calc_mg
+  public latlon_bkg_calc_ph
+  public latlon_bkg_regrid_qv
+  public latlon_bkg_regrid_pt
+  public latlon_bkg_regrid_u
+  public latlon_bkg_regrid_v
 
 contains
 
-  subroutine bkg_read(min_lon, max_lon, min_lat, max_lat)
+  subroutine latlon_bkg_read(min_lon, max_lon, min_lat, max_lat)
 
     real(r8), intent(in) :: min_lon, max_lon, min_lat, max_lat
 
@@ -50,18 +50,18 @@ contains
       if (proc%is_root()) call log_error('Unknown bkg_type ' // trim(bkg_type) // '!')
     end select
 
-  end subroutine bkg_read
+  end subroutine latlon_bkg_read
 
-  subroutine bkg_final()
+  subroutine latlon_bkg_final()
 
     call era5_reader_final()
     call mpas_reader_final()
     call waccm_reader_final()
     call openmars_reader_final()
 
-  end subroutine bkg_final
+  end subroutine latlon_bkg_final
 
-  subroutine bkg_regrid_mgs()
+  subroutine latlon_bkg_regrid_mgs()
 
     real(r8), allocatable, dimension(:,:) :: p0, t0, z0, t0_p
     real(r8) lapse_kappa
@@ -116,9 +116,9 @@ contains
       end associate
     end do
 
-  end subroutine bkg_regrid_mgs
+  end subroutine latlon_bkg_regrid_mgs
 
-  subroutine bkg_calc_mg()
+  subroutine latlon_bkg_calc_mg()
 
     integer iblk
 
@@ -129,9 +129,9 @@ contains
       call calc_dmg(blocks(iblk), blocks(iblk)%dstate(1))
     end do
 
-  end subroutine bkg_calc_mg
+  end subroutine latlon_bkg_calc_mg
 
-  subroutine bkg_calc_ph()
+  subroutine latlon_bkg_calc_ph()
 
     integer iblk
 
@@ -141,9 +141,9 @@ contains
       call calc_ph(blocks(iblk), blocks(iblk)%dstate(1))
     end do
 
-  end subroutine bkg_calc_ph
+  end subroutine latlon_bkg_calc_ph
 
-  subroutine bkg_regrid_pt()
+  subroutine latlon_bkg_regrid_pt()
 
     real(r8), pointer :: qv(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: t1, pt1, p1
@@ -224,9 +224,9 @@ contains
       end associate
     end do
 
-  end subroutine bkg_regrid_pt
+  end subroutine latlon_bkg_regrid_pt
 
-  subroutine bkg_regrid_u()
+  subroutine latlon_bkg_regrid_u()
 
     real(r8), allocatable, dimension(:,:,:) :: u1, p1
     integer iblk, i, j, k
@@ -296,9 +296,9 @@ contains
       end associate
     end do
 
-  end subroutine bkg_regrid_u
+  end subroutine latlon_bkg_regrid_u
 
-  subroutine bkg_regrid_v()
+  subroutine latlon_bkg_regrid_v()
 
     real(r8), allocatable, dimension(:,:,:) :: v1, p1
     integer iblk, i, j, k
@@ -368,9 +368,9 @@ contains
       end associate
     end do
 
-  end subroutine bkg_regrid_v
+  end subroutine latlon_bkg_regrid_v
 
-  subroutine bkg_regrid_qv()
+  subroutine latlon_bkg_regrid_qv()
 
     real(r8), pointer :: qv(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: q1, p1
@@ -415,6 +415,6 @@ contains
       end associate
     end do
 
-  end subroutine bkg_regrid_qv
+  end subroutine latlon_bkg_regrid_qv
 
-end module bkg_mod
+end module latlon_bkg_mod

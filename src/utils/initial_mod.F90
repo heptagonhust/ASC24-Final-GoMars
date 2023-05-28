@@ -6,6 +6,7 @@ module initial_mod
   use datetime
   use const_mod
   use namelist_mod
+  use formula_mod
   use time_mod
   use block_mod
   use tracer_mod
@@ -33,7 +34,9 @@ contains
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
     real(8) time1, time2
-    real(r8), pointer, dimension(:,:,:) :: qv
+    real(r8), pointer, dimension(:,:,:) :: qv, qm
+
+    character(30) :: name_style = 'cam'
 
     cell_dims   (1) =  'lon';  cell_dims   (2) =  'lat';  cell_dims   (3) =  'lev';     cell_dims(4) = 'time'
      lon_dims   (1) = 'ilon';   lon_dims   (2) =  'lat';   lon_dims   (3) =  'lev';      lon_dims(4) = 'time'
@@ -55,20 +58,34 @@ contains
     if (baroclinic) then
       call fiona_add_dim('i0',  'lev', size=global_mesh%full_nlev, add_var=.true., decomp=.false.)
       call fiona_add_dim('i0', 'ilev', size=global_mesh%half_nlev, add_var=.true., decomp=.false.)
-      call fiona_add_var('i0', 'pt'  , long_name='potential temperature'       , units='K'    , dtype=output_i0_dtype, dim_names=cell_dims)
-      call fiona_add_var('i0', 'qv'  , long_name='water vapor mixing ratio'    , units='1'    , dtype=output_i0_dtype, dim_names=cell_dims)
-      call fiona_add_var('i0', 'mgs' , long_name='surface dry-air weight'      , units='Pa'   , dtype=output_i0_dtype, dim_names=cell_dims_2d)
-      call fiona_add_var('i0', 'u'   , long_name='u wind component'            , units='m s-1', dtype=output_i0_dtype, dim_names=lon_dims)
-      call fiona_add_var('i0', 'v'   , long_name='v wind component'            , units='m s-1', dtype=output_i0_dtype, dim_names=lat_dims)
-      call fiona_add_var('i0', 'z'   , long_name='height'                      , units='m'    , dtype=output_i0_dtype, dim_names=lev_dims)
-      call fiona_add_var('i0', 'ref_ps_smth', long_name='smoothed reference surface pressure', units='Pa', dtype=output_i0_dtype, dim_names=cell_dims_2d)
-      call fiona_add_var('i0', 'ref_ps_perb', long_name='perturbed reference surface pressure', units='Pa', dtype=output_i0_dtype, dim_names=cell_dims_2d)
+      select case (name_style)
+      case ('gmcore')
+        call fiona_add_var('i0', 'pt'         , long_name='Potential temperature'                     , units='K'       , dtype=output_i0_dtype, dim_names=cell_dims)
+        call fiona_add_var('i0', 'qv'         , long_name='Water vapor dry mixing ratio'              , units='kg kg-1' , dtype=output_i0_dtype, dim_names=cell_dims)
+        call fiona_add_var('i0', 'mgs'        , long_name='Surface dry-air weight'                    , units='Pa'      , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+        call fiona_add_var('i0', 'u'          , long_name='U wind component'                          , units='m s-1'   , dtype=output_i0_dtype, dim_names=lon_dims)
+        call fiona_add_var('i0', 'v'          , long_name='V wind component'                          , units='m s-1'   , dtype=output_i0_dtype, dim_names=lat_dims)
+        call fiona_add_var('i0', 'z'          , long_name='Height'                                    , units='m'       , dtype=output_i0_dtype, dim_names=lev_dims)
+        call fiona_add_var('i0', 'ref_ps_smth', long_name='Smoothed reference surface pressure'       , units='Pa'      , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+        call fiona_add_var('i0', 'ref_ps_perb', long_name='Perturbed reference surface pressure'      , units='Pa'      , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+      case ('cam')
+        call fiona_add_var('i0', 'T'          , long_name='Temperature'                               , units='K'       , dtype=output_i0_dtype, dim_names=cell_dims)
+        call fiona_add_var('i0', 'Q'          , long_name='Specific humidity'                         , units='kg/kg'   , dtype=output_i0_dtype, dim_names=cell_dims)
+        call fiona_add_var('i0', 'PS'         , long_name='Surface pressure'                          , units='Pa'      , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+        call fiona_add_var('i0', 'US'         , long_name='Zonal wind, staggered'                     , units='m/s'     , dtype=output_i0_dtype, dim_names=lon_dims)
+        call fiona_add_var('i0', 'VS'         , long_name='Meridional wind, staggered'                , units='m/s'     , dtype=output_i0_dtype, dim_names=lat_dims)
+      end select
     end if
-    call fiona_add_var('i0', 'zs'    , long_name='surface height', units='m' , dtype=output_i0_dtype, dim_names=cell_dims_2d)
-    call fiona_add_var('i0', 'zs_std', long_name='surface height subgrid standard deviation', units='m2' , dtype=output_i0_dtype, dim_names=cell_dims_2d)
-    call fiona_add_var('i0', 'dzsdlon', long_name='zonal zs gradient'     , units='', dim_names=['ilon', 'lat '], dtype=output_i0_dtype)
-    call fiona_add_var('i0', 'dzsdlat', long_name='meridional zs gradient', units='', dim_names=['lon ', 'ilat'], dtype=output_i0_dtype)
-    call fiona_add_var('i0', 'landmask', long_name='land mask', units='-', dtype=output_i0_dtype, dim_names=cell_dims_2d)
+    select case (name_style)
+    case ('gmcore')
+      call fiona_add_var('i0', 'zs'           , long_name='Surface height'                            , units='m'       , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+      call fiona_add_var('i0', 'zs_std'       , long_name='Surface height subgrid standard deviation' , units='m2'      , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+      call fiona_add_var('i0', 'dzsdlon'      , long_name='Zonal zs gradient'                         , units=''        , dtype=output_i0_dtype, dim_names=lon_dims(1:2))
+      call fiona_add_var('i0', 'dzsdlat'      , long_name='Meridional zs gradient'                    , units=''        , dtype=output_i0_dtype, dim_names=lat_dims(1:2))
+      call fiona_add_var('i0', 'landmask'     , long_name='Land mask'                                 , units='1'       , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+    case ('cam')
+      call fiona_add_var('i0', 'PHIS'         , long_name='Surface geopotential'                      , units='m2/s2'   , dtype=output_i0_dtype, dim_names=cell_dims_2d)
+    end select
 
     call fiona_start_output('i0', 0.0d0)
     call fiona_output('i0',  'lon', global_mesh%full_lon_deg(1:global_mesh%full_nlon))
@@ -91,18 +108,39 @@ contains
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
 
       if (baroclinic) then
-        call fiona_output('i0', 'pt', dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
+        select case (name_style)
+        case ('gmcore')
+          call fiona_output('i0', 'pt', dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
+        case ('cam')
+          call fiona_output('i0', 'T' , dstate%t  (is:ie,js:je,ks:ke), start=start, count=count)
+        end select
         if (idx_qv > 0) then
           call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-          call fiona_output('i0', 'qv', qv(is:ie,js:je,ks:ke), start=start, count=count)
+          call tracer_get_array_qm(iblk, qm)
+          select case (name_style)
+          case ('gmcore')
+            call fiona_output('i0', 'qv', qv(is:ie,js:je,ks:ke), start=start, count=count)
+          case ('cam')
+            call fiona_output('i0', 'Q' , wet_mixing_ratio(qv(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke)), start=start, count=count)
+          end select
         end if
-        call fiona_output('i0', 'mgs', dstate%mgs(is:ie,js:je      ), start=start, count=count)
-        call fiona_output('i0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je), start=start, count=count)
-        call fiona_output('i0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je), start=start, count=count)
+        select case (name_style)
+        case ('gmcore')
+          call fiona_output('i0', 'mgs', dstate%mgs(is:ie,js:je), start=start, count=count)
+          call fiona_output('i0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je), start=start, count=count)
+          call fiona_output('i0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je), start=start, count=count)
+        case ('cam')
+          call fiona_output('i0', 'PS', dstate%ps(is:ie,js:je), start=start, count=count)
+        end select
       end if
-      call fiona_output('i0', 'zs'      , static%gzs     (is:ie,js:je) / g, start=start, count=count)
-      call fiona_output('i0', 'zs_std'  , static%zs_std  (is:ie,js:je)    , start=start, count=count)
-      call fiona_output('i0', 'landmask', static%landmask(is:ie,js:je)    , start=start, count=count)
+      select case (name_style)
+      case ('gmcore')
+        call fiona_output('i0', 'zs'      , static%gzs     (is:ie,js:je) / g, start=start, count=count)
+        call fiona_output('i0', 'zs_std'  , static%zs_std  (is:ie,js:je)    , start=start, count=count)
+        call fiona_output('i0', 'landmask', static%landmask(is:ie,js:je)    , start=start, count=count)
+      case ('cam')
+        call fiona_output('i0', 'PHIS'    , static%gzs(is:ie,js:je), start=start, count=count)
+      end select
 
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%full_jds; je = mesh%full_jde
@@ -110,8 +148,13 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
 
-      call fiona_output('i0', 'dzsdlon', static%dzsdlon(is:ie,js:je), start=start, count=count)
-      call fiona_output('i0', 'u', dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
+      select case (name_style)
+      case ('gmcore')
+        call fiona_output('i0', 'dzsdlon', static%dzsdlon(is:ie,js:je), start=start, count=count)
+        call fiona_output('i0', 'u', dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
+      case ('cam')
+        call fiona_output('i0', 'US', dstate%u(is:ie,js:je,ks:ke), start=start, count=count)
+      end select
 
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%half_jds; je = mesh%half_jde
@@ -119,8 +162,13 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
 
-      call fiona_output('i0', 'dzsdlat', static%dzsdlat(is:ie,js:je), start=start, count=count)
-      call fiona_output('i0', 'v', dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
+      select case (name_style)
+      case ('gmcore')
+        call fiona_output('i0', 'dzsdlat', static%dzsdlat(is:ie,js:je), start=start, count=count)
+        call fiona_output('i0', 'v', dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
+      case ('cam')
+        call fiona_output('i0', 'VS', dstate%v(is:ie,js:je,ks:ke), start=start, count=count)
+      end select
 
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
@@ -128,7 +176,10 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%full_nlat,mesh%half_nlev]
 
-      call fiona_output('i0', 'z', dstate%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
+      select case (name_style)
+      case ('gmcore')
+        call fiona_output('i0', 'z', dstate%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
+      end select
       end associate
     end do
     call fiona_end_output('i0')

@@ -2,17 +2,10 @@ program gmcore_prepare
 
   use fiona
   use string
-  use topo_mod
-  use bkg_mod
   use time_mod
-  use process_mod
-  use block_mod
-  use vert_coord_mod
   use initial_mod
   use namelist_mod
-  use damp_mod
-  use tracer_mod
-  use adv_mod
+  use gmcore_mod
   use prepare_mod
 
   implicit none
@@ -27,46 +20,9 @@ program gmcore_prepare
 
   call fiona_init()
 
-  call gas_mixture_init(planet)
-  call const_init(planet)
-  call time_init(dt_dyn)
-  call global_mesh%init_global(nlon, nlat, nlev, lon_hw=2, lat_hw=2)
-  call process_init()
-
-  if (proc%is_root()) then
-    write(*, *) '=================== GMCORE Parameters ==================='
-    write(*, *) 'nonhydrostatic       = ', to_str(nonhydrostatic)
-    write(*, *) 'nlon                 = ', to_str(nlon)
-    write(*, *) 'nlat                 = ', to_str(nlat)
-    write(*, *) 'nlev                 = ', to_str(nlev)
-    if (coarse_pole_mul /= 0) then
-    write(*, *) 'coarse_pole_mul      = ', to_str(coarse_pole_mul, 2)
-    write(*, *) 'coarse_pole_decay    = ', to_str(coarse_pole_decay, 2)
-    end if
-    write(*, *) 'vert_coord_scheme    = ', trim(vert_coord_scheme)
-    write(*, *) 'vert_coord_template  = ', trim(vert_coord_template)
-    write(*, *) 'output_ngroup        = ', to_str(output_ngroup)
-    write(*, *) 'initial_time         = ', trim(initial_time)
-    write(*, *) 'namelist_file        = ', trim(namelist_file)
-    write(*, *) 'topo_file            = ', trim(topo_file)
-    write(*, *) 'use_topo_smooth      = ', to_str(use_topo_smooth)
-    if (use_topo_smooth) then
-    write(*, *) 'topo_smooth_cycles   = ', to_str(topo_smooth_cycles)
-    end if
-    write(*, *) 'bkg_file             = ', trim(bkg_file)
-    write(*, *) 'initial_file         = ', trim(initial_file)
-    write(*, *) 'bkg_type             = ', trim(bkg_type)
-    write(*, *) '========================================================='
-  end if
-
-  call process_create_blocks()
-  call damp_init()
+  call gmcore_init_stage1(namelist_file)
   call prepare_topo()
-  call vert_coord_init(scheme=vert_coord_scheme, template=vert_coord_template)
-  call tracer_init()
-  call tracer_add_moist()
-  call tracer_allocate()
-  call adv_init()
+  call gmcore_init_stage2(namelist_file)
   call prepare_bkg()
 
   if (initial_file == 'N/A') then
