@@ -12,7 +12,7 @@ module prescribed_ozone
 
   implicit none
   private
-  save 
+  save
 
   type(trfld), pointer :: fields(:)
   type(trfile)         :: file
@@ -67,7 +67,7 @@ contains
 
     integer :: ndx, istat
     character(len=32) :: specifier(1)
-    
+
     if ( has_prescribed_ozone ) then
        if ( masterproc ) then
           write(iulog,*) 'ozone is prescribed in :'//trim(filename)
@@ -122,7 +122,7 @@ subroutine prescribed_ozone_readnl(nlfile)
       prescribed_ozone_rmfile,    &
       prescribed_ozone_cycle_yr,  &
       prescribed_ozone_fixed_ymd, &
-      prescribed_ozone_fixed_tod      
+      prescribed_ozone_fixed_tod
    !-----------------------------------------------------------------------------
 
    ! Initialize namelist variables from local module variables.
@@ -194,13 +194,13 @@ end subroutine prescribed_ozone_readnl
     use phys_control, only : cam_physpkg_is
     use physconst,    only : mwdry                ! molecular weight dry air ~ kg/kmole
     use physconst,    only : boltz                ! J/K/molecule
-    
+
     use physics_buffer, only : physics_buffer_desc, pbuf_get_chunk, pbuf_get_field, pbuf_set_field
 
     implicit none
 
-    type(physics_state), intent(in)    :: state(begchunk:endchunk)                 
-    
+    type(physics_state), intent(in)    :: state(begchunk:endchunk)
+
     type(physics_buffer_desc), pointer :: pbuf2d(:,:)
 
     type(physics_buffer_desc), pointer :: pbuf_chnk(:)
@@ -231,7 +231,7 @@ end subroutine prescribed_ozone_readnl
 !$OMP PARALLEL DO PRIVATE (C, NCOL, OUTDATA, TO_MMR, TMPPTR, PBUF_CHNK)
     do c = begchunk,endchunk
        ncol = state(c)%ncol
-     
+
        select case ( units_str )
        case ("molec/cm3","/cm3","molecules/cm3","cm^-3","cm**-3")
           to_mmr(:ncol,:) = (molmass*1.e6_r8*boltz*state(c)%t(:ncol,:))/(amass*state(c)%pmiddry(:ncol,:))
@@ -285,7 +285,7 @@ end subroutine prescribed_ozone_readnl
     implicit none
 
     type(file_desc_t) :: piofile
-    
+
     call read_trc_restart( 'prescribed_ozone', piofile, file )
 
   end subroutine read_prescribed_ozone_restart

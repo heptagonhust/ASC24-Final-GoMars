@@ -67,7 +67,7 @@ contains
                              hour  =start_time_array(4), &
                              minute=start_time_array(5))
       else
-        call start_time%init(year=1, month=1, day=1, hour=0, minute=0)
+        call start_time%init(year=2000, month=1, day=1, hour=0, minute=0)
       end if
     case ('mars')
       if (sum(start_time_array) > 0) then

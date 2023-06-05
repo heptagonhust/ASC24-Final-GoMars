@@ -12,13 +12,13 @@ module surface_varnce_module
   contains
 
   !=============================================================================
-  subroutine calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
-                             um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
+  subroutine calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &
+                             um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, &
                              wp2_splat_sfc, tau_zm_sfc, &
-                             wp2_sfc, up2_sfc, vp2_sfc, & 
-                             thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
-                             sclrp2_sfc, & 
-                             sclrprtp_sfc,  & 
+                             wp2_sfc, up2_sfc, vp2_sfc, &
+                             thlp2_sfc, rtp2_sfc, rtpthlp_sfc, &
+                             sclrp2_sfc, &
+                             sclrprtp_sfc,  &
                              sclrpthlp_sfc )
 
     ! Description:
@@ -31,7 +31,7 @@ module surface_varnce_module
     !   the Planetary Boundary Layer.  J. Atmos. Sci., 35, 1861 -- 1883.
     !-----------------------------------------------------------------------
 
-    use parameters_model, only:  & 
+    use parameters_model, only:  &
         T0 ! Variable(s)
 
     use constants_clubb, only: &
@@ -51,10 +51,10 @@ module surface_varnce_module
         max_mag_correlation_flux, &
         fstderr
 
-    use parameters_model, only: & 
+    use parameters_model, only: &
         sclr_dim  ! Variable(s)
 
-    use numerical_check, only: & 
+    use numerical_check, only: &
         surface_varnce_check ! Procedure
 
     use error_code, only: &
@@ -66,7 +66,7 @@ module surface_varnce_module
         iisclr_rt, & ! Index for a scalar emulating rt
         iisclr_thl   ! Index for a scalar emulating thetal
 
-    use stats_type_utilities, only: & 
+    use stats_type_utilities, only: &
         stat_end_update_pt, & ! Procedure(s)
         stat_update_var_pt
 
@@ -86,8 +86,8 @@ module surface_varnce_module
     ! Logical for Andre et al., 1978 parameterization.
     logical, parameter :: l_andre_1978 = .false.
 
-    real( kind = core_rknd ), parameter ::  & 
-      a_const = 1.8_core_rknd, & 
+    real( kind = core_rknd ), parameter ::  &
+      a_const = 1.8_core_rknd, &
       z_const = one, & ! Defined height of 1 meter                [m]
       ! Vince Larson increased ufmin to stabilize arm_97.  24 Jul 2007
 !      ufmin = 0.0001_core_rknd, &
@@ -102,22 +102,22 @@ module surface_varnce_module
       reduce_coef   = 0.2_core_rknd
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  &
       upwp_sfc,      & ! Surface u momentum flux, <u'w'>|_sfc   [m^2/s^2]
       vpwp_sfc,      & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
       wpthlp_sfc,    & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
       wprtp_sfc,     & ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
       um_sfc,        & ! Surface u wind component, <u>          [m/s]
       vm_sfc,        & ! Surface v wind component, <v>          [m/s]
-      Lscale_up_sfc, & ! Upward component of Lscale at surface  [m] 
+      Lscale_up_sfc, & ! Upward component of Lscale at surface  [m]
       wp2_splat_sfc, & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
       tau_zm_sfc       ! Turbulent dissipation time at level zm(1)  [s]
 
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  &
       wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  &
       wp2_sfc,     & ! Surface variance of w, <w'^2>|_sfc            [m^2/s^2]
       up2_sfc,     & ! Surface variance of u, <u'^2>|_sfc            [m^2/s^2]
       vp2_sfc,     & ! Surface variance of v, <v'^2>|_sfc            [m^2/s^2]
@@ -125,7 +125,7 @@ module surface_varnce_module
       rtp2_sfc,    & ! Surface variance of rt, <rt'^2>|_sfc          [(kg/kg)^2]
       rtpthlp_sfc    ! Surface covariance of rt and theta-l          [kg K/kg]
 
-    real( kind = core_rknd ), intent(out), dimension(sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(sclr_dim) ::  &
       sclrp2_sfc,    & ! Surface variance of passive scalar            [units^2]
       sclrprtp_sfc,  & ! Surface covariance of pssv scalar and rt  [units kg/kg]
       sclrpthlp_sfc    ! Surface covariance of pssv scalar and theta-l [units K]
@@ -137,7 +137,7 @@ module surface_varnce_module
       uf,     & ! Surface friction vel., u*, in older version   [m/s]
       min_wp2_sfc_val ! Minimum value of wp2_sfc that guarantees  [m^2/s^2]
                       ! correlation of (w,rt) and (w,thl) is within (-1,1)
-      
+
 
     ! Variables for Andre et al., 1978 parameterization.
     real( kind = core_rknd ) :: &
@@ -194,36 +194,36 @@ module surface_varnce_module
        ! Brian Griffin; February 2, 2008.
        if ( zeta < zero ) then
 
-          thlp2_sfc   = reduce_coef  & 
-                        * ( wpthlp_sfc**2 / ustar**2 ) & 
+          thlp2_sfc   = reduce_coef  &
+                        * ( wpthlp_sfc**2 / ustar**2 ) &
                         * four * ( one - 8.3_core_rknd * zeta )**(-two_thirds)
 
-          rtp2_sfc    = reduce_coef  & 
-                        * ( wprtp_sfc**2 / ustar**2 ) & 
+          rtp2_sfc    = reduce_coef  &
+                        * ( wprtp_sfc**2 / ustar**2 ) &
                         * four * ( one - 8.3_core_rknd * zeta )**(-two_thirds)
 
-          rtpthlp_sfc = reduce_coef  & 
-                        * ( wprtp_sfc * wpthlp_sfc / ustar**2 ) & 
+          rtpthlp_sfc = reduce_coef  &
+                        * ( wprtp_sfc * wpthlp_sfc / ustar**2 ) &
                         * four * ( one - 8.3_core_rknd * zeta )**(-two_thirds)
 
-          wp2_sfc     = ( ustar**2 ) & 
+          wp2_sfc     = ( ustar**2 ) &
                         * ( 1.75_core_rknd + two * (-zeta)**(two_thirds) )
 
        else
 
-          thlp2_sfc   = reduce_coef  & 
+          thlp2_sfc   = reduce_coef  &
                         * four * ( wpthlp_sfc**2 / ustar**2 )
 
-          rtp2_sfc    = reduce_coef  & 
+          rtp2_sfc    = reduce_coef  &
                         * four * ( wprtp_sfc**2 / ustar**2 )
 
-          rtpthlp_sfc = reduce_coef  & 
+          rtpthlp_sfc = reduce_coef  &
                         * four * ( wprtp_sfc * wpthlp_sfc / ustar**2 )
 
           wp2_sfc     = 1.75_core_rknd * ustar**2
 
        endif
-       
+
        thlp2_sfc = max( thl_tol**2, thlp2_sfc )
        rtp2_sfc = max( rt_tol**2, rtp2_sfc )
 
@@ -258,15 +258,15 @@ module surface_varnce_module
        endif
 
        ! Add effect of vertical compression of eddies on horizontal gustiness.
-       ! First, ensure that wp2_sfc does not make the correlation 
+       ! First, ensure that wp2_sfc does not make the correlation
        !   of (w,thl) or (w,rt) outside (-1,1).
-       ! Perhaps in the future we should also ensure that the correlations 
+       ! Perhaps in the future we should also ensure that the correlations
        !   of (w,u) and (w,v) are not outside (-1,1).
        min_wp2_sfc_val &
        = max( w_tol_sqd, &
               wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &
               wpthlp_sfc**2 / ( thlp2_sfc * max_mag_correlation_flux**2 ) )
-       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
+       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then
                             ! splatting correction drives wp2_sfc to overly small value
          wp2_splat_sfc_correction = -wp2_sfc + min_wp2_sfc_val
          wp2_sfc = min_wp2_sfc_val
@@ -311,33 +311,33 @@ module surface_varnce_module
              ! Brian Griffin; February 2, 2008.
              if ( zeta < zero ) then
 
-                sclrprtp_sfc(i)  & 
-                = reduce_coef  & 
-                  * ( wpsclrp_sfc(i) * wprtp_sfc / ustar**2 ) & 
+                sclrprtp_sfc(i)  &
+                = reduce_coef  &
+                  * ( wpsclrp_sfc(i) * wprtp_sfc / ustar**2 ) &
                   * four * ( one - 8.3_core_rknd * zeta )**(-two_thirds)
 
-                sclrpthlp_sfc(i)  & 
-                = reduce_coef  & 
-                  * ( wpsclrp_sfc(i) * wpthlp_sfc / ustar**2 ) & 
+                sclrpthlp_sfc(i)  &
+                = reduce_coef  &
+                  * ( wpsclrp_sfc(i) * wpthlp_sfc / ustar**2 ) &
                   * four * ( one - 8.3_core_rknd * zeta )**(-two_thirds)
 
-                sclrp2_sfc(i)  & 
-                = reduce_coef   & 
-                  * ( wpsclrp_sfc(i)**2 / ustar**2 ) & 
+                sclrp2_sfc(i)  &
+                = reduce_coef   &
+                  * ( wpsclrp_sfc(i)**2 / ustar**2 ) &
                   * four * ( one - 8.3_core_rknd * zeta )**(-two_thirds)
 
              else
 
-                sclrprtp_sfc(i)  & 
-                = reduce_coef  & 
+                sclrprtp_sfc(i)  &
+                = reduce_coef  &
                   * four * ( wpsclrp_sfc(i) * wprtp_sfc / ustar**2 )
 
-                sclrpthlp_sfc(i)  & 
-                = reduce_coef  & 
+                sclrpthlp_sfc(i)  &
+                = reduce_coef  &
                   * four * ( wpsclrp_sfc(i) * wpthlp_sfc / ustar**2 )
 
-                sclrp2_sfc(i)  & 
-                = reduce_coef & 
+                sclrp2_sfc(i)  &
+                = reduce_coef &
                   * four * ( wpsclrp_sfc(i)**2 / ustar**2 )
 
              endif
@@ -383,16 +383,16 @@ module surface_varnce_module
                      * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
 
        ! Add effect of vertical compression of eddies on horizontal gustiness.
-       ! First, ensure that wp2_sfc does not make the correlation 
+       ! First, ensure that wp2_sfc does not make the correlation
        !   of (w,thl) or (w,rt) outside (-1,1).
-       ! Perhaps in the future we should also ensure that the correlations 
+       ! Perhaps in the future we should also ensure that the correlations
        !   of (w,u) and (w,v) are not outside (-1,1).
        min_wp2_sfc_val &
        = max( w_tol_sqd, &
               wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &
               wpthlp_sfc**2 / ( thlp2_sfc * max_mag_correlation_flux**2 ) )
 
-       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
+       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then
                            ! splatting correction drives wp2_sfc to overly small values
          wp2_splat_sfc_correction = -wp2_sfc + min_wp2_sfc_val
          wp2_sfc = min_wp2_sfc_val
@@ -460,8 +460,8 @@ module surface_varnce_module
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-       call surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
-                                  thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
+       call surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  &
+                                  thlp2_sfc, rtp2_sfc, rtpthlp_sfc, &
                                   sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 
        if ( err_code == clubb_fatal_error ) then

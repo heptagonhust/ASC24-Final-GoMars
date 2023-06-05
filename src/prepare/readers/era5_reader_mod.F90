@@ -32,10 +32,9 @@ module era5_reader_mod
 
 contains
 
-  subroutine era5_reader_run(min_lon, max_lon, min_lat, max_lat)
+  subroutine era5_reader_run(bkg_file, min_lon, max_lon, min_lat, max_lat)
 
-    use mpi
-
+    character(*), intent(in) :: bkg_file
     real(r8), intent(in) :: min_lon
     real(r8), intent(in) :: max_lon
     real(r8), intent(in) :: min_lat
@@ -56,7 +55,7 @@ contains
     call fiona_start_input('era5')
     call fiona_input_range('era5', 'longitude', era5_lon, coord_range=[min_lon, max_lon]); era5_nlon = size(era5_lon)
     call fiona_input_range('era5', 'latitude' , era5_lat, coord_range=[min_lat, max_lat]); era5_nlat = size(era5_lat)
-    call fiona_input      ('era5', 'level'    , era5_lev); era5_nlev = size(era5_lev)
+    call fiona_input      ('era5', 'level'    , era5_lev)
     call fiona_input_range('era5', 'u'        , era5_u  , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
     call fiona_input_range('era5', 'v'        , era5_v  , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
     call fiona_input_range('era5', 't'        , era5_t  , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])

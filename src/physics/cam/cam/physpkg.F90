@@ -243,14 +243,14 @@ contains
 
        call conv_water_register()
 
-       ! Determine whether its a 'modal' aerosol simulation  or not
+       ! Determine whether its a 'modal' aerosol simulation or not
        call rad_cnst_get_info(0, nmodes=nmodes)
        clim_modal_aero = (nmodes > 0)
 
        if (clim_modal_aero) then
           call modal_aero_calcsize_reg()
           call modal_aero_wateruptake_reg()
-       endif
+       end if
 
        ! register chemical constituents including aerosols ...
        call chem_register()
@@ -821,7 +821,7 @@ contains
     call solar_data_init()
 
     ! Prognostic chemistry.
-    call chem_init(phys_state,pbuf2d)
+    call chem_init(phys_state, pbuf2d)
 
     ! Prescribed tracers
     call prescribed_ozone_init()
@@ -917,7 +917,7 @@ contains
        ! modal_aero_initialize
        if (.not. prog_modal_aero) then
           call modal_aero_calcsize_init(pbuf2d)
-       endif
+       end if
 
        call modal_aero_wateruptake_init(pbuf2d)
 
@@ -1125,7 +1125,7 @@ contains
 
 !$OMP PARALLEL DO PRIVATE (C, NCOL, phys_buffer_chunk)
 
-    do c=begchunk,endchunk
+    do c = begchunk, endchunk
        ncol = get_ncols_p(c)
        phys_buffer_chunk => pbuf_get_chunk(pbuf2d, c)
        !
@@ -1138,7 +1138,7 @@ contains
        call tphysac(ztodt, cam_in(c),  &
             cam_out(c),                              &
             phys_state(c), phys_tend(c), phys_buffer_chunk)
-    end do                    ! Chunk loop
+    end do
 
     call t_adj_detailf(-1)
     call t_stopf('ac_physics')
@@ -1503,7 +1503,7 @@ contains
 
     call check_tracers_chng(state, tracerint, "vdiff", nstep, ztodt, cam_in%cflx)
 
-    !  aerosol dry deposition processes
+    ! aerosol dry deposition processes
     call t_startf('aero_drydep')
 
     if (trim(cam_take_snapshot_before) == "aero_model_drydep") then
@@ -1518,10 +1518,10 @@ contains
     end if
     call physics_update(state, ptend, ztodt, tend)
 
-   if (trim(cam_take_snapshot_after) == "aero_model_drydep") then
-      call cam_snapshot_all_outfld_tphysac(cam_snapshot_after_num, state, tend, cam_in, cam_out, pbuf,&
-                    fh2o, surfric, obklen, flx_heat)
-   end if
+    if (trim(cam_take_snapshot_after) == "aero_model_drydep") then
+       call cam_snapshot_all_outfld_tphysac(cam_snapshot_after_num, state, tend, cam_in, cam_out, pbuf,&
+                     fh2o, surfric, obklen, flx_heat)
+    end if
 
     call t_stopf('aero_drydep')
 
@@ -2589,7 +2589,7 @@ contains
 
     ! Save atmospheric fields to force surface models
     call t_startf('cam_export')
-    call cam_export (state,cam_out,pbuf)
+    call cam_export(state, cam_out, pbuf)
     call t_stopf('cam_export')
 
     ! Write export state to history file
@@ -2661,7 +2661,7 @@ subroutine phys_timestep_init(phys_state, cam_in, cam_out, pbuf2d)
   ! Prescribed tracers
   call prescribed_ozone_adv(phys_state, pbuf2d)
   call prescribed_ghg_adv(phys_state, pbuf2d)
-  call prescribed_aero_adv(phys_state, pbuf2d)
+!   call prescribed_aero_adv(phys_state, pbuf2d)
   call aircraft_emit_adv(phys_state, pbuf2d)
   call prescribed_volcaero_adv(phys_state, pbuf2d)
   call prescribed_strataero_adv(phys_state, pbuf2d)

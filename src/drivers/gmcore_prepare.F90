@@ -17,6 +17,7 @@ program gmcore_prepare
   call parse_namelist(namelist_file)
 
   time_scheme = 'N/A'
+  physics_suite = 'N/A'
 
   call fiona_init()
 

@@ -115,9 +115,7 @@ module physics_types_mod
     logical :: updated_v  = .false.
     logical :: updated_t  = .false.
     logical :: updated_pt = .false.
-    logical :: updated_qv = .false.
-    logical :: updated_qc = .false.
-    logical :: updated_qi = .false.
+    logical, allocatable :: updated_q(:)
   contains
     procedure :: init  => ptend_init
     procedure :: clear => ptend_clear
@@ -330,6 +328,7 @@ contains
     allocate(this%dqdt      (this%ncol,this%nlev,ntracers))
     allocate(this%dptdt     (this%ncol,this%nlev))
     allocate(this%dptdt_rad (this%ncol,this%nlev)); this%dptdt_rad = 0
+    allocate(this%updated_q (ntracers)); this%updated_q = .false.
 
   end subroutine ptend_init
 
@@ -343,6 +342,7 @@ contains
     if (allocated(this%dqdt     )) deallocate(this%dqdt     )
     if (allocated(this%dptdt    )) deallocate(this%dptdt    )
     if (allocated(this%dptdt_rad)) deallocate(this%dptdt_rad)
+    if (allocated(this%updated_q)) deallocate(this%updated_q)
 
   end subroutine ptend_clear
 
@@ -362,10 +362,7 @@ contains
     this%dvdt  = 0; this%updated_v  = .false.
     this%dtdt  = 0; this%updated_t  = .false.
     this%dptdt = 0; this%updated_pt = .false.
-    this%dqdt  = 0
-    this%updated_qv = .false.
-    this%updated_qc = .false.
-    this%updated_qi = .false.
+    this%dqdt  = 0; this%updated_q  = .false.
 
   end subroutine ptend_reset
 

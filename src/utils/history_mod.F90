@@ -214,9 +214,6 @@ contains
     ! call fiona_add_var('h0', 'te_ke'  , long_name='total kinetic energy'        , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'te_ie'  , long_name='total internal energy'       , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'te_pe'  , long_name='total potential energy'      , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
-    call fiona_add_var('h0', 'ref_ps' , long_name='reference surface pressure'  , units='Pa'    , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
-    call fiona_add_var('h0', 'ref_ps_smth' , long_name='smoothed reference surface pressure'  , units='Pa'    , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
-    call fiona_add_var('h0', 'ref_ps_perb' , long_name='reference surface pressure perturbation'  , units='Pa'    , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
     call fiona_add_var('h0', 'zs'     , long_name='surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
     call fiona_add_var('h0', 'dzsdlon', long_name='zonal zs gradient'           , units=''      , dim_names=['lon', 'lat'])
     call fiona_add_var('h0', 'dzsdlat', long_name='meridional zs gradient'      , units=''      , dim_names=['lon', 'lat'])
@@ -224,13 +221,34 @@ contains
     call fiona_add_var('h0', 'u'      , long_name='u wind component'            , units='m s-1' , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'v'      , long_name='v wind component'            , units='m s-1' , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'pt'     , long_name='potential temperature'       , units='K'     , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
-    ! call fiona_add_var('h0', 't'      , long_name='temperature'                 , units='K'     , dim_names=cell_dims_3d)
+    call fiona_add_var('h0', 't'      , long_name='temperature'                 , units='K'     , dim_names=cell_dims_3d)
     call fiona_add_var('h0', 'z'      , long_name='height'                      , units='m'     , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'ph'     , long_name='hydrostatic pressure'        , units='Pa'    , dim_names=cell_dims_3d)
     call fiona_add_var('h0', 'vor'    , long_name='relative vorticity'          , units='s-1'   , dim_names= vtx_dims_3d)
     ! call fiona_add_var('h0', 'div'    , long_name='divergence'                  , units='s-1'   , dim_names=cell_dims_3d)
     ! call fiona_add_var('h0', 'landmask', long_name='land mask'                  , units=''      , dim_names=['lon', 'lat'])
-    call fiona_add_var('h0', 'qv'     , long_name='water vapor mixing ratio'    , units='g g-1' , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
+
+    if (vert_coord_scheme == 'smooth') then
+      call fiona_add_var('h0', 'ref_ps', long_name='reference surface pressure', units='Pa', dim_names=['lon', 'lat'], dtype=output_h0_dtype)
+      call fiona_add_var('h0', 'ref_ps_smth', long_name='smoothed reference surface pressure', units='Pa', dim_names=['lon', 'lat'], dtype=output_h0_dtype)
+      call fiona_add_var('h0', 'ref_ps_perb', long_name='reference surface pressure perturbation', units='Pa', dim_names=['lon', 'lat'], dtype=output_h0_dtype)
+    end if
+
+    if (idx_qv > 0) then
+      call fiona_add_var('h0', 'qv', long_name='Water vapor mixing ratio', units='kg kg-1', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_qc > 0) then
+      call fiona_add_var('h0', 'qc', long_name='Cloud water mixing ratio', units='kg kg-1', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_nc > 0) then
+      call fiona_add_var('h0', 'nc', long_name='Cloud water number concentration', units='m-3', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_qi > 0) then
+      call fiona_add_var('h0', 'qi', long_name='Cloud ice mixing ratio', units='kg kg-1', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_ni > 0) then
+      call fiona_add_var('h0', 'ni', long_name='Cloud ice number concentration', units='m-3', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
 
     select case (diag_state(1)%level_type)
     case (height_levels)
@@ -344,7 +362,7 @@ contains
       call fiona_add_var('h1', 'dudt_phys'  , long_name='physics tendency for u'                        , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'dvdt_phys'  , long_name='physics tendency for v'                        , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'dtdt_phys'  , long_name='physics tendency for t'                        , units='', dim_names=cell_dims_3d)
-      call fiona_add_var('h1', 'dshdt_phys' , long_name='physics tendency for sh'                       , units='', dim_names=cell_dims_3d)
+      call fiona_add_var('h1', 'dqdt_phys'  , long_name='physics tendency for q'                        , units='', dim_names=cell_dims_3d)
     end if
 
   end subroutine history_setup_h1_hydrostatic
@@ -455,7 +473,7 @@ contains
 
     integer iblk, is, ie, js, je, ks, ke, k
     integer start(3), count(3)
-    real(r8), pointer :: qv(:,:,:)
+    real(r8), pointer :: q(:,:,:)
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%full_nlon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%full_nlat))
@@ -476,9 +494,11 @@ contains
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-      call fiona_output('h0', 'ref_ps'  , static%ref_ps (is:ie,js:je)           , start=start, count=count)
-      call fiona_output('h0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je)    , start=start, count=count)
-      call fiona_output('h0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je)    , start=start, count=count)
+      if (vert_coord_scheme == 'smooth') then
+        call fiona_output('h0', 'ref_ps', static%ref_ps(is:ie,js:je), start=start, count=count)
+        call fiona_output('h0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je), start=start, count=count)
+        call fiona_output('h0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je), start=start, count=count)
+      end if
       call fiona_output('h0', 'zs'      , static%gzs    (is:ie,js:je) / g       , start=start, count=count)
       call fiona_output('h0', 'dzsdlon' , static%dzsdlon(is:ie,js:je)           , start=start, count=count)
       call fiona_output('h0', 'dzsdlat' , static%dzsdlat(is:ie,js:je)           , start=start, count=count)
@@ -489,10 +509,28 @@ contains
       call fiona_output('h0', 'phs'     , dstate%phs    (is:ie,js:je)           , start=start, count=count)
       ! call fiona_output('h0', 'ph'      , dstate%ph     (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'pt'      , dstate%pt     (is:ie,js:je,ks:ke)     , start=start, count=count)
-      ! call fiona_output('h0', 't'       , dstate%t      (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 't'       , dstate%t      (is:ie,js:je,ks:ke)     , start=start, count=count)
       ! call fiona_output('h0', 'div'     , aux%div       (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-      call fiona_output('h0', 'qv'      , qv            (is:ie,js:je,ks:ke)     , start=start, count=count)
+      if (idx_qv > 0) then
+        call tracer_get_array(iblk, idx_qv, q, __FILE__, __LINE__)
+        call fiona_output('h0', 'qv', q(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
+      if (idx_qc > 0) then
+        call tracer_get_array(iblk, idx_qc, q, __FILE__, __LINE__)
+        call fiona_output('h0', 'qc', q(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
+      if (idx_nc > 0) then
+        call tracer_get_array(iblk, idx_nc, q, __FILE__, __LINE__)
+        call fiona_output('h0', 'nc', q(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
+      if (idx_qi > 0) then
+        call tracer_get_array(iblk, idx_qi, q, __FILE__, __LINE__)
+        call fiona_output('h0', 'qi', q(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
+      if (idx_ni > 0) then
+        call tracer_get_array(iblk, idx_ni, q, __FILE__, __LINE__)
+        call fiona_output('h0', 'ni', q(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%half_jds; je = mesh%half_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -763,10 +801,10 @@ contains
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-      call fiona_output('h1', 'dudt_phys' , dtend%dudt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
-      call fiona_output('h1', 'dvdt_phys' , dtend%dvdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
-      call fiona_output('h1', 'dtdt_phys' , dtend%dtdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
-      call fiona_output('h1', 'dqvdt_phys', dtend%dqdt_phys(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
+      call fiona_output('h1', 'dudt_phys', dtend%dudt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1', 'dvdt_phys', dtend%dvdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1', 'dtdt_phys', dtend%dtdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1', 'dqdt_phys', dtend%dqdt_phys(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
     end if
     end associate
 

@@ -36,7 +36,7 @@ module camsrfexch
   ! This is the data that is sent from the atmosphere to the surface models
   !---------------------------------------------------------------------------
 
-  type cam_out_t 
+  type cam_out_t
      integer  :: lchnk               ! chunk index
      integer  :: ncol                ! number of columns in chunk
      real(r8) :: tbot(pcols)         ! bot level temperature
@@ -46,18 +46,18 @@ module camsrfexch
      real(r8) :: vbot(pcols)         ! bot level v wind
      real(r8) :: qbot(pcols,pcnst)   ! bot level specific humidity
      real(r8) :: pbot(pcols)         ! bot level pressure
-     real(r8) :: rho(pcols)          ! bot level density	
-     real(r8) :: netsw(pcols)        !	
-     real(r8) :: flwds(pcols)        ! 
+     real(r8) :: rho(pcols)          ! bot level density
+     real(r8) :: netsw(pcols)        !
+     real(r8) :: flwds(pcols)        !
      real(r8) :: precsc(pcols)       !
      real(r8) :: precsl(pcols)       !
-     real(r8) :: precc(pcols)        ! 
-     real(r8) :: precl(pcols)        ! 
-     real(r8) :: soll(pcols)         ! 
-     real(r8) :: sols(pcols)         ! 
+     real(r8) :: precc(pcols)        !
+     real(r8) :: precl(pcols)        !
+     real(r8) :: soll(pcols)         !
+     real(r8) :: sols(pcols)         !
      real(r8) :: solld(pcols)        !
      real(r8) :: solsd(pcols)        !
-     real(r8) :: thbot(pcols)        ! 
+     real(r8) :: thbot(pcols)        !
      real(r8) :: co2prog(pcols)      ! prognostic co2
      real(r8) :: co2diag(pcols)      ! diagnostic co2
      real(r8) :: psl(pcols)
@@ -77,13 +77,13 @@ module camsrfexch
      real(r8) :: dstdry4(pcols)      ! dry deposition of dust (bin4)
      real(r8), pointer, dimension(:) :: nhx_nitrogen_flx ! nitrogen deposition fluxes (kgN/m2/s)
      real(r8), pointer, dimension(:) :: noy_nitrogen_flx ! nitrogen deposition fluxes (kgN/m2/s)
-  end type cam_out_t 
+  end type cam_out_t
 
   !---------------------------------------------------------------------------
   ! This is the merged state of sea-ice, land and ocean surface parameterizations
   !---------------------------------------------------------------------------
 
-  type cam_in_t    
+  type cam_in_t
      integer  :: lchnk                   ! chunk index
      integer  :: ncol                    ! number of active columns
      real(r8) :: asdir(pcols)            ! albedo: shortwave, direct
@@ -96,11 +96,11 @@ module camsrfexch
      real(r8) :: wsx(pcols)              ! surface u-stress (N)
      real(r8) :: wsy(pcols)              ! surface v-stress (N)
      real(r8) :: tref(pcols)             ! ref height surface air temp
-     real(r8) :: qref(pcols)             ! ref height specific humidity 
+     real(r8) :: qref(pcols)             ! ref height specific humidity
      real(r8) :: u10(pcols)              ! 10m wind speed
-     real(r8) :: ts(pcols)               ! merged surface temp 
+     real(r8) :: ts(pcols)               ! merged surface temp
      real(r8) :: sst(pcols)              ! sea surface temp
-     real(r8) :: snowhland(pcols)        ! snow depth (liquid water equivalent) over land 
+     real(r8) :: snowhland(pcols)        ! snow depth (liquid water equivalent) over land
      real(r8) :: snowhice(pcols)         ! snow depth over ice
      real(r8) :: fco2_lnd(pcols)         ! co2 flux from lnd
      real(r8) :: fco2_ocn(pcols)         ! co2 flux from ocn
@@ -112,15 +112,15 @@ module camsrfexch
      real(r8) :: ustar(pcols)            ! atm/ocn saved version of ustar
      real(r8) :: re(pcols)               ! atm/ocn saved version of re
      real(r8) :: ssq(pcols)              ! atm/ocn saved version of ssq
-     real(r8), pointer, dimension(:)   :: ram1  !aerodynamical resistance (s/m) (pcols)
-     real(r8), pointer, dimension(:)   :: fv    !friction velocity (m/s) (pcols)
-     real(r8), pointer, dimension(:)   :: soilw !volumetric soil water (m3/m3)
-     real(r8), pointer, dimension(:,:) :: depvel ! deposition velocities
-     real(r8), pointer, dimension(:,:) :: dstflx ! dust fluxes
+     real(r8), pointer, dimension(:)   :: ram1     ! aerodynamical resistance (s/m) (pcols)
+     real(r8), pointer, dimension(:)   :: fv       ! friction velocity (m/s) (pcols)
+     real(r8), pointer, dimension(:)   :: soilw    ! volumetric soil water (m3/m3)
+     real(r8), pointer, dimension(:,:) :: depvel   ! deposition velocities
+     real(r8), pointer, dimension(:,:) :: dstflx   ! dust fluxes
      real(r8), pointer, dimension(:,:) :: meganflx ! MEGAN fluxes
-     real(r8), pointer, dimension(:,:) :: fireflx ! wild fire emissions
+     real(r8), pointer, dimension(:,:) :: fireflx  ! wild fire emissions
      real(r8), pointer, dimension(:)   :: fireztop ! wild fire emissions vert distribution top
-  end type cam_in_t    
+  end type cam_in_t
 
 !===============================================================================
 CONTAINS
@@ -142,7 +142,7 @@ CONTAINS
     integer :: c        ! chunk index
     integer :: ierror   ! Error code
     character(len=*), parameter :: sub = 'hub2atm_alloc'
-    !----------------------------------------------------------------------- 
+    !-----------------------------------------------------------------------
 
     if ( .not. phys_grid_initialized() ) call endrun(sub//": phys_grid not called yet")
     allocate (cam_in(begchunk:endchunk), stat=ierror)
@@ -160,8 +160,8 @@ CONTAINS
        nullify(cam_in(c)%meganflx)
        nullify(cam_in(c)%fireflx)
        nullify(cam_in(c)%fireztop)
-    enddo  
-    do c = begchunk,endchunk 
+    end do
+    do c = begchunk,endchunk
        if (active_Sl_ram1) then
           allocate (cam_in(c)%ram1(pcols), stat=ierror)
           if ( ierror /= 0 ) call endrun(sub//': allocation error ram1')
@@ -186,19 +186,19 @@ CONTAINS
     end do
 
     if (lnd_drydep .and. n_drydep>0) then
-       do c = begchunk,endchunk 
+       do c = begchunk,endchunk
           allocate (cam_in(c)%depvel(pcols,n_drydep), stat=ierror)
           if ( ierror /= 0 ) call endrun(sub//': allocation error depvel')
        end do
     endif
 
     if (active_Fall_flxfire .and. shr_fire_emis_mechcomps_n>0) then
-       do c = begchunk,endchunk 
+       do c = begchunk,endchunk
           allocate(cam_in(c)%fireflx(pcols,shr_fire_emis_mechcomps_n), stat=ierror)
           if ( ierror /= 0 ) call endrun(sub//': allocation error fireflx')
           allocate(cam_in(c)%fireztop(pcols), stat=ierror)
           if ( ierror /= 0 ) call endrun(sub//': allocation error fireztop')
-       enddo
+       end do
     endif
 
     do c = begchunk,endchunk
@@ -267,7 +267,7 @@ CONTAINS
     integer :: c            ! chunk index
     integer :: ierror       ! Error code
     character(len=*), parameter :: sub = 'atm2hub_alloc'
-    !----------------------------------------------------------------------- 
+    !-----------------------------------------------------------------------
 
     if (.not. phys_grid_initialized()) call endrun(sub//": phys_grid not called yet")
     allocate (cam_out(begchunk:endchunk), stat=ierror)
@@ -338,7 +338,7 @@ CONTAINS
   subroutine atm2hub_deallocate(cam_out)
 
     type(cam_out_t), pointer :: cam_out(:)    ! Atmosphere to surface input
-    !----------------------------------------------------------------------- 
+    !-----------------------------------------------------------------------
 
     if(associated(cam_out)) then
        deallocate(cam_out)
@@ -354,7 +354,7 @@ CONTAINS
     type(cam_in_t), pointer :: cam_in(:)    ! Atmosphere to surface input
 
     integer :: c
-    !----------------------------------------------------------------------- 
+    !-----------------------------------------------------------------------
 
     if(associated(cam_in)) then
        do c=begchunk,endchunk
@@ -382,8 +382,8 @@ CONTAINS
              deallocate(cam_in(c)%depvel)
              nullify(cam_in(c)%depvel)
           end if
-          
-       enddo
+
+       end do
 
        deallocate(cam_in)
     end if
@@ -489,11 +489,11 @@ subroutine cam_export(state,cam_out,pbuf)
    end do
    do m = 1, pcnst
      do i = 1, ncol
-        cam_out%qbot(i,m) = state%q(i,pver,m) 
+        cam_out%qbot(i,m) = state%q(i,pver,m)
      end do
    end do
 
-   cam_out%co2diag(:ncol) = chem_surfvals_get('CO2VMR') * 1.0e+6_r8 
+   cam_out%co2diag(:ncol) = chem_surfvals_get('CO2VMR') * 1.0e+6_r8
    if (co2_transport()) then
       do i=1,ncol
          cam_out%co2prog(i) = state%q(i,pver,c_i(4)) * 1.0e+6_r8 *mwdry/mwco2

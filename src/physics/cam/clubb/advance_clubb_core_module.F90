@@ -4545,7 +4545,7 @@ module advance_clubb_core_module
             write(fstderr,*) "rcm(k+1) = ", rcm(k+1)
             write(fstderr,*) "rcm(k-1) = ", rcm(k-1)
 
-            return
+            stop 999
 
           end if
 

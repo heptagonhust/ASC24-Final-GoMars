@@ -5,8 +5,9 @@ project(gmcore LANGUAGES Fortran C)
 option(R4 "Use single precision" OFF)
 option(R16 "Use quadruple precision" OFF)
 option(ENSURE_ORDER "Ensure computation order in parallel" OFF)
-option(USE_BULK_AERO "Use bulk aerosol model" OFF)
-option(USE_MODAL_AERO "Use modal aerosol model" ON)
+option(USE_BULK_AERO "Use bulk aerosol model" ON)
+option(USE_MODAL_AERO "Use modal aerosol model" OFF)
+option(USE_CHEM "Use chemistry" OFF)
 
 if (R4)
   add_definitions(-DREAL_KIND=4)
@@ -219,6 +220,7 @@ set(gmcore_files
   src/meshes/latlon/latlon_parallel_mod.F90
   src/meshes/latlon/latlon_decomp_mod.F90
   src/meshes/latlon/latlon_interp_mod.F90
+  src/physics/albedo_mod.F90
   src/physics/dp_coupling_mod.F90
   src/physics/mars/mars_cnv_nasa_mod.F90
   src/physics/mars/mars_co2cyc_nasa_mod.F90
@@ -240,6 +242,7 @@ set(gmcore_files
   src/prepare/latlon/latlon_topo_mod.F90
   src/prepare/prepare_mod.F90
   src/prepare/readers/era5_reader_mod.F90
+  src/prepare/readers/cam_reader_mod.F90
   src/prepare/readers/fnl_reader_mod.F90
   src/prepare/readers/mpas_reader_mod.F90
   src/prepare/readers/openmars_reader_mod.F90
@@ -247,6 +250,7 @@ set(gmcore_files
   src/prepare/readers/waccm_reader_mod.F90
   src/prepare/ref_mod.F90
   src/prepare/vert_interp_mod.F90
+  src/tests/aquaplanet_test_mod.F90
   src/tests/adv/dcmip12_test_mod.F90
   src/tests/adv/deform_test_mod.F90
   src/tests/adv/moving_vortices_test_mod.F90

@@ -641,8 +641,8 @@ end subroutine vertical_diffusion_ts_init
 !                                                                                 !
 ! =============================================================================== !
 
-subroutine vertical_diffusion_tend( &
-     ztodt    , state    , cam_in,          &
+subroutine vertical_diffusion_tend(   &
+     ztodt    , state    , cam_in,    &
      ustar    , obklen   , ptend    , &
      cldn     , pbuf)
   !---------------------------------------------------- !
@@ -651,7 +651,7 @@ subroutine vertical_diffusion_tend( &
   use physics_buffer,     only : physics_buffer_desc, pbuf_get_field, pbuf_set_field
   use physics_types,      only : physics_state, physics_ptend, physics_ptend_init
   use physics_types,      only : set_dry_to_wet, set_wet_to_dry
-  
+
   use camsrfexch,         only : cam_in_t
   use cam_history,        only : outfld
 
@@ -846,7 +846,7 @@ subroutine vertical_diffusion_tend( &
 
   ! Assume 'wet' mixing ratios in diffusion code.
   call set_dry_to_wet(state)
-  
+
   rztodt = 1._r8 / ztodt
   lchnk  = state%lchnk
   ncol   = state%ncol
@@ -972,7 +972,7 @@ subroutine vertical_diffusion_tend( &
      call virtem(ncol, th(:ncol,pver),state%q(:ncol,pver,1), thvs(:ncol))
      call calc_obklen(ncol, th(:ncol,pver), thvs(:ncol), cam_in%cflx(:ncol,1), &
           cam_in%shf(:ncol), rrho(:ncol), ustar(:ncol), &
-          khfs(:ncol),    kqfs(:ncol), kbfs(:ncol),   obklen(:ncol))
+          khfs(:ncol), kqfs(:ncol), kbfs(:ncol), obklen(:ncol))
 
 
   case ( 'HB', 'HBR', 'SPCAM_sam1mom' )
@@ -1151,7 +1151,7 @@ subroutine vertical_diffusion_tend( &
           p_dry , state%t      , rhoi_dry,  ztodt         , taux          , &
           tauy          , shflux             , cflux        , &
           kvh           , kvm                , kvq          , cgs           , cgh           , &
-          state%zi      , ksrftms            , dragblj      , & 
+          state%zi      , ksrftms            , dragblj      , &
           qmincg       , fieldlist_dry , fieldlist_molec,&
           u_tmp         , v_tmp              , q_tmp        , s_tmp         ,                 &
           tautmsx_temp  , tautmsy_temp       , dtk_temp     , topflx_temp   , errstring     , &

@@ -46,7 +46,7 @@ real(r8) :: zvir      ! rh2o/rair - 1
 interface calc_ustar
   module procedure calc_ustar_scalar
   module procedure calc_ustar_vector
-end interface 
+end interface
 
 interface calc_obklen
   module procedure calc_obklen_scalar

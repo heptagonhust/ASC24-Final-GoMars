@@ -7,6 +7,7 @@ module namelist_mod
   implicit none
 
   character(30)   :: planet               = 'earth'
+  logical         :: use_aqua_planet      = .false.
 
   integer         :: start_time(5)        = 0
   integer         :: end_time(5)          = 0
@@ -159,6 +160,7 @@ module namelist_mod
 
   namelist /gmcore_control/     &
     planet                    , &
+    use_aqua_planet           , &
     case_name                 , &
     test_case                 , &
     case_desc                 , &

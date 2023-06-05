@@ -24,10 +24,10 @@ module tracer_mod
   public ntracers_water
   public nbatches
   public idx_qv
-  public idx_qc
-  public idx_qi
-  public idx_qr
-  public idx_qs
+  public idx_qc, idx_nc
+  public idx_qi, idx_ni
+  public idx_qr, idx_nr
+  public idx_qs, idx_ns
   public idx_qg
   public idx_qh
   public idx_qo3
@@ -44,6 +44,7 @@ module tracer_mod
   interface tracer_get_array
     module procedure tracer_get_array_idx
     module procedure tracer_get_array_name
+    module procedure tracer_get_array_all
   end interface tracer_get_array
 
 contains
@@ -69,9 +70,13 @@ contains
     ntracers_water = 0
     idx_qv         = 0
     idx_qc         = 0
+    idx_nc         = 0
     idx_qi         = 0
+    idx_ni         = 0
     idx_qr         = 0
+    idx_nr         = 0
     idx_qs         = 0
+    idx_ns         = 0
     idx_qg         = 0
     idx_qh         = 0
     idx_qo3        = 0
@@ -131,7 +136,7 @@ contains
     tracer_names(ntracers) = name
     tracer_long_names(ntracers) = long_name
     if (present(units)) tracer_units(ntracers) = units
-    if (present(type )) tracer_types(ntracers) = type
+    if (present(type)) tracer_types(ntracers) = type
 
   end subroutine tracer_add
 
@@ -148,8 +153,12 @@ contains
         idx_qv    = i; ntracers_water = ntracers_water + 1
       case ('qc', 'CLDLIQ')
         idx_qc    = i; ntracers_water = ntracers_water + 1
+      case ('nc', 'NUMLIQ')
+        idx_nc    = i
       case ('qi', 'CLDICE')
         idx_qi    = i; ntracers_water = ntracers_water + 1
+      case ('ni', 'NUMICE')
+        idx_ni    = i
       case ('qr', 'RAINQM')
         idx_qr    = i; ntracers_water = ntracers_water + 1
       case ('qs', 'SNOWQM')
@@ -235,6 +244,21 @@ contains
     call tracer_get_array(iblk, idx, q, file, line)
 
   end subroutine tracer_get_array_name
+
+  subroutine tracer_get_array_all(iblk, q)
+
+    integer, intent(in) :: iblk
+    real(r8), intent(out), pointer :: q(:,:,:,:)
+
+    associate (mesh => tracers(iblk)%filter_mesh)
+    ! NOTE: q is on filter_mesh.
+    q(mesh%full_ims:mesh%full_ime, &
+      mesh%full_jms:mesh%full_jme, &
+      mesh%full_kms:mesh%full_kme, &
+      1:ntracers) => tracers(iblk)%q(:,:,:,:)
+    end associate
+
+  end subroutine tracer_get_array_all
 
   subroutine tracer_calc_qm(block)
 

@@ -20,16 +20,18 @@ contains
 
     integer iblk, i, j
 
-    call topo_reader_run(topo_file, min_lon, max_lon, min_lat, max_lat)
-    do iblk = 1, size(blocks)
-      call latlon_topo_regrid(blocks(iblk))
-    end do
-    if (use_topo_smooth) then
+    if (.not. use_aqua_planet) then
+      call topo_reader_run(topo_file, min_lon, max_lon, min_lat, max_lat)
       do iblk = 1, size(blocks)
-        call latlon_topo_smooth(blocks(iblk))
+        call latlon_topo_regrid(blocks(iblk))
       end do
+      if (use_topo_smooth) then
+        do iblk = 1, size(blocks)
+          call latlon_topo_smooth(blocks(iblk))
+        end do
+      end if
+      call ref_calc_ps()
     end if
-    call ref_calc_ps()
 
     do iblk = 1, size(blocks)
       associate (mesh    => blocks(iblk)%mesh          , &

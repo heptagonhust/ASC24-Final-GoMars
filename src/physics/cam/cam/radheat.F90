@@ -7,7 +7,7 @@ module radheat
 !
 !           This module provides a hook to allow incorporating additional
 !           radiative terms (eUV heating and nonLTE longwave cooling).
-! 
+!
 ! Original version: B.A. Boville
 !-----------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ subroutine radheat_timestep_init (state, pbuf2d)
     use ppgrid,       only : begchunk, endchunk
     use physics_buffer, only : physics_buffer_desc
 
-    type(physics_state), intent(in):: state(begchunk:endchunk)                 
+    type(physics_state), intent(in):: state(begchunk:endchunk)
     type(physics_buffer_desc), pointer :: pbuf2d(:,:)
 
 
@@ -81,7 +81,7 @@ subroutine radheat_tend(state, pbuf,  ptend, qrl, qrs, fsns, &
 
 ! Arguments
    type(physics_state), intent(in)  :: state             ! Physics state variables
-   
+
    type(physics_buffer_desc), pointer :: pbuf(:)
    type(physics_ptend), intent(out) :: ptend             ! indivdual parameterization tendencie
    real(r8),            intent(in)  :: qrl(pcols,pver)   ! longwave heating
@@ -91,7 +91,7 @@ subroutine radheat_tend(state, pbuf,  ptend, qrl, qrs, fsns, &
    real(r8),            intent(in)  :: flns(pcols)       ! Srf longwave cooling (up-down) flux
    real(r8),            intent(in)  :: flnt(pcols)       ! Net outgoing lw flux at model top
    real(r8),            intent(in)  :: asdir(pcols)      ! shortwave, direct albedo
-   real(r8),            intent(out) :: net_flx(pcols)  
+   real(r8),            intent(out) :: net_flx(pcols)
 
 
 ! Local variables
@@ -109,7 +109,7 @@ subroutine radheat_tend(state, pbuf,  ptend, qrl, qrs, fsns, &
      if (met_rlx(k) < 1._r8 .or. met_srf_feedback) then
        ptend%s(:ncol,k) = (qrs(:ncol,k) + qrl(:ncol,k))
      endif
-   enddo 
+   enddo
 #else
    ptend%s(:ncol,:) = (qrs(:ncol,:) + qrl(:ncol,:))
 #endif

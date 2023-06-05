@@ -691,10 +691,10 @@ subroutine compute_eddy_diff( pbuf, lchnk  ,                                    
      ! Save initial (i.e., before iterative diffusion) profile of (qt,sl) at each iteration.
      ! Only necessary for (qt,sl) not (u,v) because (qt,sl) are newly calculated variables.
 
-     if( iturb == 1 ) then
+     if (iturb == 1) then
         qt(:ncol,:) = qtfd(:ncol,:)
         sl(:ncol,:) = slfd(:ncol,:)
-     endif
+     end if
 
      ! Get free atmosphere exchange coefficients. This 'kvf' is not used in UW moist PBL scheme
      if (use_kvf) then
@@ -801,7 +801,7 @@ subroutine compute_eddy_diff( pbuf, lchnk  ,                                    
                             p        , t        , rhoi, ztodt        , taux      , &
                             tauy    , shflx    , qflx     , &
                             kvh_out , kvm_out  , kvh_out  , cgs          , cgh       , &
-                            zi      , ksrftms  , dragblj  , & 
+                            zi      , ksrftms  , dragblj  , &
                             zero    , fieldlist_wet, fieldlist_molec, &
                             ufd     , vfd      , qtfd     , slfd         ,             &
                             jnk1d   , jnk1d    , jnk2d    , jnk1d        , errstring , &

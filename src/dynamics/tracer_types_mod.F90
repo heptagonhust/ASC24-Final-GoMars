@@ -11,10 +11,10 @@ module tracer_types_mod
   integer ntracers_water
 
   integer idx_qv
-  integer idx_qc
-  integer idx_qi
-  integer idx_qr
-  integer idx_qs
+  integer idx_qc, idx_nc
+  integer idx_qi, idx_ni
+  integer idx_qr, idx_nr
+  integer idx_qs, idx_ns
   integer idx_qg
   integer idx_qh
   integer idx_qo3

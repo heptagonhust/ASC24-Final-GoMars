@@ -825,71 +825,72 @@ end subroutine phys_grid_readnl
        call create_chunks(lbal_opt, chunks_per_thread)
 
        ! Early clean-up, to minimize memory high water mark
-       deallocate( lat_p )
-       deallocate( lon_p )
-       deallocate( latlon_to_dyn_gcol_map )
-       if  (twin_alg .eq. 1) deallocate( lonlat_to_dyn_gcol_map )
-       if  (twin_alg .eq. 1) deallocate( clon_p_cnt )
-       if ((twin_alg .eq. 1) .or. (lbal_opt .eq. 3)) deallocate( clat_p_cnt )
+       deallocate(lat_p)
+       deallocate(lon_p)
+       deallocate(latlon_to_dyn_gcol_map)
+       if (twin_alg == 1) deallocate(lonlat_to_dyn_gcol_map)
+       if (twin_alg == 1) deallocate(clon_p_cnt)
+       if (twin_alg == 1 .or. lbal_opt == 3) deallocate(clat_p_cnt)
 
        !
        ! Determine whether dynamics and physics decompositions
        ! are colocated, not requiring any interprocess communication
        ! in the coupling.
        local_dp_map = .true.
-       do cid=1,nchunks
-          do i=1,chunks(cid)%ncols
+       do cid = 1, nchunks
+          do i = 1, chunks(cid)%ncols
              curgcol_d = chunks(cid)%gcol(i)
              block_cnt = get_gcol_block_cnt_d(curgcol_d)
-             call get_gcol_block_d(curgcol_d,block_cnt,blockids,bcids)
-             do jb=1,block_cnt
+             call get_gcol_block_d(curgcol_d, block_cnt, blockids, bcids)
+             do jb = 1, block_cnt
                 owner_d = get_block_owner_d(blockids(jb))
-                if (owner_d .ne. chunks(cid)%owner) then
+                if (owner_d /= chunks(cid)%owner) then
                    local_dp_map = .false.
-                endif
-             enddo
-          enddo
-       enddo
-    endif
+                end if
+             end do
+          end do
+       end do
+    end if
     !
     ! Allocate and initialize data structures for gather/scatter
     !
-    allocate( pgcols(1:ngcols_p) )
-    allocate( gs_col_offset(0:npes) )
-    allocate( pchunkid(0:npes) )
+    allocate(pgcols(1:ngcols_p))
+    allocate(gs_col_offset(0:npes))
+    allocate(pchunkid(0:npes))
 
     ! Initialize pchunkid and gs_col_offset by summing
     ! number of chunks and columns per process, respectively
     pchunkid(0) = 0
     gs_col_offset(0) = 0
-    do p=1,npes-1
+    do p = 1, npes - 1
        pchunkid(p)      = pchunkid(p-1)      + npchunks(p-1)
        gs_col_offset(p) = gs_col_offset(p-1) + gs_col_num(p-1)
-    enddo
+    end do
 
     ! Determine local ordering via "process id" bin sort
-    do cid=1,nchunks
+    do cid = 1, nchunks
        p = chunks(cid)%owner
        pchunkid(p) = pchunkid(p) + 1
 
+       ! FIXME: Why add lastblock?
        chunks(cid)%lcid = pchunkid(p) + lastblock
 
        curgcol = gs_col_offset(p)
-       do i=1,chunks(cid)%ncols
+       do i = 1, chunks(cid)%ncols
           curgcol = curgcol + 1
           pgcols(curgcol)%chunk = cid
           pgcols(curgcol)%ccol = i
-       enddo
+       end do
        gs_col_offset(p) = curgcol
-    enddo
+    end do
 
     ! Reinitialize pchunkid and gs_col_offset (for real)
     pchunkid(0) = 1
     gs_col_offset(0) = 1
-    do p=1,npes-1
+    do p = 1, npes - 1
        pchunkid(p)      = pchunkid(p-1)      + npchunks(p-1)
        gs_col_offset(p) = gs_col_offset(p-1) + gs_col_num(p-1)
-    enddo
+    end do
     pchunkid(npes)      = pchunkid(npes-1)      + npchunks(npes-1)
     gs_col_offset(npes) = gs_col_offset(npes-1) + gs_col_num(npes-1)
 
@@ -899,75 +900,75 @@ end subroutine phys_grid_readnl
     !
     nlcols   = gs_col_num(iam)
     nlchunks = npchunks(iam)
+    ! FIXME: Why add lastblock?
     begchunk = pchunkid(iam)   + lastblock
     endchunk = pchunkid(iam+1) + lastblock - 1
     !
     allocate( lchunks(begchunk:endchunk) )
-    do cid=1,nchunks
+    do cid = 1, nchunks
        if (chunks(cid)%owner == iam) then
           lcid = chunks(cid)%lcid
           lchunks(lcid)%ncols = chunks(cid)%ncols
           lchunks(lcid)%cid   = cid
-          do i=1,chunks(cid)%ncols
+          do i = 1, chunks(cid)%ncols
              lchunks(lcid)%gcol(i) = chunks(cid)%gcol(i)
-          enddo
-       endif
-    enddo
+          end do
+       end if
+    end do
 
-    deallocate( pchunkid )
-    deallocate( npchunks )
+    deallocate(pchunkid)
+    deallocate(npchunks)
     !
     !-----------------------------------------------------------------------
     !
     ! Initialize physics grid, using dynamics grid
     ! b) column area and integration weight
 
-    allocate( area_d(1:ngcols) )
-    allocate( wght_d(1:ngcols) )
+    allocate(area_d(1:ngcols))
+    allocate(wght_d(1:ngcols))
     area_d = 0.0_r8
     wght_d = 0.0_r8
 
     call get_horiz_grid_d(ngcols, area_d_out=area_d, wght_d_out=wght_d)
 
-
-    if ( abs(sum(area_d) - 4.0_r8*pi) > 1.e-10_r8 ) then
+    if (abs(sum(area_d) - 4.0_r8 * pi) > 1.e-10_r8) then
        write(iulog,*) ' ERROR: sum of areas on globe does not equal 4*pi'
        write(iulog,*) ' sum of areas = ', sum(area_d), sum(area_d)-4.0_r8*pi
        call endrun('phys_grid')
     end if
 
-    if ( abs(sum(wght_d) - 4.0_r8*pi) > 1.e-10_r8 ) then
+    if (abs(sum(wght_d) - 4.0_r8 * pi) > 1.e-10_r8) then
        write(iulog,*) ' ERROR: sum of integration weights on globe does not equal 4*pi'
        write(iulog,*) ' sum of weights = ', sum(wght_d), sum(wght_d)-4.0_r8*pi
        call endrun('phys_grid')
     end if
 
-    do lcid=begchunk,endchunk
+    do lcid = begchunk, endchunk
        do i=1,lchunks(lcid)%ncols
           lchunks(lcid)%area(i) = area_d(lchunks(lcid)%gcol(i))
           lchunks(lcid)%wght(i) = wght_d(lchunks(lcid)%gcol(i))
-       enddo
-    enddo
+       end do
+    end do
 
-    deallocate( area_d )
+    deallocate(area_d)
     nullify(area_d)
-    deallocate( wght_d )
+    deallocate(wght_d)
 
     if (.not. local_dp_map) then
        !
        ! allocate and initialize data structures for transposes
        !
-       allocate( btofc_blk_num(0:npes-1) )
+       allocate(btofc_blk_num(0:npes-1))
        btofc_blk_num = 0
-       allocate( btofc_blk_offset(firstblock:lastblock) )
-       do jb = firstblock,lastblock
-          nullify( btofc_blk_offset(jb)%pter )
-       enddo
+       allocate(btofc_blk_offset(firstblock:lastblock))
+       do jb = firstblock, lastblock
+          nullify(btofc_blk_offset(jb)%pter)
+       end do
        !
        glbcnt = 0
        curcnt = 0
        curp = 0
-       do curgcol=1,ngcols_p
+       do curgcol = 1, ngcols_p
           cid = pgcols(curgcol)%chunk
           i   = pgcols(curgcol)%ccol
           owner_p   = chunks(cid)%owner
@@ -975,11 +976,11 @@ end subroutine phys_grid_readnl
              btofc_blk_num(curp) = curcnt
              curcnt = 0
              curp = curp + 1
-          enddo
+          end do
           curgcol_d = chunks(cid)%gcol(i)
           block_cnt = get_gcol_block_cnt_d(curgcol_d)
           call get_gcol_block_d(curgcol_d,block_cnt,blockids,bcids)
-          do jb = 1,block_cnt
+          do jb = 1, block_cnt
              owner_d = get_block_owner_d(blockids(jb))
              if (iam == owner_d) then
                 if (.not. associated(btofc_blk_offset(blockids(jb))%pter)) then
@@ -988,32 +989,32 @@ end subroutine phys_grid_readnl
                    btofc_blk_offset(blockids(jb))%ncols = blksiz
                    btofc_blk_offset(blockids(jb))%nlvls = numlvl
                    allocate( btofc_blk_offset(blockids(jb))%pter(blksiz,numlvl) )
-                endif
+                end if
                 do k=1,btofc_blk_offset(blockids(jb))%nlvls
                    btofc_blk_offset(blockids(jb))%pter(bcids(jb),k) = glbcnt
                    curcnt = curcnt + 1
                    glbcnt = glbcnt + 1
-                enddo
-             endif
-          enddo
-       enddo
+                end do
+             end if
+          end do
+       end do
        btofc_blk_num(curp) = curcnt
        block_buf_nrecs = glbcnt
        !
-       allocate( btofc_chk_num(0:npes-1) )
+       allocate(btofc_chk_num(0:npes-1))
        btofc_chk_num = 0
-       allocate( btofc_chk_offset(begchunk:endchunk) )
-       do lcid=begchunk,endchunk
+       allocate(btofc_chk_offset(begchunk:endchunk))
+       do lcid = begchunk, endchunk
           ncols = lchunks(lcid)%ncols
           btofc_chk_offset(lcid)%ncols = ncols
           btofc_chk_offset(lcid)%nlvls = pver+1
           allocate( btofc_chk_offset(lcid)%pter(ncols,pver+1) )
-       enddo
+       end do
        !
        curcnt = 0
        glbcnt = 0
-       do p=0,npes-1
-          do curgcol=gs_col_offset(iam),gs_col_offset(iam+1)-1
+       do p = 0, npes - 1
+          do curgcol = gs_col_offset(iam), gs_col_offset(iam+1) - 1
              cid  = pgcols(curgcol)%chunk
              owner_p  = chunks(cid)%owner
              if (iam == owner_p) then
@@ -1022,23 +1023,23 @@ end subroutine phys_grid_readnl
                 curgcol_d = chunks(cid)%gcol(i)
                 block_cnt = get_gcol_block_cnt_d(curgcol_d)
                 call get_gcol_block_d(curgcol_d,block_cnt,blockids,bcids)
-                do jb = 1,block_cnt
+                do jb = 1, block_cnt
                    owner_d = get_block_owner_d(blockids(jb))
                    if (p == owner_d) then
                       numlvl = get_block_levels_cnt_d(blockids(jb),bcids(jb))
                       call get_block_levels_d(blockids(jb),bcids(jb),numlvl,levels)
-                      do k=1,numlvl
+                      do k = 1, numlvl
                          btofc_chk_offset(lcid)%pter(i,levels(k)+1) = glbcnt
                          curcnt = curcnt + 1
                          glbcnt = glbcnt + 1
-                      enddo
-                   endif
-                enddo
-             endif
-          enddo
+                      end do
+                   end if
+                end do
+             end if
+          end do
           btofc_chk_num(p) = curcnt
           curcnt = 0
-       enddo
+       end do
        chunk_buf_nrecs = glbcnt
        !
        ! Precompute swap partners and number of steps in point-to-point
@@ -1046,7 +1047,7 @@ end subroutine phys_grid_readnl
        ! First, determine number of swaps.
        !
        dp_coup_steps = 0
-       do i=1,ceil2(npes)-1
+       do i = 1, ceil2(npes) - 1
           p = pair(npes,i,iam)
           if (p >= 0) then
              if ((btofc_blk_num(p) > 0 .or. btofc_chk_num(p) > 0)) then
@@ -1057,9 +1058,9 @@ end subroutine phys_grid_readnl
        !
        ! Second, determine swap partners.
        !
-       allocate( dp_coup_proc(dp_coup_steps) )
+       allocate(dp_coup_proc(dp_coup_steps))
        dp_coup_steps = 0
-       do i=1,ceil2(npes)-1
+       do i = 1, ceil2(npes) - 1
           p = pair(npes,i,iam)
           if (p >= 0) then
              if ((btofc_blk_num(p) > 0 .or. btofc_chk_num(p) > 0)) then
@@ -1068,11 +1069,10 @@ end subroutine phys_grid_readnl
              end if
           end if
        end do
-       !
-    endif
+    end if
 
     ! Final clean-up
-    deallocate( gs_col_offset )
+    deallocate(gs_col_offset)
     ! (if eliminate get_lon_xxx, can also deallocate
     !  clat_p_idx, and grid_latlon?))
 
@@ -1213,7 +1213,7 @@ end subroutine phys_grid_readnl
     !
     call t_stopf("phys_grid_init")
     call t_adj_detailf(+2)
-    return
+
   end subroutine phys_grid_init
 
 !========================================================================
@@ -3903,30 +3903,30 @@ logical function phys_grid_initialized ()
 !
 ! Determine index range for dynamics blocks
 !
-   call get_block_bounds_d(firstblock,lastblock)
+   call get_block_bounds_d(firstblock, lastblock)
 
 !
 ! Determine maximum number of columns in a block
 !
    maxblksiz = 0
-   do jb=firstblock,lastblock
-      maxblksiz = max(maxblksiz,get_block_gcol_cnt_d(jb))
-   enddo
+   do jb = firstblock, lastblock
+      maxblksiz = max(maxblksiz, get_block_gcol_cnt_d(jb))
+   end do
 
 !
 !  determine which (and how many) processes are assigned
 !  dynamics blocks
 !
-   allocate( proc_busy_d(0:npes-1) )
+   allocate(proc_busy_d(0:npes-1))
    proc_busy_d = .false.
    nproc_busy_d = 0
-   do jb=firstblock,lastblock
+   do jb = firstblock, lastblock
       p = get_block_owner_d(jb)
-      if (.not. proc_busy_d(p) ) then
+      if (.not. proc_busy_d(p)) then
          proc_busy_d(p) = .true.
          nproc_busy_d = nproc_busy_d + 1
-      endif
-   enddo
+      end if
+   end do
 
 !
 ! Determine virtual SMP count and processes/virtual SMP map.
@@ -3943,27 +3943,27 @@ logical function phys_grid_initialized ()
 !     idle dynamics processes) so there is no advantage to
 !     blocking the idle processes in these assignments.
 !
-   if ((opt <= 0) .or. (opt == 4)) then
+   if (opt <= 0 .or. opt == 4) then
 
 !     assign active dynamics processes to virtual SMP nodes
       nsmpx = 0
-      do p=0,npes-1
+      do p = 0, npes - 1
          if (proc_busy_d(p)) then
             proc_smp_mapx(p) = nsmpx
             nsmpx = nsmpx + 1
-         endif
-      enddo
+         end if
+      end do
 !
 !     assign idle dynamics processes to virtual SMP nodes (wrap map)
       nsmpy = 0
-      do p=0,npes-1
+      do p = 0, npes - 1
          if (.not. proc_busy_d(p)) then
             proc_smp_mapx(p) = nsmpy
-            nsmpy = mod(nsmpy+1,nsmpx)
-         endif
-      enddo
+            nsmpy = mod(nsmpy + 1, nsmpx)
+         end if
+      end do
 
-   elseif (opt == 1) then
+   else if (opt == 1) then
 
       allocate( smp_busy_d(0:nsmps-1) )
       allocate( smp_smp_mapx(0:nsmps-1) )
@@ -3971,12 +3971,12 @@ logical function phys_grid_initialized ()
 !
 !     determine SMP nodes assigned dynamics blocks
       smp_busy_d = .false.
-      do p=0,npes-1
-         if ( proc_busy_d(p) ) then
+      do p = 0, npes - 1
+         if (proc_busy_d(p)) then
             smp = proc_smp_map(p)
             smp_busy_d(smp) = .true.
-         endif
-      enddo
+         end if
+      end do
 
 !
 !     determine number of SMP nodes assigned dynamics blocks
@@ -4009,14 +4009,14 @@ logical function phys_grid_initialized ()
       deallocate( smp_busy_d )
       deallocate( smp_smp_mapx )
 
-   elseif (opt == 2) then
+   else if (opt == 2) then
 
       nsmpx = 1
-      do p=0,npes-1
+      do p = 0, npes - 1
          proc_smp_mapx(p) = 0
-      enddo
+      end do
 
-   elseif (opt == 3) then
+   else if (opt == 3) then
 
 !     find active process partners
       proc_smp_mapx = -1
@@ -4035,12 +4035,12 @@ logical function phys_grid_initialized ()
    else
 
       nsmpx = npes
-      do p=0,npes-1
+      do p = 0, npes - 1
          proc_smp_mapx(p) = p
-      enddo
+      end do
 
-   endif
-!
+   end if
+
    deallocate( proc_busy_d )
 
 !
@@ -4066,45 +4066,45 @@ logical function phys_grid_initialized ()
 !
    col_smp_mapx(:) = -1
    error = .false.
-   do i=1,ngcols_p
+   do i = 1, ngcols_p
       curgcol = latlon_to_dyn_gcol_map(i)
       block_cnt = get_gcol_block_cnt_d(curgcol)
-      call get_gcol_block_d(curgcol,block_cnt,blockids,bcids)
-      do jb=1,block_cnt
+      call get_gcol_block_d(curgcol, block_cnt, blockids, bcids)
+      do jb = 1, block_cnt
          p = get_block_owner_d(blockids(jb))
          if (col_smp_mapx(i) .eq. -1) then
             col_smp_mapx(i) = proc_smp_mapx(p)
-         elseif (col_smp_mapx(i) .ne. proc_smp_mapx(p)) then
+         else if (col_smp_mapx(i) .ne. proc_smp_mapx(p)) then
             error = .true.
-         endif
-      enddo
+         end if
+      end do
    end do
    if (error) then
       write(iulog,*) "PHYS_GRID_INIT error: opt", opt, "specified, ", &
                "but vertical decomposition not limited to virtual SMP"
       call endrun()
-   endif
+   end if
 !
-   allocate( nsmpcolumns(0:nsmpx-1) )
+   allocate(nsmpcolumns(0:nsmpx-1))
    nsmpcolumns(:) = 0
-   do i=1,ngcols_p
+   do i = 1, ngcols_p
       curgcol = latlon_to_dyn_gcol_map(i)
       smp = col_smp_mapx(curgcol)
       nsmpcolumns(smp) = nsmpcolumns(smp) + 1
    end do
 !
-   deallocate( col_smp_mapx )
+   deallocate(col_smp_mapx)
 
 !
 !  Allocate other work space
 !
-   allocate( nsmpthreads(0:nsmpx-1) )
-   allocate( nsmpchunks (0:nsmpx-1) )
-   allocate( maxcol_chk (0:nsmpx-1) )
-   allocate( maxcol_chks(0:nsmpx-1) )
-   allocate( cid_offset (0:nsmpx-1) )
-   allocate( local_cid  (0:nsmpx-1) )
-   allocate( cols(1:maxblksiz) )
+   allocate(nsmpthreads(0:nsmpx-1))
+   allocate(nsmpchunks (0:nsmpx-1))
+   allocate(maxcol_chk (0:nsmpx-1))
+   allocate(maxcol_chks(0:nsmpx-1))
+   allocate(cid_offset (0:nsmpx-1))
+   allocate(local_cid  (0:nsmpx-1))
+   allocate(cols(1:maxblksiz))
 !
 ! Options 0-3: split local dynamics blocks into chunks,
 !              using wrap-map assignment of columns and
@@ -4119,15 +4119,15 @@ logical function phys_grid_initialized ()
 ! Option 4: split local dynamics blocks into chunks,
 !           using block-map assignment of columns
 !
-   if ((opt >= 0) .and. (opt <= 4)) then
+   if (opt >= 0 .and. opt <= 4) then
 !
 ! Calculate number of threads available in each SMP node.
 !
       nsmpthreads(:) = 0
-      do p=0,npes-1
+      do p = 0, npes - 1
          smp = proc_smp_mapx(p)
          nsmpthreads(smp) = nsmpthreads(smp) + npthreads(p)
-      enddo
+      end do
 !
 ! Determine number of chunks to keep all threads busy
 !
@@ -4152,7 +4152,7 @@ logical function phys_grid_initialized ()
 ! Determine maximum number of columns to assign to chunks
 ! in a given SMP
 !
-      do smp=0,nsmpx-1
+      do smp = 0, nsmpx - 1
          if (nsmpchunks(smp) /= 0) then
             ntmp1 = nsmpcolumns(smp)/nsmpchunks(smp)
             ntmp2 = mod(nsmpcolumns(smp),nsmpchunks(smp))
@@ -4162,17 +4162,17 @@ logical function phys_grid_initialized ()
             else
                maxcol_chk(smp) = ntmp1
                maxcol_chks(smp) = nsmpchunks(smp)
-            endif
+            end if
          else
             maxcol_chk(smp) = 0
             maxcol_chks(smp) = 0
-         endif
-      enddo
+         end if
+      end do
 !
 ! Allocate chunks and knuhcs data structures
 !
-      allocate( chunks(1:nchunks) )
-      allocate( knuhcs(1:ngcols) )
+      allocate(chunks(1:nchunks))
+      allocate(knuhcs(1:ngcols))
 !
 ! Initialize chunks and knuhcs data structures
 !
@@ -4184,19 +4184,19 @@ logical function phys_grid_initialized ()
 !
       cid_offset(0) = 1
       local_cid(0) = 0
-      do smp=1,nsmpx-1
+      do smp = 1, nsmpx - 1
          cid_offset(smp) = cid_offset(smp-1) + nsmpchunks(smp-1)
          local_cid(smp) = 0
-      enddo
+      end do
 !
 ! Assign columns to chunks
 !
-      do jb=firstblock,lastblock
+      do jb = firstblock, lastblock
          p = get_block_owner_d(jb)
          smp = proc_smp_mapx(p)
          blksiz = get_block_gcol_cnt_d(jb)
-         call get_block_gcol_d(jb,blksiz,cols)
-         do ib = 1,blksiz
+         call get_block_gcol_d(jb, blksiz, cols)
+         do ib = 1, blksiz
 !
 ! Assign column to a chunk if not already assigned
             curgcol = cols(ib)
@@ -4210,13 +4210,13 @@ logical function phys_grid_initialized ()
                   do while (chunks(cid)%ncols >=  maxcol_chk(smp))
                      local_cid(smp) = mod(local_cid(smp)+1,nsmpchunks(smp))
                      cid = cid_offset(smp) + local_cid(smp)
-                  enddo
+                  end do
                else
                   do while (chunks(cid)%ncols >=  maxcol_chk(smp)-1)
                      local_cid(smp) = mod(local_cid(smp)+1,nsmpchunks(smp))
                      cid = cid_offset(smp) + local_cid(smp)
                   enddo
-               endif
+               end if
                chunks(cid)%ncols = chunks(cid)%ncols + 1
                if (chunks(cid)%ncols .eq. maxcol_chk(smp)) &
                   maxcol_chks(smp) = maxcol_chks(smp) - 1
@@ -4248,19 +4248,16 @@ logical function phys_grid_initialized ()
                         chunks(cid)%lat(i) = lat_p(twingcol)
                         knuhcs(twingcol)%chunkid = cid
                         knuhcs(twingcol)%col = i
-                     endif
-!
-                  endif
+                     end if
+                  end if
 !
 ! Move on to next chunk (wrap map)
                   local_cid(smp) = mod(local_cid(smp)+1,nsmpchunks(smp))
-!
-               endif
-!
-            endif
-         enddo
-      enddo
-!
+               end if
+            end if
+         end do
+      end do
+
    else
 !
 ! Option 5: split individual dynamics blocks into chunks,
@@ -4271,50 +4268,50 @@ logical function phys_grid_initialized ()
 !  (assuming no vertical decomposition)
       nchunks = 0
       nsmpchunks(:) = 0
-      do j=firstblock,lastblock
+      do j = firstblock, lastblock
          blksiz = get_block_gcol_cnt_d(j)
          nlchunks = blksiz/pcols
          if (pcols*(blksiz/pcols) /= blksiz) then
             nlchunks = nlchunks + 1
-         endif
+         end if
          nchunks = nchunks + nlchunks
          p = get_block_owner_d(j)
          nsmpchunks(p) = nsmpchunks(p) + nlchunks
-      enddo
+      end do
 !
 ! Determine chunk id ranges for each SMP
 !
       cid_offset(0) = 1
       local_cid(0) = 0
-      do smp=1,nsmpx-1
+      do smp = 1, nsmpx - 1
          cid_offset(smp) = cid_offset(smp-1) + nsmpchunks(smp-1)
          local_cid(smp) = 0
-      enddo
+      end do
 !
 ! Allocate chunks and knuhcs data structures
 !
-      allocate( chunks(1:nchunks) )
-      allocate( knuhcs(1:ngcols) )
+      allocate(chunks(1:nchunks))
+      allocate(knuhcs(1:ngcols))
 !
 ! Initialize chunks and knuhcs data structures
 !
       knuhcs(:)%chunkid = -1
       knuhcs(:)%col = -1
       cid = 0
-      do jb=firstblock,lastblock
+      do jb = firstblock, lastblock
          p = get_block_owner_d(jb)
          smp = proc_smp_mapx(p)
          blksiz = get_block_gcol_cnt_d(jb)
-         call get_block_gcol_d(jb,blksiz,cols)
+         call get_block_gcol_d(jb, blksiz, cols)
 
          ib = 0
          do while (ib < blksiz)
 
             cid = cid_offset(smp) + local_cid(smp)
-            max_ncols = min(pcols,blksiz-ib)
+            max_ncols = min(pcols, blksiz - ib)
 
             ncols = 0
-            do i=1,max_ncols
+            do i = 1, max_ncols
                ib = ib + 1
                ! check whether global index is for a column that dynamics
                ! intends to pass to the physics
@@ -4327,21 +4324,19 @@ logical function phys_grid_initialized ()
                   chunks(cid)%lat(ncols)  = lat_p(curgcol)
                   knuhcs(curgcol)%chunkid = cid
                   knuhcs(curgcol)%col = ncols
-               endif
-            enddo
+               end if
+            end do
             chunks(cid)%ncols = ncols
-
             local_cid(smp) = local_cid(smp) + 1
-         enddo
-      enddo
+         end do
+      end do
 !
 ! Set number of threads available in each "SMP node".
 !
-      do p=0,npes-1
+      do p = 0, npes - 1
          nsmpthreads(p) = npthreads(p)
-      enddo
-!
-   endif
+      end do
+   end if
 !
 ! Assign chunks to processes.
 !
@@ -4350,17 +4345,16 @@ logical function phys_grid_initialized ()
 !
 ! Clean up
 !
-   deallocate( nsmpcolumns )
-   deallocate( nsmpthreads )
-   deallocate( nsmpchunks  )
-   deallocate( maxcol_chk  )
-   deallocate( maxcol_chks )
-   deallocate( cid_offset  )
-   deallocate( local_cid   )
-   deallocate( cols )
-   deallocate( knuhcs )
+   deallocate(nsmpcolumns)
+   deallocate(nsmpthreads)
+   deallocate(nsmpchunks)
+   deallocate(maxcol_chk)
+   deallocate(maxcol_chks)
+   deallocate(cid_offset)
+   deallocate(local_cid)
+   deallocate(cols)
+   deallocate(knuhcs)
 
-   return
    end subroutine create_chunks
 !
 !========================================================================
@@ -4916,16 +4910,10 @@ logical function phys_grid_initialized ()
 
 !  Update total number of columns assigned to this process
          gs_col_num(ntmp2)   = gs_col_num(ntmp2) + chunks(cid)%ncols
-!
-      enddo
-!
-   enddo
-!
-   return
-   end subroutine assign_chunks
-!
-!========================================================================
 
-!#######################################################################
+      end do
+   end do
+
+   end subroutine assign_chunks
 
 end module phys_grid

@@ -23,7 +23,7 @@ module rrtmg_lw_rad
 ! *                                                                          *
 ! *                                                                          *
 ! *                   a rapid radiative transfer model                       *
-! *                       for the longwave region                            * 
+! *                       for the longwave region                            *
 ! *             for application to general circulation models                *
 ! *                                                                          *
 ! *                                                                          *
@@ -67,7 +67,7 @@ public :: rrtmg_lw
 
 ! Set iaer to select aerosol option
 ! iaer = 0, no aerosols
-! iaer = 10, input total aerosol optical depth (tauaer) directly 
+! iaer = 10, input total aerosol optical depth (tauaer) directly
 integer, parameter :: iaer = 10
 
 !=========================================================================================
@@ -86,26 +86,26 @@ subroutine rrtmg_lw &
 
 ! -------- Description --------
 
-! This program is the driver subroutine for RRTMG_LW, the AER LW radiation 
+! This program is the driver subroutine for RRTMG_LW, the AER LW radiation
 ! model for application to GCMs, that has been adapted from RRTM_LW for
 ! improved efficiency.
 !
 ! This routine:
 !    a) calls INATM to read in the atmospheric profile from GCM;
-!       all layering in RRTMG is ordered from surface to toa. 
+!       all layering in RRTMG is ordered from surface to toa.
 !    b) call to CLDPRMC removed -- CAM supplies cloud optical depths
-!    c) calls SETCOEF to calculate various quantities needed for 
+!    c) calls SETCOEF to calculate various quantities needed for
 !       the radiative transfer algorithm
-!    d) calls TAUMOL to calculate gaseous optical depths for each 
+!    d) calls TAUMOL to calculate gaseous optical depths for each
 !       of the 16 spectral bands
 !    e) calls RTRNMC (for both clear and cloudy profiles) to perform the
-!       radiative transfer calculation using McICA, the Monte-Carlo 
-!       Independent Column Approximation, to represent sub-grid scale 
+!       radiative transfer calculation using McICA, the Monte-Carlo
+!       Independent Column Approximation, to represent sub-grid scale
 !       cloud variability
 !    f) passes the necessary fluxes and cooling rates back to GCM
 !
 ! *** This version uses McICA ***
-!     Monte Carlo Independent Column Approximation (McICA, Pincus et al., 
+!     Monte Carlo Independent Column Approximation (McICA, Pincus et al.,
 !     JC, 2003) method is applied to the forward model calculation
 !
 ! This call to RRTMG_LW must be preceeded by a call to the module
@@ -119,20 +119,20 @@ subroutine rrtmg_lw &
 !     Input aerosol optical depth directly by layer and spectral band (iaer=10);
 !     band average optical depth at the mid-point of each spectral band.
 !     RRTMG_LW currently treats only aerosol absorption;
-!     scattering capability is not presently available. 
+!     scattering capability is not presently available.
 !
 !
 ! ------- Modifications -------
 !
-! This version of RRTMG_LW has been modified from RRTM_LW to use a reduced 
-! set of g-points for application to GCMs.  
+! This version of RRTMG_LW has been modified from RRTM_LW to use a reduced
+! set of g-points for application to GCMs.
 !
 !-- Original version (derived from RRTM_LW), reduction of g-points, other
-!   revisions for use with GCMs.  
+!   revisions for use with GCMs.
 !     1999: M. J. Iacono, AER, Inc.
 !-- Adapted for use with NCAR/CAM.
 !     May 2004: M. J. Iacono, AER, Inc.
-!-- Revised to add McICA capability. 
+!-- Revised to add McICA capability.
 !     Nov 2005: M. J. Iacono, AER, Inc.
 !-- Conversion to F90 formatting for consistency with rrtmg_sw.
 !     Feb 2007: M. J. Iacono, AER, Inc.
@@ -234,7 +234,7 @@ subroutine rrtmg_lw &
    integer :: ig                             ! g-point loop index
 
    ! Atmosphere
-   real(kind=r8) :: pavel(nlay)              ! layer pressures (mb) 
+   real(kind=r8) :: pavel(nlay)              ! layer pressures (mb)
    real(kind=r8) :: tavel(nlay)              ! layer temperatures (K)
    real(kind=r8) :: pz(0:nlay)               ! level (interface) pressures (hPa, mb)
    real(kind=r8) :: tz(0:nlay)               ! level (interface) temperatures (K)
@@ -245,7 +245,7 @@ subroutine rrtmg_lw &
    real(kind=r8) :: wx(maxxsec,nlay)         ! cross-section amounts (mol/cm-2)
    real(kind=r8) :: pwvcm                    ! precipitable water vapor (cm)
    real(kind=r8) :: semiss(nbndlw)           ! lw surface emissivity
-   real(kind=r8) :: fracs(nlay,ngptlw)       ! 
+   real(kind=r8) :: fracs(nlay,ngptlw)       !
    real(kind=r8) :: taug(nlay,ngptlw)        ! gaseous optical depths
    real(kind=r8) :: taut(nlay,ngptlw)        ! gaseous + aerosol optical depths
 
@@ -253,12 +253,12 @@ subroutine rrtmg_lw &
 
    ! Atmosphere - setcoef
    integer :: laytrop                          ! tropopause layer index
-   integer :: jp(nlay)                         ! lookup table index 
-   integer :: jt(nlay)                         ! lookup table index 
-   integer :: jt1(nlay)                        ! lookup table index 
-   real(kind=r8) :: planklay(nlay,nbndlw)      ! 
-   real(kind=r8) :: planklev(0:nlay,nbndlw)    ! 
-   real(kind=r8) :: plankbnd(nbndlw)           ! 
+   integer :: jp(nlay)                         ! lookup table index
+   integer :: jt(nlay)                         ! lookup table index
+   integer :: jt1(nlay)                        ! lookup table index
+   real(kind=r8) :: planklay(nlay,nbndlw)      !
+   real(kind=r8) :: planklev(0:nlay,nbndlw)    !
+   real(kind=r8) :: plankbnd(nbndlw)           !
 
    real(kind=r8) :: colh2o(nlay)               ! column amount (h2o)
    real(kind=r8) :: colco2(nlay)               ! column amount (co2)
@@ -283,7 +283,7 @@ subroutine rrtmg_lw &
 
    real(kind=r8) :: &                          !
                       fac00(nlay), fac01(nlay), &
-                      fac10(nlay), fac11(nlay) 
+                      fac10(nlay), fac11(nlay)
    real(kind=r8) :: &                          !
                       rat_h2oco2(nlay),rat_h2oco2_1(nlay), &
                       rat_h2oo3(nlay),rat_h2oo3_1(nlay), &
@@ -326,8 +326,8 @@ subroutine rrtmg_lw &
    do iplon = 1, ncol
 
       !  Prepare atmospheric profile from GCM for use in RRTMG, and define
-      !  other input parameters.  
-      
+      !  other input parameters.
+
       call inatm(iplon, nlay, icld, iaer, &
                  play, plev, tlay, tlev, tsfc, h2ovmr, &
                  o3vmr, co2vmr, ch4vmr, o2vmr, n2ovmr, cfc11vmr, cfc12vmr, &
@@ -339,7 +339,7 @@ subroutine rrtmg_lw &
 
       ! Calculate information needed by the radiative transfer routine
       ! that is specific to this atmosphere
-      ! by interpolating data from stored reference atmospheres. 
+      ! by interpolating data from stored reference atmospheres.
 
       call setcoef(nlay, istart, pavel, tavel, tz, tbound, semiss, &
                    coldry, wkl, wbrodl, &
@@ -352,7 +352,7 @@ subroutine rrtmg_lw &
                    selffac, selffrac, indself, forfac, forfrac, indfor, &
                    minorfrac, scaleminor, scaleminorn2, indminor)
 
-      !  Calculate the gaseous optical depths and Planck fractions for 
+      !  Calculate the gaseous optical depths and Planck fractions for
       !  each longwave spectral band.
 
       call taumol(nlay, pavel, wx, coldry, &
@@ -368,13 +368,13 @@ subroutine rrtmg_lw &
 
       ! Combine gaseous and aerosol optical depths, if aerosol active
       if (iaer == 0) then
-         do ig = 1, ngptlw 
+         do ig = 1, ngptlw
             do k = 1, nlay
                taut(k,ig) = taug(k,ig)
             end do
          end do
       else if (iaer == 10) then
-         do ig = 1, ngptlw 
+         do ig = 1, ngptlw
             do k = 1, nlay
                taut(k,ig) = taug(k,ig) + taua(k,ngb(ig))
             end do
@@ -421,7 +421,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
               cldfmc, taucmc, ciwpmc, clwpmc, reicmc, dgesmc, relqmc, taua)
 
    !  Input atmospheric profile from GCM, and prepare it for use in RRTMG_LW.
-   !  Set other RRTMG_LW input parameters.  
+   !  Set other RRTMG_LW input parameters.
 
    use parrrtm,  only: nbndlw, ngptlw, nmol, maxxsec, mxmol
    use rrlw_con, only: grav, avogad
@@ -483,7 +483,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
 
    ! ----- Output -----
    ! Atmosphere
-   real(kind=r8), intent(out) :: pavel(nlay)            ! layer pressures (mb) 
+   real(kind=r8), intent(out) :: pavel(nlay)            ! layer pressures (mb)
                                                      !    Dimensions: (nlay)
    real(kind=r8), intent(out) :: tavel(nlay)            ! layer temperatures (K)
                                                      !    Dimensions: (nlay)
@@ -540,7 +540,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
    real(kind=r8), parameter :: sbc = 5.67e-08_r8     ! Stefan-Boltzmann constant (W/m2K4)
 
    integer :: isp, l, ix, n, imol, ib, ig            ! Loop indices
-   real(kind=r8) :: amm, amttl, wvttl, wvsh, summol  
+   real(kind=r8) :: amm, amttl, wvttl, wvsh, summol
    integer :: temp
    !----------------------------------------------------------------------------
 
@@ -556,20 +556,20 @@ subroutine inatm(iplon, nlay, icld, iaer, &
    taua(:,:) = 0.0_r8
    amttl = 0.0_r8
    wvttl = 0.0_r8
- 
+
    !  Set surface temperature.
    tbound = tsfc(iplon)
 
    !  Install input GCM arrays into RRTMG_LW arrays for pressure, temperature,
-   !  and molecular amounts.  
+   !  and molecular amounts.
    !  Pressures are input in mb, or are converted to mb here.
-   !  Molecular amounts are input in volume mixing ratio, or are converted from 
+   !  Molecular amounts are input in volume mixing ratio, or are converted from
    !  mass mixing ratio (or specific humidity for h2o) to volume mixing ratio
-   !  here. These are then converted to molecular amount (molec/cm2) below.  
-   !  The dry air column COLDRY (in molec/cm2) is calculated from the level 
-   !  pressures, pz (in mb), based on the hydrostatic equation and includes a 
-   !  correction to account for h2o in the layer.  The molecular weight of moist 
-   !  air (amm) is calculated for each layer.  
+   !  here. These are then converted to molecular amount (molec/cm2) below.
+   !  The dry air column COLDRY (in molec/cm2) is calculated from the level
+   !  pressures, pz (in mb), based on the hydrostatic equation and includes a
+   !  correction to account for h2o in the layer.  The molecular weight of moist
+   !  air (amm) is calculated for each layer.
    !  Note: In RRTMG, layer indexing goes from bottom to top, and coding below
    !  assumes GCM input fields are also bottom to top. Input layer indexing
    !  from GCM fields should be reversed here if necessary.
@@ -588,7 +588,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
       wkl(6,l) = ch4vmr(iplon,nlay-l+1)
       wkl(7,l) = o2vmr(iplon,nlay-l+1)
 
-      amm = (1._r8 - wkl(1,l)) * amd + wkl(1,l) * amw            
+      amm = (1._r8 - wkl(1,l)) * amd + wkl(1,l) * amw
 
       coldry(l) = (pz(l-1)-pz(l)) * 1.e3_r8 * avogad / &
                      (1.e2_r8 * grav * amm * (1._r8 + wkl(1,l)))
@@ -604,7 +604,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
    coldry(nlay) = (pz(nlay-1)) * 1.e3_r8 * avogad / &
                   (1.e2_r8 * grav * amm * (1._r8 + wkl(1,nlay-1)))
 
-   ! At this point all molecular amounts in wkl and wx are in volume mixing ratio; 
+   ! At this point all molecular amounts in wkl and wx are in volume mixing ratio;
    ! convert to molec/cm2 based on coldry for use in rrtm.  also, compute precipitable
    ! water vapor for diffusivity angle adjustments in rtrn and rtrnmr.
    do l = 1, nlay
@@ -628,7 +628,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
    wvsh = (amw * wvttl) / (amd * amttl)
    pwvcm = wvsh * (1.e3_r8 * pz(0)) / (1.e2_r8 * grav)
 
-   ! Set spectral surface emissivity for each longwave band.  
+   ! Set spectral surface emissivity for each longwave band.
    do n = 1, nbndlw
       semiss(n) = emis(iplon,n)
       ! semiss(n) = 1.0_r8
@@ -636,7 +636,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
 
    ! Transfer aerosol optical properties to RRTM variable;
    ! modify to reverse layer indexing here if necessary.
-   if (iaer >= 1) then 
+   if (iaer >= 1) then
       do l = 1, nlay-1
          do ib = 1, nbndlw
             taua(l,ib) = tauaer(iplon,nlay-l,ib)
@@ -647,7 +647,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
    ! Transfer cloud fraction and cloud optical properties to RRTM variables,
    ! modify to reverse layer indexing here if necessary.
 
-   if (icld >= 1) then 
+   if (icld >= 1) then
 
       ! Move incoming GCM cloud arrays to RRTMG cloud arrays.
 
@@ -662,7 +662,7 @@ subroutine inatm(iplon, nlay, icld, iaer, &
          relqmc(l) = relqmcl(iplon,nlay-l)
       end do
    end if
-      
+
 end subroutine inatm
 
 end module rrtmg_lw_rad

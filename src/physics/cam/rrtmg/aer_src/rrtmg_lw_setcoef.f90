@@ -42,7 +42,7 @@
 !
 !  Purpose:  For a given atmosphere, calculate the indices and
 !  fractions related to the pressure and temperature interpolations.
-!  Also calculate the values of the integrated Planck functions 
+!  Also calculate the values of the integrated Planck functions
 !  for each band at the level and layer temperatures.
 
 ! ------- Declarations -------
@@ -51,7 +51,7 @@
       integer, intent(in) :: nlayers         ! total number of layers
       integer, intent(in) :: istart          ! beginning band of calculation
 
-      real(kind=r8), intent(in) :: pavel(nlayers)           ! layer pressures (mb) 
+      real(kind=r8), intent(in) :: pavel(nlayers)           ! layer pressures (mb)
                                                         !    Dimensions: (nlayers)
       real(kind=r8), intent(in) :: tavel(nlayers)           ! layer temperatures (K)
                                                         !    Dimensions: (nlayers)
@@ -69,17 +69,17 @@
 
 ! ----- Output -----
       integer, intent(out) :: laytrop        ! tropopause layer index
-      integer, intent(out) :: jp(nlayers)          ! 
+      integer, intent(out) :: jp(nlayers)          !
                                                         !    Dimensions: (nlayers)
       integer, intent(out) :: jt(nlayers)          !
                                                         !    Dimensions: (nlayers)
       integer, intent(out) :: jt1(nlayers)         !
                                                         !    Dimensions: (nlayers)
-      real(kind=r8), intent(out) :: planklay(nlayers,nbndlw)     ! 
+      real(kind=r8), intent(out) :: planklay(nlayers,nbndlw)     !
                                                         !    Dimensions: (nlayers,nbndlw)
-      real(kind=r8), intent(out) :: planklev(0:nlayers,nbndlw)    ! 
+      real(kind=r8), intent(out) :: planklev(0:nlayers,nbndlw)    !
                                                         !    Dimensions: (0:nlayers,nbndlw)
-      real(kind=r8), intent(out) :: plankbnd(nbndlw)       ! 
+      real(kind=r8), intent(out) :: plankbnd(nbndlw)       !
                                                         !    Dimensions: (nbndlw)
 
       real(kind=r8), intent(out) :: colh2o(nlayers)         ! column amount (h2o)
@@ -123,8 +123,8 @@
 
       real(kind=r8), intent(out) :: &                 !
                          fac00(nlayers), fac01(nlayers), &          !    Dimensions: (nlayers)
-                         fac10(nlayers), fac11(nlayers) 
-                                                        
+                         fac10(nlayers), fac11(nlayers)
+
       real(kind=r8), intent(out) :: &                 !
                          rat_h2oco2(nlayers),rat_h2oco2_1(nlayers), &
                          rat_h2oo3(nlayers),rat_h2oo3_1(nlayers), & !    Dimensions: (nlayers)
@@ -132,7 +132,7 @@
                          rat_h2och4(nlayers),rat_h2och4_1(nlayers), &
                          rat_n2oco2(nlayers),rat_n2oco2_1(nlayers), &
                          rat_o3co2(nlayers),rat_o3co2_1(nlayers)
-                                                        
+
 
 ! ----- Local -----
       integer :: indbound, indlev0
@@ -152,6 +152,11 @@
          indbound = 180
       endif
       tbndfrac = tbound - 159._r8 - float(indbound)
+      if (tbndfrac /= tbndfrac) then
+         print *, 'tbound = ', tbound
+         print *, 'indbound = ', indbound
+         stop 444
+      end if
       indlev0 = tz(0) - 159._r8
       if (indlev0 .lt. 1) then
          indlev0 = 1
@@ -161,7 +166,7 @@
       t0frac = tz(0) - 159._r8 - float(indlev0)
       laytrop = 0
 
-! Begin layer loop 
+! Begin layer loop
 !  Calculate the integrated Planck functions for each band at the
 !  surface, level, and layer temperatures.
       do lay = 1, nlayers
@@ -180,7 +185,7 @@
          endif
          tlevfrac = tz(lay) - 159._r8 - float(indlev)
 
-! Begin spectral band loop 
+! Begin spectral band loop
          do iband = 1, 15
             if (lay.eq.1) then
                dbdtlev = totplnk(indbound+1,iband) - totplnk(indbound,iband)
@@ -196,7 +201,7 @@
          enddo
 
 !  For band 16, if radiative transfer will be performed on just
-!  this band, use integrated Planck values up to 3250 cm-1.  
+!  this band, use integrated Planck values up to 3250 cm-1.
 !  If radiative transfer will be performed across all 16 bands,
 !  then include in the integrated Planck values for this band
 !  contributions from 2600 cm-1 to infinity.
@@ -244,11 +249,11 @@
          fp = min(3._r8, max(-2._r8, 5._r8 *(preflog(jp(lay)) - plog)))
 
 !  Determine, for each reference pressure (JP and JP1), which
-!  reference temperature (these are different for each  
+!  reference temperature (these are different for each
 !  reference pressure) is nearest the layer temperature but does
 !  not exceed it.  Store these indices in JT and JT1, resp.
 !  Store in FT (resp. FT1) the fraction of the way between JT
-!  (JT1) and the next highest reference temperature that the 
+!  (JT1) and the next highest reference temperature that the
 !  layer temperature falls.
          jt(lay) = int(3._r8 + (tavel(lay)-tref(jp(lay)))/15._r8)
          if (jt(lay) .lt. 1) then
@@ -340,7 +345,7 @@
 
 !  Set up factors needed to separately include the minor gases
 !  in the calculation of absorption coefficient
-         scaleminor(lay) = pavel(lay)/tavel(lay)         
+         scaleminor(lay) = pavel(lay)/tavel(lay)
          scaleminorn2(lay) = (pavel(lay)/tavel(lay)) &
              * (wbroad(lay)/(coldry(lay)+wkl(1,lay)))
          factor = (tavel(lay)-180.8_r8)/7.2_r8
@@ -350,10 +355,10 @@
 !  Setup reference ratio to be used in calculation of binary
 !  species parameter in upper atmosphere.
          rat_h2oco2(lay)=chi_mls(1,jp(lay))/chi_mls(2,jp(lay))
-         rat_h2oco2_1(lay)=chi_mls(1,jp(lay)+1)/chi_mls(2,jp(lay)+1)         
+         rat_h2oco2_1(lay)=chi_mls(1,jp(lay)+1)/chi_mls(2,jp(lay)+1)
 
          rat_o3co2(lay)=chi_mls(3,jp(lay))/chi_mls(2,jp(lay))
-         rat_o3co2_1(lay)=chi_mls(3,jp(lay)+1)/chi_mls(2,jp(lay)+1)         
+         rat_o3co2_1(lay)=chi_mls(3,jp(lay)+1)/chi_mls(2,jp(lay)+1)
 
 !  Calculate needed column amounts.
          colh2o(lay) = 1.e-20_r8 * wkl(1,lay)
@@ -372,9 +377,9 @@
  5400    continue
 
 !  We have now isolated the layer ln pressure and temperature,
-!  between two reference pressures and two reference temperatures 
-!  (for each reference pressure).  We multiply the pressure 
-!  fraction FP with the appropriate temperature fractions to get 
+!  between two reference pressures and two reference temperatures
+!  (for each reference pressure).  We multiply the pressure
+!  fraction FP with the appropriate temperature fractions to get
 !  the factors that will be needed for the interpolation that yields
 !  the optical depths (performed in routines TAUGBn for band n).`
 
@@ -398,7 +403,7 @@
 !***************************************************************************
 
       save
- 
+
 ! These pressures are chosen such that the ln of the first pressure
 ! has only a few non-zero digits (i.e. ln(PREF(1)) = 6.96000) and
 ! each subsequent ln(pressure) differs from the previous one by 0.2.
@@ -431,8 +436,8 @@
           -3.0400e+00_r8,-3.2400e+00_r8,-3.4400e+00_r8,-3.6400e+00_r8,-3.8400e+00_r8, &
           -4.0400e+00_r8,-4.2400e+00_r8,-4.4400e+00_r8,-4.6400e+00_r8/)
 
-! These are the temperatures associated with the respective 
-! pressures for the mls standard atmosphere. 
+! These are the temperatures associated with the respective
+! pressures for the mls standard atmosphere.
 
       tref(:) = (/ &
            2.9420e+02_r8, 2.8799e+02_r8, 2.7894e+02_r8, 2.6925e+02_r8, 2.5983e+02_r8, &
@@ -561,7 +566,7 @@
 !***************************************************************************
 
       save
- 
+
       totplnk(1:50,  1) = (/ &
       0.14783e-05_r8,0.15006e-05_r8,0.15230e-05_r8,0.15455e-05_r8,0.15681e-05_r8, &
       0.15908e-05_r8,0.16136e-05_r8,0.16365e-05_r8,0.16595e-05_r8,0.16826e-05_r8, &
@@ -1263,4 +1268,3 @@
       end subroutine lwavplank
 
       end module rrtmg_lw_setcoef
-

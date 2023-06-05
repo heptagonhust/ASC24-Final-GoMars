@@ -173,7 +173,6 @@ end subroutine macrop_driver_readnl
 
     call phys_getopts(shallow_scheme_out=shallow_scheme)
 
-    stop 222
     call pbuf_add_field('AST',      'global',  dtype_r8, (/pcols,pver,dyn_time_lvls/), ast_idx)
     call pbuf_add_field('AIST',     'global',  dtype_r8, (/pcols,pver,dyn_time_lvls/), aist_idx)
     call pbuf_add_field('ALST',     'global',  dtype_r8, (/pcols,pver,dyn_time_lvls/), alst_idx)

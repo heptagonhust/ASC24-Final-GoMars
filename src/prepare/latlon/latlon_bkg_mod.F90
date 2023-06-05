@@ -9,6 +9,7 @@ module latlon_bkg_mod
   use process_mod
   use latlon_parallel_mod
   use era5_reader_mod
+  use cam_reader_mod
   use mpas_reader_mod
   use waccm_reader_mod
   use openmars_reader_mod
@@ -27,6 +28,10 @@ module latlon_bkg_mod
   public latlon_bkg_calc_mg
   public latlon_bkg_calc_ph
   public latlon_bkg_regrid_qv
+  public latlon_bkg_regrid_qc
+  public latlon_bkg_regrid_qi
+  public latlon_bkg_regrid_nc
+  public latlon_bkg_regrid_ni
   public latlon_bkg_regrid_pt
   public latlon_bkg_regrid_u
   public latlon_bkg_regrid_v
@@ -39,7 +44,9 @@ contains
 
     select case (bkg_type)
     case ('era5')
-      call era5_reader_run(min_lon, max_lon, min_lat, max_lat)
+      call era5_reader_run(bkg_file, min_lon, max_lon, min_lat, max_lat)
+    case ('cam')
+      call cam_reader_run(bkg_file, min_lon, max_lon, min_lat, max_lat)
     case ('mpas')
       call mpas_reader_run(bkg_file)
     case ('waccm')
@@ -89,6 +96,9 @@ contains
         call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_t(:,:,era5_nlev), mesh, t0)
         t0_p = era5_lev(era5_nlev)
         do_hydrostatic_correct = .true.
+      case ('cam')
+        call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_ps, mesh, mgs)
+        do_hydrostatic_correct = .false.
       case ('mpas')
         call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_ps, mesh, mgs)
         do_hydrostatic_correct = .false.
@@ -145,7 +155,7 @@ contains
 
   subroutine latlon_bkg_regrid_pt()
 
-    real(r8), pointer :: qv(:,:,:)
+    real(r8), pointer, dimension(:,:,:) :: qv, qm
     real(r8), allocatable, dimension(:,:,:) :: t1, pt1, p1
     integer iblk, i, j, k
 
@@ -160,6 +170,7 @@ contains
                  tv    => blocks(iblk)%dstate(1)%tv, & ! out
                  pt    => blocks(iblk)%dstate(1)%pt)   ! out
         call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
+        call tracer_get_array_qm(iblk, qm)
         select case (bkg_type)
         case ('era5')
           allocate(t1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -171,7 +182,22 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:), qv(i,j,:))
+              tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:), qm(i,j,:))
+              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
+            end do
+          end do
+          deallocate(t1, p1)
+        case ('cam')
+          allocate(t1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+          allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+          do k = 1, cam_nlev
+            call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_t(:,:,k), mesh, t1(:,:,k))
+            call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_p(:,:,k), mesh, p1(:,:,k))
+          end do
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:), qm(i,j,:))
               pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
             end do
           end do
@@ -251,7 +277,18 @@ contains
             call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
-        deallocate(u1, p1)
+      case ('cam')
+        allocate(u1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        allocate(p1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        do k = 1, cam_nlev
+          call latlon_interp_bilinear_lon_edge(cam_lon, cam_slat, cam_us(:,:,k), mesh, u1(:,:,k), zero_pole=.true.)
+          call latlon_interp_bilinear_lon_edge(cam_lon, cam_lat , cam_p (:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%half_ids, mesh%half_ide
+            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
       case ('mpas')
         allocate(u1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mpas_nlev))
         allocate(p1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mpas_nlev))
@@ -264,7 +301,6 @@ contains
             call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.false.)
           end do
         end do
-        deallocate(u1, p1)
       case ('waccm')
         allocate(u1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,waccm_nlev))
         allocate(p1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,waccm_nlev))
@@ -277,7 +313,6 @@ contains
               call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
-        deallocate(u1, p1)
       case ('openmars')
         allocate(u1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,openmars_nlev))
         allocate(p1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,openmars_nlev))
@@ -290,8 +325,8 @@ contains
             call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
-        deallocate(u1, p1)
       end select
+      deallocate(u1, p1)
       call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
       end associate
     end do
@@ -323,7 +358,18 @@ contains
             call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
-        deallocate(v1, p1)
+      case ('cam')
+        allocate(v1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,cam_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,cam_nlev))
+        do k = 1, cam_nlev
+          call latlon_interp_bilinear_lat_edge(cam_slon, cam_lat, cam_vs(:,:,k), mesh, v1(:,:,k))
+          call latlon_interp_bilinear_lat_edge(cam_lon , cam_lat, cam_p (:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
       case ('mpas')
         allocate(v1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mpas_nlev))
         allocate(p1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mpas_nlev))
@@ -336,7 +382,6 @@ contains
             call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.false.)
           end do
         end do
-        deallocate(v1, p1)
       case ('waccm')
         allocate(v1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,waccm_nlev))
         allocate(p1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,waccm_nlev))
@@ -349,7 +394,6 @@ contains
             call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
-        deallocate(v1, p1)
       case ('openmars')
         allocate(v1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,openmars_nlev))
         allocate(p1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,openmars_nlev))
@@ -362,8 +406,8 @@ contains
             call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
-        deallocate(v1, p1)
       end select
+      deallocate(v1, p1)
       call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
       end associate
     end do
@@ -375,6 +419,8 @@ contains
     real(r8), pointer :: qv(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: q1, p1
     integer iblk, i, j, k
+
+    if (idx_qv == 0) return
 
     if (proc%is_root()) call log_notice('Regrid water vapor mixing ratio.')
 
@@ -390,6 +436,19 @@ contains
         do k = 1, era5_nlev
           call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_qv(:,:,k), mesh, q1(:,:,k))
           call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_pd(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qv(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(q1, p1)
+      case ('cam')
+        allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        do k = 1, cam_nlev
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_q(:,:,k), mesh, q1(:,:,k))
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_p(:,:,k), mesh, p1(:,:,k))
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -416,5 +475,175 @@ contains
     end do
 
   end subroutine latlon_bkg_regrid_qv
+
+  subroutine latlon_bkg_regrid_qc()
+
+    real(r8), pointer :: qc(:,:,:)
+    real(r8), allocatable, dimension(:,:,:) :: q1, p1
+    integer iblk, i, j, k
+
+    if (idx_qc == 0) return
+
+    if (proc%is_root()) call log_notice('Regrid cloud liquid mixing ratio.')
+
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%filter_mesh , &
+                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
+      call tracer_get_array(iblk, idx_qc, qc, __FILE__, __LINE__)
+      select case (bkg_type)
+      case ('era5')
+        allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
+        do k = 1, era5_nlev
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_ql(:,:,k), mesh, q1(:,:,k))
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_pd(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qc(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(q1, p1)
+      case ('cam')
+        allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        do k = 1, cam_nlev
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_cldliq(:,:,k), mesh, q1(:,:,k))
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_p(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qc(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(q1, p1)
+      end select
+      call fill_halo(block%filter_halo, qc, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      end associate
+    end do
+
+  end subroutine latlon_bkg_regrid_qc
+
+  subroutine latlon_bkg_regrid_qi()
+
+    real(r8), pointer :: qi(:,:,:)
+    real(r8), allocatable, dimension(:,:,:) :: q1, p1
+    integer iblk, i, j, k
+
+    if (idx_qi == 0) return
+
+    if (proc%is_root()) call log_notice('Regrid cloud ice mixing ratio.')
+
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%filter_mesh , &
+                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
+      call tracer_get_array(iblk, idx_qi, qi, __FILE__, __LINE__)
+      select case (bkg_type)
+      case ('era5')
+        allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
+        do k = 1, era5_nlev
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_qi(:,:,k), mesh, q1(:,:,k))
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_pd(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qi(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(q1, p1)
+      case ('cam')
+        allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        do k = 1, cam_nlev
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_cldice(:,:,k), mesh, q1(:,:,k))
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_p(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qi(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(q1, p1)
+      end select
+      call fill_halo(block%filter_halo, qi, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      end associate
+    end do
+
+  end subroutine latlon_bkg_regrid_qi
+
+  subroutine latlon_bkg_regrid_nc()
+
+    real(r8), pointer :: ni(:,:,:)
+    real(r8), allocatable, dimension(:,:,:) :: n1, p1
+    integer iblk, i, j, k
+
+    if (idx_nc == 0) return
+
+    if (proc%is_root()) call log_notice('Regrid cloud liquid number mixing ratio.')
+
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%filter_mesh , &
+                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
+      call tracer_get_array(iblk, idx_nc, ni, __FILE__, __LINE__)
+      select case (bkg_type)
+      case ('cam')
+        allocate(n1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        do k = 1, cam_nlev
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_numliq(:,:,k), mesh, n1(:,:,k))
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_p(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), ni(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(n1, p1)
+      end select
+      call fill_halo(block%filter_halo, ni, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      end associate
+    end do
+
+  end subroutine latlon_bkg_regrid_nc
+
+  subroutine latlon_bkg_regrid_ni()
+
+    real(r8), pointer :: ni(:,:,:)
+    real(r8), allocatable, dimension(:,:,:) :: n1, p1
+    integer iblk, i, j, k
+
+    if (idx_ni == 0) return
+
+    if (proc%is_root()) call log_notice('Regrid cloud ice number mixing ratio.')
+
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%filter_mesh , &
+                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
+      call tracer_get_array(iblk, idx_ni, ni, __FILE__, __LINE__)
+      select case (bkg_type)
+      case ('cam')
+        allocate(n1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        allocate(p1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
+        do k = 1, cam_nlev
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_numice(:,:,k), mesh, n1(:,:,k))
+          call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_p(:,:,k), mesh, p1(:,:,k))
+        end do
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), ni(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(n1, p1)
+      end select
+      call fill_halo(block%filter_halo, ni, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      end associate
+    end do
+
+  end subroutine latlon_bkg_regrid_ni
 
 end module latlon_bkg_mod

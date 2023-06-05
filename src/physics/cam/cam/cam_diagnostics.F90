@@ -75,17 +75,17 @@ logical          :: history_waccm                  ! outputs typically used for 
 
 ! Physics buffer indices
 
-integer  ::      psl_idx    = 0 
-integer  ::      relhum_idx = 0 
-integer  ::      qcwat_idx  = 0 
-integer  ::      tcwat_idx  = 0 
-integer  ::      lcwat_idx  = 0 
-integer  ::      cld_idx    = 0 
-integer  ::      concld_idx = 0 
-integer  ::      tke_idx    = 0 
-integer  ::      kvm_idx    = 0 
-integer  ::      kvh_idx    = 0 
-integer  ::      cush_idx   = 0 
+integer  ::      psl_idx    = 0
+integer  ::      relhum_idx = 0
+integer  ::      qcwat_idx  = 0
+integer  ::      tcwat_idx  = 0
+integer  ::      lcwat_idx  = 0
+integer  ::      cld_idx    = 0
+integer  ::      concld_idx = 0
+integer  ::      tke_idx    = 0
+integer  ::      kvm_idx    = 0
+integer  ::      kvh_idx    = 0
+integer  ::      cush_idx   = 0
 integer  ::      t_ttend_idx = 0
 
 integer  ::      prec_dp_idx  = 0
@@ -163,7 +163,7 @@ contains
   end subroutine diag_register
 
 !==============================================================================
-  
+
   subroutine diag_init_dry(pbuf2d)
     ! Declare the history fields for which this module contains outfld calls.
 
@@ -205,7 +205,7 @@ contains
       call addfld ('TFIX',    horiz_only,  'A', 'K/s',        'T fixer (T equivalent of Energy correction)')
     end if
     call addfld ('TTEND_TOT', (/ 'lev' /), 'A', 'K/s',        'Total temperature tendency')
-   
+
     ! Debugging negative water output fields
     call addfld ('INEGCLPTEND ', (/ 'lev' /), 'A', 'kg/kg/s', 'Cloud ice tendency due to clipping neg values after microp')
     call addfld ('LNEGCLPTEND ', (/ 'lev' /), 'A', 'kg/kg/s', 'Cloud liq tendency due to clipping neg values after microp')
@@ -334,7 +334,7 @@ contains
       ! State after physics (FV)
       call add_default ('TAP     '  , history_budget_histfile_num, ' ')
       call add_default ('UAP     '  , history_budget_histfile_num, ' ')
-      call add_default ('VAP     '  , history_budget_histfile_num, ' ')  
+      call add_default ('VAP     '  , history_budget_histfile_num, ' ')
       call add_default (apcnst(1)   , history_budget_histfile_num, ' ')
       if ( dycore_is('LR') .or. dycore_is('SE') .or. dycore_is('FV3')  ) then
         call add_default ('TFIX    '    , history_budget_histfile_num, ' ')

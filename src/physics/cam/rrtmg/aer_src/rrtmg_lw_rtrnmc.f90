@@ -33,7 +33,7 @@
                         cldfmc, taucmc, planklay, planklev, plankbnd, &
                         pwvcm, fracs, taut, &
                         totuflux, totdflux, fnet, htr, &
-                        totuclfl, totdclfl, fnetc, htrc, totufluxs, totdfluxs ) 
+                        totuclfl, totdclfl, fnetc, htrc, totufluxs, totdfluxs )
 !-----------------------------------------------------------------------------
 !
 !  Original version:   E. J. Mlawer, et al. RRTM_V3.0
@@ -43,15 +43,15 @@
 !  This program calculates the upward fluxes, downward fluxes, and
 !  heating rates for an arbitrary clear or cloudy atmosphere.  The input
 !  to this program is the atmospheric profile, all Planck function
-!  information, and the cloud fraction by layer.  A variable diffusivity 
-!  angle (SECDIFF) is used for the angle integration.  Bands 2-3 and 5-9 
-!  use a value for SECDIFF that varies from 1.50 to 1.80 as a function of 
-!  the column water vapor, and other bands use a value of 1.66.  The Gaussian 
-!  weight appropriate to this angle (WTDIFF=0.5) is applied here.  Note that 
-!  use of the emissivity angle for the flux integration can cause errors of 
-!  1 to 4 W/m2 within cloudy layers.  
+!  information, and the cloud fraction by layer.  A variable diffusivity
+!  angle (SECDIFF) is used for the angle integration.  Bands 2-3 and 5-9
+!  use a value for SECDIFF that varies from 1.50 to 1.80 as a function of
+!  the column water vapor, and other bands use a value of 1.66.  The Gaussian
+!  weight appropriate to this angle (WTDIFF=0.5) is applied here.  Note that
+!  use of the emissivity angle for the flux integration can cause errors of
+!  1 to 4 W/m2 within cloudy layers.
 !  Clouds are treated with the McICA stochastic approach and maximum-random
-!  cloud overlap. 
+!  cloud overlap.
 !***************************************************************************
 
 ! ------- Declarations -------
@@ -68,13 +68,13 @@
       real(kind=r8), intent(in) :: pwvcm                ! precipitable water vapor (cm)
       real(kind=r8), intent(in) :: semiss(nbndlw)            ! lw surface emissivity
                                                         !    Dimensions: (nbndlw)
-      real(kind=r8), intent(in) :: planklay(nlayers,nbndlw)        ! 
+      real(kind=r8), intent(in) :: planklay(nlayers,nbndlw)        !
                                                         !    Dimensions: (nlayers,nbndlw)
-      real(kind=r8), intent(in) :: planklev(0:nlayers,nbndlw)       ! 
+      real(kind=r8), intent(in) :: planklev(0:nlayers,nbndlw)       !
                                                         !    Dimensions: (0:nlayers,nbndlw)
-      real(kind=r8), intent(in) :: plankbnd(nbndlw)          ! 
+      real(kind=r8), intent(in) :: plankbnd(nbndlw)          !
                                                         !    Dimensions: (nbndlw)
-      real(kind=r8), intent(in) :: fracs(nlayers,ngptlw)           ! 
+      real(kind=r8), intent(in) :: fracs(nlayers,ngptlw)           !
                                                         !    Dimensions: (nlayers,ngptw)
       real(kind=r8), intent(in) :: taut(nlayers,ngptlw)            ! gaseous + aerosol optical depths
                                                         !    Dimensions: (nlayers,ngptlw)
@@ -179,12 +179,12 @@
 !    bbutot                       ! gas and cloud planck function for upward calc.
 !    gassrc                       ! source radiance due to gas only
 !    efclfrac                     ! effective cloud fraction
-!    radlu                        ! spectrally summed upward radiance 
-!    radclru                      ! spectrally summed clear sky upward radiance 
+!    radlu                        ! spectrally summed upward radiance
+!    radclru                      ! spectrally summed clear sky upward radiance
 !    urad                         ! upward radiance by layer
 !    clrurad                      ! clear sky upward radiance by layer
-!    radld                        ! spectrally summed downward radiance 
-!    radclrd                      ! spectrally summed clear sky downward radiance 
+!    radld                        ! spectrally summed downward radiance
+!    radclrd                      ! spectrally summed clear sky downward radiance
 !    drad                         ! downward radiance by layer
 !    clrdrad                      ! clear sky downward radiance by layer
 
@@ -199,7 +199,7 @@
 !    htrc                         ! clear sky longwave heating rate (k/day)
 
 
-! This secant and weight corresponds to the standard diffusivity 
+! This secant and weight corresponds to the standard diffusivity
 ! angle.  This initial value is redefined below for some bands.
       data wtdiff /0.5_r8/
       data rec_6 /0.166667_r8/
@@ -285,7 +285,7 @@
          radclrd = 0._r8
          iclddn = 0
 
-! Downward radiative transfer loop.  
+! Downward radiative transfer loop.
 
          do lev = nlayers, 1, -1
                plfrac = fracs(lev,igc)
@@ -312,7 +312,7 @@
                          gassrc + cldfmc(igc,lev) * &
                          (bbdtot * atot(lev) - gassrc)
                      drad(lev-1) = drad(lev-1) + radld
-                  
+
                      bbugas(lev) =  plfrac * (blay+dplankup*odepth_rec)
                      bbutot(lev) =  plfrac * (blay+dplankup*odtot_rec)
 
@@ -378,7 +378,7 @@
                      tausfac = tfn_tbl(itr)
                      bbd = plfrac*(blay+tausfac*dplankdn)
                      bbugas(lev) = plfrac * (blay + tausfac * dplankup)
-                  endif   
+                  endif
                   radld = radld + (bbd-radld)*atrans(lev)
                   drad(lev-1) = drad(lev-1) + radld
                endif
@@ -386,7 +386,7 @@
 !  remain clear.  Streams diverge when a cloud is reached (iclddn=1),
 !  and clear sky stream must be computed separately from that point.
                   if (iclddn.eq.1) then
-                     radclrd = radclrd + (bbd-radclrd) * atrans(lev) 
+                     radclrd = radclrd + (bbd-radclrd) * atrans(lev)
                      clrdrad(lev-1) = clrdrad(lev-1) + radclrd
                   else
                      radclrd = radld
@@ -426,11 +426,11 @@
                urad(lev) = urad(lev) + radlu
             endif
 !  Set clear sky stream to total sky stream as long as all layers
-!  are clear (iclddn=0).  Streams must be calculated separately at 
-!  all layers when a cloud is present (ICLDDN=1), because surface 
+!  are clear (iclddn=0).  Streams must be calculated separately at
+!  all layers when a cloud is present (ICLDDN=1), because surface
 !  reflectance is different for each stream.
                if (iclddn.eq.1) then
-                  radclru = radclru + (bbugas(lev)-radclru)*atrans(lev) 
+                  radclru = radclru + (bbugas(lev)-radclru)*atrans(lev)
                   clrurad(lev) = clrurad(lev) + radclru
                else
                   radclru = radlu
@@ -490,8 +490,8 @@
          l = lev - 1
 
 ! Calculate heating rates at model layers
-         htr(l)=heatfac*(fnet(l)-fnet(lev))/(pz(l)-pz(lev)) 
-         htrc(l)=heatfac*(fnetc(l)-fnetc(lev))/(pz(l)-pz(lev)) 
+         htr(l)=heatfac*(fnet(l)-fnet(lev))/(pz(l)-pz(lev))
+         htrc(l)=heatfac*(fnetc(l)-fnetc(lev))/(pz(l)-pz(lev))
       enddo
 
 ! Set heating rate to zero in top layer
@@ -501,4 +501,3 @@
       end subroutine rtrnmc
 
       end module rrtmg_lw_rtrnmc
-

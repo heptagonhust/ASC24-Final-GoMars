@@ -133,59 +133,62 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    integer i, j, k, icol
+    integer i, j, k, icol, m
 
     select case (physics_suite)
 #ifdef HAS_CAM
     case ('cam')
       call cam_physics_p2d(block, itime)
 #endif
+    case default
+      associate (mesh  => block%mesh                   , &
+                ptend => block%ptend                  , & ! in
+                dudt  => block%dtend(itime)%dudt_phys , & ! out
+                dvdt  => block%dtend(itime)%dvdt_phys , & ! out
+                dtdt  => block%dtend(itime)%dtdt_phys , & ! out
+                dqdt  => block%dtend(itime)%dqdt_phys)    ! out
+      if (ptend%updated_u .and. ptend%updated_v) then
+        do k = mesh%full_kds, mesh%full_kde
+          icol = 0
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              icol = icol + 1
+              dudt(i,j,k) = ptend%dudt(icol,k)
+              dvdt(i,j,k) = ptend%dvdt(icol,k)
+            end do
+          end do
+        end do
+        call fill_halo(block%halo, dudt, full_lon=.true., full_lat=.true., full_lev=.true., &
+                      west_halo=.false., south_halo=.false., north_halo=.false.)
+        call fill_halo(block%halo, dvdt, full_lon=.true., full_lat=.true., full_lev=.true., &
+                      west_halo=.false.,  east_halo=.false., south_halo=.false.)
+      end if
+      if (ptend%updated_t) then
+        do k = mesh%full_kds, mesh%full_kde
+          icol = 0
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              icol = icol + 1
+              dtdt(i,j,k) = ptend%dtdt(icol,k)
+            end do
+          end do
+        end do
+      end if
+      do m = 1, ntracers
+        if (ptend%updated_q(m)) then
+          do k = mesh%full_kds, mesh%full_kde
+            icol = 0
+            do j = mesh%full_jds, mesh%full_jde
+              do i = mesh%full_ids, mesh%full_ide
+                icol = icol + 1
+                dqdt(i,j,k,m) = ptend%dqdt(icol,k,m)
+              end do
+            end do
+          end do
+        end if
+      end do
+      end associate
     end select
-    associate (mesh  => block%mesh                   , &
-               ptend => block%ptend                  , & ! in
-               dudt  => block%dtend(itime)%dudt_phys , & ! out
-               dvdt  => block%dtend(itime)%dvdt_phys , & ! out
-               dtdt  => block%dtend(itime)%dtdt_phys , & ! out
-               dqdt  => block%dtend(itime)%dqdt_phys)    ! out
-    if (ptend%updated_u .and. ptend%updated_v) then
-      do k = mesh%full_kds, mesh%full_kde
-        icol = 0
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            icol = icol + 1
-            dudt(i,j,k) = ptend%dudt(icol,k)
-            dvdt(i,j,k) = ptend%dvdt(icol,k)
-          end do
-        end do
-      end do
-      call fill_halo(block%halo, dudt, full_lon=.true., full_lat=.true., full_lev=.true., &
-                    west_halo=.false., south_halo=.false., north_halo=.false.)
-      call fill_halo(block%halo, dvdt, full_lon=.true., full_lat=.true., full_lev=.true., &
-                    west_halo=.false.,  east_halo=.false., south_halo=.false.)
-    end if
-    if (ptend%updated_t) then
-      do k = mesh%full_kds, mesh%full_kde
-        icol = 0
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            icol = icol + 1
-            dtdt(i,j,k) = ptend%dtdt(icol,k)
-          end do
-        end do
-      end do
-    end if
-    if (ptend%updated_qv) then
-      do k = mesh%full_kds, mesh%full_kde
-        icol = 0
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            icol = icol + 1
-            dqdt(i,j,k,idx_qv) = ptend%dqdt(icol,k,idx_qv)
-          end do
-        end do
-      end do
-    end if
-    end associate
 
   end subroutine dp_coupling_p2d
 

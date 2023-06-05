@@ -1,5 +1,55 @@
 cmake_policy(SET CMP0076 NEW)
 
+if (USE_CHEM)
+  target_sources(gmcore PRIVATE
+    mozart/cfc11star.F90
+    mozart/chemistry.F90
+    mozart/mo_airglow.F90
+    mozart/mo_chemini.F90
+    mozart/mo_cph.F90
+    mozart/mo_heatnirco2.F90
+    mozart/mo_neu_wetdep.F90
+    mozart/mo_srf_emissions.F90
+    mozart/mo_waccm_hrates.F90
+    mozart/ocean_emis.F90
+    mozart/set_cp.F90
+    pp_trop_mam4/chem_mods.F90
+    pp_trop_mam4/m_spc_id.F90
+    pp_trop_mam4/mo_adjrxt.F90
+    pp_trop_mam4/mo_exp_sol.F90
+    pp_trop_mam4/mo_exp_sol.F90
+    pp_trop_mam4/mo_imp_sol.F90
+    pp_trop_mam4/mo_indprd.F90
+    pp_trop_mam4/mo_lin_matrix.F90
+    pp_trop_mam4/mo_lu_factor.F90
+    pp_trop_mam4/mo_lu_solve.F90
+    pp_trop_mam4/mo_nln_matrix.F90
+    pp_trop_mam4/mo_phtadj.F90
+    pp_trop_mam4/mo_prod_loss.F90
+    pp_trop_mam4/mo_rxt_rates_conv.F90
+    pp_trop_mam4/mo_setrxt.F90
+    pp_trop_mam4/mo_sim_dat.F90
+  )
+else ()
+  target_sources(gmcore PRIVATE
+    pp_none/chemistry.F90
+    pp_none/chem_mods.F90
+    pp_none/m_spc_id.F90
+    pp_none/mo_adjrxt.F90
+    pp_none/mo_exp_sol.F90
+    pp_none/mo_imp_sol.F90
+    pp_none/mo_indprd.F90
+    pp_none/mo_lin_matrix.F90
+    pp_none/mo_lu_factor.F90
+    pp_none/mo_lu_solve.F90
+    pp_none/mo_nln_matrix.F90
+    pp_none/mo_phtadj.F90
+    pp_none/mo_prod_loss.F90
+    pp_none/mo_rxt_rates_conv.F90
+    pp_none/mo_setrxt.F90
+  )
+endif ()
+
 target_sources(gmcore PRIVATE
   aerosol/cldaero_mod.F90
   aerosol/drydep_mod.F90
@@ -9,10 +59,8 @@ target_sources(gmcore PRIVATE
   aerosol/soil_erod_mod.F90
   aerosol/sslt_sections.F90
   aerosol/wetdep.F90
-  mozart/cfc11star.F90
   mozart/charge_neutrality.F90
   mozart/chem_prod_loss_diags.F90
-  mozart/chemistry.F90
   mozart/chlorine_loading_data.F90
   mozart/clybry_fam.F90
   mozart/epp_ionization.F90
@@ -25,22 +73,18 @@ target_sources(gmcore PRIVATE
   mozart/llnl_O1D_to_2OH_adj.F90
   mozart/m_sad_data.F90
   mozart/mo_aero_settling.F90
-  mozart/mo_airglow.F90
   mozart/mo_airmas.F90
   mozart/mo_airplane.F90
   mozart/mo_apex.F90
   mozart/mo_aurora.F90
   mozart/mo_calcoe.F90
   mozart/mo_chem_utls.F90
-  mozart/mo_chemini.F90
   mozart/mo_chm_diags.F90
-  mozart/mo_cph.F90
   mozart/mo_drydep.F90
   mozart/mo_extfrc.F90
   mozart/mo_fstrat.F90
   mozart/mo_gas_phase_chemdr.F90
   mozart/mo_ghg_chem.F90
-  mozart/mo_heatnirco2.F90
   mozart/mo_inter.F90
   mozart/mo_jeuv.F90
   mozart/mo_jlong.F90
@@ -51,7 +95,6 @@ target_sources(gmcore PRIVATE
   mozart/mo_mass_xforms.F90
   mozart/mo_mean_mass.F90
   mozart/mo_negtrc.F90
-  mozart/mo_neu_wetdep.F90
   mozart/mo_params.F90
   mozart/mo_pchem.F90
   mozart/mo_photo.F90
@@ -71,7 +114,6 @@ target_sources(gmcore PRIVATE
   mozart/mo_setz.F90
   mozart/mo_snoe.F90
   mozart/mo_sphers.F90
-  mozart/mo_srf_emissions.F90
   mozart/mo_strato_rates.F90
   mozart/mo_sulf.F90
   mozart/mo_synoz.F90
@@ -80,7 +122,6 @@ target_sources(gmcore PRIVATE
   mozart/mo_trislv.F90
   mozart/mo_tuv_inti.F90
   mozart/mo_usrrxt.F90
-  mozart/mo_waccm_hrates.F90
   mozart/mo_waveall.F90
   mozart/mo_wavelab.F90
   mozart/mo_wavelen.F90
@@ -88,10 +129,8 @@ target_sources(gmcore PRIVATE
   mozart/mo_xsections.F90
   mozart/mo_zadj.F90
   mozart/noy_ubc.F90
-  mozart/ocean_emis.F90
   mozart/photo_bkgrnd.F90
   mozart/rate_diags.F90
-  mozart/set_cp.F90
   mozart/short_lived_species.F90
   mozart/species_sums_diags.F90
   mozart/spehox.F90
@@ -103,22 +142,6 @@ target_sources(gmcore PRIVATE
   msis/physics_msis.f90
   msis/utils_constants.f90
   msis/utils_spline.f90
-  pp_trop_mam4/chem_mods.F90
-  pp_trop_mam4/m_spc_id.F90
-  pp_trop_mam4/mo_adjrxt.F90
-  pp_trop_mam4/mo_exp_sol.F90
-  pp_trop_mam4/mo_exp_sol.F90
-  pp_trop_mam4/mo_imp_sol.F90
-  pp_trop_mam4/mo_indprd.F90
-  pp_trop_mam4/mo_lin_matrix.F90
-  pp_trop_mam4/mo_lu_factor.F90
-  pp_trop_mam4/mo_lu_solve.F90
-  pp_trop_mam4/mo_nln_matrix.F90
-  pp_trop_mam4/mo_phtadj.F90
-  pp_trop_mam4/mo_prod_loss.F90
-  pp_trop_mam4/mo_rxt_rates_conv.F90
-  pp_trop_mam4/mo_setrxt.F90
-  pp_trop_mam4/mo_sim_dat.F90
   utils/aerodep_flx.F90
   utils/aircraft_emit.F90
   utils/apex.F90

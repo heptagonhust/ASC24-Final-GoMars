@@ -105,7 +105,7 @@ module air_composition
    real(r8), public, protected, allocatable :: cappav(:,:,:)
    ! mbarv: composition dependent atmosphere mean mass
    real(r8), public, protected, allocatable :: mbarv(:,:,:)
-   ! cp_or_cv_dycore:  enthalpy or internal energy scaling factor for 
+   ! cp_or_cv_dycore:  enthalpy or internal energy scaling factor for
    !                   energy consistency
    real(r8), public, protected, allocatable :: cp_or_cv_dycore(:,:,:)
    !
@@ -674,7 +674,7 @@ CONTAINS
         call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx, &
              cp_or_cv_dycore(:ncol,:,lchnk), fact=to_dry_factor, Rdry=rairv(:ncol,:,lchnk))
         !
-        ! internal energy coefficient for MPAS 
+        ! internal energy coefficient for MPAS
         ! (equation 92 in Eldred et al. 2023; https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.4353)
         !
         cp_or_cv_dycore(:ncol,:,lchnk)=cp_or_cv_dycore(:ncol,:,lchnk)*&

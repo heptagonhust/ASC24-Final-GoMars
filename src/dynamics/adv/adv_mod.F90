@@ -338,11 +338,11 @@ contains
             end associate
           end do
           end associate
-          if (block%adv_batches(m)%name == 'moist') call tracer_calc_qm(block)
         end if
         call block%adv_batches(m)%copy_old_m(m_new)
       end do
       deallocate(q_old, work, pole)
+      call tracer_calc_qm(block)
       end associate
     end do
 
