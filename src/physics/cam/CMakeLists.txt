@@ -152,7 +152,7 @@ target_sources(gmcore PRIVATE
   rrtmg/aer_src/rrlw_ref.f90
   rrtmg/aer_src/rrlw_tbl.f90
   rrtmg/aer_src/rrlw_wvn.f90
-  rrtmg/aer_src/rrsw_con.F90
+  rrtmg/aer_src/rrsw_con.f90
   rrtmg/aer_src/rrsw_kg16.f90
   rrtmg/aer_src/rrsw_kg17.f90
   rrtmg/aer_src/rrsw_kg18.f90
@@ -167,9 +167,9 @@ target_sources(gmcore PRIVATE
   rrtmg/aer_src/rrsw_kg27.f90
   rrtmg/aer_src/rrsw_kg28.f90
   rrtmg/aer_src/rrsw_kg29.f90
-  rrtmg/aer_src/rrsw_ref.F90
-  rrtmg/aer_src/rrsw_tbl.F90
-  rrtmg/aer_src/rrsw_wvn.F90
+  rrtmg/aer_src/rrsw_ref.f90
+  rrtmg/aer_src/rrsw_tbl.f90
+  rrtmg/aer_src/rrsw_wvn.f90
   rrtmg/aer_src/rrtmg_lw_init.f90
   rrtmg/aer_src/rrtmg_lw_k_g.f90
   rrtmg/aer_src/rrtmg_lw_rad.f90
@@ -181,7 +181,7 @@ target_sources(gmcore PRIVATE
   rrtmg/aer_src/rrtmg_sw_k_g.f90
   rrtmg/aer_src/rrtmg_sw_rad.f90
   rrtmg/aer_src/rrtmg_sw_reftra.f90
-  rrtmg/aer_src/rrtmg_sw_setcoef.F90
+  rrtmg/aer_src/rrtmg_sw_setcoef.f90
   rrtmg/aer_src/rrtmg_sw_spcvmc.f90
   rrtmg/aer_src/rrtmg_sw_taumol.f90
   rrtmg/aer_src/rrtmg_sw_vrtqdr.f90
