@@ -19,7 +19,7 @@ use shr_kind_mod,    only: r8 => shr_kind_r8
 use phys_debug_util, only: phys_debug_col
 use ppgrid,          only: pcols, pver, pverp
 use physics_types,   only: physics_state, physics_ptend
-use camsrfexch,      only: cam_in_t     
+use camsrfexch,      only: cam_in_t
 use cam_logfile,     only: iulog
 use cam_history,     only: addfld, add_default, outfld
 use constituents,    only: pcnst, cnst_get_ind, cnst_name
@@ -156,7 +156,7 @@ subroutine phys_debug_state_out(tag, state)
    ! Dump selected state variables at location corresponding to given tag.
 
    character(len=*),    intent(in) :: tag
-   type(physics_state), intent(in) :: state 
+   type(physics_state), intent(in) :: state
 
    ! Local variables
    integer :: lchnk, j
@@ -194,7 +194,7 @@ subroutine phys_debug_vdiff1(state, kvm, tautotx, tautoty)
    integer :: icol
    !-----------------------------------------------------------------------------
 
-   icol = phys_debug_col(state%lchnk) 
+   icol = phys_debug_col(state%lchnk)
    if (icol > 0) then
       write(iulog,*) ' vert_diff: kvm, u ', kvm(icol,pver), kvm(icol,pver-1), &
          state%u(icol, pver), state%u(icol,pver-1), &
@@ -222,7 +222,7 @@ subroutine phys_debug_shallow1(state, ptend, nstep, prec_cmf, rliq2, ztodt, kmx)
    real(r8) :: qtmx, qtmn
    !-----------------------------------------------------------------------------
 
-   icol = phys_debug_col(state%lchnk) 
+   icol = phys_debug_col(state%lchnk)
    if (icol > 0) then
       qtmx = 0._r8
       kmx = 0
@@ -240,7 +240,7 @@ subroutine phys_debug_shallow1(state, ptend, nstep, prec_cmf, rliq2, ztodt, kmx)
          endif
       end do
       k = kmx
-66    format ('tphysbc, aft shallow:', 4i5, 6f9.4) 
+66    format ('tphysbc, aft shallow:', 4i5, 6f9.4)
       call cnst_get_ind('CLDLIQ', ixcldliq, abort=.false.)
       write (iulog,66)  nstep, icol, &
            kmx, kmn, &
@@ -270,11 +270,11 @@ subroutine phys_debug_strat1(state, ptend, nstep, prec_str, rliq, ztodt, kmx)
    integer  :: icol, k, ixcldliq
    !-----------------------------------------------------------------------------
 
-   icol = phys_debug_col(state%lchnk) 
+   icol = phys_debug_col(state%lchnk)
    if (icol > 0) then
 
       k = kmx
-67    format ('tphysbc, aft strat:', i5, 6f9.4) 
+67    format ('tphysbc, aft strat:', i5, 6f9.4)
       call cnst_get_ind('CLDLIQ', ixcldliq, abort=.false.)
       write (iulog,67)  nstep, prec_str(icol)*8.64e7_r8, rliq(icol)*8.64e7_r8,  &
            (ptend%q(icol,k,1)*ztodt)*1.e3_r8, &
@@ -296,7 +296,7 @@ subroutine phys_debug_srf1(lchnk, cam_in)
    integer :: icol
    !-----------------------------------------------------------------------------
 
-   icol = phys_debug_col(lchnk) 
+   icol = phys_debug_col(lchnk)
    if (icol > 0) then
 
       write(iulog,*) 'bot tphysbc: cam_in%tref', cam_in%tref(icol)
@@ -317,7 +317,7 @@ subroutine phys_debug_hbdiff1(lchnk, pblh, zl, zh)
    integer :: icol
    !-----------------------------------------------------------------------------
 
-   icol = phys_debug_col(lchnk) 
+   icol = phys_debug_col(lchnk)
    if (icol > 0) then
 
       write(iulog,*) ' austach_pbl, pblh, zl, zh: ', pblh(icol), zl(icol), zh(icol)
@@ -347,7 +347,7 @@ subroutine phys_debug_flux1(lchnk, srfflx, lhflx, shflx, taux, tauy, qflx, &
    integer :: icol
    !-----------------------------------------------------------------------------
 
-   icol = phys_debug_col(lchnk) 
+   icol = phys_debug_col(lchnk)
    if (icol > 0) then
 
       write(iulog,*) ' b flux_tweak called, lhflx, oldlhflx ', &
@@ -392,7 +392,7 @@ subroutine phys_debug_flux2(lchnk, srfflx, lhflx, &
    integer :: icol
    !-----------------------------------------------------------------------------
 
-   icol = phys_debug_col(lchnk) 
+   icol = phys_debug_col(lchnk)
    if (icol > 0) then
 
       write(iulog,*) ' a flux_tweak called, lhflx, oldlhflx ', &

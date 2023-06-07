@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id$ 
+! $Id$
 !===============================================================================
 module parameters_tunable
- 
+
   ! Description:
   !   This module contains tunable model parameters.  The purpose of the module is to make it
   !   easier for the clubb_tuner code to use the params vector without "knowing" any information
@@ -15,7 +15,7 @@ module parameters_tunable
   !
   ! References:
   !   None
-  ! 
+  !
   ! Notes:
   !   To make it easier to verify of code correctness, please keep the omp threadprivate
   !   directives just after the variable declaration.  All parameters in this
@@ -43,7 +43,7 @@ module parameters_tunable
   !       specific code.
 
   ! Model constant parameters
-  real( kind = core_rknd ), public :: & 
+  real( kind = core_rknd ), public :: &
     C1          = 1.000000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
     C1b         = 1.000000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
     C1c         = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skw. Function [-]
@@ -89,7 +89,7 @@ module parameters_tunable
 !$omp threadprivate(C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh)
 
   ! Note: DD 1987 is Duynkerke & Driedonks (1987).
-  real( kind = core_rknd ), public :: & 
+  real( kind = core_rknd ), public :: &
     c_K         = 0.200000_core_rknd, & ! Constant C_mu^(1/4) in DD 1987 [m^2/s]
     c_K1        = 0.750000_core_rknd, & ! Coef. of Eddy Diffusion: wp2   [m^2/s]
     c_K2        = 0.125000_core_rknd, & ! Coef. of Eddy Diffusion: xp2   [m^2/s]
@@ -121,7 +121,7 @@ module parameters_tunable
 
 !$omp threadprivate(alpha_corr)
 
-  real( kind = core_rknd ), private :: & 
+  real( kind = core_rknd ), private :: &
     nu1   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp2        [m^2/s]
     nu2   = 5.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: xp2        [m^2/s]
     nu6   = 5.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wpxp       [m^2/s]
@@ -132,7 +132,7 @@ module parameters_tunable
 !$omp threadprivate(nu1, nu2, nu6, nu8, nu9, nu10, nu_hm)
 
 
-  real( kind = core_rknd ), public, allocatable, dimension(:) :: & 
+  real( kind = core_rknd ), public, allocatable, dimension(:) :: &
     nu1_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wp2      [m^2/s]
     nu2_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: xp2      [m^2/s]
     nu6_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wpxp     [m^2/s]
@@ -163,19 +163,19 @@ module parameters_tunable
 
 !$omp threadprivate(Skw_max_mag)
 
-  real( kind = core_rknd ), public ::  &   
-    C_invrs_tau_bkgnd         = 1.0_core_rknd,  &   ! 
+  real( kind = core_rknd ), public ::  &
+    C_invrs_tau_bkgnd         = 1.0_core_rknd,  &   !
     C_invrs_tau_sfc           = 0.1_core_rknd,  &   !
     C_invrs_tau_shear         = 0.02_core_rknd, &   !
-    C_invrs_tau_N2            = 0.1_core_rknd,  &   ! 
+    C_invrs_tau_N2            = 0.1_core_rknd,  &   !
     C_invrs_tau_N2_wp2        = 0.2_core_rknd,  &   !
     C_invrs_tau_N2_xp2        = 0.2_core_rknd,  &   !
     C_invrs_tau_N2_wpxp       = 0.0_core_rknd,  &   !
     C_invrs_tau_N2_clear_wp3  = 0.0_core_rknd
 
 !$omp threadprivate(C_invrs_tau_bkgnd,C_invrs_tau_sfc)
-!$omp threadprivate(C_invrs_tau_shear,C_invrs_tau_N2)  
-!$omp threadprivate(C_invrs_tau_N2_wp2,C_invrs_tau_N2_xp2) 
+!$omp threadprivate(C_invrs_tau_shear,C_invrs_tau_N2)
+!$omp threadprivate(C_invrs_tau_N2_wp2,C_invrs_tau_N2_xp2)
 !$omp threadprivate(C_invrs_tau_N2_wpxp)
 !$omp threadprivate(C_invrs_tau_N2_clear_wp3)
 
@@ -285,14 +285,14 @@ module parameters_tunable
 
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
-  namelist /clubb_params_nl/  & 
-    C1, C1b, C1c, C2, C2b, C2c,  & 
-    C2rt, C2thl, C2rtthl, C4, C5, & 
-    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-    C12, C13, C14, C15, C_wp2_splat, & 
+  namelist /clubb_params_nl/  &
+    C1, C1b, C1c, C2, C2b, C2c,  &
+    C2rt, C2thl, C2rtthl, C4, C5, &
+    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
+    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, &
+    C12, C13, C14, C15, C_wp2_splat, &
     C6rt_Lscale0, C6thl_Lscale0, &
-    C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
+    C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, &
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, &
     c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
     slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
@@ -316,8 +316,8 @@ module parameters_tunable
   ! tuner will break!
   !                    ***** IMPORTANT *****
   !***************************************************************
-  character(len=28), dimension(nparams), parameter, public ::  & 
-  params_list = & 
+  character(len=28), dimension(nparams), parameter, public ::  &
+  params_list = &
      (/"C1                          ", "C1b                         ", &
        "C1c                         ", "C2                          ", &
        "C2b                         ", "C2c                         ", &
@@ -420,7 +420,7 @@ module parameters_tunable
   contains
 
   !=============================================================================
-  subroutine setup_parameters & 
+  subroutine setup_parameters &
             ( deltaz, params, nzmax, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
@@ -460,10 +460,10 @@ module parameters_tunable
       lmin_deltaz = 40.0_core_rknd ! Fixed value for minimum value for the length scale.
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  &
       deltaz  ! Change per height level        [m]
 
-    real( kind = core_rknd ), intent(in), dimension(nparams) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nparams) :: &
       params  ! Tuneable model parameters      [-]
 
     ! Grid definition
@@ -522,8 +522,8 @@ module parameters_tunable
 
     end do
 
-    call unpack_parameters & 
-             ( params, & 
+    call unpack_parameters &
+             ( params, &
                C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
@@ -540,7 +540,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, & 
+               C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3 )
 
@@ -729,7 +729,7 @@ module parameters_tunable
         write(fstderr,*) "C_wp2_splat must satisfy C_wp2_splat >= 0"
         err_code = clubb_fatal_error
     end if
-    
+
     err_code_out = err_code
 
     return
@@ -796,7 +796,7 @@ module parameters_tunable
     !    halfway between momentum levels).
     integer, intent(in) :: grid_type
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  &
       deltaz  ! Change per height level        [m]
 
     ! If the CLUBB parameterization is implemented in a host model,
@@ -869,9 +869,9 @@ module parameters_tunable
       ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
       ! is based on avg_deltaz, which is the average grid spacing over the
       ! vertical domain.
- 
+
       if ( l_prescribed_avg_deltaz ) then
-        
+
         avg_deltaz = deltaz
 
       else if ( grid_type == 3 ) then
@@ -1032,8 +1032,8 @@ module parameters_tunable
     ! ---- Begin Code ----
 
     ! If clubb_tunables_nl present, read in to replace preset values
-    ! This is made available for tuning 
-     
+    ! This is made available for tuning
+
     clubb_C1 = init_value
     clubb_C1b = init_value
     clubb_C1c = init_value
@@ -1123,7 +1123,7 @@ module parameters_tunable
    call mpibcast(clubb_wpxp_L_thresh, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_bkgnd, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_sfc, 1, mpir8,  0, mpicom)
-   call mpibcast(clubb_C_invrs_tau_shear, 1, mpir8,  0, mpicom) 
+   call mpibcast(clubb_C_invrs_tau_shear, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_N2 , 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_N2_wp2 , 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_N2_xp2 , 1, mpir8,  0, mpicom)
@@ -1268,7 +1268,7 @@ module parameters_tunable
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
-               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &  
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
 
     l_error = .false.
@@ -1288,7 +1288,7 @@ module parameters_tunable
   end subroutine read_parameters
 
   !=============================================================================
-  subroutine read_param_max & 
+  subroutine read_param_max &
            ( iunit, filename, nindex, param_max, ndim )
 
     ! Description:
@@ -1316,7 +1316,7 @@ module parameters_tunable
     ! are contained within the simplex and the max variable)
     integer, intent(out), dimension(nparams) :: nindex
 
-    real( kind = core_rknd ), intent(out), dimension(nparams) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(nparams) ::  &
       param_max  ! Amount to vary the parameter in the initial simplex
 
     integer, intent(out) :: &
@@ -1330,14 +1330,14 @@ module parameters_tunable
 
     ! Amount to change each parameter for the initial simplex
     ! This MUST be changed to match the clubb_params_nl namelist if parameters are added!
-    namelist /initmax/  & 
-      C1, C1b, C1c, C2, C2b, C2c,  & 
-      C2rt, C2thl, C2rtthl, C4, C5, & 
-      C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
+    namelist /initmax/  &
+      C1, C1b, C1c, C2, C2b, C2c,  &
+      C2rt, C2thl, C2rtthl, C4, C5, &
+      C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
+      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, &
       C12, C13, C14, C15, C_wp2_splat, &
       C6rt_Lscale0, C6thl_Lscale0, &
-      C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
+      C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, &
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, &
       c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
       slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
@@ -1444,35 +1444,35 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
-    use parameter_indices, only: & 
+    use parameter_indices, only: &
       iC1,  & ! Variable(s)
-      iC1b, & 
-      iC1c, & 
-      iC2, & 
-      iC2b, & 
-      iC2c, & 
-      iC2rt, & 
-      iC2thl, & 
-      iC2rtthl, & 
-      iC4, & 
-      iC5, & 
-      iC6rt, & 
-      iC6rtb, & 
-      iC6rtc, & 
-      iC6thl, & 
-      iC6thlb, & 
-      iC6thlc, & 
-      iC7, & 
-      iC7b, & 
-      iC7c, & 
-      iC8, & 
-      iC8b, & 
-      iC10, & 
-      iC11, & 
-      iC11b, & 
-      iC11c, & 
-      iC12, & 
-      iC13, & 
+      iC1b, &
+      iC1c, &
+      iC2, &
+      iC2b, &
+      iC2c, &
+      iC2rt, &
+      iC2thl, &
+      iC2rtthl, &
+      iC4, &
+      iC5, &
+      iC6rt, &
+      iC6rtb, &
+      iC6rtc, &
+      iC6thl, &
+      iC6thlb, &
+      iC6thlc, &
+      iC7, &
+      iC7b, &
+      iC7c, &
+      iC8, &
+      iC8b, &
+      iC10, &
+      iC11, &
+      iC11b, &
+      iC11c, &
+      iC12, &
+      iC13, &
       iC14, &
       iC15, &
       iC_wp2_splat
@@ -1483,40 +1483,40 @@ module parameters_tunable
       iC7_Lscale0, &
       iwpxp_L_thresh
 
-    use parameter_indices, only: & 
-      ic_K,  & 
-      ic_K1, & 
-      inu1, & 
-      ic_K2, & 
-      inu2, & 
-      ic_K6, & 
-      inu6, & 
-      ic_K8, & 
-      inu8, & 
-      ic_K9, & 
-      inu9, & 
+    use parameter_indices, only: &
+      ic_K,  &
+      ic_K1, &
+      inu1, &
+      ic_K2, &
+      inu2, &
+      ic_K6, &
+      inu6, &
+      ic_K8, &
+      inu8, &
+      ic_K9, &
+      inu9, &
       inu10, &
-      ic_K_hm, & 
-      ic_K_hmb, & 
+      ic_K_hm, &
+      ic_K_hmb, &
       iK_hm_min_coef, &
-      inu_hm, & 
+      inu_hm, &
       islope_coef_spread_DG_means_w, &
       ipdf_component_stdev_factor_w, &
       icoef_spread_DG_means_rt, &
       icoef_spread_DG_means_thl, &
-      igamma_coef, & 
-      igamma_coefb, & 
-      igamma_coefc, & 
-      imu, & 
-      ibeta, & 
+      igamma_coef, &
+      igamma_coefb, &
+      igamma_coefc, &
+      imu, &
+      ibeta, &
       ilmin_coef, &
       iomicron, &
       izeta_vrnce_rat, &
       iupsilon_precip_frac_rat, &
       ilambda0_stability_coef, &
       imult_coef, &
-      itaumin, & 
-      itaumax, & 
+      itaumin, &
+      itaumax, &
       iLscale_mu_coef, &
       iLscale_pert_coef, &
       ialpha_corr, &
@@ -1540,13 +1540,13 @@ module parameters_tunable
     implicit none
 
     ! Input variables
-    real( kind = core_rknd ), intent(in) :: & 
-      C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
-      C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-      C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, & 
+    real( kind = core_rknd ), intent(in) :: &
+      C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
+      C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
+      C7, C7b, C7c, C8, C8b, C10, &
+      C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
+      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  &
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
       slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
@@ -1666,8 +1666,8 @@ module parameters_tunable
   end subroutine pack_parameters
 
   !=============================================================================
-  subroutine unpack_parameters & 
-             ( params, & 
+  subroutine unpack_parameters &
+             ( params, &
                C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
@@ -1684,7 +1684,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, & 
+               C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3  )
 
@@ -1697,35 +1697,35 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
-    use parameter_indices, only: & 
+    use parameter_indices, only: &
       iC1,  & ! Variable(s)
-      iC1b, & 
-      iC1c, & 
-      iC2, & 
-      iC2b, & 
-      iC2c, & 
-      iC2rt, & 
-      iC2thl, & 
-      iC2rtthl, & 
-      iC4, & 
-      iC5, & 
-      iC6rt, & 
-      iC6rtb, & 
-      iC6rtc, & 
-      iC6thl, & 
-      iC6thlb, & 
-      iC6thlc, & 
-      iC7, & 
-      iC7b, & 
-      iC7c, & 
-      iC8, & 
-      iC8b, & 
-      iC10, & 
-      iC11, & 
-      iC11b, & 
-      iC11c, & 
-      iC12, & 
-      iC13, & 
+      iC1b, &
+      iC1c, &
+      iC2, &
+      iC2b, &
+      iC2c, &
+      iC2rt, &
+      iC2thl, &
+      iC2rtthl, &
+      iC4, &
+      iC5, &
+      iC6rt, &
+      iC6rtb, &
+      iC6rtc, &
+      iC6thl, &
+      iC6thlb, &
+      iC6thlc, &
+      iC7, &
+      iC7b, &
+      iC7c, &
+      iC8, &
+      iC8b, &
+      iC10, &
+      iC11, &
+      iC11b, &
+      iC11c, &
+      iC12, &
+      iC13, &
       iC14, &
       iC15, &
       iC_wp2_splat
@@ -1736,46 +1736,46 @@ module parameters_tunable
       iC7_Lscale0, &
       iwpxp_L_thresh
 
-    use parameter_indices, only: & 
-      ic_K,  & 
-      ic_K1, & 
-      inu1, & 
-      ic_K2, & 
-      inu2, & 
-      ic_K6, & 
-      inu6, & 
-      ic_K8, & 
-      inu8, & 
-      ic_K9, & 
-      inu9, & 
+    use parameter_indices, only: &
+      ic_K,  &
+      ic_K1, &
+      inu1, &
+      ic_K2, &
+      inu2, &
+      ic_K6, &
+      inu6, &
+      ic_K8, &
+      inu8, &
+      ic_K9, &
+      inu9, &
       inu10, &
-      ic_K_hm, & 
-      ic_K_hmb, & 
-      iK_hm_min_coef, & 
-      inu_hm, & 
+      ic_K_hm, &
+      ic_K_hmb, &
+      iK_hm_min_coef, &
+      inu_hm, &
       islope_coef_spread_DG_means_w, &
       ipdf_component_stdev_factor_w, &
       icoef_spread_DG_means_rt, &
       icoef_spread_DG_means_thl, &
-      igamma_coef, & 
-      igamma_coefb, & 
-      igamma_coefc, & 
-      imu, & 
-      ibeta, & 
+      igamma_coef, &
+      igamma_coefb, &
+      igamma_coefc, &
+      imu, &
+      ibeta, &
       ilmin_coef, &
       iomicron, &
       izeta_vrnce_rat, &
       iupsilon_precip_frac_rat, &
       ilambda0_stability_coef, &
       imult_coef, &
-      itaumin, & 
-      itaumax, & 
+      itaumin, &
+      itaumax, &
       iLscale_mu_coef, &
       iLscale_pert_coef, &
       ialpha_corr, &
       iSkw_denom_coef, &
       ic_K10, &
-      ic_K10h, & 
+      ic_K10h, &
       ithlp2_rad_coef, &
       ithlp2_rad_cloud_frac_thresh, &
       iup2_vp2_factor, &
@@ -1796,13 +1796,13 @@ module parameters_tunable
     real( kind = core_rknd ), intent(in), dimension(nparams) :: params
 
     ! Output variables
-    real( kind = core_rknd ), intent(out) :: & 
-      C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
-      C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-      C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, & 
+    real( kind = core_rknd ), intent(out) :: &
+      C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
+      C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
+      C7, C7b, C7c, C8, C8b, C10, &
+      C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
+      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  &
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
       slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
@@ -2001,7 +2001,7 @@ module parameters_tunable
     C13                          = init_value
     C14                          = init_value
     C15                          = init_value
-    C_wp2_splat                  = init_value 
+    C_wp2_splat                  = init_value
     C6rt_Lscale0                 = init_value
     C6thl_Lscale0                = init_value
     C7_Lscale0                   = init_value
@@ -2049,10 +2049,10 @@ module parameters_tunable
     thlp2_rad_cloud_frac_thresh  = init_value
     up2_vp2_factor               = init_value
     Skw_max_mag                  = init_value
-    C_invrs_tau_bkgnd            = init_value 
-    C_invrs_tau_sfc              = init_value 
-    C_invrs_tau_shear            = init_value 
-    C_invrs_tau_N2               = init_value 
+    C_invrs_tau_bkgnd            = init_value
+    C_invrs_tau_sfc              = init_value
+    C_invrs_tau_shear            = init_value
+    C_invrs_tau_N2               = init_value
     C_invrs_tau_N2_xp2           = init_value
     C_invrs_tau_N2_wp2           = init_value
     C_invrs_tau_N2_wpxp          = init_value

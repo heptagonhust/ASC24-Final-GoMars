@@ -5748,10 +5748,14 @@ end subroutine print_active_fldlst
     if (ff == 0) then
       ! fldname generated a hash key that doesn't have an entry in tbl_hash_pri.
       ! This means that fldname isn't in the masterlist
+      get_masterlist_indx = -1
+      return
       call endrun ('GET_MASTERLIST_INDX: attemping to output field '//fldname//' not on master list')
     end if
 
     if (associated(masterlist(ff)%thisentry) .and. masterlist(ff)%thisentry%field%name /= fldname ) then
+      get_masterlist_indx = -1
+      return
       call endrun ('GET_MASTERLIST_INDX: error finding field '//fldname//' on master list')
     end if
 

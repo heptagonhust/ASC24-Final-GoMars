@@ -110,8 +110,6 @@ subroutine chem_surfvals_readnl(nlfile)
                                ghg_yearStart_model, ghg_yearStart_data, &
                                flbc_type, flbc_cycle_yr, flbc_fixed_ymd, flbc_fixed_tod, flbc_list, flbc_file
 
-   !-----------------------------------------------------------------------------
-
    if (masterproc) then
       unitn = getunit()
       open( unitn, file=trim(nlfile), status='old' )
@@ -225,7 +223,7 @@ subroutine chem_surfvals_readnl(nlfile)
          write(iulog,*) '  Species from LBC file:'
          do i = 1, pcnst
             if (flbc_list(i) == ' ') exit
-            write(iulog,*) '    '//trim(flbc_list(i))
+            write(iulog,*) '    ' // trim(flbc_list(i))
          end do
 
       else

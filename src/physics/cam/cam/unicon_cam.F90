@@ -66,7 +66,7 @@ integer, parameter :: n_org = 5                      ! Number of constituents
 character(len=8), dimension(n_org), parameter :: &   ! Constituent names
    cnst_names = (/'ORGawk  ','ORGthl  ','ORGqto  ','ORGuoo  ','ORGvoo  '/)
 
-integer :: awk_cnst_ind, thl_cnst_ind, qt_cnst_ind, u_cnst_ind, v_cnst_ind 
+integer :: awk_cnst_ind, thl_cnst_ind, qt_cnst_ind, u_cnst_ind, v_cnst_ind
 
 ! fields added to physics buffer by this module
 integer :: &
@@ -109,7 +109,7 @@ integer :: &
    am_evp_st_idx = -1, &    !  Evaporation area of stratiform precipitation [fraction]
    evprain_st_idx = -1, &   !  Grid-mean evaporation rate of stratiform rain [kg/kg/s] >= 0.
    evpsnow_st_idx = -1      !  Grid-mean evaporation rate of stratiform snow [kg/kg/s] >= 0.
-   
+
 ! constituent indices
 integer :: ixcldliq, ixcldice, ixnumliq, ixnumice
 
@@ -132,7 +132,7 @@ logical :: cnst_is_mam_mmr(ncnst)
 !==================================================================================================
 contains
 !==================================================================================================
-  
+
 !> \brief Read namelist group unicon_nl
 !!
 !! \param[in] nlfile  ! filepath for file containing namelist input
@@ -148,7 +148,7 @@ subroutine unicon_cam_readnl(nlfile)
    ! Local variables
    integer :: unitn, ierr
    character(len=*), parameter :: subname = 'unicon_cam_readnl'
-   
+
    namelist /unicon_nl/ unicon_offline_dat_out, unicon_offline_dat_hfile
 
    !-----------------------------------------------------------------------------
@@ -183,21 +183,21 @@ subroutine unicon_cam_register
 
 
    ! Jun.02.2012. Sungsu for advecting organization-related horizontal heterogeneity
-   !              within PBL. 
-   !              For the time being, in order to save computation time, advection of aerosol perturbations 
+   !              within PBL.
+   !              For the time being, in order to save computation time, advection of aerosol perturbations
    !              are simply neglected.
 
 #ifdef USE_UNICON
 
-   call cnst_add(cnst_names(1), mwdry, cpair,    0._r8, awk_cnst_ind, & 
+   call cnst_add(cnst_names(1), mwdry, cpair,    0._r8, awk_cnst_ind, &
       'Wake area within PBL associated with organization', readiv=.false., mixtype = 'dry')
-   call cnst_add(cnst_names(2), mwdry, cpair,    0._r8, thl_cnst_ind, & 
+   call cnst_add(cnst_names(2), mwdry, cpair,    0._r8, thl_cnst_ind, &
       'Perturbation of  thl associated with organization', readiv=.false., mixtype = 'dry')
-   call cnst_add(cnst_names(3), mwdry, cpair,    0._r8,  qt_cnst_ind, & 
+   call cnst_add(cnst_names(3), mwdry, cpair,    0._r8,  qt_cnst_ind, &
       'Perturbation of  qt  associated with organization', readiv=.false., mixtype = 'dry')
-   call cnst_add(cnst_names(4), mwdry, cpair,    0._r8,   u_cnst_ind, & 
+   call cnst_add(cnst_names(4), mwdry, cpair,    0._r8,   u_cnst_ind, &
       'Perturbation of  u   associated with organization', readiv=.false., mixtype = 'dry')
-   call cnst_add(cnst_names(5), mwdry, cpair,    0._r8,   v_cnst_ind, & 
+   call cnst_add(cnst_names(5), mwdry, cpair,    0._r8,   v_cnst_ind, &
       'Perturbation of  v   associated with organization', readiv=.false., mixtype = 'dry')
 
 
@@ -278,7 +278,7 @@ subroutine unicon_cam_init(pbuf2d)
    evpsnow_st_idx = pbuf_get_index('evpsnow_st')
 
    ! physics buffer fields that need initializers -- these are only
-   ! fields that have been added to pbuf by this module, or by the 
+   ! fields that have been added to pbuf by this module, or by the
    ! convection driver layer.
    if (is_first_step()) then
 
@@ -627,13 +627,13 @@ subroutine unicon_cam_init(pbuf2d)
    end do
 
 
-   ! Nov.15.2012. Below output corresponding to individual updraft segment is designed to write out individual 
+   ! Nov.15.2012. Below output corresponding to individual updraft segment is designed to write out individual
    !              segment values for writing UNICON_II paper.
 
    do msfc = 1, nseg
       write(numcha,'(i2.2)') msfc
 
-      ! The properties of individual updraft segment       
+      ! The properties of individual updraft segment
 
       call addfld('thl_u'//numcha//'_SP',        (/ 'ilev' /), 'A', 'K', numcha//' updraft segment : updraft thl'            )
       call addfld('qt_u'//numcha//'_SP',    (/ 'ilev' /), 'A',  'kg/kg', numcha//' updraft segment : updraft qt'             )
@@ -648,7 +648,7 @@ subroutine unicon_cam_init(pbuf2d)
       call addfld('rad_u'//numcha//'_SP',        (/ 'ilev' /), 'A', 'm', numcha//' updraft segment : updraft plume radius'   )
       call addfld('nl_u'//numcha//'_SP',     (/ 'ilev' /), 'A',  '1/kg', numcha//' updraft segment : updraft nl'             )
       call addfld('ni_u'//numcha//'_SP',     (/ 'ilev' /), 'A',  '1/kg', numcha//' updraft segment : updraft ni'             )
-      
+
       call addfld('eps0_u'//numcha//'_SP',     (/ 'ilev' /), 'A',     '1/Pa', numcha//' updraft segment : updraft eps0'    )
       call addfld('eps_u'//numcha//'_SP' ,     (/ 'ilev' /), 'A',     '1/Pa', numcha//' updraft segment : updraft eps'     )
       call addfld('del_u'//numcha//'_SP' ,     (/ 'ilev' /), 'A',     '1/Pa', numcha//' updraft segment : updraft del'     )
@@ -669,7 +669,7 @@ subroutine unicon_cam_init(pbuf2d)
       call addfld('ptop'//numcha//'_SP', horiz_only, 'A', 'Pa', numcha//' updraft segment : updraft top pressure')
       call addfld('ztop'//numcha//'_SP',  horiz_only, 'A', 'm', numcha//' updraft segment : updraft top height')
 
-      ! The properties of mass flux weighted ( or area-weighted or net=sum ) downdraft properties for individual updraft segment       
+      ! The properties of mass flux weighted ( or area-weighted or net=sum ) downdraft properties for individual updraft segment
 
       call addfld('thl_d'//numcha//'_SP',         (/ 'ilev' /), 'A', 'K',&
          'Mass-flux weighted  mean downdraft thl for '// numcha//' updraft segment')
@@ -859,21 +859,21 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    ! -------------------------------------------------------- !
    ! Internal output and local variables for positive tracers !
    ! -------------------------------------------------------- !
-   
+
    real(r8) :: sten_ori(mix,mkx)         !  Tendency of dry static energy [ J / kg / s ]
    real(r8) :: qvten_ori(mix,mkx)        !  Tendency of water vapor specific humidity [ kg / kg / s ]
    real(r8) :: qlten_ori(mix,mkx)        !  Tendency of liquid water mixing ratio [ kg / kg / s ]
    real(r8) :: qiten_ori(mix,mkx)        !  Tendency of ice mixing ratio [ kg / kg / s ]
    real(r8) :: trten_ori(mix,mkx,ncnst)  !  Tendency of tracers [ # / kg / s, kg / kg / s ]
 
-   real(r8) :: slten_pos_inv(mix,mkx)    ! 
-   real(r8) :: qtten_pos_inv(mix,mkx)    ! 
-   real(r8) :: uten_pos_inv(mix,mkx)     ! 
-   real(r8) :: vten_pos_inv(mix,mkx)     ! 
-   real(r8) :: sten_pos_inv(mix,mkx)     ! 
-   real(r8) :: qvten_pos_inv(mix,mkx)    ! 
-   real(r8) :: qlten_pos_inv(mix,mkx)    ! 
-   real(r8) :: qiten_pos_inv(mix,mkx)    ! 
+   real(r8) :: slten_pos_inv(mix,mkx)    !
+   real(r8) :: qtten_pos_inv(mix,mkx)    !
+   real(r8) :: uten_pos_inv(mix,mkx)     !
+   real(r8) :: vten_pos_inv(mix,mkx)     !
+   real(r8) :: sten_pos_inv(mix,mkx)     !
+   real(r8) :: qvten_pos_inv(mix,mkx)    !
+   real(r8) :: qlten_pos_inv(mix,mkx)    !
+   real(r8) :: qiten_pos_inv(mix,mkx)    !
    real(r8) :: trten_pos_inv(mix,mkx,ncnst)
 
    ! --------------- !
@@ -881,7 +881,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    ! --------------- !
 
    integer :: iend
-   integer :: lchnk     
+   integer :: lchnk
    integer :: itim
 
    ! fields in physics buffer
@@ -1033,7 +1033,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    real(r8) :: tr0_c(mix,mkx,ncnst)      !  Environmental tracers [ # / kg, kg / kg ]
 
    ! Layer index variables
-   integer  :: k                         !  Vertical index for local fields 
+   integer  :: k                         !  Vertical index for local fields
    integer  :: k_inv                     !  Vertical index for incoming fields
    integer  :: mt                        !  Tracer index [ no ]
    integer  :: m
@@ -1051,7 +1051,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
 
    iend  = state%ncol
    lchnk = state%lchnk
-   
+
    ! Associate pointers with physics buffer fields
 
    itim = pbuf_old_tim_idx()
@@ -1121,7 +1121,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    end do
 
    ! Reverse variables defined at the interfaces
-    
+
    do k = 0, mkx
       k_inv               = mkx + 1 - k
       ps0(:iend,k)        = state%pint(:iend,k_inv)
@@ -1134,25 +1134,25 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
 
    kpblh(:iend) = mkx + 1 - kpblh_inv(:iend)
 
-   
+
    call compute_unicon( mix       , mkx        , iend      , ncnst    , dt      ,           &
                         ps0       , zs0        , p0        , z0       , dp0     , dpdry0  , &
-                        t0        , qv0        , ql0       , qi0      , tr0     ,           & 
+                        t0        , qv0        , ql0       , qi0      , tr0     ,           &
                         u0        , v0         , ast0      , tke0     , bprod0  ,           &
-                        kpblh     , pblh       , went      ,                                & 
+                        kpblh     , pblh       , went      ,                                &
                         cam_in%cflx(:,1), cam_in%shf, cam_in%wsx, cam_in%wsy, cam_in%cflx , &
                         cam_in%landfrac, sgh30   ,                                          &
                         am_evp_st , evprain_st , evpsnow_st,                                &
                         cush      , cushavg    , cuorg     ,                                &
-                        awk_PBL                , delta_thl_PBL        , delta_qt_PBL      , & 
+                        awk_PBL                , delta_thl_PBL        , delta_qt_PBL      , &
                         delta_u_PBL            , delta_v_PBL          , delta_tr_PBL      , &
                         cu_cmfum  , cu_cmfr    , cu_thlr   , cu_qtr   , cu_ur   , cu_vr   , &
-                        cu_qlr    , cu_qir     , cu_trr    ,                                & 
+                        cu_qlr    , cu_qir     , cu_trr    ,                                &
                         cu_cmfrd  , cu_thlrd   , cu_qtrd   , cu_urd   , cu_vrd  ,           &
-                        cu_qlrd   , cu_qird    , cu_trrd   ,                                & 
+                        cu_qlrd   , cu_qird    , cu_trrd   ,                                &
                         am_u      , qlm_u      , qim_u     ,                                &
                         am_d      , qlm_d      , qim_d     ,                                &
-                        cmf_u     , slflx      , qtflx     ,                                & 
+                        cmf_u     , slflx      , qtflx     ,                                &
                         qvten     , qlten      , qiten     , trten    ,                     &
                         sten      , uten       , vten      ,                                &
                         qrten     , qsten      ,                                            &
@@ -1161,7 +1161,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
                         cnt       , cnb        , cmf_det   , ql_det   , qi_det  ,           &
                         lchnk )
 
-      
+
    ! Initialize output ptend
    lq(:) = .true.
    call physics_ptend_init(ptend, state%psetcols, 'unicon', ls=.true., lu=.true., lv=.true., lq=lq)
@@ -1179,8 +1179,8 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    ! 'ql0,qi0' further below becomes negative.             !
    ! This feature is inevitable at the current stage.      !
    ! Note that in future, I can impose consistency between !
-   ! positive_moisture and positive_tracer for nl,ni.      !     
-   ! ----------------------------------------------------- !  
+   ! positive_moisture and positive_tracer for nl,ni.      !
+   ! ----------------------------------------------------- !
 
    qlten(:iend,:mkx) = qlten(:iend,:mkx) - rqc_l(:iend,:mkx)
    qiten(:iend,:mkx) = qiten(:iend,:mkx) - rqc_i(:iend,:mkx)
@@ -1201,7 +1201,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
       tr0_c(:iend,:mkx,mt)  = tr0(:iend,:mkx,mt) + trten(:iend,:mkx,mt)*dt
    enddo
 
-   ! Note : Since 'positive_moisture' will only perform condensation not the evaporation, 
+   ! Note : Since 'positive_moisture' will only perform condensation not the evaporation,
    !        we don't need to modify corresponding 'nl,ni'.
    !        Thus, current version is completely OK.
 
@@ -1249,7 +1249,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    ! Sep.08.2010. In the new scheme, it will be 'rqc_l = rqc_i = 0'. Thus, below block does nothing.
    !              But it is no harm to keep below block.
    ! Jan.04.2012. Below block will be used again for many reasons : (1) inctease TGCLDLWP, (2) reduce PREH20,
-   !              (2) reduce too strong SWCF over the far eastern equatorial Pacific. 
+   !              (2) reduce too strong SWCF over the far eastern equatorial Pacific.
    !              Currently, below produces conservation error of both energy and water.
    ! Jan.04.2012. Conservation errors of energy and moisture dissappears if I locate below block
    !              before applying 'positive_moisture'. Thus, I relocated below block above.
@@ -1271,7 +1271,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    out%cnb(:iend) = real(mkx,r8) + 1._r8 - cnb(:iend)
 
    ! Reverse variables defined at the interfaces
-   
+
    do k = 0, mkx
       k_inv                     = mkx + 1 - k
       out%cmfmc(:iend,k_inv)    = cmf_u(:iend,k)       !  Updraft mass flux at top of layer
@@ -1328,16 +1328,16 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
 
    end do
 
-   call outfld('slten_pos_SP' , slten_pos_inv, mix, lchnk) 
-   call outfld('qtten_pos_SP' , qtten_pos_inv, mix, lchnk) 
-   call outfld('uten_pos_SP'  ,  uten_pos_inv, mix, lchnk) 
+   call outfld('slten_pos_SP' , slten_pos_inv, mix, lchnk)
+   call outfld('qtten_pos_SP' , qtten_pos_inv, mix, lchnk)
+   call outfld('uten_pos_SP'  ,  uten_pos_inv, mix, lchnk)
    call outfld('vten_pos_SP'  ,  vten_pos_inv, mix, lchnk)
-   call outfld('sten_pos_SP'  ,  sten_pos_inv, mix, lchnk) 
-   call outfld('qvten_pos_SP' , qvten_pos_inv, mix, lchnk) 
-   call outfld('qlten_pos_SP' , qlten_pos_inv, mix, lchnk) 
-   call outfld('qiten_pos_SP' , qiten_pos_inv, mix, lchnk) 
-   call outfld('nlten_pos_SP' , trten_pos_inv(:,:,ixnumliq), mix, lchnk) 
-   call outfld('niten_pos_SP' , trten_pos_inv(:,:,ixnumice), mix, lchnk) 
+   call outfld('sten_pos_SP'  ,  sten_pos_inv, mix, lchnk)
+   call outfld('qvten_pos_SP' , qvten_pos_inv, mix, lchnk)
+   call outfld('qlten_pos_SP' , qlten_pos_inv, mix, lchnk)
+   call outfld('qiten_pos_SP' , qiten_pos_inv, mix, lchnk)
+   call outfld('nlten_pos_SP' , trten_pos_inv(:,:,ixnumliq), mix, lchnk)
+   call outfld('niten_pos_SP' , trten_pos_inv(:,:,ixnumice), mix, lchnk)
    call outfld('CMFR_DET'     , cmfr_det,      pcols, lchnk)
    call outfld('QLR_DET'      , qlr_det,       pcols, lchnk)
    call outfld('QIR_DET'      , qir_det,       pcols, lchnk)
@@ -1393,7 +1393,7 @@ subroutine unicon_cam_org_diags(state, pbuf)
 
    do i = 1, ncol
 
-      state%q(i,:,awk_cnst_ind) = awk_PBL(i) 
+      state%q(i,:,awk_cnst_ind) = awk_PBL(i)
 
       ! Add a constant offset of '100._r8' to 'delta_xxx' variables to be
       ! consistent with the reading sentence of unicon.F90 and so to prevent

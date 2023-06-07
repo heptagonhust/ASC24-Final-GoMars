@@ -3,7 +3,7 @@ module modal_aero_deposition
 !------------------------------------------------------------------------------------------------
 ! Purpose:
 !
-! Partition the contributions from modal components of wet and dry 
+! Partition the contributions from modal components of wet and dry
 ! deposition at the surface into the fields passed to the coupler.
 !
 ! *** N.B. *** Currently only a simple scheme for the 3-mode version
@@ -18,7 +18,7 @@ module modal_aero_deposition
 !------------------------------------------------------------------------------------------------
 
 use shr_kind_mod,     only: r8 => shr_kind_r8
-use camsrfexch,       only: cam_out_t     
+use camsrfexch,       only: cam_out_t
 use constituents,     only: cnst_get_ind, pcnst
 use cam_abortutils,   only: endrun
 use rad_constituents, only: rad_cnst_get_info
@@ -59,13 +59,13 @@ subroutine modal_aero_deposition_init( bcphi_indices, bcpho_indices, ocphi_indic
   ! *_a1 = accumulation mode
   ! *_a2 = aitken mode
   ! *_a3 = coarse mode
-  
+
   ! can be initialized with user specified indices
   ! if called from aerodep_flx module (for prescribed modal aerosol fluxes) then these indices are specified
   integer, optional, intent(in) :: bcphi_indices(:)     ! hydrophilic black carbon
   integer, optional, intent(in) :: bcpho_indices(:)     ! hydrophobic black carbon
   integer, optional, intent(in) :: ocphi_indices(:)     ! hydrophilic organic carbon
-  integer, optional, intent(in) :: ocpho_indices(:)     ! hydrophobic organic carbon 
+  integer, optional, intent(in) :: ocpho_indices(:)     ! hydrophobic organic carbon
   integer, optional, intent(in) :: fine_dust_indices(:) ! fine dust
   integer, optional, intent(in) :: crse_dust_indices(:) ! coarse dust
 
@@ -154,7 +154,7 @@ subroutine set_srf_wetdep(aerdepwetis, aerdepwetcw, cam_out)
    cam_out%ocphiwet(:) = 0._r8
 
    ! derive cam_out variables from deposition fluxes
-   !  note: wet deposition fluxes are negative into surface, 
+   !  note: wet deposition fluxes are negative into surface,
    !        dry deposition fluxes are positive into surface.
    !        srf models want positive definite fluxes.
    do i = 1, ncol
@@ -211,7 +211,7 @@ end subroutine set_srf_wetdep
 subroutine set_srf_drydep(aerdepdryis, aerdepdrycw, cam_out)
 
 ! Set surface dry deposition fluxes passed to coupler.
-   
+
    ! Arguments:
    real(r8), intent(in) :: aerdepdryis(:,:)  ! aerosol dry deposition (interstitial)
    real(r8), intent(in) :: aerdepdrycw(:,:)  ! aerosol dry deposition (cloud water)
@@ -233,7 +233,7 @@ subroutine set_srf_drydep(aerdepdryis, aerdepdrycw, cam_out)
    cam_out%ocphodry(:) = 0._r8
 
    ! derive cam_out variables from deposition fluxes
-   !  note: wet deposition fluxes are negative into surface, 
+   !  note: wet deposition fluxes are negative into surface,
    !        dry deposition fluxes are positive into surface.
    !        srf models want positive definite fluxes.
    do i = 1, ncol

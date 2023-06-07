@@ -659,7 +659,7 @@ end subroutine check_energy_get_integrals
     call cnst_get_ind('GRAUQM', ixgrau,   abort=.false.)
 
 
-    do m = 1,pcnst
+    do m = 1, pcnst
 
        if ( any(m == (/ 1, ixcldliq, ixcldice, &
                            ixrain,   ixsnow, ixgrau /)) ) exit   ! dont process water substances

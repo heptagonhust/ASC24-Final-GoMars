@@ -43,7 +43,7 @@ module aero_model
   character(len=16) :: drydep_list(pcnst) = ' '
 
   integer :: ndrydep = 0
-  integer,allocatable :: drydep_indices(:)
+  integer, allocatable :: drydep_indices(:)
   integer :: nwetdep = 0
   integer,allocatable :: wetdep_indices(:)
   logical :: drydep_lq(pcnst)
@@ -78,7 +78,7 @@ contains
 
     namelist /aerosol_nl/ aer_wetdep_list, aer_drydep_list
     namelist /aerosol_nl/ aer_sol_facti, aer_sol_factb, aer_scav_coef
-    !-----------------------------------------------------------------------------
+
     aer_sol_facti = nan
     aer_sol_factb = nan
     aer_scav_coef = nan

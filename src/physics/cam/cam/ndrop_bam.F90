@@ -73,10 +73,10 @@ subroutine ndrop_bam_init
 
   use phys_control, only: phys_getopts
 
-   !----------------------------------------------------------------------- 
-   ! 
+   !-----------------------------------------------------------------------
+   !
    ! Initialize constants for droplet activation by bulk aerosols
-   ! 
+   !
    !-----------------------------------------------------------------------
 
    integer  :: l, m, iaer
@@ -172,7 +172,7 @@ subroutine ndrop_bam_init
 
       ! Skip aerosols that don't have a dispersion defined.
       if (dispersion_aer(m) == 0._r8) cycle
-      
+
       alogsig(m)     = log(dispersion_aer(m))
       exp45logsig(m) = exp(4.5_r8*alogsig(m)*alogsig(m))
       argfactor(m)   = 2._r8/(3._r8*sqrt(2._r8)*alogsig(m))
@@ -266,6 +266,8 @@ subroutine ndrop_bam_run( &
    integer  :: m
    !-------------------------------------------------------------------------------
 
+   if (pmode == 0) return
+
    maxmodes = naer_all
    allocate( &
       volc(maxmodes),       &
@@ -316,7 +318,7 @@ subroutine ndrop_bam_run( &
          smc(m) = smcrit(m) ! only for prescribed size dist
 
          if (hygro_aer(m) > 1.e-10_r8) then   ! loop only if variable size dist
-            smc(m) = 2._r8*aten*sqrt(aten/(27._r8*hygro_aer(m)*amcubeloc(m))) 
+            smc(m) = 2._r8*aten*sqrt(aten/(27._r8*hygro_aer(m)*amcubeloc(m)))
          else
             smc(m) = 100._r8
          endif
@@ -397,7 +399,7 @@ subroutine ndrop_bam_ccn(lchnk, ncol, maerosol, naer2)
          if (m == idxsul) then
             ! Lohmann treatment for sulfate has variable size distribution
             do i = 1, ncol
-               if (naer2(i,k,m) > 0._r8) then 
+               if (naer2(i,k,m) > 0._r8) then
                   amcubesulfate(i) = amcubefactor(m)*maerosol(i,k,m)/(naer2(i,k,m))
                   smcritsulfate(i) = smcritfactor(m)/sqrt(amcubesulfate(i))
                else
@@ -489,9 +491,9 @@ subroutine maxsat(zeta, eta, nmode, smc, smax)
          sum=1.e20_r8
       endif
    enddo
-   
+
    smax=1._r8/sqrt(sum)
-   
+
 end subroutine maxsat
 
 !===============================================================================

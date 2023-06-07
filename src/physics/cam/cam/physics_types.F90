@@ -140,11 +140,11 @@ module physics_types
           top_level,        &! top level index for which nonzero tendencies have been set
           bot_level          ! bottom level index for which nonzero tendencies have been set
 
-     real(r8), dimension(:,:),allocatable   :: &
+     real(r8), dimension(:,:), allocatable :: &
           s,                &! heating rate (J/kg/s)
           u,                &! u momentum tendency (m/s/s)
           v                  ! v momentum tendency (m/s/s)
-     real(r8), dimension(:,:,:),allocatable :: &
+     real(r8), dimension(:,:,:), allocatable :: &
           q                  ! consituent tendencies (kg/kg/s)
 
 ! boundary fluxes
@@ -651,7 +651,7 @@ contains
          varname="state%zi",        msg=msg)
 
     ! 3-D variables
-    do m = 1,pcnst
+    do m = 1, pcnst
        call shr_assert_in_domain(state%q(:ncol,:,m),    lt=posinf_r8, gt=neginf_r8, &
             varname="state%q ("//trim(cnst_name(m))//")", msg=msg)
     end do
@@ -1430,10 +1430,10 @@ subroutine set_wet_to_dry (state)
 
   ncol = state%ncol
 
-  do m = 1,pcnst
+  do m = 1, pcnst
      if (cnst_type(m).eq.'dry') then
         state%q(:ncol,:,m) = state%q(:ncol,:,m)*state%pdel(:ncol,:)/state%pdeldry(:ncol,:)
-     endif
+     end if
   end do
 
 end subroutine set_wet_to_dry

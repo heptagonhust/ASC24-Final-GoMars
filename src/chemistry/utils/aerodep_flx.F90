@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------
-! Manages reading and interpolation of prescribed aerosol deposition 
+! Manages reading and interpolation of prescribed aerosol deposition
 ! fluxes.  These are the deposition fluxes sent to the surface.
 !
 ! Created by: Francis Vitt
@@ -15,7 +15,7 @@ module aerodep_flx
 
   implicit none
   private
-  save 
+  save
 
   type(trfld), pointer :: fields(:)
   type(trfile)         :: file
@@ -76,7 +76,7 @@ module aerodep_flx
   integer, parameter :: idx_dst3 = 6
   integer, parameter :: idx_ncl3 = 7
   integer, parameter :: idx_so43 = 8
-  
+
   integer, parameter :: nmodal_idxs = 8
 
   integer :: idx_bc1_dryis = -1
@@ -256,7 +256,7 @@ subroutine aerodep_flx_readnl(nlfile)
       aerodep_flx_rmfile,    &
       aerodep_flx_cycle_yr,  &
       aerodep_flx_fixed_ymd, &
-      aerodep_flx_fixed_tod      
+      aerodep_flx_fixed_tod
    !-----------------------------------------------------------------------------
 
    ! Initialize namelist variables from local module variables.
@@ -315,17 +315,17 @@ subroutine aerodep_flx_readnl(nlfile)
 end subroutine aerodep_flx_readnl
 
 !-------------------------------------------------------------------
-! sets the aerosol deposition fluxes in the cam_out structure 
+! sets the aerosol deposition fluxes in the cam_out structure
 ! to be sent to the surface models
 !-------------------------------------------------------------------
   subroutine aerodep_flx_set( cam_out, ncol, lchnk )
-    use camsrfexch,       only : cam_out_t     
+    use camsrfexch,       only : cam_out_t
 
     type(cam_out_t),     intent(inout) :: cam_out
     integer,             intent(in)    :: ncol, lchnk
-    
+
     if( .not. has_aerodep_flx ) return
-    
+
     if (modal_fluxes) then
        call set_modal_fluxes( cam_out, ncol, lchnk )
     else
@@ -346,12 +346,12 @@ end subroutine aerodep_flx_readnl
 
     implicit none
 
-    type(physics_state), intent(in)    :: state(begchunk:endchunk)                 
+    type(physics_state), intent(in)    :: state(begchunk:endchunk)
     type(cam_out_t),     intent(inout) :: cam_out(begchunk:endchunk)
     type(physics_buffer_desc), pointer :: pbuf2d(:,:)
 
     integer :: c, ncol
-    
+
     if( .not. has_aerodep_flx ) return
 
     call advance_trcdata( fields, file, state, pbuf2d  )
@@ -376,7 +376,7 @@ end subroutine aerodep_flx_readnl
 !-------------------------------------------------------------------
 !-------------------------------------------------------------------
   subroutine set_bulk_fluxes( cam_out, ncol, lchnk )
-    use camsrfexch,            only : cam_out_t     
+    use camsrfexch,            only : cam_out_t
 
     ! Arguments
     type(cam_out_t), intent(inout) :: cam_out
@@ -405,7 +405,7 @@ end subroutine aerodep_flx_readnl
 !-------------------------------------------------------------------
 !-------------------------------------------------------------------
   subroutine set_modal_fluxes( cam_out, ncol, lchnk )
-    use camsrfexch,            only : cam_out_t     
+    use camsrfexch,            only : cam_out_t
     use modal_aero_deposition, only : set_srf_drydep, set_srf_wetdep
 
     ! Arguments

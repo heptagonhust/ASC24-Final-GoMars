@@ -135,7 +135,7 @@
   fcrit2                    = 1.0d0
   frontgfc                  = 1.25d-15
   gw_apply_tndmax           = .false.
-  gw_dc                     = 2.5D0
+  gw_dc                     = 2.5d0
   gw_dc_long                = 0.0d0
   gw_drag_file              = '/Users/dongli/works/gmcore-data/earth/waccm/gw/newmfspectra40_dc25.nc'
   gw_limit_tau_without_eff  = .true.

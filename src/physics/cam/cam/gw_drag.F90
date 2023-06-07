@@ -1,22 +1,22 @@
 module gw_drag
 
-!--------------------------------------------------------------------------
-! CAM and WACCM gravity wave parameterizations were merged by Sean Patrick
-! Santos in Summer 2013, and at the same time, gw_drag was split into
-! various modules. This is the CAM interface and driver module. The below
-! notes are for the old CAM and WACCM versions of gw_drag.
-!--------------------------------------------------------------------------
-! This file came from wa17 and was modified by Fabrizio: 07-02-2004
-! Standard gw_drag with modification (6) of latitude profile of gw spectrum
-!--------------------------------------------------------------------------
-! Purpose:
-!
-! Module to compute the forcing due to parameterized gravity waves. Both an
-! orographic and an internal source spectrum are considered.
-!
-! Author: Byron Boville
-!
-!--------------------------------------------------------------------------
+  !--------------------------------------------------------------------------
+  ! CAM and WACCM gravity wave parameterizations were merged by Sean Patrick
+  ! Santos in Summer 2013, and at the same time, gw_drag was split into
+  ! various modules. This is the CAM interface and driver module. The below
+  ! notes are for the old CAM and WACCM versions of gw_drag.
+  !--------------------------------------------------------------------------
+  ! This file came from wa17 and was modified by Fabrizio: 07-02-2004
+  ! Standard gw_drag with modification (6) of latitude profile of gw spectrum
+  !--------------------------------------------------------------------------
+  ! Purpose:
+  !
+  ! Module to compute the forcing due to parameterized gravity waves. Both an
+  ! orographic and an internal source spectrum are considered.
+  !
+  ! Author: Byron Boville
+  !
+  !--------------------------------------------------------------------------
   use shr_kind_mod,   only: r8=>shr_kind_r8, cl=>shr_kind_cl
   use shr_log_mod,    only: errMsg => shr_log_errMsg
   use shr_assert_mod, only: shr_assert
@@ -41,38 +41,33 @@ module gw_drag
   use gw_convect,     only: BeresSourceDesc
   use gw_front,       only: CMSourceDesc
 
-! Typical module header
   implicit none
+
   private
+
   save
 
-!
-! PUBLIC: interfaces
-!
-  public :: gw_drag_readnl           ! Read namelist
-  public :: gw_init                  ! Initialization
-  public :: gw_tend                  ! interface to actual parameterization
+  public gw_drag_readnl           ! Read namelist
+  public gw_init                  ! Initialization
+  public gw_tend                  ! interface to actual parameterization
 
-!
-! PRIVATE: Rest of the data and interfaces are private to this module
-!
-  real(r8), parameter :: unset_r8 = huge(1._r8)
+  real(r8), parameter :: unset_r8 = huge(1.0_r8)
 
   ! A mid-scale "band" with only stationary waves (l = 0).
-  type(GWBand) :: band_oro
+  type(GWBand) band_oro
   ! Medium scale waves.
-  type(GWBand) :: band_mid
+  type(GWBand) band_mid
   ! Long scale waves for IGWs.
-  type(GWBand) :: band_long
+  type(GWBand) band_long
 
   ! Top level for gravity waves.
   integer, parameter :: ktop = 1
   ! Bottom level for frontal waves.
-  integer :: kbot_front
+  integer kbot_front
 
   ! Factor for SH orographic waves.
-  real(r8) :: gw_oro_south_fac = 1._r8
-  
+  real(r8) :: gw_oro_south_fac = 1.0_r8
+
   ! Frontogenesis function critical threshold.
   real(r8) :: frontgfc = unset_r8
 
@@ -154,24 +149,23 @@ module gw_drag
   ! anisotropic ridge fields
   integer, parameter :: prdg = 16
 
-  real(r8), allocatable, dimension(:,:), target :: &
-     rdg_gbxar
+  real(r8), allocatable, dimension(:,:), target :: rdg_gbxar
 
-     ! Meso Beta
+  ! Meso Beta
   real(r8), allocatable, dimension(:,:,:), target :: &
-     rdg_hwdth,  &
-     rdg_clngt,  &
-     rdg_mxdis,  &
-     rdg_anixy,  &
-     rdg_angll
+    rdg_hwdth,  &
+    rdg_clngt,  &
+    rdg_mxdis,  &
+    rdg_anixy,  &
+    rdg_angll
 
-     ! Meso Gamma
+  ! Meso Gamma
   real(r8), allocatable, dimension(:,:,:), target :: &
-     rdg_hwdthg, &
-     rdg_clngtg, &
-     rdg_mxdisg, &
-     rdg_anixyg, &
-     rdg_angllg
+    rdg_hwdthg, &
+    rdg_clngtg, &
+    rdg_mxdisg, &
+    rdg_anixyg, &
+    rdg_angllg
 
   ! Water constituent indices for budget
   integer :: ixcldliq = -1
@@ -183,497 +177,486 @@ module gw_drag
   character(len=1), parameter :: beres_dp_pf = "B"
   character(len=1), parameter :: beres_sh_pf = "S"
 
-  ! namelist 
-  logical          :: history_amwg                   ! output the variables used by the AMWG diag package
+  ! namelist
+  logical  :: history_amwg                   ! output the variables used by the AMWG diag package
   logical  :: gw_lndscl_sgh = .true. ! scale SGH by land frac
   real(r8) :: gw_prndl = 0.25_r8
-  real(r8) :: gw_qbo_hdepth_scaling = 1._r8 ! heating depth scaling factor
+  real(r8) :: gw_qbo_hdepth_scaling = 1.0_r8 ! heating depth scaling factor
 
-  logical :: gw_top_taper=.false.
-  real(r8), pointer :: vramp(:)=>null()
+  logical :: gw_top_taper = .false.
+  real(r8), pointer :: vramp(:) => null()
 
-!==========================================================================
 contains
-!==========================================================================
 
-subroutine gw_drag_readnl(nlfile)
+  subroutine gw_drag_readnl(nlfile)
 
-  use namelist_utils,  only: find_group_name
-  use units,           only: getunit, freeunit
-  use spmd_utils,      only: mpicom, mstrid=>masterprocid, mpi_real8, &
-                             mpi_character, mpi_logical, mpi_integer
-  use gw_rdg,          only: gw_rdg_readnl
+    use namelist_utils, only: find_group_name
+    use units,          only: getunit, freeunit
+    use spmd_utils,     only: mpicom, mstrid=>masterprocid, mpi_real8, &
+                              mpi_character, mpi_logical, mpi_integer
+    use gw_rdg,         only: gw_rdg_readnl
 
-  ! File containing namelist input.
-  character(len=*), intent(in) :: nlfile
+    character(*), intent(in) :: nlfile
 
-  ! Local variables
-  integer :: unitn, ierr
-  character(len=*), parameter :: sub = 'gw_drag_readnl'
+    ! Local variables
+    integer unitn, ierr
+    character(len=*), parameter :: sub = 'gw_drag_readnl'
 
-  ! Maximum wave number and width of spectrum bins.
-  integer :: pgwv = -1
-  real(r8) :: gw_dc = unset_r8
-  integer :: pgwv_long = -1
-  real(r8) :: gw_dc_long = unset_r8
+    ! Maximum wave number and width of spectrum bins.
+    integer :: pgwv = -1
+    real(r8) :: gw_dc = unset_r8
+    integer :: pgwv_long = -1
+    real(r8) :: gw_dc_long = unset_r8
 
-  ! fcrit2 for the mid-scale waves has been made a namelist variable to
-  ! facilitate backwards compatibility with the CAM3 version of this
-  ! parameterization.  In CAM3, fcrit2=0.5.
-  real(r8) :: fcrit2 = unset_r8   ! critical froude number squared
+    ! fcrit2 for the mid-scale waves has been made a namelist variable to
+    ! facilitate backwards compatibility with the CAM3 version of this
+    ! parameterization.  In CAM3, fcrit2=0.5.
+    real(r8) :: fcrit2 = unset_r8   ! critical froude number squared
 
-  namelist /gw_drag_nl/ pgwv, gw_dc, pgwv_long, gw_dc_long, tau_0_ubc, &
-       effgw_beres_dp, effgw_beres_sh, effgw_cm, effgw_cm_igw, effgw_oro, &
-       fcrit2, frontgfc, gw_drag_file, gw_drag_file_sh, taubgnd, &
-       taubgnd_igw, gw_polar_taper, &
-       use_gw_rdg_beta, n_rdg_beta, effgw_rdg_beta, effgw_rdg_beta_max, &
-       rdg_beta_cd_llb, trpd_leewv_rdg_beta, &
-       use_gw_rdg_gamma, n_rdg_gamma, effgw_rdg_gamma, effgw_rdg_gamma_max, &
-       rdg_gamma_cd_llb, trpd_leewv_rdg_gamma, bnd_rdggm, &
-       gw_oro_south_fac, gw_limit_tau_without_eff, &
-       gw_lndscl_sgh, gw_prndl, gw_apply_tndmax, gw_qbo_hdepth_scaling, &
-       gw_top_taper
-  !----------------------------------------------------------------------
+    namelist /gw_drag_nl/ pgwv, gw_dc, pgwv_long, gw_dc_long, tau_0_ubc, &
+      effgw_beres_dp, effgw_beres_sh, effgw_cm, effgw_cm_igw, effgw_oro, &
+      fcrit2, frontgfc, gw_drag_file, gw_drag_file_sh, taubgnd, &
+      taubgnd_igw, gw_polar_taper, &
+      use_gw_rdg_beta, n_rdg_beta, effgw_rdg_beta, effgw_rdg_beta_max, &
+      rdg_beta_cd_llb, trpd_leewv_rdg_beta, &
+      use_gw_rdg_gamma, n_rdg_gamma, effgw_rdg_gamma, effgw_rdg_gamma_max, &
+      rdg_gamma_cd_llb, trpd_leewv_rdg_gamma, bnd_rdggm, &
+      gw_oro_south_fac, gw_limit_tau_without_eff, &
+      gw_lndscl_sgh, gw_prndl, gw_apply_tndmax, gw_qbo_hdepth_scaling, &
+      gw_top_taper
 
-  if (use_simple_phys) return
+    if (use_simple_phys) return
 
-  if (masterproc) then
-     unitn = getunit()
-     open( unitn, file=trim(nlfile), status='old' )
-     call find_group_name(unitn, 'gw_drag_nl', status=ierr)
-     if (ierr == 0) then
+    if (masterproc) then
+      unitn = getunit()
+      open( unitn, file=trim(nlfile), status='old' )
+      call find_group_name(unitn, 'gw_drag_nl', status=ierr)
+      if (ierr == 0) then
         read(unitn, gw_drag_nl, iostat=ierr)
         if (ierr /= 0) then
-           call endrun(sub // ':: ERROR reading namelist')
+          call endrun(sub // ':: ERROR reading namelist')
         end if
-     end if
-     close(unitn)
-     call freeunit(unitn)
-  end if
+      end if
+      close(unitn)
+      call freeunit(unitn)
+    end if
 
-  call mpi_bcast(pgwv, 1, mpi_integer, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: pgwv")
-  call mpi_bcast(gw_dc, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_dc")
-  call mpi_bcast(pgwv_long, 1, mpi_integer, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: pgwv_long")
-  call mpi_bcast(gw_dc_long, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_dc_long")
-  call mpi_bcast(tau_0_ubc, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: tau_0_ubc")
-  call mpi_bcast(effgw_beres_dp, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_beres_dp")
-  call mpi_bcast(effgw_beres_sh, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_beres_sh")
-  call mpi_bcast(effgw_cm, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_cm")
-  call mpi_bcast(effgw_cm_igw, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_cm_igw")
-  call mpi_bcast(effgw_oro, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_oro")
+    call mpi_bcast(pgwv, 1, mpi_integer, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: pgwv")
+    call mpi_bcast(gw_dc, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_dc")
+    call mpi_bcast(pgwv_long, 1, mpi_integer, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: pgwv_long")
+    call mpi_bcast(gw_dc_long, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_dc_long")
+    call mpi_bcast(tau_0_ubc, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: tau_0_ubc")
+    call mpi_bcast(effgw_beres_dp, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_beres_dp")
+    call mpi_bcast(effgw_beres_sh, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_beres_sh")
+    call mpi_bcast(effgw_cm, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_cm")
+    call mpi_bcast(effgw_cm_igw, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_cm_igw")
+    call mpi_bcast(effgw_oro, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_oro")
 
-  call mpi_bcast(use_gw_rdg_beta, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: use_gw_rdg_beta")
-  call mpi_bcast(n_rdg_beta, 1, mpi_integer, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: n_rdg_beta")
-  call mpi_bcast(effgw_rdg_beta, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_beta")
-  call mpi_bcast(effgw_rdg_beta_max, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_beta_max")
-  call mpi_bcast(rdg_beta_cd_llb, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: rdg_beta_cd_llb")
-  call mpi_bcast(trpd_leewv_rdg_beta, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: trpd_leewv_rdg_beta")
+    call mpi_bcast(use_gw_rdg_beta, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: use_gw_rdg_beta")
+    call mpi_bcast(n_rdg_beta, 1, mpi_integer, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: n_rdg_beta")
+    call mpi_bcast(effgw_rdg_beta, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_beta")
+    call mpi_bcast(effgw_rdg_beta_max, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_beta_max")
+    call mpi_bcast(rdg_beta_cd_llb, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: rdg_beta_cd_llb")
+    call mpi_bcast(trpd_leewv_rdg_beta, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: trpd_leewv_rdg_beta")
 
-  call mpi_bcast(use_gw_rdg_gamma, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: use_gw_rdg_gamma")
-  call mpi_bcast(n_rdg_gamma, 1, mpi_integer, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: n_rdg_gamma")
-  call mpi_bcast(effgw_rdg_gamma, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_gamma")
-  call mpi_bcast(effgw_rdg_gamma_max, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_gamma_max")
-  call mpi_bcast(rdg_gamma_cd_llb, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: rdg_gamma_cd_llb")
-  call mpi_bcast(trpd_leewv_rdg_gamma, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: trpd_leewv_rdg_gamma")
-  call mpi_bcast(bnd_rdggm, len(bnd_rdggm), mpi_character, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: bnd_rdggm")
+    call mpi_bcast(use_gw_rdg_gamma, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: use_gw_rdg_gamma")
+    call mpi_bcast(n_rdg_gamma, 1, mpi_integer, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: n_rdg_gamma")
+    call mpi_bcast(effgw_rdg_gamma, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_gamma")
+    call mpi_bcast(effgw_rdg_gamma_max, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: effgw_rdg_gamma_max")
+    call mpi_bcast(rdg_gamma_cd_llb, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: rdg_gamma_cd_llb")
+    call mpi_bcast(trpd_leewv_rdg_gamma, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: trpd_leewv_rdg_gamma")
+    call mpi_bcast(bnd_rdggm, len(bnd_rdggm), mpi_character, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: bnd_rdggm")
 
-  call mpi_bcast(gw_oro_south_fac, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_oro_south_fac")
-  call mpi_bcast(fcrit2, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: fcrit2")
-  call mpi_bcast(frontgfc, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: frontgfc")
-  call mpi_bcast(taubgnd, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: taubgnd")
-  call mpi_bcast(taubgnd_igw, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: taubgnd_igw")
+    call mpi_bcast(gw_oro_south_fac, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_oro_south_fac")
+    call mpi_bcast(fcrit2, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: fcrit2")
+    call mpi_bcast(frontgfc, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: frontgfc")
+    call mpi_bcast(taubgnd, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: taubgnd")
+    call mpi_bcast(taubgnd_igw, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: taubgnd_igw")
 
-  call mpi_bcast(gw_polar_taper, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_polar_taper")
-  call mpi_bcast(gw_limit_tau_without_eff, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_limit_tau_without_eff")
-  call mpi_bcast(gw_apply_tndmax, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_apply_tndmax")
+    call mpi_bcast(gw_polar_taper, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_polar_taper")
+    call mpi_bcast(gw_limit_tau_without_eff, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_limit_tau_without_eff")
+    call mpi_bcast(gw_apply_tndmax, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_apply_tndmax")
 
-  call mpi_bcast(gw_top_taper, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_top_taper")
+    call mpi_bcast(gw_top_taper, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_top_taper")
 
-  call mpi_bcast(gw_lndscl_sgh, 1, mpi_logical, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_lndscl_sgh")
-  call mpi_bcast(gw_prndl, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_prndl")
-  call mpi_bcast(gw_qbo_hdepth_scaling, 1, mpi_real8, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_qbo_hdepth_scaling")
+    call mpi_bcast(gw_lndscl_sgh, 1, mpi_logical, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_lndscl_sgh")
+    call mpi_bcast(gw_prndl, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_prndl")
+    call mpi_bcast(gw_qbo_hdepth_scaling, 1, mpi_real8, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_qbo_hdepth_scaling")
 
-  call mpi_bcast(gw_drag_file, len(gw_drag_file), mpi_character, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_drag_file")
-  call mpi_bcast(gw_drag_file_sh, len(gw_drag_file_sh), mpi_character, mstrid, mpicom, ierr)
-  if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_drag_file_sh")
+    call mpi_bcast(gw_drag_file, len(gw_drag_file), mpi_character, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_drag_file")
+    call mpi_bcast(gw_drag_file_sh, len(gw_drag_file_sh), mpi_character, mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: gw_drag_file_sh")
 
 
-  ! Check if fcrit2 was set.
-  call shr_assert(fcrit2 /= unset_r8, &
-       "gw_drag_readnl: fcrit2 must be set via the namelist."// &
-       errMsg(__FILE__, __LINE__))
+    ! Check if fcrit2 was set.
+    call shr_assert(fcrit2 /= unset_r8, &
+        "gw_drag_readnl: fcrit2 must be set via the namelist."// &
+        errMsg(__FILE__, __LINE__))
 
-  ! Check if pgwv was set.
-  call shr_assert(pgwv >= 0, &
-       "gw_drag_readnl: pgwv must be set via the namelist and &
-       &non-negative."// &
-       errMsg(__FILE__, __LINE__))
+    ! Check if pgwv was set.
+    call shr_assert(pgwv >= 0, &
+        "gw_drag_readnl: pgwv must be set via the namelist and &
+        &non-negative."// &
+        errMsg(__FILE__, __LINE__))
 
-  ! Check if gw_dc was set.
-  call shr_assert(gw_dc /= unset_r8, &
-       "gw_drag_readnl: gw_dc must be set via the namelist."// &
-       errMsg(__FILE__, __LINE__))
+    ! Check if gw_dc was set.
+    call shr_assert(gw_dc /= unset_r8, &
+        "gw_drag_readnl: gw_dc must be set via the namelist."// &
+        errMsg(__FILE__, __LINE__))
 
-  band_oro = GWBand(0, gw_dc, fcrit2, wavelength_mid)
-  band_mid = GWBand(pgwv, gw_dc, 1.0_r8, wavelength_mid)
-  band_long = GWBand(pgwv_long, gw_dc_long, 1.0_r8, wavelength_long)
+    band_oro = GWBand(0, gw_dc, fcrit2, wavelength_mid)
+    band_mid = GWBand(pgwv, gw_dc, 1.0_r8, wavelength_mid)
+    band_long = GWBand(pgwv_long, gw_dc_long, 1.0_r8, wavelength_long)
 
-  if (use_gw_rdg_gamma .or. use_gw_rdg_beta) then
-     call gw_rdg_readnl(nlfile)
-  end if
+    if (use_gw_rdg_gamma .or. use_gw_rdg_beta) then
+      call gw_rdg_readnl(nlfile)
+    end if
 
-end subroutine gw_drag_readnl
+  end subroutine gw_drag_readnl
 
-!==========================================================================
+  subroutine gw_init()
 
-subroutine gw_init()
-  !-----------------------------------------------------------------------
-  ! Time independent initialization for multiple gravity wave
-  ! parameterization.
-  !-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
+    ! Time independent initialization for multiple gravity wave
+    ! parameterization.
+    !-----------------------------------------------------------------------
 
-  use cam_history,      only: addfld, add_default, horiz_only
-  use cam_history,      only: register_vector_field
-  use interpolate_data, only: lininterp
-  use phys_control,     only: phys_getopts
-  use physics_buffer,   only: pbuf_get_index
-  use constituents,     only: cnst_get_ind
+    use cam_history,      only: addfld, add_default, horiz_only
+    use cam_history,      only: register_vector_field
+    use interpolate_data, only: lininterp
+    use phys_control,     only: phys_getopts
+    use physics_buffer,   only: pbuf_get_index
+    use constituents,     only: cnst_get_ind
 
-  use cam_initfiles,    only: topo_file_get_id
+    use cam_initfiles,    only: topo_file_get_id
 
-  ! temporary for restart with ridge scheme
-  use cam_initfiles,    only: bnd_topo
-  
-  use cam_pio_utils,    only: cam_pio_openfile
-  use cam_grid_support, only: cam_grid_check, cam_grid_id
-  use cam_grid_support, only: cam_grid_get_dim_names
-  use pio,              only: file_desc_t, pio_nowrite, pio_closefile
-  use ncdio_atm,        only: infld
-  use ioFileMod,        only: getfil
+    ! temporary for restart with ridge scheme
+    use cam_initfiles,    only: bnd_topo
 
-  use ref_pres,   only: pref_edge, pref_mid
-  use physconst,  only: gravit, rair, rearth
+    use cam_pio_utils,    only: cam_pio_openfile
+    use cam_grid_support, only: cam_grid_check, cam_grid_id
+    use cam_grid_support, only: cam_grid_get_dim_names
+    use pio,              only: file_desc_t, pio_nowrite, pio_closefile
+    use ncdio_atm,        only: infld
+    use ioFileMod,        only: getfil
 
-  use gw_common,  only: gw_common_init
-  use gw_front,   only: gaussian_cm_desc
+    use ref_pres,         only: pref_edge, pref_mid
+    use physconst,        only: gravit, rair, rearth
 
-  !---------------------------Local storage-------------------------------
+    use gw_common,        only: gw_common_init
+    use gw_front,         only: gaussian_cm_desc
 
-  integer          :: i, l, k
-  character(len=1) :: cn
+    integer i, l, k
+    character(1) cn
 
-  ! Index for levels at specific pressures.
-  integer :: kfront
+    ! Index for levels at specific pressures.
+    integer :: kfront
 
-  ! output tendencies and state variables for CAM4 temperature,
-  ! water vapor, cloud ice and cloud liquid budgets.
-  logical :: history_budget
-  ! output history file number for budget fields
-  integer :: history_budget_histfile_num
-  ! output variables of interest in WACCM runs
-  logical :: history_waccm
+    ! output tendencies and state variables for CAM4 temperature,
+    ! water vapor, cloud ice and cloud liquid budgets.
+    logical :: history_budget
+    ! output history file number for budget fields
+    integer :: history_budget_histfile_num
+    ! output variables of interest in WACCM runs
+    logical :: history_waccm
 
-  ! Interpolated Newtonian cooling coefficients.
-  real(r8) :: alpha(pver+1)
+    ! Interpolated Newtonian cooling coefficients.
+    real(r8) :: alpha(pver+1)
 
-  ! Levels of pre-calculated Newtonian cooling (1/day).
-  ! The following profile is digitized from:
-  ! Wehrbein and Leovy (JAS, 39, 1532-1544, 1982) figure 5
+    ! Levels of pre-calculated Newtonian cooling (1/day).
+    ! The following profile is digitized from:
+    ! Wehrbein and Leovy (JAS, 39, 1532-1544, 1982) figure 5
 
-  integer, parameter :: nalph = 71
-  real(r8) :: alpha0(nalph) = [ &
-       0.1_r8,         0.1_r8,         0.1_r8,         0.1_r8,         &
-       0.1_r8,         0.1_r8,         0.1_r8,         0.1_r8,         &
-       0.1_r8,         0.1_r8,         0.10133333_r8,  0.104_r8,       &
-       0.108_r8,       0.112_r8,       0.116_r8,       0.12066667_r8,  &
-       0.126_r8,       0.132_r8,       0.138_r8,       0.144_r8,       &
-       0.15133333_r8,  0.16_r8,        0.17_r8,        0.18_r8,        &
-       0.19_r8,        0.19933333_r8,  0.208_r8,       0.216_r8,       &
-       0.224_r8,       0.232_r8,       0.23466667_r8,  0.232_r8,       &
-       0.224_r8,       0.216_r8,       0.208_r8,       0.20133333_r8,  &
-       0.196_r8,       0.192_r8,       0.188_r8,       0.184_r8,       &
-       0.18266667_r8,  0.184_r8,       0.188_r8,       0.192_r8,       &
-       0.196_r8,       0.19333333_r8,  0.184_r8,       0.168_r8,       &
-       0.152_r8,       0.136_r8,       0.12133333_r8,  0.108_r8,       &
-       0.096_r8,       0.084_r8,       0.072_r8,       0.061_r8,       &
-       0.051_r8,       0.042_r8,       0.033_r8,       0.024_r8,       &
-       0.017666667_r8, 0.014_r8,       0.013_r8,       0.012_r8,       &
-       0.011_r8,       0.010333333_r8, 0.01_r8,        0.01_r8,        &
-       0.01_r8,        0.01_r8,        0.01_r8                         &
-       ]
+    integer, parameter :: nalph = 71
+    real(r8) :: alpha0(nalph) = [ &
+      0.1_r8,         0.1_r8,         0.1_r8,         0.1_r8,         &
+      0.1_r8,         0.1_r8,         0.1_r8,         0.1_r8,         &
+      0.1_r8,         0.1_r8,         0.10133333_r8,  0.104_r8,       &
+      0.108_r8,       0.112_r8,       0.116_r8,       0.12066667_r8,  &
+      0.126_r8,       0.132_r8,       0.138_r8,       0.144_r8,       &
+      0.15133333_r8,  0.16_r8,        0.17_r8,        0.18_r8,        &
+      0.19_r8,        0.19933333_r8,  0.208_r8,       0.216_r8,       &
+      0.224_r8,       0.232_r8,       0.23466667_r8,  0.232_r8,       &
+      0.224_r8,       0.216_r8,       0.208_r8,       0.20133333_r8,  &
+      0.196_r8,       0.192_r8,       0.188_r8,       0.184_r8,       &
+      0.18266667_r8,  0.184_r8,       0.188_r8,       0.192_r8,       &
+      0.196_r8,       0.19333333_r8,  0.184_r8,       0.168_r8,       &
+      0.152_r8,       0.136_r8,       0.12133333_r8,  0.108_r8,       &
+      0.096_r8,       0.084_r8,       0.072_r8,       0.061_r8,       &
+      0.051_r8,       0.042_r8,       0.033_r8,       0.024_r8,       &
+      0.017666667_r8, 0.014_r8,       0.013_r8,       0.012_r8,       &
+      0.011_r8,       0.010333333_r8, 0.01_r8,        0.01_r8,        &
+      0.01_r8,        0.01_r8,        0.01_r8                         &
+    ]
 
-  ! Pressure levels that were used to calculate alpha0 (hPa).
-  real(r8) :: palph(nalph) = [ &
-       2.06115E-06_r8, 2.74280E-06_r8, 3.64988E-06_r8, 4.85694E-06_r8, &
-       6.46319E-06_r8, 8.60065E-06_r8, 1.14450E-05_r8, 1.52300E-05_r8, &
-       2.02667E-05_r8, 2.69692E-05_r8, 3.58882E-05_r8, 4.77568E-05_r8, &
-       6.35507E-05_r8, 8.45676E-05_r8, 0.000112535_r8, 0.000149752_r8, &
-       0.000199277_r8, 0.000265180_r8, 0.000352878_r8, 0.000469579_r8, &
-       0.000624875_r8, 0.000831529_r8, 0.00110653_r8,  0.00147247_r8,  &
-       0.00195943_r8,  0.00260744_r8,  0.00346975_r8,  0.00461724_r8,  &
-       0.00614421_r8,  0.00817618_r8,  0.0108801_r8,   0.0144783_r8,   &
-       0.0192665_r8,   0.0256382_r8,   0.0341170_r8,   0.0453999_r8,   &
-       0.0604142_r8,   0.0803939_r8,   0.106981_r8,    0.142361_r8,    &
-       0.189442_r8,    0.252093_r8,    0.335463_r8,    0.446404_r8,    &
-       0.594036_r8,    0.790490_r8,    1.05192_r8,     1.39980_r8,     &
-       1.86273_r8,     2.47875_r8,     3.29851_r8,     4.38936_r8,     &
-       5.84098_r8,     7.77266_r8,     10.3432_r8,     13.7638_r8,     &
-       18.3156_r8,     24.3728_r8,     32.4332_r8,     43.1593_r8,     &
-       57.4326_r8,     76.4263_r8,     101.701_r8,     135.335_r8,     &
-       180.092_r8,     239.651_r8,     318.907_r8,     424.373_r8,     &
-       564.718_r8,     751.477_r8,     1000._r8                        &
-       ]
+    ! Pressure levels that were used to calculate alpha0 (hPa).
+    real(r8) :: palph(nalph) = [ &
+      2.06115E-06_r8, 2.74280E-06_r8, 3.64988E-06_r8, 4.85694E-06_r8, &
+      6.46319E-06_r8, 8.60065E-06_r8, 1.14450E-05_r8, 1.52300E-05_r8, &
+      2.02667E-05_r8, 2.69692E-05_r8, 3.58882E-05_r8, 4.77568E-05_r8, &
+      6.35507E-05_r8, 8.45676E-05_r8, 0.000112535_r8, 0.000149752_r8, &
+      0.000199277_r8, 0.000265180_r8, 0.000352878_r8, 0.000469579_r8, &
+      0.000624875_r8, 0.000831529_r8, 0.00110653_r8,  0.00147247_r8,  &
+      0.00195943_r8,  0.00260744_r8,  0.00346975_r8,  0.00461724_r8,  &
+      0.00614421_r8,  0.00817618_r8,  0.0108801_r8,   0.0144783_r8,   &
+      0.0192665_r8,   0.0256382_r8,   0.0341170_r8,   0.0453999_r8,   &
+      0.0604142_r8,   0.0803939_r8,   0.106981_r8,    0.142361_r8,    &
+      0.189442_r8,    0.252093_r8,    0.335463_r8,    0.446404_r8,    &
+      0.594036_r8,    0.790490_r8,    1.05192_r8,     1.39980_r8,     &
+      1.86273_r8,     2.47875_r8,     3.29851_r8,     4.38936_r8,     &
+      5.84098_r8,     7.77266_r8,     10.3432_r8,     13.7638_r8,     &
+      18.3156_r8,     24.3728_r8,     32.4332_r8,     43.1593_r8,     &
+      57.4326_r8,     76.4263_r8,     101.701_r8,     135.335_r8,     &
+      180.092_r8,     239.651_r8,     318.907_r8,     424.373_r8,     &
+      564.718_r8,     751.477_r8,     1000._r8                        &
+    ]
 
-  ! Read data from file
-  type(file_desc_t), pointer :: fh_topo
-  type(file_desc_t)  :: fh_rdggm
-  integer            :: grid_id
-  character(len=8)   :: dim1name, dim2name
-  logical            :: found
-  character(len=256) :: bnd_rdggm_loc   ! filepath of topo file on local disk
+    ! Read data from file
+    type(file_desc_t), pointer :: fh_topo
+    type(file_desc_t)  fh_rdggm
+    integer            grid_id
+    character(len=8)   dim1name, dim2name
+    logical            found
+    character(256) bnd_rdggm_loc   ! filepath of topo file on local disk
 
-  ! Allow reporting of error messages.
-  character(len=128) :: errstring
-  character(len=*), parameter :: sub = 'gw_init'
+    ! Allow reporting of error messages.
+    character(128) errstring
+    character(len=*), parameter :: sub = 'gw_init'
 
-  ! temporary workaround for restart w/ ridge scheme
-  character(len=256) :: bnd_topo_loc   ! filepath of topo file on local disk
+    ! temporary workaround for restart w/ ridge scheme
+    character(len=256) bnd_topo_loc   ! filepath of topo file on local disk
 
-  integer :: botndx,topndx
+    integer botndx,topndx
 
-  !-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
-  if (do_molec_diff) then
-     kvt_idx     = pbuf_get_index('kvt')
-  end if
+    if (do_molec_diff) then
+      kvt_idx = pbuf_get_index('kvt')
+    end if
 
-  if (masterproc) then
-     write(iulog,*) ' '
-     write(iulog,*) "GW_DRAG: band_mid%ngwv = ", band_mid%ngwv
-     do l = -band_mid%ngwv, band_mid%ngwv
-        write (iulog,'(A,I0,A,F7.2)') &
-             "GW_DRAG: band_mid%cref(",l,") = ",band_mid%cref(l)
-     enddo
-     write(iulog,*) 'GW_DRAG: band_mid%kwv = ', band_mid%kwv
-     write(iulog,*) 'GW_DRAG: band_mid%fcrit2 = ', band_mid%fcrit2
-     write(iulog,*) ' '
-     write(iulog,*) "GW_DRAG: band_long%ngwv = ", band_long%ngwv
-     do l = -band_long%ngwv, band_long%ngwv
-        write (iulog,'(A,I2,A,F7.2)') &
-             "GW_DRAG: band_long%cref(",l,") = ",band_long%cref(l)
-     enddo
-     write(iulog,*) 'GW_DRAG: band_long%kwv = ', band_long%kwv
-     write(iulog,*) 'GW_DRAG: band_long%fcrit2 = ', band_long%fcrit2
-     write(iulog,*) ' '
-  end if
+    if (masterproc) then
+      write(iulog,*) ' '
+      write(iulog,*) "GW_DRAG: band_mid%ngwv = ", band_mid%ngwv
+      do l = -band_mid%ngwv, band_mid%ngwv
+          write (iulog,'(A,I0,A,F7.2)') &
+              "GW_DRAG: band_mid%cref(",l,") = ",band_mid%cref(l)
+      enddo
+      write(iulog,*) 'GW_DRAG: band_mid%kwv = ', band_mid%kwv
+      write(iulog,*) 'GW_DRAG: band_mid%fcrit2 = ', band_mid%fcrit2
+      write(iulog,*) ' '
+      write(iulog,*) "GW_DRAG: band_long%ngwv = ", band_long%ngwv
+      do l = -band_long%ngwv, band_long%ngwv
+          write (iulog,'(A,I2,A,F7.2)') &
+              "GW_DRAG: band_long%cref(",l,") = ",band_long%cref(l)
+      enddo
+      write(iulog,*) 'GW_DRAG: band_long%kwv = ', band_long%kwv
+      write(iulog,*) 'GW_DRAG: band_long%fcrit2 = ', band_long%fcrit2
+      write(iulog,*) ' '
+    end if
 
-  ! pre-calculated newtonian damping:
-  !     * convert to 1/s
-  !     * ensure it is not smaller than 1e-6
-  !     * convert palph from hpa to pa
+    ! pre-calculated newtonian damping:
+    !     * convert to 1/s
+    !     * ensure it is not smaller than 1e-6
+    !     * convert palph from hpa to pa
 
-  do k=1,nalph
-     alpha0(k) = alpha0(k) / 86400._r8
-     alpha0(k) = max(alpha0(k), 1.e-6_r8)
-     palph(k) = palph(k)*1.e2_r8
-  end do
+    do k=1,nalph
+      alpha0(k) = alpha0(k) / 86400._r8
+      alpha0(k) = max(alpha0(k), 1.e-6_r8)
+      palph(k) = palph(k)*1.e2_r8
+    end do
 
-  ! interpolate to current vertical grid and obtain alpha
+    ! interpolate to current vertical grid and obtain alpha
 
-  call lininterp (alpha0  ,palph, nalph , alpha  , pref_edge , pver+1)
-  if (masterproc) then
-     write (iulog,*) 'gw_init: newtonian damping (1/day):'
-     write (iulog,fmt='(a4,a12,a10)') ' k  ','  pref_edge      ', &
-          '  alpha   '
-     do k = 1, pver+1
-        write (iulog,fmt='(i4,1e12.5,1f10.2)') k,pref_edge(k), &
-             alpha(k)*86400._r8
-     end do
-  end if
+    call lininterp (alpha0  ,palph, nalph , alpha  , pref_edge , pver+1)
+    if (masterproc) then
+      write (iulog,*) 'gw_init: newtonian damping (1/day):'
+      write (iulog,fmt='(a4,a12,a10)') ' k  ','  pref_edge      ', &
+            '  alpha   '
+      do k = 1, pver+1
+          write (iulog,fmt='(i4,1e12.5,1f10.2)') k,pref_edge(k), &
+              alpha(k)*86400._r8
+      end do
+    end if
 
-  if (masterproc) then
-     write(iulog,*) 'KTOP        =',ktop
-  end if
+    if (masterproc) then
+      write(iulog,*) 'KTOP        =',ktop
+    end if
 
-  ! Used to decide whether temperature tendencies should be output.
-  call phys_getopts( history_budget_out = history_budget, &
-       history_budget_histfile_num_out = history_budget_histfile_num, &
-       history_waccm_out = history_waccm, &
-       history_amwg_out   = history_amwg  )
+    ! Used to decide whether temperature tendencies should be output.
+    call phys_getopts( history_budget_out = history_budget, &
+        history_budget_histfile_num_out = history_budget_histfile_num, &
+        history_waccm_out = history_waccm, &
+        history_amwg_out   = history_amwg  )
 
-  ! Initialize subordinate modules.
-  call gw_common_init(pver,&
-       tau_0_ubc, ktop, gravit, rair, alpha, gw_prndl, & 
-       gw_qbo_hdepth_scaling, errstring )
-  call shr_assert(trim(errstring) == "", "gw_common_init: "//errstring// &
-       errMsg(__FILE__, __LINE__))
+    ! Initialize subordinate modules.
+    call gw_common_init(pver,&
+        tau_0_ubc, ktop, gravit, rair, alpha, gw_prndl, &
+        gw_qbo_hdepth_scaling, errstring )
+    call shr_assert(trim(errstring) == "", "gw_common_init: "//errstring// &
+        errMsg(__FILE__, __LINE__))
 
-  if ( use_gw_oro ) then
+    if ( use_gw_oro ) then
 
-     if (effgw_oro == unset_r8) then
+      if (effgw_oro == unset_r8) then
         call endrun("gw_drag_init: Orographic gravity waves enabled, &
-             &but effgw_oro was not set.")
-     end if
-  end if
-     
-  if (use_gw_oro .or. use_gw_rdg_beta .or. use_gw_rdg_gamma) then
+            &but effgw_oro was not set.")
+      end if
+    end if
 
-     sgh_idx = pbuf_get_index('SGH')
+    if (use_gw_oro .or. use_gw_rdg_beta .or. use_gw_rdg_gamma) then
 
-     ! Declare history variables for orographic term
-     call addfld ('TAUAORO',    (/ 'ilev' /), 'I','N/m2',  &
-          'Total stress from original OGW scheme')
-     call addfld ('TTGWORO',    (/ 'lev' /), 'A','K/s',  &
-          'T tendency - orographic gravity wave drag')
-     call addfld ('TTGWSDFORO', (/ 'lev' /), 'A','K/s',  &
-          'T tendency - orographic gravity wave, diffusion.')
-     call addfld ('TTGWSKEORO', (/ 'lev' /), 'A','K/s',  &
-          'T tendency - orographic gravity wave, breaking KE.')
-     call addfld ('UTGWORO',    (/ 'lev' /), 'A','m/s2', &
-          'U tendency - orographic gravity wave drag')
-     call addfld ('VTGWORO',    (/ 'lev' /), 'A','m/s2', &
-          'V tendency - orographic gravity wave drag')
-     call register_vector_field('UTGWORO', 'VTGWORO')
-     call addfld ('TAUGWX',     horiz_only,  'A','N/m2', &
-          'Zonal gravity wave surface stress')
-     call addfld ('TAUGWY',     horiz_only,  'A','N/m2', &
-          'Meridional gravity wave surface stress')
-     call register_vector_field('TAUGWX', 'TAUGWY')
+      sgh_idx = pbuf_get_index('SGH')
 
-     if (history_amwg) then
+      ! Declare history variables for orographic term
+      call addfld ('TAUAORO',    (/ 'ilev' /), 'I','N/m2',  &
+            'Total stress from original OGW scheme')
+      call addfld ('TTGWORO',    (/ 'lev' /), 'A','K/s',  &
+            'T tendency - orographic gravity wave drag')
+      call addfld ('TTGWSDFORO', (/ 'lev' /), 'A','K/s',  &
+            'T tendency - orographic gravity wave, diffusion.')
+      call addfld ('TTGWSKEORO', (/ 'lev' /), 'A','K/s',  &
+            'T tendency - orographic gravity wave, breaking KE.')
+      call addfld ('UTGWORO',    (/ 'lev' /), 'A','m/s2', &
+            'U tendency - orographic gravity wave drag')
+      call addfld ('VTGWORO',    (/ 'lev' /), 'A','m/s2', &
+            'V tendency - orographic gravity wave drag')
+      call register_vector_field('UTGWORO', 'VTGWORO')
+      call addfld ('TAUGWX',     horiz_only,  'A','N/m2', &
+            'Zonal gravity wave surface stress')
+      call addfld ('TAUGWY',     horiz_only,  'A','N/m2', &
+            'Meridional gravity wave surface stress')
+      call register_vector_field('TAUGWX', 'TAUGWY')
+
+      if (history_amwg) then
         call add_default('TAUGWX  ', 1, ' ')
         call add_default('TAUGWY  ', 1, ' ')
-     end if
+      end if
 
-     if (history_waccm) then
+      if (history_waccm) then
         call add_default('UTGWORO ', 1, ' ')
         call add_default('VTGWORO ', 1, ' ')
         call add_default('TAUGWX  ', 1, ' ')
         call add_default('TAUGWY  ', 1, ' ')
-     end if
+      end if
+    end if
 
-  end if
+    if (use_gw_rdg_beta .or. use_gw_rdg_gamma) then
+      grid_id = cam_grid_id('physgrid')
+      if (.not. cam_grid_check(grid_id)) then
+          call endrun(sub//': ERROR: no "physgrid" grid')
+      end if
+      call cam_grid_get_dim_names(grid_id, dim1name, dim2name)
+    end if
 
-  if (use_gw_rdg_beta .or. use_gw_rdg_gamma) then
-     grid_id = cam_grid_id('physgrid')
-     if (.not. cam_grid_check(grid_id)) then
-        call endrun(sub//': ERROR: no "physgrid" grid')
-     end if
-     call cam_grid_get_dim_names(grid_id, dim1name, dim2name)
-  end if
+    if (use_gw_rdg_beta) then
 
-  if (use_gw_rdg_beta) then
-
-     if (effgw_rdg_beta == unset_r8) then
+      if (effgw_rdg_beta == unset_r8) then
         call endrun(sub//": ERROR: Anisotropic OGW enabled, &
-                     &but effgw_rdg_beta was not set.")
-     end if
+                    &but effgw_rdg_beta was not set.")
+      end if
 
-     fh_topo => topo_file_get_id()
-     bnd_topo_loc = ' '
-     if (.not. associated(fh_topo)) then
-
+      fh_topo => topo_file_get_id()
+      bnd_topo_loc = ' '
+      if (.not. associated(fh_topo)) then
         ! Try to open topo file here.  This workaround will not be needed
         ! once the refactored initialization sequence is on trunk.
-        
         allocate(fh_topo)
         ! Error exit is from getfil if file not found.
         call getfil(bnd_topo, bnd_topo_loc)
         call cam_pio_openfile(fh_topo, bnd_topo_loc, PIO_NOWRITE)
+      end if
 
-     end if
+      ! Get beta ridge data
+      allocate( &
+          rdg_gbxar(pcols,begchunk:endchunk),      &
+          rdg_hwdth(pcols,prdg,begchunk:endchunk), &
+          rdg_clngt(pcols,prdg,begchunk:endchunk), &
+          rdg_mxdis(pcols,prdg,begchunk:endchunk), &
+          rdg_anixy(pcols,prdg,begchunk:endchunk), &
+          rdg_angll(pcols,prdg,begchunk:endchunk)  )
 
-     ! Get beta ridge data
-     allocate( &
-        rdg_gbxar(pcols,begchunk:endchunk),      &
-        rdg_hwdth(pcols,prdg,begchunk:endchunk), &
-        rdg_clngt(pcols,prdg,begchunk:endchunk), &
-        rdg_mxdis(pcols,prdg,begchunk:endchunk), &
-        rdg_anixy(pcols,prdg,begchunk:endchunk), &
-        rdg_angll(pcols,prdg,begchunk:endchunk)  )
-   
-     call infld('GBXAR', fh_topo, dim1name, dim2name, 1, pcols, &
-                         begchunk, endchunk, rdg_gbxar, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: GBXAR not found on topo file')
-     rdg_gbxar = rdg_gbxar * (rearth/1000._r8)*(rearth/1000._r8) ! transform to km^2
- 
-     call infld('HWDTH', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_hwdth, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: HWDTH not found on topo file')
+      call infld('GBXAR', fh_topo, dim1name, dim2name, 1, pcols, &
+                          begchunk, endchunk, rdg_gbxar, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: GBXAR not found on topo file')
+      rdg_gbxar = rdg_gbxar * (rearth/1000._r8)*(rearth/1000._r8) ! transform to km^2
 
-     call infld('CLNGT', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_clngt, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: CLNGT not found on topo file')
+      call infld('HWDTH', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_hwdth, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: HWDTH not found on topo file')
 
-     call infld('MXDIS', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_mxdis, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: MXDIS not found on topo file')
+      call infld('CLNGT', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_clngt, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: CLNGT not found on topo file')
 
-     call infld('ANIXY', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_anixy, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: ANIXY not found on topo file')
+      call infld('MXDIS', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_mxdis, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: MXDIS not found on topo file')
 
-     call infld('ANGLL', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_angll, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: ANGLL not found on topo file')
+      call infld('ANIXY', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_anixy, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: ANIXY not found on topo file')
 
-     ! close topo file only if it was opened here
-     if (len_trim(bnd_topo_loc) > 0) then
+      call infld('ANGLL', fh_topo, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_angll, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: ANGLL not found on topo file')
+
+      ! close topo file only if it was opened here
+      if (len_trim(bnd_topo_loc) > 0) then
         call pio_closefile(fh_topo)
-     end if
+      end if
 
-     call addfld('UEGW',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
-          'Zonal wind profile-entry to GW ' )
-     call addfld('VEGW',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
-          'Merdional wind profile-entry to GW ' )
-     call register_vector_field('UEGW','VEGW')
-     call addfld('TEGW',  (/ 'lev' /) , 'A'  ,'K' ,  &
-          'Temperature profile-entry to GW ' )
+      call addfld('UEGW',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
+            'Zonal wind profile-entry to GW ' )
+      call addfld('VEGW',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
+            'Merdional wind profile-entry to GW ' )
+      call register_vector_field('UEGW','VEGW')
+      call addfld('TEGW',  (/ 'lev' /) , 'A'  ,'K' ,  &
+            'Temperature profile-entry to GW ' )
 
-     call addfld('TAU1RDGBETAM' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
-          'Ridge based momentum flux profile')
-     call addfld('UBM1BETA',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
-          'On-ridge wind profile           ' )
-     call addfld('UBT1RDGBETA' , (/ 'lev' /) , 'I'  ,'m/s' , &
-          'On-ridge wind tendency from ridge 1     ')
+      call addfld('TAU1RDGBETAM' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
+            'Ridge based momentum flux profile')
+      call addfld('UBM1BETA',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
+            'On-ridge wind profile           ' )
+      call addfld('UBT1RDGBETA' , (/ 'lev' /) , 'I'  ,'m/s' , &
+            'On-ridge wind tendency from ridge 1     ')
 
-     do i = 1, 6
+      do i = 1, 6
         write(cn, '(i1)') i
         call addfld('TAU'//cn//'RDGBETAY' , (/ 'ilev' /), 'I', 'N/m2', &
           'Ridge based momentum flux profile')
@@ -685,81 +668,78 @@ subroutine gw_init()
         call addfld('VT'//cn//'RDGBETA',    (/ 'lev' /),  'I', 'm/s', &
           'V wind tendency from ridge '//cn)
         call register_vector_field('UT'//cn//'RDGBETA','VT'//cn//'RDGBETA')
-     end do
+      end do
 
-     call addfld('TAUARDGBETAY' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
-          'Ridge based momentum flux profile')
-     call addfld('TAUARDGBETAX' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
-          'Ridge based momentum flux profile')
-     call register_vector_field('TAUARDGBETAX','TAUARDGBETAY')
+      call addfld('TAUARDGBETAY' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
+            'Ridge based momentum flux profile')
+      call addfld('TAUARDGBETAX' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
+            'Ridge based momentum flux profile')
+      call register_vector_field('TAUARDGBETAX','TAUARDGBETAY')
 
-     if (history_waccm) then
+      if (history_waccm) then
         call add_default('TAUARDGBETAX', 1, ' ')
-        call add_default('TAUARDGBETAY  ', 1, ' ')
-     end if
+        call add_default('TAUARDGBETAY', 1, ' ')
+      end if
+    end if
 
-  end if
-
-  if (use_gw_rdg_gamma) then
-
-     if (effgw_rdg_gamma == unset_r8) then
+    if (use_gw_rdg_gamma) then
+      if (effgw_rdg_gamma == unset_r8) then
         call endrun(sub//": ERROR: Anisotropic OGW enabled, but effgw_rdg_gamma was not set.")
-     end if
-     
-     call getfil(bnd_rdggm, bnd_rdggm_loc, iflag=1, lexist=found)
-     if (found) then
-        call cam_pio_openfile(fh_rdggm, bnd_rdggm_loc, PIO_NOWRITE)
-     else
-        call endrun(sub//': ERROR: file for gamma ridges not found: bnd_rdggm='// &
-                   trim(bnd_rdggm))
-     end if
+      end if
 
-     if (.not. allocated(rdg_gbxar)) then
+      call getfil(bnd_rdggm, bnd_rdggm_loc, iflag=1, lexist=found)
+      if (found) then
+        call cam_pio_openfile(fh_rdggm, bnd_rdggm_loc, PIO_NOWRITE)
+      else
+        call endrun(sub//': ERROR: file for gamma ridges not found: bnd_rdggm='//trim(bnd_rdggm))
+      end if
+
+      if (.not. allocated(rdg_gbxar)) then
         allocate(rdg_gbxar(pcols,begchunk:endchunk))
         call infld('GBXAR', fh_rdggm, dim1name, dim2name, 1, pcols, &
                             begchunk, endchunk, rdg_gbxar, found, gridname='physgrid')
         if (.not. found) call endrun(sub//': ERROR: GBXAR not found on bnd_rdggm')
         rdg_gbxar = rdg_gbxar * (rearth/1000._r8)*(rearth/1000._r8) ! transform to km^2
-     end if
+      end if
 
-     ! Get meso-gamma ridge data
-     allocate( &
-        rdg_hwdthg(pcols,prdg,begchunk:endchunk), &
-        rdg_clngtg(pcols,prdg,begchunk:endchunk), &
-        rdg_mxdisg(pcols,prdg,begchunk:endchunk), &
-        rdg_anixyg(pcols,prdg,begchunk:endchunk), &
-        rdg_angllg(pcols,prdg,begchunk:endchunk)  )
+      ! Get meso-gamma ridge data
+      allocate( &
+          rdg_hwdthg(pcols,prdg,begchunk:endchunk), &
+          rdg_clngtg(pcols,prdg,begchunk:endchunk), &
+          rdg_mxdisg(pcols,prdg,begchunk:endchunk), &
+          rdg_anixyg(pcols,prdg,begchunk:endchunk), &
+          rdg_angllg(pcols,prdg,begchunk:endchunk)  )
 
-     call infld('HWDTH', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_hwdthg, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: HWDTH not found on bnd_rdggm')
+      call infld('HWDTH', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_hwdthg, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: HWDTH not found on bnd_rdggm')
 
-     call infld('CLNGT', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_clngtg, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: CLNGT not found on bnd_rdggm')
+      call infld('CLNGT', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_clngtg, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: CLNGT not found on bnd_rdggm')
 
-     call infld('MXDIS', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_mxdisg, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: MXDIS not found on bnd_rdggm')
+      call infld('MXDIS', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_mxdisg, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: MXDIS not found on bnd_rdggm')
 
-     call infld('ANIXY', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_anixyg, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: ANIXY not found on bnd_rdggm')
+      call infld('ANIXY', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_anixyg, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: ANIXY not found on bnd_rdggm')
 
-     call infld('ANGLL', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
-                1, prdg, begchunk, endchunk, rdg_angllg, found, gridname='physgrid')
-     if (.not. found) call endrun(sub//': ERROR: ANGLL not found on bnd_rdggm')
- 
-     call pio_closefile(fh_rdggm)
+      call infld('ANGLL', fh_rdggm, dim1name, 'nrdg', dim2name, 1, pcols, &
+                  1, prdg, begchunk, endchunk, rdg_angllg, found, gridname='physgrid')
+      if (.not. found) call endrun(sub//': ERROR: ANGLL not found on bnd_rdggm')
 
-     call addfld ('TAU1RDGGAMMAM' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
-          'Ridge based momentum flux profile')
-     call addfld ('UBM1GAMMA',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
-          'On-ridge wind profile           ' )
-     call addfld ('UBT1RDGGAMMA' , (/ 'lev' /) , 'I'  ,'m/s' , &
-          'On-ridge wind tendency from ridge 1     ')
+      call pio_closefile(fh_rdggm)
 
-     do i = 1, 6
+      call addfld ('TAU1RDGGAMMAM' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
+            'Ridge based momentum flux profile')
+      call addfld ('UBM1GAMMA',  (/ 'lev' /) , 'A'  ,'1/s' ,  &
+            'On-ridge wind profile           ' )
+      call addfld ('UBT1RDGGAMMA' , (/ 'lev' /) , 'I'  ,'m/s' , &
+            'On-ridge wind tendency from ridge 1     ')
+
+      do i = 1, 6
         write(cn, '(i1)') i
         call addfld('TAU'//cn//'RDGGAMMAY', (/ 'ilev' /), 'I', 'N/m2', &
           'Ridge based momentum flux profile')
@@ -770,255 +750,210 @@ subroutine gw_init()
         call addfld('VT'//cn//'RDGGAMMA' , (/ 'lev' /),  'I', 'm/s', &
           'V wind tendency from ridge '//cn)
         call register_vector_field('UT'//cn//'RDGGAMMA','VT'//cn//'RDGGAMMA')
-     end do
+      end do
 
-     call addfld ('TAUARDGGAMMAY' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
-          'Ridge based momentum flux profile')
-     call addfld ('TAUARDGGAMMAX' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
-          'Ridge based momentum flux profile')
-     call register_vector_field('TAUARDGGAMMAX','TAUARDGGAMMAY')
-     call addfld ('TAURDGGMX',     horiz_only,  'A','N/m2', &
-          'Zonal gravity wave surface stress')
-     call addfld ('TAURDGGMY',     horiz_only,  'A','N/m2', &
-          'Meridional gravity wave surface stress')
-     call register_vector_field('TAURDGGMX','TAURDGGMY')
-     call addfld ('UTRDGGM' , (/ 'lev' /) , 'I'  ,'m/s' , &
-          'U wind tendency from ridge 6     ')
-     call addfld ('VTRDGGM' , (/ 'lev' /) , 'I'  ,'m/s' , &
-          'V wind tendency from ridge 6     ')
-     call register_vector_field('UTRDGGM','VTRDGGM')
-  end if
+      call addfld ('TAUARDGGAMMAY' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
+            'Ridge based momentum flux profile')
+      call addfld ('TAUARDGGAMMAX' , (/ 'ilev' /) , 'I'  ,'N/m2' , &
+            'Ridge based momentum flux profile')
+      call register_vector_field('TAUARDGGAMMAX','TAUARDGGAMMAY')
+      call addfld ('TAURDGGMX',     horiz_only,  'A','N/m2', &
+            'Zonal gravity wave surface stress')
+      call addfld ('TAURDGGMY',     horiz_only,  'A','N/m2', &
+            'Meridional gravity wave surface stress')
+      call register_vector_field('TAURDGGMX','TAURDGGMY')
+      call addfld ('UTRDGGM' , (/ 'lev' /) , 'I'  ,'m/s' , &
+            'U wind tendency from ridge 6     ')
+      call addfld ('VTRDGGM' , (/ 'lev' /) , 'I'  ,'m/s' , &
+            'V wind tendency from ridge 6     ')
+      call register_vector_field('UTRDGGM','VTRDGGM')
+    end if
 
-  if (use_gw_front .or. use_gw_front_igw) then
-
-     frontgf_idx = pbuf_get_index('FRONTGF')
-     frontga_idx = pbuf_get_index('FRONTGA')
-
-     call shr_assert(unset_r8 /= frontgfc, &
-          "gw_drag_init: Frontogenesis enabled, but frontgfc was &
-          & not set!"// &
-          errMsg(__FILE__, __LINE__))
-
-     do k = 0, pver
+    if (use_gw_front .or. use_gw_front_igw) then
+      frontgf_idx = pbuf_get_index('FRONTGF')
+      frontga_idx = pbuf_get_index('FRONTGA')
+      call shr_assert(unset_r8 /= frontgfc, &
+            "gw_drag_init: Frontogenesis enabled, but frontgfc was &
+            & not set!"// &
+            errMsg(__FILE__, __LINE__))
+      do k = 0, pver
         ! Check frontogenesis at 600 hPa.
-        if (pref_edge(k+1) < 60000._r8) kfront = k+1
-     end do
+        if (pref_edge(k+1) < 60000.0_r8) kfront = k + 1
+      end do
 
-     ! Source waves from 500 hPa.
-     kbot_front = maxloc(pref_edge, 1, (pref_edge < 50000._r8)) - 1
+      ! Source waves from 500 hPa.
+      kbot_front = maxloc(pref_edge, 1, (pref_edge < 50000._r8)) - 1
 
-     if (masterproc) then
-        write (iulog,*) 'KFRONT      =',kfront
-        write (iulog,*) 'KBOT_FRONT  =',kbot_front
+      if (masterproc) then
+        write(iulog,*) 'KFRONT      =',kfront
+        write(iulog,*) 'KBOT_FRONT  =',kbot_front
         write(iulog,*) ' '
-     end if
+      end if
 
-     call addfld ('FRONTGF', (/ 'lev' /), 'A', 'K^2/M^2/S', &
-          'Frontogenesis function at gws src level')
-     call addfld ('FRONTGFA', (/ 'lev' /), 'A', 'K^2/M^2/S', &
-          'Frontogenesis function at gws src level')
+      call addfld('FRONTGF', (/ 'lev' /), 'A', 'K^2/M^2/S', &
+            'Frontogenesis function at gws src level')
+      call addfld('FRONTGFA', (/ 'lev' /), 'A', 'K^2/M^2/S', &
+            'Frontogenesis function at gws src level')
 
-     if (history_waccm) then
+      if (history_waccm) then
         call add_default('FRONTGF', 1, ' ')
         call add_default('FRONTGFA', 1, ' ')
-     end if
+      end if
+    end if
 
-  end if
+    if (use_gw_front) then
+      call shr_assert(all(unset_r8 /= [ effgw_cm, taubgnd ]), &
+            "gw_drag_init: Frontogenesis mid-scale waves enabled, but not &
+            &all required namelist variables were set!"// &
+            errMsg(__FILE__, __LINE__))
+      if (masterproc) then
+        write(iulog, *) 'gw_init: gw spectrum taubgnd, ', &
+            'effgw_cm = ', taubgnd, effgw_cm
+        write(iulog, *) ' '
+      end if
+      cm_desc = gaussian_cm_desc(band_mid, kbot_front, kfront, frontgfc, &
+            taubgnd, front_gaussian_width)
+      ! Output for gravity waves from frontogenesis.
+      call gw_spec_addflds(prefix=cm_pf, scheme="C&M", band=band_mid, &
+            history_defaults=history_waccm)
+    end if
 
-  if (use_gw_front) then
+    if (use_gw_front_igw) then
+      call shr_assert(all(unset_r8 /= [ effgw_cm_igw, taubgnd_igw ]), &
+            "gw_drag_init: Frontogenesis inertial waves enabled, but not &
+            &all required namelist variables were set!"// &
+            errMsg(__FILE__, __LINE__))
+      if (masterproc) then
+        write(iulog, *) 'gw_init: gw spectrum taubgnd_igw, ', &
+            'effgw_cm_igw = ', taubgnd_igw, effgw_cm_igw
+        write(iulog, *) ' '
+      end if
+      cm_igw_desc = gaussian_cm_desc(band_long, kbot_front, kfront, frontgfc, &
+            taubgnd_igw, front_gaussian_width)
+      ! Output for gravity waves from frontogenesis.
+      call gw_spec_addflds(prefix=cm_igw_pf, scheme="C&M IGW", &
+            band=band_long, history_defaults=history_waccm)
+    end if
 
-     call shr_assert(all(unset_r8 /= [ effgw_cm, taubgnd ]), &
-          "gw_drag_init: Frontogenesis mid-scale waves enabled, but not &
-          &all required namelist variables were set!"// &
-          errMsg(__FILE__, __LINE__))
-
-     if (masterproc) then
-        write(iulog,*) 'gw_init: gw spectrum taubgnd, ', &
-             'effgw_cm = ',taubgnd, effgw_cm
-        write(iulog,*) ' '
-     end if
-
-     cm_desc = gaussian_cm_desc(band_mid, kbot_front, kfront, frontgfc, &
-          taubgnd, front_gaussian_width)
-
-     ! Output for gravity waves from frontogenesis.
-     call gw_spec_addflds(prefix=cm_pf, scheme="C&M", band=band_mid, &
-          history_defaults=history_waccm)
-
-  end if
-
-  if (use_gw_front_igw) then
-
-     call shr_assert(all(unset_r8 /= [ effgw_cm_igw, taubgnd_igw ]), &
-          "gw_drag_init: Frontogenesis inertial waves enabled, but not &
-          &all required namelist variables were set!"// &
-          errMsg(__FILE__, __LINE__))
-
-     if (masterproc) then
-        write(iulog,*) 'gw_init: gw spectrum taubgnd_igw, ', &
-             'effgw_cm_igw = ',taubgnd_igw, effgw_cm_igw
-        write(iulog,*) ' '
-     end if
-
-     cm_igw_desc = gaussian_cm_desc(band_long, kbot_front, kfront, frontgfc, &
-          taubgnd_igw, front_gaussian_width)
-
-     ! Output for gravity waves from frontogenesis.
-     call gw_spec_addflds(prefix=cm_igw_pf, scheme="C&M IGW", &
-          band=band_long, history_defaults=history_waccm)
-
-  end if
-
-  if (use_gw_convect_dp) then
-
-     ttend_dp_idx    = pbuf_get_index('TTEND_DP')
-
-     ! Set the deep scheme specification components.
-     beres_dp_desc%storm_shift = .true.
-
-     do k = 0, pver
+    if (use_gw_convect_dp) then
+      ttend_dp_idx = pbuf_get_index('TTEND_DP')
+      ! Set the deep scheme specification components.
+      beres_dp_desc%storm_shift = .true.
+      do k = 0, pver
         ! 700 hPa index
-        if (pref_edge(k+1) < 70000._r8) beres_dp_desc%k = k+1
-     end do
-
-     if (masterproc) then
+        if (pref_edge(k+1) < 70000.0_r8) beres_dp_desc%k = k+1
+      end do
+      if (masterproc) then
         write (iulog,*) 'Beres deep level =',beres_dp_desc%k
-     end if
-
-     ! Don't use deep convection heating depths below this limit.
-     ! This is important for QBO. Bad result if left at 2.5 km.
-     beres_dp_desc%min_hdepth = 1000._r8
-
-     ! Read Beres file.
-
-     call shr_assert(trim(gw_drag_file) /= "", &
-          "gw_drag_init: No gw_drag_file provided for Beres deep &
-          &scheme. Set this via namelist."// &
-          errMsg(__FILE__, __LINE__))
-
-     call gw_init_beres(gw_drag_file, band_mid, beres_dp_desc)
-
-     ! Output for gravity waves from the Beres scheme (deep).
-     call gw_spec_addflds(prefix=beres_dp_pf, scheme="Beres (deep)", &
-          band=band_mid, history_defaults=history_waccm)
-
-     call addfld ('NETDT',(/ 'lev' /), 'A','K/s', &
-          'Net heating rate')
-     call addfld ('MAXQ0',horiz_only  ,  'A','K/day', &
-          'Max column heating rate')
-     call addfld ('HDEPTH',horiz_only,    'A','km', &
-          'Heating Depth')
-
-     if (history_waccm) then
+      end if
+      ! Don't use deep convection heating depths below this limit.
+      ! This is important for QBO. Bad result if left at 2.5 km.
+      beres_dp_desc%min_hdepth = 1000._r8
+      ! Read Beres file.
+      call shr_assert(trim(gw_drag_file) /= "", &
+            "gw_drag_init: No gw_drag_file provided for Beres deep &
+            &scheme. Set this via namelist."// &
+            errMsg(__FILE__, __LINE__))
+      call gw_init_beres(gw_drag_file, band_mid, beres_dp_desc)
+      ! Output for gravity waves from the Beres scheme (deep).
+      call gw_spec_addflds(prefix=beres_dp_pf, scheme="Beres (deep)", &
+            band=band_mid, history_defaults=history_waccm)
+      call addfld('NETDT' , (/'lev'/) , 'A', 'K/s'  , 'Net heating rate')
+      call addfld('MAXQ0' , horiz_only, 'A', 'K/day', 'Max column heating rate')
+      call addfld('HDEPTH', horiz_only, 'A', 'km'   , 'Heating Depth')
+      if (history_waccm) then
         call add_default('NETDT    ', 1, ' ')
         call add_default('HDEPTH   ', 1, ' ')
         call add_default('MAXQ0    ', 1, ' ')
-     end if
-
-  end if
-
-  if (use_gw_convect_sh) then
-
-     ttend_sh_idx    = pbuf_get_index('TTEND_SH')
-
-     ! Set the shallow scheme specification components.
-     beres_sh_desc%storm_shift = .false.
-
-     do k = 0, pver
+      end if
+    end if
+    if (use_gw_convect_sh) then
+      ttend_sh_idx = pbuf_get_index('TTEND_SH')
+      ! Set the shallow scheme specification components.
+      beres_sh_desc%storm_shift = .false.
+      do k = 0, pver
         ! 900 hPa index
-        if (pref_edge(k+1) < 90000._r8) beres_sh_desc%k = k+1
-     end do
-
-     if (masterproc) then
-        write (iulog,*) 'Beres shallow level =',beres_sh_desc%k
-     end if
-
-     ! Use all heating depths for shallow convection.
-     beres_sh_desc%min_hdepth = 0._r8
-
-     ! Read Beres file.
-
-     call shr_assert(trim(gw_drag_file_sh) /= "", &
-          "gw_drag_init: No gw_drag_file_sh provided for Beres shallow &
-          &scheme. Set this via namelist."// &
-          errMsg(__FILE__, __LINE__))
-
-     call gw_init_beres(gw_drag_file_sh, band_mid, beres_sh_desc)
-
-     ! Output for gravity waves from the Beres scheme (shallow).
-     call gw_spec_addflds(prefix=beres_sh_pf, scheme="Beres (shallow)", &
-          band=band_mid, history_defaults=history_waccm)
-
-     call addfld ('SNETDT',(/ 'lev' /), 'A','K/s', &
-          'Net heating rate')
-     call addfld ('SMAXQ0',horiz_only  ,  'A','K/day', &
-          'Max column heating rate')
-     call addfld ('SHDEPTH',horiz_only,    'A','km', &
-          'Heating Depth')
-
-     if (history_waccm) then
+        if (pref_edge(k+1) < 90000.0_r8) beres_sh_desc%k = k + 1
+      end do
+      if (masterproc) then
+        write (iulog, *) 'Beres shallow level =', beres_sh_desc%k
+      end if
+      ! Use all heating depths for shallow convection.
+      beres_sh_desc%min_hdepth = 0
+      ! Read Beres file.
+      call shr_assert(trim(gw_drag_file_sh) /= "", &
+            "gw_drag_init: No gw_drag_file_sh provided for Beres shallow &
+            &scheme. Set this via namelist."// &
+            errMsg(__FILE__, __LINE__))
+      call gw_init_beres(gw_drag_file_sh, band_mid, beres_sh_desc)
+      ! Output for gravity waves from the Beres scheme (shallow).
+      call gw_spec_addflds(prefix=beres_sh_pf, scheme="Beres (shallow)", &
+            band=band_mid, history_defaults=history_waccm)
+      call addfld('SNETDT' , (/'lev'/) , 'A', 'K/s'  , 'Net heating rate')
+      call addfld('SMAXQ0' , horiz_only, 'A', 'K/day', 'Max column heating rate')
+      call addfld('SHDEPTH', horiz_only, 'A', 'km'   , 'Heating Depth')
+      if (history_waccm) then
         call add_default('SNETDT   ', 1, ' ')
         call add_default('SHDEPTH  ', 1, ' ')
         call add_default('SMAXQ0   ', 1, ' ')
-     end if
+      end if
+    end if
 
-  end if
+    call addfld('EKGW' ,(/ 'ilev' /), 'A','M2/S', &
+        'Effective Kzz due to diffusion by gravity waves')
 
-  call addfld ('EKGW' ,(/ 'ilev' /), 'A','M2/S', &
-       'Effective Kzz due to diffusion by gravity waves')
+    if (history_waccm) then
+      call add_default('EKGW', 1, ' ')
+    end if
 
-  if (history_waccm) then
-     call add_default('EKGW', 1, ' ')
-  end if
+    call addfld('UTGW_TOTAL',    (/ 'lev' /), 'A','m/s2', &
+        'Total U tendency due to gravity wave drag')
+    call addfld('VTGW_TOTAL',    (/ 'lev' /), 'A','m/s2', &
+        'Total V tendency due to gravity wave drag')
+    call register_vector_field('UTGW_TOTAL', 'VTGW_TOTAL')
 
-  call addfld ('UTGW_TOTAL',    (/ 'lev' /), 'A','m/s2', &
-       'Total U tendency due to gravity wave drag')
-  call addfld ('VTGW_TOTAL',    (/ 'lev' /), 'A','m/s2', &
-       'Total V tendency due to gravity wave drag')
-  call register_vector_field('UTGW_TOTAL', 'VTGW_TOTAL')
+    ! Total temperature tendency output.
+    call addfld('TTGW', (/ 'lev' /), 'A', 'K/s',  &
+        'T tendency - gravity wave drag')
 
-  ! Total temperature tendency output.
-  call addfld ('TTGW', (/ 'lev' /), 'A', 'K/s',  &
-       'T tendency - gravity wave drag')
+    ! Water budget terms.
+    call addfld('QTGW',(/ 'lev' /), 'A','kg/kg/s', &
+        'Q tendency - gravity wave drag')
+    call addfld('CLDLIQTGW',(/ 'lev' /), 'A','kg/kg/s', &
+        'CLDLIQ tendency - gravity wave drag')
+    call addfld('CLDICETGW',(/ 'lev' /), 'A','kg/kg/s', &
+        'CLDICE tendency - gravity wave drag')
 
-  ! Water budget terms.
-  call addfld('QTGW',(/ 'lev' /), 'A','kg/kg/s', &
-       'Q tendency - gravity wave drag')
-  call addfld('CLDLIQTGW',(/ 'lev' /), 'A','kg/kg/s', &
-       'CLDLIQ tendency - gravity wave drag')
-  call addfld('CLDICETGW',(/ 'lev' /), 'A','kg/kg/s', &
-       'CLDICE tendency - gravity wave drag')
+    if ( history_budget ) then
+      call add_default('TTGW', history_budget_histfile_num, ' ')
+      call add_default('QTGW', history_budget_histfile_num, ' ')
+      call add_default('CLDLIQTGW', history_budget_histfile_num, ' ')
+      call add_default('CLDICETGW', history_budget_histfile_num, ' ')
+    end if
 
-  if ( history_budget ) then
-     call add_default('TTGW', history_budget_histfile_num, ' ')
-     call add_default('QTGW', history_budget_histfile_num, ' ')
-     call add_default('CLDLIQTGW', history_budget_histfile_num, ' ')
-     call add_default('CLDICETGW', history_budget_histfile_num, ' ')
-  end if
+    ! Get indices to actually output the above.
+    call cnst_get_ind("CLDLIQ", ixcldliq)
+    call cnst_get_ind("CLDICE", ixcldice)
 
-  ! Get indices to actually output the above.
-  call cnst_get_ind("CLDLIQ", ixcldliq)
-  call cnst_get_ind("CLDICE", ixcldice)
-
-  if (gw_top_taper) then
-     allocate(vramp(pver))
-     vramp(:) = 1._r8
-     topndx = 1
-     botndx = press_lim_idx( 0.6E-02_r8, top=.true. )
-     if (botndx>1) then
-        do k=botndx,topndx,-1
-           vramp(k) = vramp(k+1)/(pref_edge(k+1)/pref_edge(k))
+    if (gw_top_taper) then
+      allocate(vramp(pver))
+      vramp(:) = 1
+      topndx = 1
+      botndx = press_lim_idx(0.6e-02_r8, top=.true.)
+      if (botndx>1) then
+        do k = botndx, topndx, -1
+          vramp(k) = vramp(k+1) / (pref_edge(k+1) / pref_edge(k))
         end do
         if (masterproc) then
-           write(iulog,'(A)') 'GW taper coef (vramp):'
-           do k=1,pver
-              write(iulog,"('k: ',I4,' taper coef,press(Pa): ',F12.8,E12.4)") k, vramp(k), pref_mid(k)
-           enddo
-        endif
-     endif
-  end if
+          write(iulog, '(A)') 'GW taper coef (vramp):'
+          do k = 1, pver
+            write(iulog,"('k: ',I4,' taper coef,press(Pa): ',F12.8,E12.4)") k, vramp(k), pref_mid(k)
+          end do
+        end if
+      end if
+    end if
 
-end subroutine gw_init
+  end subroutine gw_init
 
 !==========================================================================
 
@@ -1320,7 +1255,7 @@ subroutine gw_tend(state, pbuf, dt, ptend, cam_in, flx_heat)
   real(r8), parameter :: degree2radian = pi/180._r8
   real(r8), parameter :: al0 = 82.5_r8 * degree2radian
   real(r8), parameter :: dlat0 = 5.0_r8 * degree2radian
-  
+
   ! effective gw diffusivity at interfaces needed for output
   real(r8) :: egwdffi(state%ncol,pver+1)
   ! sum from the two types of spectral GW
@@ -1406,7 +1341,7 @@ subroutine gw_tend(state, pbuf, dt, ptend, cam_in, flx_heat)
   ! Totals that accumulate over different sources.
   egwdffi_tot = 0._r8
   flx_heat = 0._r8
-  
+
   if (use_gw_convect_dp) then
      !------------------------------------------------------------------
      ! Convective gravity waves (Beres scheme, deep).
@@ -1757,7 +1692,7 @@ subroutine gw_tend(state, pbuf, dt, ptend, cam_in, flx_heat)
      ! Efficiency of gravity wave momentum transfer.
      ! Take into account that wave sources are only over land.
      call pbuf_get_field(pbuf, sgh_idx, sgh)
- 
+
      if (gw_lndscl_sgh) then
         where (cam_in%landfrac(:ncol) >= epsilon(1._r8))
            effgw = effgw_oro * cam_in%landfrac(:ncol)
@@ -1922,7 +1857,7 @@ subroutine gw_tend(state, pbuf, dt, ptend, cam_in, flx_heat)
   ! Write totals to history file.
   call outfld('EKGW', egwdffi_tot , ncol, lchnk)
   call outfld('TTGW', ptend%s/cpairv(:,:,lchnk),  pcols, lchnk)
- 
+
   call outfld('UTGW_TOTAL', ptend%u, pcols, lchnk)
   call outfld('VTGW_TOTAL', ptend%v, pcols, lchnk)
 
@@ -2094,42 +2029,42 @@ subroutine gw_rdg_calc( &
 
    ! initialize accumulated momentum fluxes and tendencies
    taurx = 0._r8
-   taury = 0._r8 
+   taury = 0._r8
    ttrdg = 0._r8
    utrdg = 0._r8
    vtrdg = 0._r8
 
    do nn = 1, n_rdg
-  
+
       kwvrdg  = 0.001_r8 / ( hwdth(:,nn) + 0.001_r8 ) ! this cant be done every time step !!!
-      isoflag = 0   
+      isoflag = 0
       effgw   = effgw_rdg * ( hwdth(1:ncol,nn)* clngt(1:ncol,nn) ) / gbxar(1:ncol)
       effgw   = min( effgw_rdg_max , effgw )
 
       call gw_rdg_src(ncol, band_oro, p, &
          u, v, t, mxdis(:,nn), angll(:,nn), anixy(:,nn), kwvrdg, isoflag, zi, nm, &
-         src_level, tend_level, bwv_level, tlb_level, tau, ubm, ubi, xv, yv,  & 
+         src_level, tend_level, bwv_level, tlb_level, tau, ubm, ubi, xv, yv,  &
          ubmsrc, usrc, vsrc, nsrc, rsrc, m2src, tlb, bwv, Fr1, Fr2, Frx, c)
 
       call gw_rdg_belowpeak(ncol, band_oro, rdg_cd_llb, &
-         t, mxdis(:,nn), anixy(:,nn), kwvrdg, & 
+         t, mxdis(:,nn), anixy(:,nn), kwvrdg, &
          zi, nm, ni, rhoi, &
-         src_level, tau, & 
-         ubmsrc, nsrc, rsrc, m2src, tlb, bwv, Fr1, Fr2, Frx, & 
+         src_level, tau, &
+         ubmsrc, nsrc, rsrc, m2src, tlb, bwv, Fr1, Fr2, Frx, &
          tauoro, taudsw, hdspwv, hdspdw)
 
       call gw_rdg_break_trap(ncol, band_oro, &
-         zi, nm, ni, ubm, ubi, rhoi, kwvrdg , bwv, tlb, wbr, & 
-         src_level, tlb_level, hdspwv, hdspdw,  mxdis(:,nn), & 
-         tauoro, taudsw, tau, & 
+         zi, nm, ni, ubm, ubi, rhoi, kwvrdg , bwv, tlb, wbr, &
+         src_level, tlb_level, hdspwv, hdspdw,  mxdis(:,nn), &
+         tauoro, taudsw, tau, &
          ldo_trapped_waves=trpd_leewv)
-     
+
       call gw_drag_prof(ncol, band_oro, p, src_level, tend_level, dt, &
          t, vramp,    &
          piln, rhoi, nm, ni, ubm, ubi, xv, yv,   &
          effgw, c, kvtt, q, dse, tau, utgw, vtgw, &
          ttgw, qtgw, egwdffi,   gwut, dttdf, dttke, &
-         kwvrdg=kwvrdg, & 
+         kwvrdg=kwvrdg, &
          satfac_in = 1._r8, lapply_vdiff=gw_rdg_do_vdiff )
 
       ! Add the tendencies from each ridge to the totals.
@@ -2564,7 +2499,5 @@ character(len=9) pure function tau_fld_name(l, prefix, x_not_y)
   tau_fld_name = trim(tau_fld_name)//num_str
 
 end function tau_fld_name
-
-!==========================================================================
 
 end module gw_drag

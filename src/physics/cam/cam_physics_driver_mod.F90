@@ -390,9 +390,9 @@ contains
           end if
         end do
       end do
-      call fill_halo(block%halo, dtend%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+      call fill_halo(block%filter_halo, dtend%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
                     west_halo=.false., south_halo=.false., north_halo=.false.)
-      call fill_halo(block%halo, dtend%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+      call fill_halo(block%filter_halo, dtend%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
                     west_halo=.false.,  east_halo=.false., south_halo=.false.)
     else
       call log_error('cam_physics_p2d: Distributed physics columns are not supported yet!', __FILE__, __LINE__)

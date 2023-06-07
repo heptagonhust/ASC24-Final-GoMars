@@ -76,7 +76,6 @@ contains
 
   subroutine chem_readnl(nlfile)
 
-    ! args
 
     character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
 

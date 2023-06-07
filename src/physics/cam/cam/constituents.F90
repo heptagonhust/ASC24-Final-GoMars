@@ -489,7 +489,7 @@ subroutine cnst_chk_dim
    end if
 
    ! Set names of advected tracer diagnostics
-   do m=1,pcnst
+   do m = 1, pcnst
       apcnst    (m)  = trim(cnst_name(m))//'AP'
       bpcnst    (m)  = trim(cnst_name(m))//'BP'
       hadvnam   (m)  = 'HA'//cnst_name(m)

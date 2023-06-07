@@ -89,7 +89,7 @@ subroutine cam_snapshot_init(cam_in_arr, cam_out_arr, pbuf, index)
 
    call phys_getopts(cam_snapshot_before_num_out = cam_snapshot_before_num, &
                      cam_snapshot_after_num_out  = cam_snapshot_after_num)
-                     
+
 
    ! Return if not turned on
    if (cam_snapshot_before_num <= 0 .and. cam_snapshot_after_num <= 0) return ! No snapshot files are being requested
@@ -142,7 +142,7 @@ use time_manager,   only: is_first_step
    ! Return if the first timestep as not all fields may be filled in and this will cause a core dump
    if (is_first_step()) return
 
-   ! Return if not turned on 
+   ! Return if not turned on
    if (cam_snapshot_before_num <= 0 .and. cam_snapshot_after_num <= 0) return ! No snapshot files are being requested
 
    lchnk = state%lchnk
@@ -191,7 +191,7 @@ use time_manager,   only: is_first_step
    ! Return if the first timestep as not all fields may be filled in and this will cause a core dump
    if (is_first_step()) return
 
-   ! Return if not turned on 
+   ! Return if not turned on
    if (cam_snapshot_before_num <= 0 .and. cam_snapshot_after_num <= 0) return ! No snapshot files are being requested
 
    lchnk = state%lchnk
@@ -781,7 +781,7 @@ subroutine cam_tphysbc_snapshot_init(cam_snapshot_before_num, cam_snapshot_after
 !--------------------------------------------------------
 
    integer,intent(in) :: cam_snapshot_before_num, cam_snapshot_after_num
-    
+
    ntphysbc_var = 0
 
    !--------------------------------------------------------
@@ -836,7 +836,7 @@ subroutine cam_tphysac_snapshot_init(cam_snapshot_before_num, cam_snapshot_after
 !--------------------------------------------------------
 
    integer,intent(in) :: cam_snapshot_before_num, cam_snapshot_after_num
-    
+
    ntphysac_var = 0
 
    !--------------------------------------------------------

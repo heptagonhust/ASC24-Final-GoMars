@@ -51,7 +51,7 @@
 
 
         ! local vars
-        integer :: vid, i,ii 
+        integer :: vid, i,ii
 
         character(len=256), parameter :: filelist = ' '
         character(len=256), parameter :: datapath = ' '
@@ -61,13 +61,13 @@
         character(len=4)              :: specifier(nubc) = ' '
 
         ii = 0
-        
+
         do i = 1,nubc
            call cnst_get_ind( species(i), vid, abort=.false. )
            if( vid > 0 ) then
               if( cnst_fixed_ubc(vid) ) then
                  ii = ii+1
-                 specifier(ii) = species(i) ! set specifier to the species that actually 
+                 specifier(ii) = species(i) ! set specifier to the species that actually
                                             ! are registered to have a specified upper bounary
                                             ! so that the species mapping is correct
                  ubc_from_tgcm(vid) = .true.
@@ -116,7 +116,7 @@
         !--------------------------------------------------------------------
         !	... Set the upper boundary values h2o, h2, and h
         !--------------------------------------------------------------------
-        
+
         use ppgrid,       only : pcols
         use constituents, only : cnst_get_ind, cnst_mw
 

@@ -199,9 +199,9 @@ CONTAINS
           allocate(cam_in(c)%fireztop(pcols), stat=ierror)
           if ( ierror /= 0 ) call endrun(sub//': allocation error fireztop')
        end do
-    endif
+    end if
 
-    do c = begchunk,endchunk
+    do c = begchunk, endchunk
        cam_in(c)%lchnk = c
        cam_in(c)%ncol  = get_ncols_p(c)
        cam_in(c)%asdir    (:) = 0._r8
@@ -232,9 +232,9 @@ CONTAINS
        if (associated(cam_in(c)%fv)) &
             cam_in(c)%fv    (:) = 0.1_r8
        if (associated(cam_in(c)%soilw)) &
-            cam_in(c)%soilw (:) = 0.0_r8
+            cam_in(c)%soilw (:) = 0
        if (associated(cam_in(c)%dstflx)) &
-            cam_in(c)%dstflx(:,:) = 0.0_r8
+            cam_in(c)%dstflx(:,:) = 0
        if (associated(cam_in(c)%meganflx)) &
             cam_in(c)%meganflx(:,:) = 0.0_r8
 
@@ -253,9 +253,7 @@ CONTAINS
 
   end subroutine hub2atm_alloc
 
-  !===============================================================================
-
-  subroutine atm2hub_alloc( cam_out )
+  subroutine atm2hub_alloc(cam_out)
 
     ! Allocate space for the atmosphere to surface data type. And initialize
     ! the values.
@@ -266,7 +264,7 @@ CONTAINS
     ! LOCAL VARIABLES:
     integer :: c            ! chunk index
     integer :: ierror       ! Error code
-    character(len=*), parameter :: sub = 'atm2hub_alloc'
+    character(*), parameter :: sub = 'atm2hub_alloc'
     !-----------------------------------------------------------------------
 
     if (.not. phys_grid_initialized()) call endrun(sub//": phys_grid not called yet")
@@ -323,22 +321,20 @@ CONTAINS
           allocate (cam_out(c)%nhx_nitrogen_flx(pcols), stat=ierror)
           if ( ierror /= 0 ) call endrun(sub//': allocation error nhx_nitrogen_flx')
           cam_out(c)%nhx_nitrogen_flx(:) = 0._r8
-       endif
+       end if
        if (active_Faxa_noy) then
           allocate (cam_out(c)%noy_nitrogen_flx(pcols), stat=ierror)
           if ( ierror /= 0 ) call endrun(sub//': allocation error noy_nitrogen_flx')
           cam_out(c)%noy_nitrogen_flx(:) = 0._r8
-       endif
+       end if
     end do
 
   end subroutine atm2hub_alloc
 
-  !===============================================================================
-
   subroutine atm2hub_deallocate(cam_out)
 
     type(cam_out_t), pointer :: cam_out(:)    ! Atmosphere to surface input
-    !-----------------------------------------------------------------------
+
 
     if(associated(cam_out)) then
        deallocate(cam_out)
@@ -346,8 +342,6 @@ CONTAINS
     nullify(cam_out)
 
   end subroutine atm2hub_deallocate
-
-  !===============================================================================
 
   subroutine hub2atm_deallocate(cam_in)
 
@@ -362,37 +356,32 @@ CONTAINS
              deallocate(cam_in(c)%ram1)
              nullify(cam_in(c)%ram1)
           end if
-          if(associated(cam_in(c)%fv)) then
+          if (associated(cam_in(c)%fv)) then
              deallocate(cam_in(c)%fv)
              nullify(cam_in(c)%fv)
           end if
-          if(associated(cam_in(c)%soilw)) then
+          if (associated(cam_in(c)%soilw)) then
              deallocate(cam_in(c)%soilw)
              nullify(cam_in(c)%soilw)
           end if
-          if(associated(cam_in(c)%dstflx)) then
+          if (associated(cam_in(c)%dstflx)) then
              deallocate(cam_in(c)%dstflx)
              nullify(cam_in(c)%dstflx)
           end if
-          if(associated(cam_in(c)%meganflx)) then
+          if (associated(cam_in(c)%meganflx)) then
              deallocate(cam_in(c)%meganflx)
              nullify(cam_in(c)%meganflx)
           end if
-          if(associated(cam_in(c)%depvel)) then
+          if (associated(cam_in(c)%depvel)) then
              deallocate(cam_in(c)%depvel)
              nullify(cam_in(c)%depvel)
           end if
-
        end do
-
        deallocate(cam_in)
     end if
     nullify(cam_in)
 
   end subroutine hub2atm_deallocate
-
-
-!======================================================================
 
 subroutine cam_export(state,cam_out,pbuf)
 

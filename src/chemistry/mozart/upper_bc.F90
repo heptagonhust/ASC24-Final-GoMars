@@ -13,7 +13,7 @@ module upper_bc
   use shr_const_mod,only: grav   => shr_const_g,     &   ! gravitational constant (m/s^2)
                           kboltz => shr_const_boltz, &   ! Boltzmann constant
                           pi => shr_const_pi,        &   ! pi
-                          rEarth => shr_const_rearth     ! Earth radius 
+                          rEarth => shr_const_rearth     ! Earth radius
   use ppgrid,       only: pcols, pver, pverp
   use constituents, only: pcnst
   use cam_logfile,  only: iulog
@@ -52,7 +52,7 @@ contains
 
 subroutine ubc_defaultopts(tgcm_ubc_file_out, tgcm_ubc_data_type_out, tgcm_ubc_cycle_yr_out, tgcm_ubc_fixed_ymd_out, &
      tgcm_ubc_fixed_tod_out, snoe_ubc_file_out, t_pert_ubc_out, no_xfac_ubc_out)
-!----------------------------------------------------------------------- 
+!-----------------------------------------------------------------------
 ! Purpose: Return default runtime options
 !-----------------------------------------------------------------------
 
@@ -98,7 +98,7 @@ end subroutine ubc_defaultopts
 
 subroutine ubc_setopts(tgcm_ubc_file_in, tgcm_ubc_data_type_in, tgcm_ubc_cycle_yr_in, tgcm_ubc_fixed_ymd_in, &
      tgcm_ubc_fixed_tod_in, snoe_ubc_file_in, t_pert_ubc_in, no_xfac_ubc_in)
-!----------------------------------------------------------------------- 
+!-----------------------------------------------------------------------
 ! Purpose: Set runtime options
 !-----------------------------------------------------------------------
 
@@ -206,7 +206,7 @@ end subroutine ubc_setopts
     use ppgrid,           only: begchunk, endchunk
     use physics_buffer,   only: physics_buffer_desc
 
-    type(physics_state), intent(in) :: state(begchunk:endchunk)                 
+    type(physics_state), intent(in) :: state(begchunk:endchunk)
     type(physics_buffer_desc), pointer :: pbuf2d(:,:)
 
     if (.not.apply_upper_bc) return
@@ -285,11 +285,11 @@ end subroutine ubc_setopts
           call endrun
        end if
     end if
-   
+
     !--------------------------------------------------------------------------------------------
     ! For WACCM-X, calculate upper boundary H flux
     !--------------------------------------------------------------------------------------------
-    if ( waccmx_is('ionosphere') .or. waccmx_is('neutral') ) then 
+    if ( waccmx_is('ionosphere') .or. waccmx_is('neutral') ) then
 
       call cnst_get_ind('H',  indx_H)
       qh_top => q(:,1,indx_H)
@@ -298,48 +298,48 @@ end subroutine ubc_setopts
         !--------------------------------------------------
         ! Get total density (rho) at top level
         !--------------------------------------------------
-        nmbartop = 0.5_r8 * (pint(iCol,1) + pint(iCol,2)) / ( rairv(iCol,1,lchnk) * t(iCol,1) ) 
+        nmbartop = 0.5_r8 * (pint(iCol,1) + pint(iCol,2)) / ( rairv(iCol,1,lchnk) * t(iCol,1) )
 
         !---------------------------------------------------------------------
         ! Calculate factor for Jean's escape flux once here, used twice below
         !---------------------------------------------------------------------
         zkt = (rEarth + ( 0.5_r8 * ( zi(iCol,1) + zi(iCol,2) ) + rga * phis(iCol) ) ) * &
                                                    cnst_mw(indx_H) / avogad * grav / ( kboltz * t(iCol,1) )
-      
+
         ubc_flux(iCol,indx_H) = hfluxlimitfac * SQRT(kboltz/(2.0_r8 * pi * cnst_mw(indx_H) / avogad)) * &
                                 qh_top(iCol) * nmbartop * &
                                 SQRT(t(iCol,1)) * (1._r8 + zkt) * EXP(-zkt)
-                                
+
         ubc_flux(iCol,indx_H) = ubc_flux(iCol,indx_H) * &
                                 (2.03E-13_r8 * qh_top(iCol) * nmbartop / (cnst_mw(indx_H) / avogad) * t(iCol,1))
-                                       
+
         !--------------------------------------------------------------------------------------------------------------
         !  Need to get helium number density (SI units) from mass mixing ratio.  mbarv is kg/mole, same as rMass units
         !  kg/kg * (kg/mole)/(kg/mole) * (Pa or N/m*m)/((Joules/K or N*m/K) * (K)) = m-3
-        !--------------------------------------------------------------------------------------------------------------- 
+        !---------------------------------------------------------------------------------------------------------------
 !        nDensHETop  = qhe_top(iCol) * mbarv(iCol,1,lchnk) / cnst_mw(indx_HE) * &
 !                                   0.5_r8 * (pint(iCol,1) + pint(iCol,2)) / (kboltz * t(iCol,1))
-!       
+!
 !        !------------------------------------------------------------------------------------------------------
 !        !  Get midpoint vertical velocity for top level by extrapolating from two levels below top (Pa/s)*P
-!        !------------------------------------------------------------------------------------------------------                 
+!        !------------------------------------------------------------------------------------------------------
 !
-!        pScaleHeight = .5_r8*(rairv(iCol,2,lchnk)*t(iCol,1) + rairv(iCol,1,lchnk)*t(iCol,1)) / grav      
-!        wN2 = -omega(iCol,2) / 0.5_r8 * (pint(iCol,1) + pint(iCol,2)) * pScaleHeight 
-! 
-!        pScaleHeight = .5_r8 * (rairv(iCol,3,lchnk)*t(iCol,2) + rairv(iCol,2,lchnk)*t(iCol,2)) / grav      
-!        wN3 = -omega(iCol,3) / 0.5_r8 * (pint(iCol,1) + pint(iCol,2)) * pScaleHeight 
-!  
+!        pScaleHeight = .5_r8*(rairv(iCol,2,lchnk)*t(iCol,1) + rairv(iCol,1,lchnk)*t(iCol,1)) / grav
+!        wN2 = -omega(iCol,2) / 0.5_r8 * (pint(iCol,1) + pint(iCol,2)) * pScaleHeight
+!
+!        pScaleHeight = .5_r8 * (rairv(iCol,3,lchnk)*t(iCol,2) + rairv(iCol,2,lchnk)*t(iCol,2)) / grav
+!        wN3 = -omega(iCol,3) / 0.5_r8 * (pint(iCol,1) + pint(iCol,2)) * pScaleHeight
+!
 !        !----------------------------------------------------
 !        !  Get top midpoint level vertical velocity
 !        !----------------------------------------------------
-!        wNTop = 1.5_r8 * wN2 - 0.5_r8 * wN3 
+!        wNTop = 1.5_r8 * wN2 - 0.5_r8 * wN3
 !
 !        !-----------------------------------------------------------------------------------------------------------------
-!        ! Helium upper boundary flux is just helium density multiplied by vertical velocity (kg*/m3)*(m/s) = kg/s/m^2) 
+!        ! Helium upper boundary flux is just helium density multiplied by vertical velocity (kg*/m3)*(m/s) = kg/s/m^2)
 !        !-----------------------------------------------------------------------------------------------------------------
-!        ubc_flux(iCol,indx_HE) = -ndensHETop * wNTop 
-!                         
+!        ubc_flux(iCol,indx_HE) = -ndensHETop * wNTop
+!
       enddo
 
       ubc_mmr(:ncol,ndx_no) = 0.0_r8

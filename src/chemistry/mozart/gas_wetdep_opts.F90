@@ -55,16 +55,16 @@ contains
     end if
 
 #ifdef SPMD
-    call mpibcast (gas_wetdep_list, len(gas_wetdep_list(1))*pcnst, mpichar, 0, mpicom)
+    call mpibcast (gas_wetdep_list, len(gas_wetdep_list(1)) * pcnst, mpichar, 0, mpicom)
     call mpibcast (gas_wetdep_method, len(gas_wetdep_method), mpichar, 0, mpicom)
 #endif
 
     gas_wetdep_cnt = 0
-    do i = 1,pcnst
+    do i = 1, pcnst
        if ( len_trim(gas_wetdep_list(i)) > 0 ) then
           gas_wetdep_cnt = gas_wetdep_cnt + 1
-       endif
-    enddo
+       end if
+    end do
 
     if (( gas_wetdep_cnt>0 ).and.( .not.(gas_wetdep_method=='MOZ' .or. gas_wetdep_method=='NEU' &
          .or. gas_wetdep_method=='OFF') )) then

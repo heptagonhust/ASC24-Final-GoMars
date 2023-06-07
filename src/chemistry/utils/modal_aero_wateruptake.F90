@@ -269,6 +269,7 @@ subroutine modal_aero_wateruptake_dr(state, pbuf, list_idx_in, dgnumdry_m, dgnum
 
    ! loop over all aerosol modes
    call rad_cnst_get_info(list_idx, nmodes=nmodes)
+   if (nmodes == 0) return
 
    if (modal_strat_sulfate) then
      call pbuf_get_field(pbuf,  sulfeq_idx, sulfeq )
