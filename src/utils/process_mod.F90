@@ -29,15 +29,15 @@ contains
 
     integer, intent(in), optional :: comm
 
-    integer ierr, n
+    integer thread, ierr, n
 
     if (present(comm)) then
       proc%comm = comm
     else
-      call MPI_INIT(ierr)
+      call MPI_INIT_THREAD(MPI_THREAD_SERIALIZED, thread, ierr)
       proc%comm = MPI_COMM_WORLD
+      call perf_init()
     end if
-    call perf_init()
     call MPI_COMM_GROUP(proc%comm, proc%group, ierr)
     call MPI_COMM_SIZE(proc%comm, proc%np, ierr)
     call MPI_COMM_RANK(proc%comm, proc%id, ierr)

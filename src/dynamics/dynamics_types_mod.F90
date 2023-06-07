@@ -79,6 +79,7 @@ module dynamics_types_mod
   end type dstate_type
 
   type dtend_type
+    type(latlon_mesh_type), pointer :: filter_mesh => null()
     type(latlon_mesh_type), pointer :: mesh => null()
     real(r8), allocatable, dimension(:,:,:) :: du
     real(r8), allocatable, dimension(:,:,:) :: dv
@@ -413,11 +414,12 @@ contains
   subroutine dtend_init(this, filter_mesh, mesh)
 
     class(dtend_type), intent(inout) :: this
-    type(latlon_mesh_type), intent(in) :: filter_mesh
+    type(latlon_mesh_type), intent(in), target :: filter_mesh
     type(latlon_mesh_type), intent(in), target :: mesh
 
     call this%clear()
 
+    this%filter_mesh => filter_mesh
     this%mesh => mesh
 
     call allocate_array(filter_mesh, this%du  , half_lon=.true., full_lat=.true., full_lev=.true.)
@@ -440,10 +442,10 @@ contains
     class(dtend_type), intent(inout) :: this
 
     if (trim(physics_suite) /= '') then
-      call allocate_array(this%mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
+      call allocate_array(this%filter_mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%filter_mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%filter_mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%filter_mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
     end if
 
   end subroutine dtend_init_phys

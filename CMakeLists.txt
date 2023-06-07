@@ -295,13 +295,12 @@ set(gmcore_files
   src/utils/tridiag_spk_mod.F90
 )
 
-if (HAS_MCT)
+if (HAS_ESMF)
   list(APPEND gmcore_files
     src/coupler/atm_comp_mod.F90
     src/coupler/lnd_comp_mod.F90
     src/coupler/ocn_comp_mod.F90
     src/coupler/ice_comp_mod.F90
-    src/coupler/comp_interface_mod.F90
     src/coupler/cpl_comp_mod.F90
   )
 endif ()
@@ -345,7 +344,7 @@ if (HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)
   add_definitions(-DUSE_CSM_SHARE)
   add_definitions(-DPCOLS=16)
   add_definitions(-DPSUBCOLS=1)
-  add_definitions(-DPLEV=64)
+  add_definitions(-DPLEV=32)
   add_definitions(-DPCNST=33)
   add_definitions(-DN_RAD_CNST=15)
   add_definitions(-DHAVE_IEEE_ARITHMETIC)

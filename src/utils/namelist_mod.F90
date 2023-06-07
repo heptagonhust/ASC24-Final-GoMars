@@ -54,7 +54,8 @@ module namelist_mod
 
   integer         :: nproc_lon(20)        = 0
   integer         :: nproc_lat(20)        = 0
-  integer         :: lon_hw               = 2
+  integer         :: lon_hw               = 3
+  integer         :: lat_hw               = 3
   character(30)   :: proc_layout          = 'lon>lat' ! or 'lat>lon'
 
   character(30)   :: tangent_wgt_scheme   = 'classic'
@@ -172,6 +173,7 @@ module namelist_mod
     nproc_lon                 , &
     nproc_lat                 , &
     lon_hw                    , &
+    lat_hw                    , &
     proc_layout               , &
     initial_time              , &
     start_time                , &

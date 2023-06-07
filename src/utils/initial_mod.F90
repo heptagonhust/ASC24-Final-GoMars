@@ -245,7 +245,12 @@ contains
     integer iblk, is, ie, js, je, ks, ke, i, j, k
     integer start(3), count(3)
     real(8) time1, time2
-    real(r8), pointer, dimension(:,:,:) :: qv, qc, qi, nc, ni, qm
+    real(r8), pointer, dimension(:,:,:) :: qv => null()
+    real(r8), pointer, dimension(:,:,:) :: qc => null()
+    real(r8), pointer, dimension(:,:,:) :: qi => null()
+    real(r8), pointer, dimension(:,:,:) :: nc => null()
+    real(r8), pointer, dimension(:,:,:) :: ni => null()
+    real(r8), pointer, dimension(:,:,:) :: qm => null()
 
     if (proc%is_root()) call cpu_time(time1)
 
@@ -301,17 +306,14 @@ contains
           if (idx_qv > 0) then
             call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
             call fiona_input('i0', 'Q' , qv(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
           end if
           if (idx_qc > 0 .and. fiona_has_var('i0', 'CLDLIQ')) then
             call tracer_get_array(iblk, idx_qc, qc, __FILE__, __LINE__)
             call fiona_input('i0', 'CLDLIQ', qc(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%filter_halo, qc, full_lon=.true., full_lat=.true., full_lev=.true.)
           end if
           if (idx_qi > 0 .and. fiona_has_var('i0', 'CLDICE')) then
             call tracer_get_array(iblk, idx_qi, qi, __FILE__, __LINE__)
             call fiona_input('i0', 'CLDICE', qi(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%filter_halo, qi, full_lon=.true., full_lat=.true., full_lev=.true.)
           end if
           if (idx_nc > 0 .and. fiona_has_var('i0', 'NUMLIQ')) then
             call tracer_get_array(iblk, idx_nc, nc, __FILE__, __LINE__)
@@ -325,9 +327,18 @@ contains
           end if
           call tracer_calc_qm(block)
           call tracer_get_array_qm(iblk, qm)
-          if (idx_qv > 0) qv = dry_mixing_ratio(qv, qm)
-          if (idx_qc > 0) qc = dry_mixing_ratio(qc, qm)
-          if (idx_qi > 0) qi = dry_mixing_ratio(qi, qm)
+          if (associated(qv)) then
+            qv(is:ie,js:je,ks:ke) = dry_mixing_ratio(qv(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke))
+            call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+          end if
+          if (associated(qc)) then
+            qc(is:ie,js:je,ks:ke) = dry_mixing_ratio(qc(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke))
+            call fill_halo(block%filter_halo, qc, full_lon=.true., full_lat=.true., full_lev=.true.)
+          end if
+          if (associated(qi)) then
+            qi(is:ie,js:je,ks:ke) = dry_mixing_ratio(qi(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke))
+            call fill_halo(block%filter_halo, qi, full_lon=.true., full_lat=.true., full_lev=.true.)
+          end if
           call calc_mg(block, dstate)
           call calc_dmg(block, dstate)
           call calc_ph(block, dstate)

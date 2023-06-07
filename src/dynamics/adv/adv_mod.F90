@@ -277,7 +277,7 @@ contains
                     else if (qm2 > qm0) then
                       if (qm2 > 0) q_new(i,j,k+1) = qm2 - qm0
                     else
-                      call log_error('Negative tracer!')
+                      call log_error('Negative tracer at i=' // to_str(i) // ', j=' // to_str(j) // '!', __FILE__, __LINE__)
                     end if
                     q_new(i,j,k) = 0
                   end if

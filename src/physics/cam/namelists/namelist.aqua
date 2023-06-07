@@ -296,7 +296,13 @@
 /
 
 &zmconv_nl
-  zmconv_c0_lnd  = 0.0059d0
-  zmconv_c0_ocn  = 0.0450d0
-  zmconv_ke      = 1.0d-6
+  zmconv_c0_lnd   =  0.0075D0 
+  zmconv_c0_ocn   =  0.0300D0 
+  zmconv_ke       =  5.0E-6 
+  zmconv_ke_lnd   =  1.0E-5 
+  zmconv_microp   =  .false. 
+  zmconv_momcd    =  0.7000D0 
+  zmconv_momcu    =  0.7000D0 
+  zmconv_num_cin  =  1       
+  zmconv_org      =  .false. 
 /

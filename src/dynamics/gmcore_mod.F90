@@ -67,7 +67,7 @@ contains
     call const_init(planet)
     call time_scheme_init()
     call time_init(dt_dyn)
-    call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=2)
+    call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=lat_hw)
     call process_init(comm)
     call process_create_blocks()
     call damp_init()
@@ -199,7 +199,7 @@ contains
       if (baroclinic) then
         do iblk = 1, size(blocks)
           call physics_run(blocks(iblk), old, dt_phys)
-          call physics_update_state(blocks(iblk), old, dt_phys)
+          call physics_update_state(blocks(iblk), old, dt_dyn)
         end do
       end if
       ! ------------------------------------------------------------------------
