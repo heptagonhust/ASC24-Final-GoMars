@@ -36,7 +36,7 @@ module cam_physics_driver_mod
   use process_mod     , only: proc, process_barrier
   use time_mod        , only: start_time, end_time, curr_time
   use tracer_mod      , only: tracer_add, tracer_get_array, tracer_get_array_qm, tracers
-  use block_mod       , only: block_type
+  use block_mod       , only: block_type, global_mesh
   use albedo_mod      , only: albedo_ocnice
   use latlon_parallel_mod
   use aquaplanet_test_mod
@@ -355,13 +355,15 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    integer ncol, c, i, k, m
+    integer ncol, c, i, j, k, m
     integer ilon(pcols), jlat(pcols)
     real(r8), pointer :: q(:,:,:,:), qm(:,:,:)
+    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
+    real(r8) pole(block%mesh%full_nlev)
 
     call tracer_get_array(block%id, q)
     call tracer_get_array_qm(block%id, qm)
-    associate (dstate => block%dstate(itime), dtend => block%dtend(itime), ptend => block%ptend)
+    associate (mesh => block%mesh, dstate => block%dstate(itime), dtend => block%dtend(itime), ptend => block%ptend)
     if (local_dp_map) then
       do c = begchunk, endchunk
         ncol = phys_state(c)%ncol
@@ -394,6 +396,64 @@ contains
                     west_halo=.false., south_halo=.false., north_halo=.false.)
       call fill_halo(block%filter_halo, dtend%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
                     west_halo=.false.,  east_halo=.false., south_halo=.false.)
+      if (mesh%has_south_pole()) then
+        j = mesh%full_jds
+        do k = mesh%full_kds, mesh%full_kde
+          do i = mesh%full_ids, mesh%full_ide
+            work(i,k) = dtend%dtdt_phys(i,j,k)
+          end do
+        end do
+        call zonal_sum(proc%zonal_circle, work, pole)
+        pole = pole / global_mesh%full_nlon
+        do k = mesh%full_kds, mesh%full_kde
+          do i = mesh%full_ids, mesh%full_ide
+            dtend%dtdt_phys(i,j,k) = pole(k)
+          end do
+        end do
+        do m = 1, pcnst
+          do k = mesh%full_kds, mesh%full_kde
+            do i = mesh%full_ids, mesh%full_ide
+              work(i,k) = dtend%dqdt_phys(i,j,k,m)
+            end do
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          pole = pole / global_mesh%full_nlon
+          do k = mesh%full_kds, mesh%full_kde
+            do i = mesh%full_ids, mesh%full_ide
+              dtend%dqdt_phys(i,j,k,m) = pole(k)
+            end do
+          end do
+        end do
+      end if
+      if (mesh%has_north_pole()) then
+        j = mesh%full_jde
+        do k = mesh%full_kds, mesh%full_kde
+          do i = mesh%full_ids, mesh%full_ide
+            work(i,k) = dtend%dtdt_phys(i,j,k)
+          end do
+        end do
+        call zonal_sum(proc%zonal_circle, work, pole)
+        pole = pole / global_mesh%full_nlon
+        do k = mesh%full_kds, mesh%full_kde
+          do i = mesh%full_ids, mesh%full_ide
+            dtend%dtdt_phys(i,j,k) = pole(k)
+          end do
+        end do
+        do m = 1, pcnst
+          do k = mesh%full_kds, mesh%full_kde
+            do i = mesh%full_ids, mesh%full_ide
+              work(i,k) = dtend%dqdt_phys(i,j,k,m)
+            end do
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          pole = pole / global_mesh%full_nlon
+          do k = mesh%full_kds, mesh%full_kde
+            do i = mesh%full_ids, mesh%full_ide
+              dtend%dqdt_phys(i,j,k,m) = pole(k)
+            end do
+          end do
+        end do
+      end if
     else
       call log_error('cam_physics_p2d: Distributed physics columns are not supported yet!', __FILE__, __LINE__)
     end if
