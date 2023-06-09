@@ -1097,12 +1097,12 @@ subroutine vertical_diffusion_tend(   &
      tauy = 0._r8
      shflux = 0._r8
      cflux(:,1) = 0._r8
-     cflux(:,2:) = cam_in%cflx(:,2:)
+     cflux(:,2:pcnst) = cam_in%cflx(:,2:pcnst)
   case default
      taux = cam_in%wsx
      tauy = cam_in%wsy
      shflux = cam_in%shf
-     cflux = cam_in%cflx
+     cflux(:,:pcnst) = cam_in%cflx(:,:pcnst)
   end select
 
   if( any(fieldlist_wet) ) then
