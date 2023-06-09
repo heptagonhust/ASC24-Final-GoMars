@@ -134,7 +134,7 @@ module physics_types
           lu = .false.,               &! true if dudt is returned
           lv = .false.                 ! true if dvdt is returned
 
-     logical,dimension(pcnst) ::  lq = .false.  ! true if dqdt() is returned
+     logical :: lq(PCNST) = .false.    ! true if dqdt() is returned
 
      integer ::             &
           top_level,        &! top level index for which nonzero tendencies have been set
@@ -974,7 +974,7 @@ end subroutine physics_ptend_copy
     logical, optional                   :: ls       ! if true, then fields to support dsdt are allocated
     logical, optional                   :: lu       ! if true, then fields to support dudt are allocated
     logical, optional                   :: lv       ! if true, then fields to support dvdt are allocated
-    logical, dimension(pcnst),optional  :: lq       ! if true, then fields to support dqdt are allocated
+    logical, dimension(pcnst), optional :: lq       ! if true, then fields to support dqdt are allocated
 
 !-----------------------------------------------------------------------
 
@@ -1015,9 +1015,9 @@ end subroutine physics_ptend_copy
     end if
 
     if (present(lq)) then
-       ptend%lq(:) = lq(:)
+       ptend%lq(:pcnst) = lq(:pcnst)
     else
-       ptend%lq(:) = .false.
+       ptend%lq(:pcnst) = .false.
     end if
 
     call physics_ptend_alloc(ptend, psetcols)

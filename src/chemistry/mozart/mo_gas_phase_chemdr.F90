@@ -19,7 +19,7 @@ module mo_gas_phase_chemdr
   public :: gas_phase_chemdr, gas_phase_chemdr_inti
   public :: map2chm
 
-  integer :: map2chm(pcnst) = 0           ! index map to/from chemistry/constituents list
+  integer :: map2chm(PCNST) = 0 ! index map to/from chemistry/constituents list
 
   integer :: synoz_ndx, so4_ndx, h2o_ndx, o2_ndx, o_ndx, hno3_ndx, hcl_ndx, dst_ndx, cldice_ndx, snow_ndx
   integer :: o3_ndx, o3s_ndx

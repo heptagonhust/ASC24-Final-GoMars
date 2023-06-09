@@ -21,7 +21,7 @@
 
       integer                :: ndx_n, ndx_h, ndx_o, ndx_o2           ! n, h, o, o2 spc indicies
       integer                :: msis_cnt = 0                          ! count of msis species in simulation
-      integer                :: ndx(pcnst) = -1
+      integer                :: ndx(PCNST) = -1
       real(r8), allocatable  :: msis_ubc(:,:,:)                       ! module array for msis ub values (kg/kg)
 
       logical                :: zonal_average         = .false.       ! use zonal averaged tgcm values

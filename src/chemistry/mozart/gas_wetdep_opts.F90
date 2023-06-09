@@ -13,9 +13,9 @@ module gas_wetdep_opts
 
   implicit none
 
-  character(len=16), protected :: gas_wetdep_list(pcnst) = ' '
-  character(len=3), protected :: gas_wetdep_method = 'MOZ'
-  integer,          protected :: gas_wetdep_cnt = 0
+  character(16), protected :: gas_wetdep_list(PCNST)
+  character(3 ), protected :: gas_wetdep_method = 'MOZ'
+  integer,       protected :: gas_wetdep_cnt = 0
 
 contains
 

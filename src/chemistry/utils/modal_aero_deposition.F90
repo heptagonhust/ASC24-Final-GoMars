@@ -35,12 +35,12 @@ public :: &
 ! Private module data
 
 logical :: initialized = .false.
-integer :: bcphi_ndx( pcnst ) = -1
-integer :: bcpho_ndx( pcnst ) = -1
-integer :: ocphi_ndx( pcnst ) = -1
-integer :: ocpho_ndx( pcnst ) = -1
-integer :: crse_dust_ndx( pcnst ) = -1
-integer :: fine_dust_ndx( pcnst ) = -1
+integer :: bcphi_ndx(PCNST) = -1
+integer :: bcpho_ndx(PCNST) = -1
+integer :: ocphi_ndx(PCNST) = -1
+integer :: ocpho_ndx(PCNST) = -1
+integer :: crse_dust_ndx(PCNST) = -1
+integer :: fine_dust_ndx(PCNST) = -1
 integer :: bcphi_cnt = 0
 integer :: ocphi_cnt = 0
 integer :: bcpho_cnt = 0

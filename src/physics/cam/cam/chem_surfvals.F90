@@ -77,7 +77,7 @@ module chem_surfvals
    ! fixed lower boundary
 
    character(len=256) :: flbc_file = 'NONE'
-   character(len=16)  :: flbc_list(pcnst) = ''
+   character(len=16)  :: flbc_list(PCNST) = ''
    type(time_ramp)    :: flbc_timing     != time_ramp( "CYCLICAL",  19970101, 0 )
 
 !=========================================================================================
@@ -160,7 +160,7 @@ subroutine chem_surfvals_readnl(nlfile)
    if (ierr /= 0) call endrun(sub//" mpi_bcast: flbc_fixed_ymd")
    call mpi_bcast(flbc_fixed_tod, 1, mpi_integer, mstrid, mpicom, ierr)
    if (ierr /= 0) call endrun(sub//" mpi_bcast: flbc_fixed_tod")
-   call mpi_bcast(flbc_list, len(flbc_list(1))*pcnst, mpi_character, mstrid, mpicom, ierr)
+   call mpi_bcast(flbc_list, len(flbc_list(1))*PCNST, mpi_character, mstrid, mpicom, ierr)
    if (ierr /= 0) call endrun(sub//" mpi_bcast: flbc_list")
    call mpi_bcast(flbc_file, len(flbc_file), mpi_character, mstrid, mpicom, ierr)
    if (ierr /= 0) call endrun(sub//" mpi_bcast: flbc_file")
@@ -221,7 +221,7 @@ subroutine chem_surfvals_readnl(nlfile)
             write(iulog,*) '    flbc_fixed_tod = ', flbc_fixed_tod
          end if
          write(iulog,*) '  Species from LBC file:'
-         do i = 1, pcnst
+         do i = 1, size(flbc_list)
             if (flbc_list(i) == ' ') exit
             write(iulog,*) '    ' // trim(flbc_list(i))
          end do

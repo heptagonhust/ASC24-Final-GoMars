@@ -86,7 +86,7 @@ end type ptr2d_t
 
 ! modal aerosols
 logical :: prog_modal_aero     ! true when modal aerosols are prognostic
-logical :: lq(pcnst) = .false. ! set flags true for constituents with non-zero tendencies
+logical :: lq(PCNST) = .false. ! set flags true for constituents with non-zero tendencies
                                ! in the ptend object
 
 !===============================================================================

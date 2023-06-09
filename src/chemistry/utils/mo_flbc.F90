@@ -38,14 +38,14 @@ module mo_flbc
   integer :: tim_ndx(2)
   integer, allocatable  :: dates(:)
   real(r8), allocatable     :: times(:)
-  logical, protected :: has_flbc(pcnst)
+  logical, protected :: has_flbc(PCNST)
   character(len=256) :: filename
 
   type(time_ramp) :: flbc_timing
   integer ::  ncdate, ncsec
 
   integer, parameter :: nghg = 6
-  integer, parameter :: max_nflbc = pcnst+nghg
+  integer, parameter :: max_nflbc = PCNST + nghg
 
   integer, parameter :: co2_ndx = 1
   integer, parameter :: ch4_ndx = 2

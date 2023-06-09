@@ -28,7 +28,7 @@
         character(len=16) :: ubc_name(MAXTRCRS)
         integer :: map(MAXTRCRS)
 
-        logical :: ubc_from_tgcm(pcnst)  = .false.
+        logical :: ubc_from_tgcm(PCNST) = .false.
 
       contains
 

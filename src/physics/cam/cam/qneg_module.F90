@@ -1,6 +1,6 @@
 module qneg_module
 
-  use shr_kind_mod,        only: r8 => shr_kind_r8, CS => SHR_KIND_CS
+  use shr_kind_mod,        only: r8 => shr_kind_r8, cs => SHR_KIND_CS
   use perf_mod,            only: t_startf, t_stopf
   use cam_logfile,         only: iulog
   use cam_abortutils,      only: endrun
@@ -31,24 +31,24 @@ module qneg_module
   real(r8), parameter :: worst_reset = 1.e35_r8
 
   ! Diagnostic field names
-  integer, parameter               :: num_diag_fields = (2 * pcnst) + 1
-  character(len=max_fieldname_len) :: diag_names(num_diag_fields)
-  logical             :: cnst_out_calc = .false.
-  logical             :: cnst_outfld(num_diag_fields) = .false.
+  integer num_diag_fields
+  character(max_fieldname_len) diag_names(PCNST)
+  logical :: cnst_out_calc = .false.
+  logical :: cnst_outfld(PCNST) = .false.
 
   ! Summary buffers
-  integer, parameter  :: num3_bins = 24
-  integer, parameter  :: num4_bins = 4
-  character(len=CS)   :: qneg3_warn_labels(num3_bins) = ''
-  character(len=CS)   :: qneg4_warn_labels(num4_bins) = ''
-  integer             :: qneg3_warn_num(pcnst, num3_bins)   = 0
-  integer             :: qneg4_warn_num(num4_bins)          = 0
-  real(r8)            :: qneg3_warn_worst(pcnst, num3_bins) = worst_reset
-  real(r8)            :: qneg4_warn_worst(num4_bins)        = worst_reset
+  integer, parameter :: num3_bins = 24
+  integer, parameter :: num4_bins = 4
+  character(cs)      :: qneg3_warn_labels(num3_bins) = ''
+  character(cs)      :: qneg4_warn_labels(num4_bins) = ''
+  integer            :: qneg3_warn_num(PCNST,num3_bins)   = 0
+  integer            :: qneg4_warn_num(num4_bins)         = 0
+  real(r8)           :: qneg3_warn_worst(PCNST,num3_bins) = worst_reset
+  real(r8)           :: qneg4_warn_worst(num4_bins)       = worst_reset
 
-  private             :: calc_cnst_out
-  private             :: find_index3
-  private             :: find_index4
+  private calc_cnst_out
+  private find_index3
+  private find_index4
   interface reset_stats
      module procedure reset_stats_scalar
      module procedure reset_stats_array

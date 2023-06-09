@@ -30,10 +30,10 @@ public :: &
 
 ! Public data
 
-integer, parameter, public :: pcnst  = PCNST      ! number of advected constituents (including water vapor)
+integer, public :: pcnst = 0 ! number of advected constituents (including water vapor)
 
-character(len=16), public, protected :: cnst_name(pcnst)     ! constituent names
-character(len=128),public, protected :: cnst_longname(pcnst) ! long name of constituents
+character(len=16),  public, protected :: cnst_name(PCNST)     ! constituent names
+character(len=128), public, protected :: cnst_longname(PCNST) ! long name of constituents
 
 ! Namelist variables
 logical, public, protected :: readtrace = .true.  ! true => obtain initial tracer data from IC file
@@ -47,40 +47,40 @@ integer, public, parameter :: cnst_spec_class_other       = 4
 !
 ! Constants for each tracer
 
-integer, public, protected :: cnst_species_class(pcnst) = cnst_spec_class_undefined  ! indicates species class &
+integer, public, protected :: cnst_species_class(PCNST) = cnst_spec_class_undefined  ! indicates species class &
                                                                                        ! (cldphysics, aerosol, gas )
-real(r8),    public :: cnst_cp  (pcnst)          ! specific heat at constant pressure (J/kg/K)
-real(r8),    public :: cnst_cv  (pcnst)          ! specific heat at constant volume (J/kg/K)
-real(r8),    public :: cnst_mw  (pcnst)          ! molecular weight (kg/kmole)
-character*3, public, protected :: cnst_type(pcnst)! wet or dry mixing ratio
-character*5, public :: cnst_molec(pcnst)         ! major or minor species molecular diffusion
-real(r8),    public :: cnst_rgas(pcnst)          ! gas constant ()
-real(r8),    public :: qmin     (pcnst)          ! minimum permitted constituent concentration (kg/kg)
-real(r8),    public :: qmincg   (pcnst)          ! for backward compatibility only
-logical,     public :: cnst_fixed_ubc(pcnst) = .false.  ! upper bndy condition = fixed ?
-logical,     public :: cnst_fixed_ubflx(pcnst) = .false.! upper boundary non-zero fixed constituent flux
-logical, public, protected :: cnst_is_convtran1(pcnst) = .false.  ! do convective transport in phase 1
-logical, public, protected :: cnst_is_convtran2(pcnst) = .false.  ! do convective transport in phase 2
+real(r8),    public :: cnst_cp  (PCNST)          ! specific heat at constant pressure (J/kg/K)
+real(r8),    public :: cnst_cv  (PCNST)          ! specific heat at constant volume (J/kg/K)
+real(r8),    public :: cnst_mw  (PCNST)          ! molecular weight (kg/kmole)
+character*3, public, protected :: cnst_type(PCNST)! wet or dry mixing ratio
+character*5, public :: cnst_molec(PCNST)         ! major or minor species molecular diffusion
+real(r8),    public :: cnst_rgas(PCNST)          ! gas constant ()
+real(r8),    public :: qmin     (PCNST)          ! minimum permitted constituent concentration (kg/kg)
+real(r8),    public :: qmincg   (PCNST)          ! for backward compatibility only
+logical,     public :: cnst_fixed_ubc(PCNST) = .false.  ! upper bndy condition = fixed ?
+logical,     public :: cnst_fixed_ubflx(PCNST) = .false.! upper boundary non-zero fixed constituent flux
+logical, public, protected :: cnst_is_convtran1(PCNST) = .false.  ! do convective transport in phase 1
+logical, public, protected :: cnst_is_convtran2(PCNST) = .false.  ! do convective transport in phase 2
 
 !++bee - temporary... These names should be declared in the module that makes the addfld and outfld calls.
 ! Lists of tracer names and diagnostics
-character(len=16), public :: apcnst    (pcnst)   ! constituents after physics  (FV core only)
-character(len=16), public :: bpcnst    (pcnst)   ! constituents before physics (FV core only)
-character(len=16), public :: hadvnam   (pcnst)   ! names of horizontal advection tendencies
-character(len=16), public :: vadvnam   (pcnst)   ! names of vertical advection tendencies
-character(len=16), public :: dcconnam  (pcnst)   ! names of convection tendencies
-character(len=16), public :: fixcnam   (pcnst)   ! names of species slt fixer tendencies
-character(len=16), public :: tendnam   (pcnst)   ! names of total tendencies of species
-character(len=16), public :: ptendnam  (pcnst)   ! names of total physics tendencies of species
-character(len=16), public :: dmetendnam(pcnst)   ! names of dme adjusted tracers (FV)
-character(len=16), public :: sflxnam   (pcnst)   ! names of surface fluxes of species
-character(len=16), public :: tottnam   (pcnst)   ! names for horz + vert + fixer tendencies
+character(len=16), public :: apcnst    (PCNST)   ! constituents after physics  (FV core only)
+character(len=16), public :: bpcnst    (PCNST)   ! constituents before physics (FV core only)
+character(len=16), public :: hadvnam   (PCNST)   ! names of horizontal advection tendencies
+character(len=16), public :: vadvnam   (PCNST)   ! names of vertical advection tendencies
+character(len=16), public :: dcconnam  (PCNST)   ! names of convection tendencies
+character(len=16), public :: fixcnam   (PCNST)   ! names of species slt fixer tendencies
+character(len=16), public :: tendnam   (PCNST)   ! names of total tendencies of species
+character(len=16), public :: ptendnam  (PCNST)   ! names of total physics tendencies of species
+character(len=16), public :: dmetendnam(PCNST)   ! names of dme adjusted tracers (FV)
+character(len=16), public :: sflxnam   (PCNST)   ! names of surface fluxes of species
+character(len=16), public :: tottnam   (PCNST)   ! names for horz + vert + fixer tendencies
 
 ! Private data
 
 integer :: padv = 0                      ! index pointer to last advected tracer
-logical :: read_init_vals(pcnst)         ! true => read initial values from initial file
-logical :: cam_outfld_(pcnst)            ! true  => default CAM output of constituents in kg/kg
+logical :: read_init_vals(PCNST)         ! true => read initial values from initial file
+logical :: cam_outfld_(PCNST)            ! true  => default CAM output of constituents in kg/kg
                                          ! false => chemistry is responsible for making outfld
                                          !          calls for constituents
 
@@ -167,16 +167,15 @@ subroutine cnst_add (name, mwc, cpc, qminc, &
       cnst_spec_class ! type of species class
 
    character(len=*), parameter :: sub='cnst_add'
-   character(len=128) :: errmsg
    !-----------------------------------------------------------------------
 
    ! set tracer index and check validity
-   padv = padv+1
+   padv = padv + 1
    ind  = padv
-   if (padv > pcnst) then
-      write(errmsg, *) sub//': FATAL: advected tracer index ', padv, ' greater than pcnst=', pcnst
-      call endrun(errmsg)
+   if (padv > PCNST) then
+      call endrun(sub // ': FATAL: Enlarge PCNST in CMakeLists.txt!')
    end if
+   pcnst = padv
 
    ! set tracer name and constants
    cnst_name(ind) = name

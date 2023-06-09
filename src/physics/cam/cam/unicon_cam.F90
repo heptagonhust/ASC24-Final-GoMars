@@ -58,8 +58,7 @@ real(r8) :: cp     ! Specific heat of dry air
 integer, parameter :: &
    nseg = 1,      &! Number of updraft segments [ # ]
    mix  = pcols,  &! Maximum number of columns
-   mkx  = pver,   &! Number of vertical layers
-   ncnst = pcnst   ! Number of advected constituents
+   mkx  = pver     ! Number of vertical layers
 
 ! For advecting organization-related variables
 integer, parameter :: n_org = 5                      ! Number of constituents
@@ -125,9 +124,9 @@ type unicon_out_t
 end type unicon_out_t
 
 ! logical array to identify constituents that are mode number concentrations
-logical :: cnst_is_mam_num(ncnst)
+logical :: cnst_is_mam_num(PCNST)
 ! logical array to identify constituents that are mode specie mass mixing ratios
-logical :: cnst_is_mam_mmr(ncnst)
+logical :: cnst_is_mam_mmr(PCNST)
 
 !==================================================================================================
 contains
@@ -864,7 +863,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    real(r8) :: qvten_ori(mix,mkx)        !  Tendency of water vapor specific humidity [ kg / kg / s ]
    real(r8) :: qlten_ori(mix,mkx)        !  Tendency of liquid water mixing ratio [ kg / kg / s ]
    real(r8) :: qiten_ori(mix,mkx)        !  Tendency of ice mixing ratio [ kg / kg / s ]
-   real(r8) :: trten_ori(mix,mkx,ncnst)  !  Tendency of tracers [ # / kg / s, kg / kg / s ]
+   real(r8) :: trten_ori(mix,mkx,PCNST)  !  Tendency of tracers [ # / kg / s, kg / kg / s ]
 
    real(r8) :: slten_pos_inv(mix,mkx)    !
    real(r8) :: qtten_pos_inv(mix,mkx)    !
@@ -874,7 +873,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    real(r8) :: qvten_pos_inv(mix,mkx)    !
    real(r8) :: qlten_pos_inv(mix,mkx)    !
    real(r8) :: qiten_pos_inv(mix,mkx)    !
-   real(r8) :: trten_pos_inv(mix,mkx,ncnst)
+   real(r8) :: trten_pos_inv(mix,mkx,PCNST)
 
    ! --------------- !
    ! Local variables !
@@ -911,7 +910,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
       delta_u_PBL,   &! Diff of u   between off-wake region and grid-mean value averaged over the PBL [ m/s ]
       delta_v_PBL     ! Diff of v   between off-wake region and grid-mean value averaged over the PBL [ m/s ]
 
-   real(r8), pointer, dimension(:,:) :: & ! (mix,ncnst)
+   real(r8), pointer, dimension(:,:) :: & ! (mix,pcnst)
       delta_tr_PBL ! Diff of tr  between off-wake region and grid-mean value avg over the PBL [ kg/kg, #/kg ]
 
    real(r8), dimension(mix,mkx) :: & ! (mix,mkx)
@@ -929,7 +928,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
       qlr_det, &! Mass-flux wghted mean 'ql'  of detrained mass from conv up and downdraft at prev step [ kg/kg ]
       qir_det   ! Mass-flux wghted mean 'qi'  of detrained mass from conv up and downdraft at prev step [ kg/kg ]
 
-   real(r8), pointer, dimension(:,:,:) :: & ! (mix,mkx,ncnst)
+   real(r8), pointer, dimension(:,:,:) :: & ! (mix,mkx,pcnst)
       cu_trr    ! Mass-flux wghted mean 'tr'  of detrained mass from conv up and downdraft at prev step [ kg/kg ]
 
    real(r8), dimension(mix,mkx) :: & ! (mix,mkx)
@@ -941,7 +940,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
       cu_qlrd, &! Mass-flux wghted mean 'ql'  of detrained mass from conv downdraft at prev step [ kg/kg ]
       cu_qird   ! Mass-flux wghted mean 'qi'  of detrained mass from conv downdraft at prev step [ kg/kg ]
 
-   real(r8), dimension(mix,mkx,ncnst) :: & ! (mix,mkx,ncnst)
+   real(r8), dimension(mix,mkx,PCNST) :: & ! (mix,mkx,pcnst)
       cu_trrd   ! Mass-flux wghted mean 'tr'  of detrained mass from conv downdraft at prev step [ kg/kg ]
 
    real(r8), pointer, dimension(:,:) :: & ! (mix,mkx)
@@ -968,7 +967,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    real(r8) :: qv0(mix,mkx)              !  Environmental specific humidity
    real(r8) :: ql0(mix,mkx)              !  Environmental liquid water mixing ratio
    real(r8) :: qi0(mix,mkx)              !  Environmental ice mixing ratio
-   real(r8) :: tr0(mix,mkx,ncnst)        !  Environmental tracers [ #/kg, kg/kg ]
+   real(r8) :: tr0(mix,mkx,PCNST)        !  Environmental tracers [ #/kg, kg/kg ]
    real(r8) :: t0(mix,mkx)               !  Environmental temperature
    real(r8) :: s0(mix,mkx)               !  Environmental dry static energy
    real(r8) :: ast0(mix,mkx)             !  Physical stratiform cloud fraction [ fraction ]
@@ -996,7 +995,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    real(r8) :: qvten(mix,mkx)            !  Tendency of water vapor specific humidity [ kg / kg / s ]
    real(r8) :: qlten(mix,mkx)            !  Tendency of liquid water mixing ratio [ kg / kg / s ]
    real(r8) :: qiten(mix,mkx)            !  Tendency of ice mixing ratio [ kg / kg / s ]
-   real(r8) :: trten(mix,mkx,ncnst)      !  Tendency of tracers [ # / kg / s, kg / kg / s ]
+   real(r8) :: trten(mix,mkx,PCNST)      !  Tendency of tracers [ # / kg / s, kg / kg / s ]
 
    real(r8) :: sten(mix,mkx)             !  Tendency of dry static energy [ J / kg / s ]
    real(r8) :: uten(mix,mkx)             !  Tendency of zonal wind [ m / s / s ]
@@ -1030,7 +1029,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    real(r8) :: qi0_c(mix,mkx)            !  Environmental ice mixing ratio
    real(r8) :: t0_c(mix,mkx)             !  Environmental temperature
    real(r8) :: s0_c(mix,mkx)             !  Environmental dry static energy
-   real(r8) :: tr0_c(mix,mkx,ncnst)      !  Environmental tracers [ # / kg, kg / kg ]
+   real(r8) :: tr0_c(mix,mkx,PCNST)      !  Environmental tracers [ # / kg, kg / kg ]
 
    ! Layer index variables
    integer  :: k                         !  Vertical index for local fields
@@ -1041,7 +1040,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    ! For aerosol tendency output
    character(len=30) :: varname
 
-   logical :: lq(ncnst)
+   logical :: lq(PCNST)
 
    ! --------- !
    ! Main body !
@@ -1115,7 +1114,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
       am_evp_st(:iend,k)  = am_evp_st_inv(:iend,k_inv)
       evprain_st(:iend,k) = evprain_st_inv(:iend,k_inv)
       evpsnow_st(:iend,k) = evpsnow_st_inv(:iend,k_inv)
-      do mt = 1, ncnst
+      do mt = 1, pcnst
          tr0(:iend,k,mt)  = state%q(:iend,k_inv,mt)
       end do
    end do
@@ -1135,7 +1134,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    kpblh(:iend) = mkx + 1 - kpblh_inv(:iend)
 
 
-   call compute_unicon( mix       , mkx        , iend      , ncnst    , dt      ,           &
+   call compute_unicon( mix       , mkx        , iend      , pcnst    , dt      ,           &
                         ps0       , zs0        , p0        , z0       , dp0     , dpdry0  , &
                         t0        , qv0        , ql0       , qi0      , tr0     ,           &
                         u0        , v0         , ast0      , tke0     , bprod0  ,           &
@@ -1197,7 +1196,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    qi0_c(:iend,:mkx)  = qi0(:iend,:mkx) + qiten(:iend,:mkx)*dt
    t0_c(:iend,:mkx)   =  t0(:iend,:mkx) + (1._r8/cp)*sten(:iend,:mkx)*dt
    s0_c(:iend,:mkx)   =  s0(:iend,:mkx) +  sten(:iend,:mkx)*dt
-   do mt = 1, ncnst
+   do mt = 1, pcnst
       tr0_c(:iend,:mkx,mt)  = tr0(:iend,:mkx,mt) + trten(:iend,:mkx,mt)*dt
    enddo
 
@@ -1209,7 +1208,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    qvten_ori(:iend,:mkx) = qvten(:iend,:mkx)
    qlten_ori(:iend,:mkx) = qlten(:iend,:mkx)
    qiten_ori(:iend,:mkx) = qiten(:iend,:mkx)
-   do mt = 1, ncnst
+   do mt = 1, pcnst
       trten_ori(:iend,:mkx,mt) = trten(:iend,:mkx,mt)
    enddo
 
@@ -1219,7 +1218,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
       dp0, qv0_c, ql0_c, qi0_c, t0_c, &
       s0_c, qvten, qlten, qiten, sten )
 
-   do mt = 1, ncnst
+   do mt = 1, pcnst
 
       if( cnst_get_type_byind(mt) .eq. 'wet' ) then
          pdel0(:iend,:mkx) = dp0(:iend,:mkx)
@@ -1299,7 +1298,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
       rprdsh(:iend,k_inv)  = qrten(:iend,k) + qsten(:iend,k)
       evapc_inv(:iend,k_inv) = evapc(:iend,k)       ! Evaporation rate of convective precipitation within environment
 
-      do mt = 2, ncnst
+      do mt = 2, pcnst
          if (mt /= ixcldliq .and. mt /= ixcldice) then
             ptend%q(:iend,k_inv,mt) = trten(:iend,k,mt)
          end if
@@ -1317,7 +1316,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
                                                               - xls * qiten_pos_inv(:iend,k_inv)
       uten_pos_inv(:iend,k_inv)   = 0._r8
       vten_pos_inv(:iend,k_inv)   = 0._r8
-      do mt = 1, ncnst
+      do mt = 1, pcnst
          trten_pos_inv(:iend,k_inv,mt)  = trten(:iend,k,mt) - trten_ori(:iend,k,mt)
       enddo
 
@@ -1342,7 +1341,7 @@ subroutine unicon_cam_tend(dt, state, cam_in, &
    call outfld('QLR_DET'      , qlr_det,       pcols, lchnk)
    call outfld('QIR_DET'      , qir_det,       pcols, lchnk)
 
-   do m = 1, ncnst
+   do m = 1, pcnst
       if (cnst_is_mam_num(m) .or. cnst_is_mam_mmr(m)) then
          varname = trim(cnst_name(m))//'_pos_SP'
          call outfld(trim(varname), trten_pos_inv(:,:,m), mix, lchnk)

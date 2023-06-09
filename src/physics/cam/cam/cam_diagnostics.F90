@@ -47,7 +47,7 @@ public :: &
 ! Private data
 
 integer :: dqcond_num                     ! number of constituents to compute convective
-character(len=16) :: dcconnam(pcnst)      ! names of convection tendencies
+character(16) :: dcconnam(PCNST)          ! names of convection tendencies
                                           ! tendencies for
 real(r8), allocatable :: dtcond(:,:,:)    ! temperature tendency due to convection
 type dqcond_t

@@ -105,7 +105,7 @@ logical  :: separate_dust = .false.
 real(r8) :: sigmag_aitken
 real(r8) :: sigmag_accum
 
-logical :: lq(pcnst) = .false. ! set flags true for constituents with non-zero tendencies
+logical :: lq(PCNST) = .false. ! set flags true for constituents with non-zero tendencies
 integer :: cnum_idx, cdst_idx, cso4_idx
 
 !===============================================================================

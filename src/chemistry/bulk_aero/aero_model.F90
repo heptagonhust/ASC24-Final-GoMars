@@ -39,21 +39,21 @@ module aero_model
   integer :: soa_ndx, soai_ndx, soam_ndx, soab_ndx, soat_ndx, soax_ndx
 
   ! Namelist variables
-  character(len=16) :: wetdep_list(pcnst) = ' '
-  character(len=16) :: drydep_list(pcnst) = ' '
+  character(len=16) :: wetdep_list(PCNST) = ' '
+  character(len=16) :: drydep_list(PCNST) = ' '
 
   integer :: ndrydep = 0
   integer, allocatable :: drydep_indices(:)
   integer :: nwetdep = 0
-  integer,allocatable :: wetdep_indices(:)
-  logical :: drydep_lq(pcnst)
-  logical :: wetdep_lq(pcnst)
+  integer, allocatable :: wetdep_indices(:)
+  logical :: drydep_lq(PCNST)
+  logical :: wetdep_lq(PCNST)
 
   integer :: fracis_idx = 0
 
-  real(r8) :: aer_sol_facti(pcnst) ! in-cloud solubility factor
-  real(r8) :: aer_sol_factb(pcnst) ! below-cloud solubility factor
-  real(r8) :: aer_scav_coef(pcnst)
+  real(r8) aer_sol_facti(PCNST) ! in-cloud solubility factor
+  real(r8) aer_sol_factb(PCNST) ! below-cloud solubility factor
+  real(r8) aer_scav_coef(PCNST)
 
 contains
 
@@ -73,8 +73,8 @@ contains
     character(len=*), parameter :: subname = 'aero_model_readnl'
 
     ! Namelist variables
-    character(len=16) :: aer_wetdep_list(pcnst) = ' '
-    character(len=16) :: aer_drydep_list(pcnst) = ' '
+    character(len=16) :: aer_wetdep_list(PCNST) = ' '
+    character(len=16) :: aer_drydep_list(PCNST) = ' '
 
     namelist /aerosol_nl/ aer_wetdep_list, aer_drydep_list
     namelist /aerosol_nl/ aer_sol_facti, aer_sol_factb, aer_scav_coef

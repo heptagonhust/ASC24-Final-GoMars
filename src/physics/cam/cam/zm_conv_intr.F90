@@ -829,8 +829,8 @@ subroutine zm_conv_tend(pblh    ,mcon    ,cme     , &
    call cnst_get_ind('CLDLIQ', ixcldliq)
    call cnst_get_ind('CLDICE', ixcldice)
 
-   lq(:)  = .FALSE.
-   lq(2:) = cnst_is_convtran1(2:)
+   lq(:)  = .false.
+   lq(2:pcnst) = cnst_is_convtran1(2:pcnst)
    call physics_ptend_init(ptend_loc, state1%psetcols, 'convtran1', lq=lq)
 
 

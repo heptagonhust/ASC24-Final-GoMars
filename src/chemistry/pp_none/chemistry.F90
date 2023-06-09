@@ -76,9 +76,11 @@ contains
 
   subroutine chem_readnl(nlfile)
 
+    use aero_model, only: aero_model_readnl
 
     character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
 
+    call aero_model_readnl(nlfile)
 
   end subroutine chem_readnl
 

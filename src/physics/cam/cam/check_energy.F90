@@ -68,9 +68,9 @@ module check_energy
   integer  :: dtcore_idx = 0       ! dtcore index in physics buffer
 
   type check_tracers_data
-     real(r8) :: tracer(pcols,pcnst)       ! initial vertically integrated total (kinetic + static) energy
-     real(r8) :: tracer_tnd(pcols,pcnst)   ! cumulative boundary flux of total energy
-     integer :: count(pcnst)               ! count of values with significant imbalances
+     real(r8) :: tracer(pcols,PCNST)       ! initial vertically integrated total (kinetic + static) energy
+     real(r8) :: tracer_tnd(pcols,PCNST)   ! cumulative boundary flux of total energy
+     integer :: count(PCNST)               ! count of values with significant imbalances
   end type check_tracers_data
 
 

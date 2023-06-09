@@ -109,7 +109,7 @@ integer              :: kvt_idx                      ! Index for kinematic molec
 integer              :: turbtype_idx, smaw_idx       ! Turbulence type and instability functions
 integer              :: tauresx_idx, tauresy_idx     ! Redisual stress for implicit surface stress
 
-character(len=fieldname_len) :: vdiffnam(pcnst)      ! Names of vertical diffusion tendencies
+character(fieldname_len) :: vdiffnam(PCNST)          ! Names of vertical diffusion tendencies
 integer              :: ixcldice, ixcldliq           ! Constituent indices for cloud liquid and ice water
 integer              :: ixnumice, ixnumliq
 

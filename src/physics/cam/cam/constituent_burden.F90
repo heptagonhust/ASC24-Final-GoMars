@@ -17,7 +17,7 @@ module constituent_burden
 
   private
 
-  character(len=18) :: burdennam(pcnst)     ! name of burden history variables
+  character(18) burdennam(PCNST) ! name of burden history variables
 
   save
 

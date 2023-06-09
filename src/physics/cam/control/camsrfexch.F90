@@ -44,7 +44,7 @@ module camsrfexch
      real(r8) :: topo(pcols)         ! surface topographic height (m)
      real(r8) :: ubot(pcols)         ! bot level u wind
      real(r8) :: vbot(pcols)         ! bot level v wind
-     real(r8) :: qbot(pcols,pcnst)   ! bot level specific humidity
+     real(r8) :: qbot(pcols,PCNST)   ! bot level specific humidity
      real(r8) :: pbot(pcols)         ! bot level pressure
      real(r8) :: rho(pcols)          ! bot level density
      real(r8) :: netsw(pcols)        !
@@ -108,7 +108,7 @@ module camsrfexch
      real(r8) :: landfrac(pcols)         ! land area fraction
      real(r8) :: icefrac(pcols)          ! sea-ice areal fraction
      real(r8) :: ocnfrac(pcols)          ! ocean areal fraction
-     real(r8) :: cflx(pcols,pcnst)       ! constituent flux (emissions)
+     real(r8) :: cflx(pcols,PCNST)       ! constituent flux (emissions)
      real(r8) :: ustar(pcols)            ! atm/ocn saved version of ustar
      real(r8) :: re(pcols)               ! atm/ocn saved version of re
      real(r8) :: ssq(pcols)              ! atm/ocn saved version of ssq

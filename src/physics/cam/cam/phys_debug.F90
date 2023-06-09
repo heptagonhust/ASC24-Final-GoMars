@@ -49,9 +49,9 @@ public :: &
 ! constituent indices
 integer :: ixcldliq, ixcldice, ixnumliq, ixnumice
 ! logical array to identify constituents that are mode number concentrations
-logical :: cnst_is_mam_num(pcnst)
+logical :: cnst_is_mam_num(PCNST)
 ! logical array to identify constituents that are mode specie mass mixing ratios
-logical :: cnst_is_mam_mmr(pcnst)
+logical :: cnst_is_mam_mmr(PCNST)
 
 
 !===================================================================================================
