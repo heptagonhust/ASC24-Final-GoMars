@@ -38,6 +38,7 @@ module cam_physics_driver_mod
   use tracer_mod      , only: tracer_add, tracer_get_array, tracer_get_array_qm, tracers
   use block_mod       , only: block_type, global_mesh
   use albedo_mod      , only: albedo_ocnice
+  use filter_mod      , only: filter_on_cell
   use latlon_parallel_mod
   use aquaplanet_test_mod
 
@@ -392,6 +393,22 @@ contains
           end if
         end do
       end do
+      ! ------------------------------------------------------------------------
+      call fill_halo(block%filter_halo, dtend%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, dtend%dudt_phys)
+      call fill_halo(block%filter_halo, dtend%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, dtend%dvdt_phys)
+      call fill_halo(block%filter_halo, dtend%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, dtend%dtdt_phys)
+      do m = 1, pcnst
+        call fill_halo(block%filter_halo, dtend%dqdt_phys(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
+                       south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dtend%dqdt_phys(:,:,:,m))
+      end do
+      ! ------------------------------------------------------------------------
       call fill_halo(block%filter_halo, dtend%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
                     west_halo=.false., south_halo=.false., north_halo=.false.)
       call fill_halo(block%filter_halo, dtend%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
