@@ -1,6 +1,7 @@
 module block_mod
 
   use mpi
+  use container
   use flogger
   use namelist_mod
   use latlon_mesh_mod, mesh_type => latlon_mesh_type
@@ -10,6 +11,7 @@ module block_mod
   use adv_batch_mod
   use filter_types_mod
   use allocator_mod
+  use accum_mod
 
   implicit none
 
@@ -25,6 +27,7 @@ module block_mod
   public pstate_type
   public dtend_type
   public ptend_type
+  public accum_type
 
   type block_type
     integer id
@@ -42,10 +45,12 @@ module block_mod
     type(filter_type) small_filter
     type(halo_type), allocatable :: filter_halo(:)
     type(halo_type), allocatable :: halo(:)
+    type(array_type) accum_list
   contains
     procedure :: init_stage_1 => block_init_stage_1
     procedure :: init_stage_2 => block_init_stage_2
     procedure :: clear => block_clear
+    procedure :: accum => block_accum
     final :: block_final
   end type block_type
 
@@ -62,12 +67,23 @@ contains
     integer, intent(in) :: jds
     integer, intent(in) :: jde
 
+    type(accum_type) accum
+    integer cell_dims(3)
+
     this%id = id
 
     call this%filter_mesh%init_from_parent(global_mesh, this%id, ids, ide, jds, jde)
     call this%mesh%init_from_parent(global_mesh, this%id, ids, ide, jds, jde)
     call this%big_filter%init(this%filter_mesh, 'big_filter')
     call this%small_filter%init(this%filter_mesh, 'small_filter')
+
+    ! cell_dims = [this%mesh%full_nlon,this%mesh%full_nlat,this%mesh%full_nlev]
+    ! call accum%init('daily_avg_t', 'K', 'Daily averaged temperature', freq_daily, stat_avg, cell_dims)
+    ! call this%accum_list%append(accum)
+    ! call accum%init('daily_max_t', 'K', 'Daily maximum temperature' , freq_daily, stat_max, cell_dims)
+    ! call this%accum_list%append(accum)
+    ! call accum%init('daily_min_t', 'K', 'Daily minimum temperature' , freq_daily, stat_min, cell_dims)
+    ! call this%accum_list%append(accum)
 
   end subroutine block_init_stage_1
 
@@ -148,7 +164,29 @@ contains
     if (allocated(this%adv_batches)) deallocate(this%adv_batches)
     if (allocated(this%halo)) deallocate(this%halo)
 
+    call this%accum_list%clear()
+
   end subroutine block_clear
+
+  subroutine block_accum(this, itime)
+
+    class(block_type), intent(inout) :: this
+    integer, intent(in) :: itime
+
+    integer i, is, ie, js, je, ks, ke
+
+    is = this%mesh%full_ids; ie = this%mesh%full_ide
+    js = this%mesh%full_jds; je = this%mesh%full_jde
+    ks = this%mesh%full_kds; ke = this%mesh%full_kde
+
+    do i = 1, this%accum_list%size
+      select type (accum => this%accum_list%value_at(i))
+      type is (accum_type)
+        call accum%run(this%dstate(itime)%t(is:ie,js:je,ks:ke))
+      end select
+    end do
+
+  end subroutine block_accum
 
   subroutine block_final(this)
 

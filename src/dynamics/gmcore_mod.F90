@@ -205,6 +205,7 @@ contains
       ! ------------------------------------------------------------------------
       call diagnose(blocks, old)
       if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+      call blocks(1)%accum(old)
       call output(old)
     end do model_main_loop
 

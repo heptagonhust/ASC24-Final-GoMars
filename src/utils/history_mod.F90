@@ -274,6 +274,13 @@ contains
       end do
     end select
 
+    do k = 1, blocks(1)%accum_list%size
+      select type (accum => blocks(1)%accum_list%value_at(k))
+      type is (accum_type)
+        call fiona_add_var('h0', accum%name, accum%units, accum%long_name, dim_names=cell_dims_3d, dtype=output_h0_dtype)
+      end select
+    end do
+
   end subroutine history_setup_h0_hydrostatic
 
   subroutine history_setup_h0_nonhydrostatic()
@@ -488,7 +495,8 @@ contains
                  static      => blocks(iblk)%static       , &
                  adv_batches => blocks(iblk)%adv_batches  , &
                  aux         => blocks(iblk)%aux          , &
-                 pstate      => blocks(iblk)%pstate       )
+                 pstate      => blocks(iblk)%pstate       , &
+                 accum_list  => blocks(iblk)%accum_list   )
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -564,6 +572,18 @@ contains
             diag_state(iblk)%t(is:ie,js:je,k), start=start, count=count)
         end do
       end select
+
+      is = mesh%full_ids; ie = mesh%full_ide
+      js = mesh%full_jds; je = mesh%full_jde
+      ks = mesh%full_kds; ke = mesh%full_kde
+      start = [is,js,ks]
+      count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
+      do k = 1, accum_list%size
+        select type (accum => accum_list%value_at(k))
+        type is (accum_type)
+          call fiona_output('h0', accum%name, accum%array(:,:,:,1), start=start, count=count)
+        end select
+      end do
       end associate
     end do
 
