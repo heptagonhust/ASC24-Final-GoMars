@@ -28,26 +28,48 @@ if (ENSURE_ORDER)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -fno-range-check -fallow-argument-mismatch -fallow-invalid-boz")
+  if (CMAKE_Fortran_COMPILER_VERSION STREQUAL 13.1.0)
+    message(FATAL_ERROR "GCC 13.1.0 is not supported! Use previous versions > 7.0!")
+  endif ()
+  list(APPEND fortran_flags
+    -ffree-line-length-none
+    -fno-range-check
+    -fallow-argument-mismatch
+    -fallow-invalid-boz
+  )
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0 -fcheck=all -g -fbacktrace")
+    list(APPEND fortran_flags -O0 -fcheck=all -g -fbacktrace)
   else ()
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Ofast")
+    list(APPEND fortran_flags -Ofast)
   endif ()
   # FIXME: OpenMP causes sigmentation faults.
-  # set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
+  # list(APPEND fortran_flags -fopenmp)
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O0 -check bounds -g -traceback -fp-model precise -qopenmp")
+    list(APPEND fortran_flags
+      -no-wrap-margin
+      -O0
+      -check bounds
+      -g
+      -traceback
+      -fp-model precise
+    )
   else ()
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte -qopenmp") # Add -fp-model precise when checking serial-parallel and restart consistencies.
+    list(APPEND fortran_flags
+      -no-wrap-margin
+      -O3
+      -align array64byte
+      # -fp-model precise
+    )
   endif ()
   if (CMAKE_Fortran_COMPILER_VERSION GREATER 2021.0)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl=sequential")
+    list(APPEND fortran_flags -qmkl=sequential)
   else ()
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl=sequential")
+    list(APPEND fortran_flags -mkl=sequential)
   endif ()
+  list(APPEND fortran_flags -qopenmp)
 endif ()
+string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 
 find_package(MPI)
 
