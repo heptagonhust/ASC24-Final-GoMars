@@ -174,15 +174,18 @@ contains
     integer, intent(in) :: itime
 
     integer i, is, ie, js, je, ks, ke
+    class(*), pointer :: accum
 
     is = this%mesh%full_ids; ie = this%mesh%full_ide
     js = this%mesh%full_jds; je = this%mesh%full_jde
     ks = this%mesh%full_kds; ke = this%mesh%full_kde
 
     do i = 1, this%accum_list%size
-      select type (accum => this%accum_list%value_at(i))
+      accum => this%accum_list%value_at(i)
+      select type (accum)
       type is (accum_type)
-        call accum%run(this%dstate(itime)%t(is:ie,js:je,ks:ke))
+        print *, accum%name, accum%freq, accum%stat
+        call accum%accum_run_3d(this%dstate(itime)%t(is:ie,js:je,ks:ke))
       end select
     end do
 
