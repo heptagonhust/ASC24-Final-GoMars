@@ -124,7 +124,7 @@ CONTAINS
     type(block_type), intent(inout), target :: block
 
     integer i, j, k
-    real(r8), pointer :: qv(:,:,:)
+    real(r8), pointer :: qv(:,:,:), qm(:,:,:)
     real(r8) rho, thetav
 
     associate (mesh  => block%mesh,            &
@@ -143,6 +143,7 @@ CONTAINS
                mgs   => block%dstate(1)%mgs  , &
                gzs   => block%static%gzs     )
     call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
+    call tracer_get_array_qm(block%id, qm)
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         ! Get surface pressure.
@@ -153,19 +154,20 @@ CONTAINS
           p(i,j,k) = vert_coord_calc_mg(k, ps(i,j), block%static%ref_ps_perb(i,j))
           call tropical_cyclone_test(real(lon(i), r8), real(lat(j), r8), p(i,j,k), z(i,j,k), 0, &
             u(i,j,k), v(i,j,k), t(i,j,k), thetav, gzs(i,j), ps(i,j), rho, qv(i,j,k))
-          qv(i,j,k) = dry_mixing_ratio(qv(i,j,k), qv(i,j,k))
+          qm(i,j,k) = qv(i,j,k)
+          qv(i,j,k) = dry_mixing_ratio(qv(i,j,k), qm(i,j,k))
           pt(i,j,k) = modified_potential_temperature(t(i,j,k), p(i,j,k), qv(i,j,k))
           gz(i,j,k) = g * z(i,j,k)
         end do
       end do
     end do
-    call fill_halo(block%halo,  ps, full_lon=.true. , full_lat=.true.)
-    call fill_halo(block%halo,   u, full_lon=.false., full_lat=.true. , full_lev=.true.)
-    call fill_halo(block%halo,   v, full_lon=.true. , full_lat=.false., full_lev=.true.)
-    call fill_halo(block%halo,   t, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block%halo,  gz, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block%filter_halo, qv, full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    call fill_halo(block%filter_halo, pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block%halo,        ps, full_lon=.true., full_lat=.true.)
+    call fill_halo(block%halo,         u, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo,         v, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo,         t, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo,        gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%half_ids, mesh%half_ide
@@ -200,18 +202,18 @@ CONTAINS
     !   Input / output parameters
     !------------------------------------------------
 
-    REAL(r8), INTENT(IN) ::     &
+    REAL(r8), INTENT(IN) ::    &
               lon,             &     ! Longitude (radians)
               lat                    ! Latitude (radians)
 
-    REAL(r8), INTENT(INOUT) ::  &
+    REAL(r8), INTENT(INOUT) :: &
               p,               &     ! Pressure (Pa)
               z                      ! Height (m)
 
-    INTEGER, INTENT(IN) :: zcoords     ! 1 if z coordinates are specified
+    INTEGER, INTENT(IN) :: zcoords   ! 1 if z coordinates are specified
                                      ! 0 if p coordinates are specified
 
-    REAL(r8), INTENT(OUT) ::    &
+    REAL(r8), INTENT(OUT) ::   &
               u,               &     ! Zonal wind (m s^-1)
               v,               &     ! Meridional wind (m s^-1)
               t,               &     ! Temperature (K)

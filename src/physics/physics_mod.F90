@@ -36,13 +36,17 @@ contains
     call time_add_alert('phys', seconds=dt_phys)
 
     select case (physics_suite)
-#ifdef HAS_CCPP
     case ('ccpp')
+#ifdef HAS_CCPP
       call ccpp_driver_init(namelist_path)
+#else
+      if (proc%is_root()) call log_error('CCPP physics is not compiled!')
 #endif
-#ifdef HAS_CAM
     case ('cam')
+#ifdef HAS_CAM
       call cam_physics_driver_init(namelist_path)
+#else
+      if (proc%is_root()) call log_error('CAM physics is not compiled!')
 #endif
     end select
 
@@ -69,7 +73,7 @@ contains
         pstate%ncol           , &
         pstate%nlev           , &
         dt                    , &
-        pstate%lat            , &
+        pstate%lat * rad      , &
         pstate%t              , &
         pstate%qv             , &
         pstate%u              , &
@@ -142,17 +146,25 @@ contains
     call tracer_get_array(block%id, q)
     call tracer_get_array_qm(block%id, qm)
     do m = 1, ntracers
-      ! FIXME: Handle dry mass mixing ratio.
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            q(i,j,k,m) = dry_mixing_ratio(wet_mixing_ratio(q(i,j,k,m), qm(i,j,k)) + dt * dtend%dqdt_phys(i,j,k,m), qm(i,j,k))
+            q(i,j,k,m) = wet_mixing_ratio(q(i,j,k,m), qm(i,j,k)) + dt * dtend%dqdt_phys(i,j,k,m)
+          end do
+        end do
+      end do
+    end do
+    call tracer_calc_qm(block)
+    do m = 1, ntracers
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            q(i,j,k,m) = dry_mixing_ratio(q(i,j,k,m), qm(i,j,k))
           end do
         end do
       end do
       call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true. , full_lat=.true. , full_lev=.true.)
     end do
-    call tracer_calc_qm(block)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde

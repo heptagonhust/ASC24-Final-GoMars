@@ -12,6 +12,7 @@ module latlon_parallel_mod
 
   private
 
+  public proc
   public fill_halo
   public zonal_sum
   public zonal_max

@@ -17,8 +17,8 @@ module physics_types_mod
     integer :: nlev = 0
     integer , allocatable, dimension(:    ) :: i
     integer , allocatable, dimension(:    ) :: j
-    real(r8), allocatable, dimension(:    ) :: lon
-    real(r8), allocatable, dimension(:    ) :: lat
+    real(r8), allocatable, dimension(:    ) :: lon      ! Cell center longitude (deg)
+    real(r8), allocatable, dimension(:    ) :: lat      ! Cell center latitude (deg)
     real(r8), allocatable, dimension(:    ) :: area     ! Cell area (m2)
     ! Wind
     real(r8), allocatable, dimension(:,:  ) :: u        ! U-wind speed (m s-1)
