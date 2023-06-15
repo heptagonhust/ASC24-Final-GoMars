@@ -86,11 +86,6 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
     real(r8), allocatable, dimension(:,:  ) :: dmgs
-    ! Tendencies from physics
-    real(r8), allocatable, dimension(:,:,:  ) :: dudt_phys
-    real(r8), allocatable, dimension(:,:,:  ) :: dvdt_phys
-    real(r8), allocatable, dimension(:,:,:  ) :: dtdt_phys
-    real(r8), allocatable, dimension(:,:,:,:) :: dqdt_phys
     logical :: update_u   = .false.
     logical :: update_v   = .false.
     logical :: update_gz  = .false.
@@ -104,7 +99,6 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: adv_w
   contains
     procedure :: init         => dtend_init
-    procedure :: init_phys    => dtend_init_phys
     procedure :: reset_flags  => dtend_reset_flags
     procedure :: clear        => dtend_clear
     generic :: operator(+)    => dtend_add
@@ -141,6 +135,8 @@ module dynamics_types_mod
   end type static_type
 
   type aux_array_type
+    type(latlon_mesh_type), pointer :: filter_mesh => null()
+    type(latlon_mesh_type), pointer :: mesh => null()
     ! Smagorinsky damping variables
     real(r8), allocatable, dimension(:,:,:) :: smag_t            ! tension strain
     real(r8), allocatable, dimension(:,:,:) :: smag_s            ! shear strain on vertex
@@ -169,9 +165,15 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: dmf
     real(r8), allocatable, dimension(:,:,:) :: omg               ! Vertical pressure velocity (Pa s-1)
+    ! Tendencies from physics
+    real(r8), allocatable, dimension(:,:,:  ) :: dudt_phys
+    real(r8), allocatable, dimension(:,:,:  ) :: dvdt_phys
+    real(r8), allocatable, dimension(:,:,:  ) :: dtdt_phys
+    real(r8), allocatable, dimension(:,:,:,:) :: dqdt_phys
   contains
-    procedure :: init  => aux_array_init
-    procedure :: clear => aux_array_clear
+    procedure :: init      => aux_array_init
+    procedure :: init_phys => aux_array_init_phys
+    procedure :: clear     => aux_array_clear
     final :: aux_array_final
   end type aux_array_type
 
@@ -437,19 +439,6 @@ contains
 
   end subroutine dtend_init
 
-  subroutine dtend_init_phys(this)
-
-    class(dtend_type), intent(inout) :: this
-
-    if (trim(physics_suite) /= '') then
-      call allocate_array(this%filter_mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%filter_mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%filter_mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%filter_mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
-    end if
-
-  end subroutine dtend_init_phys
-
   subroutine dtend_reset_flags(this)
 
     class(dtend_type), intent(inout) :: this
@@ -480,11 +469,6 @@ contains
 
     if (allocated(this%adv_gz  )) deallocate(this%adv_gz  )
     if (allocated(this%adv_w   )) deallocate(this%adv_w   )
-
-    if (allocated(this%dudt_phys)) deallocate(this%dudt_phys)
-    if (allocated(this%dvdt_phys)) deallocate(this%dvdt_phys)
-    if (allocated(this%dtdt_phys)) deallocate(this%dtdt_phys)
-    if (allocated(this%dqdt_phys)) deallocate(this%dqdt_phys)
 
   end subroutine dtend_clear
 
@@ -774,8 +758,11 @@ contains
   subroutine aux_array_init(this, filter_mesh, mesh)
 
     class(aux_array_type), intent(inout) :: this
-    type(latlon_mesh_type), intent(in) :: filter_mesh
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(latlon_mesh_type), intent(in), target :: filter_mesh
+    type(latlon_mesh_type), intent(in), target :: mesh
+
+    this%filter_mesh => filter_mesh
+    this%mesh => mesh
 
     if (use_smag_damp) then
       call allocate_array(mesh, this%smag_t       , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -811,6 +798,19 @@ contains
 
   end subroutine aux_array_init
 
+  subroutine aux_array_init_phys(this)
+
+    class(aux_array_type), intent(inout) :: this
+
+    if (trim(physics_suite) /= '') then
+      call allocate_array(this%filter_mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%filter_mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%filter_mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%filter_mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
+    end if
+
+  end subroutine aux_array_init_phys
+
   subroutine aux_array_clear(this)
 
     class(aux_array_type), intent(inout) :: this
@@ -842,6 +842,10 @@ contains
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%dmf              )) deallocate(this%dmf              )
     if (allocated(this%omg              )) deallocate(this%omg              )
+    if (allocated(this%dudt_phys        )) deallocate(this%dudt_phys        )
+    if (allocated(this%dvdt_phys        )) deallocate(this%dvdt_phys        )
+    if (allocated(this%dtdt_phys        )) deallocate(this%dtdt_phys        )
+    if (allocated(this%dqdt_phys        )) deallocate(this%dqdt_phys        )
 
   end subroutine aux_array_clear
 

@@ -128,25 +128,24 @@ contains
 
   end subroutine dp_coupling_d2p
 
-  subroutine dp_coupling_p2d(block, itime)
+  subroutine dp_coupling_p2d(block)
 
     type(block_type), intent(inout) :: block
-    integer, intent(in) :: itime
 
     integer i, j, k, icol, m
 
     select case (physics_suite)
 #ifdef HAS_CAM
     case ('cam')
-      call cam_physics_p2d(block, itime)
+      call cam_physics_p2d(block)
 #endif
     case default
-      associate (mesh  => block%mesh                   , &
-                 ptend => block%ptend                  , & ! in
-                 dudt  => block%dtend(itime)%dudt_phys , & ! out
-                 dvdt  => block%dtend(itime)%dvdt_phys , & ! out
-                 dtdt  => block%dtend(itime)%dtdt_phys , & ! out
-                 dqdt  => block%dtend(itime)%dqdt_phys)    ! out
+      associate (mesh  => block%mesh          , &
+                 ptend => block%ptend         , & ! in
+                 dudt  => block%aux%dudt_phys , & ! out
+                 dvdt  => block%aux%dvdt_phys , & ! out
+                 dtdt  => block%aux%dtdt_phys , & ! out
+                 dqdt  => block%aux%dqdt_phys)    ! out
       if (ptend%updated_u .and. ptend%updated_v) then
         do k = mesh%full_kds, mesh%full_kde
           icol = 0
@@ -186,26 +185,26 @@ contains
       end associate
     end select
 
-    associate (dtend => block%dtend(itime))
+    associate (aux => block%aux)
     ! ------------------------------------------------------------------------
-    call fill_halo(block%filter_halo, dtend%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                   south_halo=.false., north_halo=.false.)
-    call filter_on_cell(block%big_filter, dtend%dudt_phys)
-    call fill_halo(block%filter_halo, dtend%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                   south_halo=.false., north_halo=.false.)
-    call filter_on_cell(block%big_filter, dtend%dvdt_phys)
-    call fill_halo(block%filter_halo, dtend%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                   south_halo=.false., north_halo=.false.)
-    call filter_on_cell(block%big_filter, dtend%dtdt_phys)
-    do m = 1, ntracers
-      call fill_halo(block%filter_halo, dtend%dqdt_phys(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%big_filter, dtend%dqdt_phys(:,:,:,m))
-    end do
+    ! call fill_halo(block%filter_halo, aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+    !                south_halo=.false., north_halo=.false.)
+    ! call filter_on_cell(block%big_filter, aux%dudt_phys)
+    ! call fill_halo(block%filter_halo, aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+    !                south_halo=.false., north_halo=.false.)
+    ! call filter_on_cell(block%big_filter, aux%dvdt_phys)
+    ! call fill_halo(block%filter_halo, aux%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+    !                south_halo=.false., north_halo=.false.)
+    ! call filter_on_cell(block%big_filter, aux%dtdt_phys)
+    ! do m = 1, ntracers
+    !   call fill_halo(block%filter_halo, aux%dqdt_phys(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
+    !                  south_halo=.false., north_halo=.false.)
+    !   call filter_on_cell(block%big_filter, aux%dqdt_phys(:,:,:,m))
+    ! end do
     ! ------------------------------------------------------------------------
-    call fill_halo(block%filter_halo, dtend%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+    call fill_halo(block%filter_halo, aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
                    west_halo=.false., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%filter_halo, dtend%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+    call fill_halo(block%filter_halo, aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
                    west_halo=.false.,  east_halo=.false., south_halo=.false.)
     end associate
 

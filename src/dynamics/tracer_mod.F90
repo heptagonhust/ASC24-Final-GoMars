@@ -184,12 +184,8 @@ contains
       ! Allocate tracer arrays in physics state and tendency.
       call blocks(iblk)%pstate%init(blocks(iblk)%mesh)
       call blocks(iblk)%ptend%init(blocks(iblk)%mesh)
-      ! Allocate tendency arrays in dynamics tendency.
-      if (allocated(blocks(iblk)%dtend)) then
-        do i = 1, size(blocks(iblk)%dtend)
-          call blocks(iblk)%dtend(i)%init_phys()
-        end do
-      end if
+      ! Allocate physics tendency arrays for dynamics.
+      call blocks(iblk)%aux%init_phys()
     end do
 
   end subroutine tracer_allocate

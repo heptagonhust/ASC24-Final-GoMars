@@ -350,10 +350,9 @@ contains
 
   end subroutine cam_physics_d2p
 
-  subroutine cam_physics_p2d(block, itime)
+  subroutine cam_physics_p2d(block)
 
     type(block_type), intent(inout) :: block
-    integer, intent(in) :: itime
 
     integer ncol, c, i, j, k, m
     integer ilon(pcols), jlat(pcols)
@@ -363,7 +362,7 @@ contains
 
     call tracer_get_array(block%id, q)
     call tracer_get_array_qm(block%id, qm)
-    associate (mesh => block%mesh, dstate => block%dstate(itime), dtend => block%dtend(itime), ptend => block%ptend)
+    associate (mesh => block%mesh, ptend => block%ptend, aux => block%aux)
     if (local_dp_map) then
       do c = begchunk, endchunk
         ncol = phys_state(c)%ncol
@@ -371,22 +370,22 @@ contains
         call get_lat_all_p(c, ncol, jlat)
         do k = 1, pver
           do i = 1, ncol
-            dtend%dudt_phys(ilon(i),jlat(i),k) = phys_tend(c)%dudt(i,k)
-            dtend%dvdt_phys(ilon(i),jlat(i),k) = phys_tend(c)%dvdt(i,k)
-            dtend%dtdt_phys(ilon(i),jlat(i),k) = phys_tend(c)%dtdt(i,k)
+            aux%dudt_phys(ilon(i),jlat(i),k) = phys_tend(c)%dudt(i,k)
+            aux%dvdt_phys(ilon(i),jlat(i),k) = phys_tend(c)%dvdt(i,k)
+            aux%dtdt_phys(ilon(i),jlat(i),k) = phys_tend(c)%dtdt(i,k)
           end do
         end do
         do m = 1, pcnst
           if (wetq(m)) then
             do k = 1, pver
               do i = 1, ncol
-                dtend%dqdt_phys(ilon(i),jlat(i),k,m) = (phys_state(c)%q(i,k,m) - wet_mixing_ratio(q(ilon(i),jlat(i),k,m), qm(ilon(i),jlat(i),k))) / dt_phys
+                aux%dqdt_phys(ilon(i),jlat(i),k,m) = (phys_state(c)%q(i,k,m) - wet_mixing_ratio(q(ilon(i),jlat(i),k,m), qm(ilon(i),jlat(i),k))) / dt_phys
               end do
             end do
           else
             do k = 1, pver
               do i = 1, ncol
-                dtend%dqdt_phys(ilon(i),jlat(i),k,m) = (phys_state(c)%q(i,k,m) - q(ilon(i),jlat(i),k,m)) / dt_phys
+                aux%dqdt_phys(ilon(i),jlat(i),k,m) = (phys_state(c)%q(i,k,m) - q(ilon(i),jlat(i),k,m)) / dt_phys
               end do
             end do
           end if
@@ -396,27 +395,27 @@ contains
         j = mesh%full_jds
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = dtend%dtdt_phys(i,j,k)
+            work(i,k) = aux%dtdt_phys(i,j,k)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%full_ids, mesh%full_ide
-            dtend%dtdt_phys(i,j,k) = pole(k)
+            aux%dtdt_phys(i,j,k) = pole(k)
           end do
         end do
         do m = 1, pcnst
           do k = mesh%full_kds, mesh%full_kde
             do i = mesh%full_ids, mesh%full_ide
-              work(i,k) = dtend%dqdt_phys(i,j,k,m)
+              work(i,k) = aux%dqdt_phys(i,j,k,m)
             end do
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
           pole = pole / global_mesh%full_nlon
           do k = mesh%full_kds, mesh%full_kde
             do i = mesh%full_ids, mesh%full_ide
-              dtend%dqdt_phys(i,j,k,m) = pole(k)
+              aux%dqdt_phys(i,j,k,m) = pole(k)
             end do
           end do
         end do
@@ -425,27 +424,27 @@ contains
         j = mesh%full_jde
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = dtend%dtdt_phys(i,j,k)
+            work(i,k) = aux%dtdt_phys(i,j,k)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%full_ids, mesh%full_ide
-            dtend%dtdt_phys(i,j,k) = pole(k)
+            aux%dtdt_phys(i,j,k) = pole(k)
           end do
         end do
         do m = 1, pcnst
           do k = mesh%full_kds, mesh%full_kde
             do i = mesh%full_ids, mesh%full_ide
-              work(i,k) = dtend%dqdt_phys(i,j,k,m)
+              work(i,k) = aux%dqdt_phys(i,j,k,m)
             end do
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
           pole = pole / global_mesh%full_nlon
           do k = mesh%full_kds, mesh%full_kde
             do i = mesh%full_ids, mesh%full_ide
-              dtend%dqdt_phys(i,j,k,m) = pole(k)
+              aux%dqdt_phys(i,j,k,m) = pole(k)
             end do
           end do
         end do

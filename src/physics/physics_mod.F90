@@ -108,7 +108,7 @@ contains
 #endif
     end select
 
-    call dp_coupling_p2d(block, itime)
+    call dp_coupling_p2d(block)
     end associate
 
   end subroutine physics_run
@@ -123,58 +123,70 @@ contains
     integer i, j, k, m
 
     associate (mesh   => block%mesh         , &
-               dstate => block%dstate(itime), &
-               dtend   => block%dtend(itime))
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          dstate%u_lon(i,j,k) = dstate%u_lon(i,j,k) + dt * 0.5_r8 * (dtend%dudt_phys(i,j,k) + dtend%dudt_phys(i+1,j,k))
+               ptend  => block%ptend        , &
+               aux    => block%aux          , &
+               dstate => block%dstate(itime))
+    if (ptend%updated_u) then
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
+            dstate%u_lon(i,j,k) = dstate%u_lon(i,j,k) + dt * 0.5_r8 * (aux%dudt_phys(i,j,k) + aux%dudt_phys(i+1,j,k))
+          end do
         end do
       end do
-    end do
-    call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          dstate%v_lat(i,j,k) = dstate%v_lat(i,j,k) + dt * 0.5_r8 * (dtend%dvdt_phys(i,j,k) + dtend%dvdt_phys(i,j+1,k))
+      call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
+    end if
+    if (ptend%updated_v) then
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
+            dstate%v_lat(i,j,k) = dstate%v_lat(i,j,k) + dt * 0.5_r8 * (aux%dvdt_phys(i,j,k) + aux%dvdt_phys(i,j+1,k))
+          end do
         end do
       end do
-    end do
-    call fill_halo(block%halo, dstate%v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
+      call fill_halo(block%halo, dstate%v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
+    end if
 
     ! Update tracers.
     call tracer_get_array(block%id, q)
     call tracer_get_array_qm(block%id, qm)
     do m = 1, ntracers
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            q(i,j,k,m) = wet_mixing_ratio(q(i,j,k,m), qm(i,j,k)) + dt * dtend%dqdt_phys(i,j,k,m)
+      if (ptend%updated_q(m)) then
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              q(i,j,k,m) = wet_mixing_ratio(q(i,j,k,m), qm(i,j,k)) + dt * aux%dqdt_phys(i,j,k,m)
+            end do
           end do
         end do
-      end do
+      end if
     end do
     call tracer_calc_qm(block)
     do m = 1, ntracers
+      if (ptend%updated_q(m)) then
+        ! FIXME: When q is not updated, we should only update its value with new qm.
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              q(i,j,k,m) = dry_mixing_ratio(q(i,j,k,m), qm(i,j,k))
+            end do
+          end do
+        end do
+        call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      end if
+    end do
+
+    if (ptend%updated_t) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            q(i,j,k,m) = dry_mixing_ratio(q(i,j,k,m), qm(i,j,k))
+            dstate%t (i,j,k) = dstate%t(i,j,k) + dt * aux%dtdt_phys(i,j,k)
+            dstate%pt(i,j,k) = modified_potential_temperature(dstate%t(i,j,k), dstate%p(i,j,k), q(i,j,k,idx_qv))
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true. , full_lat=.true. , full_lev=.true.)
-    end do
-
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          dstate%t (i,j,k) = dstate%t(i,j,k) + dt * dtend%dtdt_phys(i,j,k)
-          dstate%pt(i,j,k) = modified_potential_temperature(dstate%t(i,j,k), dstate%p(i,j,k), q(i,j,k,idx_qv))
-        end do
-      end do
-    end do
-    call fill_halo(block%filter_halo, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block%filter_halo, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    end if
     end associate
 
   end subroutine physics_update_state
