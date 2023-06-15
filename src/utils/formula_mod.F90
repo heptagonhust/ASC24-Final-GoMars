@@ -34,7 +34,7 @@ contains
     real(r8), intent(in) :: qv  ! Specific humidity or wet mixing ratio of water vapor (kg kg-1)
     real(r8), intent(in) :: qm  ! Total dry mixing ratio of water vapor and its condensate (kg kg-1)
 
-    res = qv / (1 - qm)
+    res = qv * (1 + qm)
 
   end function dry_mixing_ratio
 
