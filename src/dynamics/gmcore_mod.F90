@@ -183,6 +183,7 @@ contains
       !                              Dynamical Core
       do iblk = 1, size(blocks)
         call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
+        call physics_update_state(blocks(iblk), new, dt_dyn)
         call damp_run(blocks(iblk), blocks(iblk)%dstate(new), blocks(iblk)%dtend(new), dt_dyn)
         call blocks(iblk)%dstate(new)%c2a()
       end do
@@ -199,7 +200,6 @@ contains
       if (baroclinic) then
         do iblk = 1, size(blocks)
           call physics_run(blocks(iblk), old, dt_phys)
-          call physics_update_state(blocks(iblk), old, dt_dyn)
         end do
       end if
       ! ------------------------------------------------------------------------

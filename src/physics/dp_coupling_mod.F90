@@ -187,20 +187,20 @@ contains
 
     associate (aux => block%aux)
     ! ------------------------------------------------------------------------
-    ! call fill_halo(block%filter_halo, aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-    !                south_halo=.false., north_halo=.false.)
-    ! call filter_on_cell(block%big_filter, aux%dudt_phys)
-    ! call fill_halo(block%filter_halo, aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-    !                south_halo=.false., north_halo=.false.)
-    ! call filter_on_cell(block%big_filter, aux%dvdt_phys)
-    ! call fill_halo(block%filter_halo, aux%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-    !                south_halo=.false., north_halo=.false.)
-    ! call filter_on_cell(block%big_filter, aux%dtdt_phys)
-    ! do m = 1, ntracers
-    !   call fill_halo(block%filter_halo, aux%dqdt_phys(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
-    !                  south_halo=.false., north_halo=.false.)
-    !   call filter_on_cell(block%big_filter, aux%dqdt_phys(:,:,:,m))
-    ! end do
+    call fill_halo(block%filter_halo, aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                   south_halo=.false., north_halo=.false.)
+    call filter_on_cell(block%big_filter, aux%dudt_phys)
+    call fill_halo(block%filter_halo, aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                   south_halo=.false., north_halo=.false.)
+    call filter_on_cell(block%big_filter, aux%dvdt_phys)
+    call fill_halo(block%filter_halo, aux%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                   south_halo=.false., north_halo=.false.)
+    call filter_on_cell(block%big_filter, aux%dtdt_phys)
+    do m = 1, ntracers
+      call fill_halo(block%filter_halo, aux%dqdt_phys(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, aux%dqdt_phys(:,:,:,m))
+    end do
     ! ------------------------------------------------------------------------
     call fill_halo(block%filter_halo, aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
                    west_halo=.false., south_halo=.false., north_halo=.false.)
