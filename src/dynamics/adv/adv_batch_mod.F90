@@ -6,7 +6,7 @@ module adv_batch_mod
   use latlon_mesh_mod
   use time_mod
   use allocator_mod
-  use latlon_parallel_zonal_mod
+  use latlon_parallel_mod
 
   implicit none
 

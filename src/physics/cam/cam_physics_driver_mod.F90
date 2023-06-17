@@ -392,61 +392,15 @@ contains
         end do
       end do
       if (mesh%has_south_pole()) then
-        j = mesh%full_jds
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = aux%dtdt_phys(i,j,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole / global_mesh%full_nlon
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            aux%dtdt_phys(i,j,k) = pole(k)
-          end do
-        end do
+        call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jds, aux%dtdt_phys)
         do m = 1, pcnst
-          do k = mesh%full_kds, mesh%full_kde
-            do i = mesh%full_ids, mesh%full_ide
-              work(i,k) = aux%dqdt_phys(i,j,k,m)
-            end do
-          end do
-          call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole / global_mesh%full_nlon
-          do k = mesh%full_kds, mesh%full_kde
-            do i = mesh%full_ids, mesh%full_ide
-              aux%dqdt_phys(i,j,k,m) = pole(k)
-            end do
-          end do
+          call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jds, aux%dqdt_phys(:,:,:,m))
         end do
       end if
       if (mesh%has_north_pole()) then
-        j = mesh%full_jde
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = aux%dtdt_phys(i,j,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole / global_mesh%full_nlon
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            aux%dtdt_phys(i,j,k) = pole(k)
-          end do
-        end do
+        call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jde, aux%dtdt_phys)
         do m = 1, pcnst
-          do k = mesh%full_kds, mesh%full_kde
-            do i = mesh%full_ids, mesh%full_ide
-              work(i,k) = aux%dqdt_phys(i,j,k,m)
-            end do
-          end do
-          call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole / global_mesh%full_nlon
-          do k = mesh%full_kds, mesh%full_kde
-            do i = mesh%full_ids, mesh%full_ide
-              aux%dqdt_phys(i,j,k,m) = pole(k)
-            end do
-          end do
+          call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jde, aux%dqdt_phys(:,:,:,m))
         end do
       end if
     else

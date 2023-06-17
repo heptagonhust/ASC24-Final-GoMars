@@ -5,7 +5,7 @@ module latlon_parallel_mod
   ! use const_mod
   use latlon_mesh_mod
   use latlon_halo_mod
-  use latlon_parallel_types_mod, only: proc
+  use latlon_parallel_types_mod
   use latlon_parallel_zonal_mod
 
   implicit none
@@ -16,6 +16,7 @@ module latlon_parallel_mod
   public fill_halo
   public zonal_sum
   public zonal_max
+  public zonal_avg
   public global_sum
   public global_max
 
