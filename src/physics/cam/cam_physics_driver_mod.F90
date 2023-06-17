@@ -357,12 +357,14 @@ contains
     integer ncol, c, i, j, k, m
     integer ilon(pcols), jlat(pcols)
     real(r8), pointer :: q(:,:,:,:), qm(:,:,:)
-    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
-    real(r8) pole(block%mesh%full_nlev)
 
     call tracer_get_array(block%id, q)
     call tracer_get_array_qm(block%id, qm)
     associate (mesh => block%mesh, ptend => block%ptend, aux => block%aux)
+    ptend%updated_u = .true.
+    ptend%updated_v = .true.
+    ptend%updated_t = .true.
+    ptend%updated_q = .true.
     if (local_dp_map) then
       do c = begchunk, endchunk
         ncol = phys_state(c)%ncol
@@ -392,15 +394,15 @@ contains
         end do
       end do
       if (mesh%has_south_pole()) then
-        call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jds, aux%dtdt_phys)
+        call zonal_avg(proc%zonal_circle, block%mesh, mesh%full_jds, aux%dtdt_phys)
         do m = 1, pcnst
-          call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jds, aux%dqdt_phys(:,:,:,m))
+          call zonal_avg(proc%zonal_circle, block%mesh, mesh%full_jds, aux%dqdt_phys(:,:,:,m))
         end do
       end if
       if (mesh%has_north_pole()) then
-        call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jde, aux%dtdt_phys)
+        call zonal_avg(proc%zonal_circle, block%mesh, mesh%full_jde, aux%dtdt_phys)
         do m = 1, pcnst
-          call zonal_avg(proc%zonal_circle, block%filter_mesh, mesh%full_jde, aux%dqdt_phys(:,:,:,m))
+          call zonal_avg(proc%zonal_circle, block%mesh, mesh%full_jde, aux%dqdt_phys(:,:,:,m))
         end do
       end if
     else

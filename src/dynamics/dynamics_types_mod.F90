@@ -803,10 +803,10 @@ contains
     class(aux_array_type), intent(inout) :: this
 
     if (trim(physics_suite) /= '') then
-      call allocate_array(this%filter_mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%filter_mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%filter_mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%filter_mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
+      call allocate_array(this%mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
     end if
 
   end subroutine aux_array_init_phys
