@@ -1,12 +1,14 @@
 module ocn_comp_mod
 
   use esmf
+  use comp_wrapper_mod
 
   implicit none
 
   private
 
   public ocn_comp_SetServices
+  public comp_type
 
 contains
 

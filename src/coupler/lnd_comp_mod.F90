@@ -1,18 +1,20 @@
 module lnd_comp_mod
 
   use esmf
+  use comp_wrapper_mod
 
   implicit none
 
   private
 
   public lnd_comp_SetServices
+  public comp_type
 
 contains
 
   subroutine lnd_comp_SetServices(comp, rc)
 
-    type(ESMF_GridComp), intent(inout) :: comp
+    type(ESMF_GridComp) comp
     integer, intent(out) :: rc
 
     call ESMF_GridCompSetEntryPoint(comp, ESMF_METHOD_INITIALIZE, userRoutine=lnd_comp_init, rc=rc)

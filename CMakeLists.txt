@@ -321,6 +321,7 @@ set(gmcore_files
 
 if (HAS_ESMF)
   list(APPEND gmcore_files
+    src/coupler/comp_wrapper_mod.F90
     src/coupler/atm_comp_mod.F90
     src/coupler/lnd_comp_mod.F90
     src/coupler/ocn_comp_mod.F90
@@ -396,3 +397,8 @@ target_link_libraries(gmcore_driver.exe gmcore)
 
 add_executable(gmcore_adv_driver.exe src/drivers/gmcore_adv_driver.F90)
 target_link_libraries(gmcore_adv_driver.exe gmcore)
+
+if (HAS_ESMF)
+  add_executable(gmcore_esmf_driver.exe src/drivers/gmcore_esmf_driver.F90)
+  target_link_libraries(gmcore_esmf_driver.exe gmcore piof pioc)
+endif ()

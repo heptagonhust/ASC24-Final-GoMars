@@ -1,18 +1,25 @@
 module atm_comp_mod
 
+  use mpi
   use esmf
+
+  use namelist_mod
+  use comp_wrapper_mod
+  use gmcore_mod
+  use prepare_mod
 
   implicit none
 
   private
 
   public atm_comp_SetServices
+  public comp_type
 
 contains
 
   subroutine atm_comp_SetServices(comp, rc)
 
-    type(ESMF_GridComp), intent(inout) :: comp
+    type(ESMF_GridComp) comp
     integer, intent(out) :: rc
 
     call ESMF_GridCompSetEntryPoint(comp, ESMF_METHOD_INITIALIZE, userRoutine=atm_comp_init, rc=rc)
@@ -30,6 +37,24 @@ contains
     type(ESMF_State) exportState
     type(ESMF_Clock) clock
     integer, intent(out) :: rc
+
+    type(comp_info_wrapper_type) info
+
+    call ESMF_GridCompGetInternalState(comp, info, rc)
+    if (rc /= ESMF_SUCCESS) then
+      call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+    end if
+
+    call parse_namelist(info%p%namelist_path)
+    call gmcore_init_stage1(info%p%namelist_path, comm=MPI_COMM_WORLD)
+    call prepare_topo()
+    call gmcore_init_stage2(info%p%namelist_path)
+    call prepare_bkg()
+    call prepare_final()
+
+    ! Add fields to importState.
+    ! call ESMF_StateAdd()
+    ! Add fields to exportState.
 
     rc = ESMF_SUCCESS
 
@@ -54,6 +79,8 @@ contains
     type(ESMF_State) exportState
     type(ESMF_Clock) clock
     integer, intent(out) :: rc
+
+    call gmcore_final()
 
     rc = ESMF_SUCCESS
 

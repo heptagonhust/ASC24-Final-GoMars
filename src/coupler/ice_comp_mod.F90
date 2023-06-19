@@ -1,12 +1,14 @@
 module ice_comp_mod
 
   use esmf
+  use comp_wrapper_mod
 
   implicit none
 
   private
 
   public ice_comp_SetServices
+  public comp_type
 
 contains
 

@@ -93,7 +93,7 @@ contains
 
     call spmdinit(proc%comm)
     call cam_instance_init(atm_id, 'atm', 1, '_1')
-    call shr_pio_init1(ncomps, merge(namelist_path, cam_namelist_path, cam_namelist_path == 'N/A'), proc%comm)
+    call shr_pio_init1(ncomps, trim(merge(namelist_path, cam_namelist_path, cam_namelist_path == 'N/A')), proc%comm)
     call shr_pio_init2(comp_id, comp_name, comp_iamin, comp_comm, comp_comm_iam)
     call init_pio_subsystem()
     call cam_ctrl_init(                &
@@ -121,7 +121,7 @@ contains
       perpetual_ymd=20000101, &
       initial_run=.not. restart &
     )
-    call read_namelist(merge(namelist_path, cam_namelist_path, cam_namelist_path == 'N/A'))
+    call read_namelist(trim(merge(namelist_path, cam_namelist_path, cam_namelist_path == 'N/A')))
     call cam_initfiles_open()
     call dyn_grid_init()
     call phys_grid_init()
