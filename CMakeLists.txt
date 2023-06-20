@@ -319,17 +319,6 @@ set(gmcore_files
   src/utils/tridiag_spk_mod.F90
 )
 
-if (HAS_ESMF)
-  list(APPEND gmcore_files
-    src/coupler/comp_wrapper_mod.F90
-    src/coupler/atm_comp_mod.F90
-    src/coupler/lnd_comp_mod.F90
-    src/coupler/ocn_comp_mod.F90
-    src/coupler/ice_comp_mod.F90
-    src/coupler/cpl_comp_mod.F90
-  )
-endif ()
-
 if (EXISTS ${PROJECT_SOURCE_DIR}/src/physics/ccpp/host/CCPP_CAPS.cmake)
   include(src/physics/ccpp/host/CCPP_CAPS.cmake)
   include(src/physics/ccpp/host/CCPP_SCHEMES.cmake)
@@ -399,6 +388,14 @@ add_executable(gmcore_adv_driver.exe src/drivers/gmcore_adv_driver.F90)
 target_link_libraries(gmcore_adv_driver.exe gmcore)
 
 if (HAS_ESMF)
-  add_executable(gmcore_esmf_driver.exe src/drivers/gmcore_esmf_driver.F90)
+  add_executable(gmcore_esmf_driver.exe
+    src/coupler/esmf/comp_wrapper_mod.F90
+    src/coupler/esmf/atm_comp_mod.F90
+    src/coupler/esmf/lnd_comp_mod.F90
+    src/coupler/esmf/ocn_comp_mod.F90
+    src/coupler/esmf/ice_comp_mod.F90
+    src/coupler/esmf/cpl_comp_mod.F90
+    src/drivers/gmcore_esmf_driver.F90
+  )
   target_link_libraries(gmcore_esmf_driver.exe gmcore piof pioc)
 endif ()

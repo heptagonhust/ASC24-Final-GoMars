@@ -29,9 +29,13 @@ program gmcore_esmf_driver
     call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
   end if
   call ESMF_LogWrite("GMCORE ESMF driver start", ESMF_LOGMSG_INFO)
+  call ESMF_LogSet(flush=.true.)
 
-  call atm%init('atm', atm_comp_SetServices, clock, namelist_path)
-  call lnd%init('lnd', lnd_comp_SetServices, clock, namelist_path)
+  call atm%init('atm', atm_comp_set_services, clock, namelist_path)
+  call lnd%init('lnd', lnd_comp_set_services, clock, namelist_path)
+
+  call atm%run()
+  call lnd%run()
 
   call perf_final()
   call ESMF_Finalize()

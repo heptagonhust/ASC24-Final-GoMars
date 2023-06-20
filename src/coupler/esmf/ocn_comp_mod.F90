@@ -7,12 +7,12 @@ module ocn_comp_mod
 
   private
 
-  public ocn_comp_SetServices
+  public ocn_comp_set_services
   public comp_type
 
 contains
 
-  subroutine ocn_comp_SetServices(comp, rc)
+  subroutine ocn_comp_set_services(comp, rc)
 
     type(ESMF_GridComp), intent(inout) :: comp
     integer, intent(out) :: rc
@@ -23,13 +23,13 @@ contains
 
     rc = ESMF_SUCCESS
 
-  end subroutine ocn_comp_SetServices
+  end subroutine ocn_comp_set_services
 
-  subroutine ocn_comp_init(comp, importState, exportState, clock, rc)
+  subroutine ocn_comp_init(comp, import_state, export_state, clock, rc)
 
     type(ESMF_GridComp) comp
-    type(ESMF_State) importState
-    type(ESMF_State) exportState
+    type(ESMF_State) import_state
+    type(ESMF_State) export_state
     type(ESMF_Clock) clock
     integer, intent(out) :: rc
 
@@ -37,11 +37,11 @@ contains
 
   end subroutine ocn_comp_init
 
-  subroutine ocn_comp_run(comp, importState, exportState, clock, rc)
+  subroutine ocn_comp_run(comp, import_state, export_state, clock, rc)
 
     type(ESMF_GridComp) comp
-    type(ESMF_State) importState
-    type(ESMF_State) exportState
+    type(ESMF_State) import_state
+    type(ESMF_State) export_state
     type(ESMF_Clock) clock
     integer, intent(out) :: rc
 
@@ -49,11 +49,11 @@ contains
 
   end subroutine ocn_comp_run
 
-  subroutine ocn_comp_final(comp, importState, exportState, clock, rc)
+  subroutine ocn_comp_final(comp, import_state, export_state, clock, rc)
 
     type(ESMF_GridComp) comp
-    type(ESMF_State) importState
-    type(ESMF_State) exportState
+    type(ESMF_State) import_state
+    type(ESMF_State) export_state
     type(ESMF_Clock) clock
     integer, intent(out) :: rc
 
