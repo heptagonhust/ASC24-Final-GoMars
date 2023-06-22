@@ -10,6 +10,7 @@ module dp_coupling_mod
 #ifdef HAS_CAM
   use cam_physics_driver_mod, only: cam_physics_d2p, cam_physics_p2d
 #endif
+  use filter_mod
 
   implicit none
 
@@ -184,10 +185,31 @@ contains
       end associate
     end select
 
-    call fill_halo(block%halo, block%aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                   west_halo=.false., south_halo=.false., north_halo=.false.)
-    call fill_halo(block%halo, block%aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                   west_halo=.false.,  east_halo=.false., south_halo=.false.)
+    if (filter_ptend) then
+      call fill_halo(block%filter_halo, block%aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, block%aux%dudt_phys)
+      call fill_halo(block%filter_halo, block%aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, block%aux%dvdt_phys)
+      call fill_halo(block%filter_halo, block%aux%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, block%aux%dtdt_phys)
+      do m = 1, ntracers
+        call fill_halo(block%filter_halo, block%aux%dqdt_phys(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
+                       south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, block%aux%dqdt_phys(:,:,:,m))
+      end do
+      call fill_halo(block%filter_halo, block%aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     west_halo=.false., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%filter_halo, block%aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     west_halo=.false.,  east_halo=.false., south_halo=.false.)
+    else
+      call fill_halo(block%halo, block%aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     west_halo=.false., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%halo, block%aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     west_halo=.false.,  east_halo=.false., south_halo=.false.)
+    end if
 
   end subroutine dp_coupling_p2d
 

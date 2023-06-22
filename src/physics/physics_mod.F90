@@ -113,19 +113,18 @@ contains
 
   end subroutine physics_run
 
-  subroutine physics_update_state(block, itime, dt)
+  subroutine physics_update_state(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
-    integer, intent(in) :: itime
+    type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: dt
 
     real(r8), pointer :: q(:,:,:,:), qm(:,:,:)
     integer i, j, k, m
 
-    associate (mesh   => block%mesh         , &
-               ptend  => block%ptend        , &
-               aux    => block%aux          , &
-               dstate => block%dstate(itime))
+    associate (mesh   => block%mesh , &
+               ptend  => block%ptend, &
+               aux    => block%aux  )
     if (ptend%updated_u) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -172,7 +171,7 @@ contains
             end do
           end do
         end do
-        call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true. , full_lat=.true. , full_lev=.true.)
+        call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true. , full_lat=.true. , full_lev=.true., cross_pole=.true.)
       end if
     end do
 
@@ -185,7 +184,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+      call fill_halo(block%filter_halo, dstate%pt, full_lon=.true. , full_lat=.true. , full_lev=.true., cross_pole=.true.)
     end if
     end associate
 

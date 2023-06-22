@@ -23,8 +23,8 @@ contains
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    integer i, j, k
-    real(r8), pointer :: qv(:,:,:)
+    integer i, j, k, m
+    real(r8), pointer :: q(:,:,:,:)
     real(r8) c, tmp(global_mesh%full_nlev)
 
     associate (mesh    => block%mesh  , &
@@ -33,7 +33,6 @@ contains
                u_lon   => dstate%u_lon, &
                v_lat   => dstate%v_lat)
     if (use_pole_damp .and. baroclinic) then
-      ! c = 1.0e12_r8
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -41,8 +40,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-      ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, pt, lon_coef=decay_from_pole, coef=c)
+      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
       call filter_on_cell(block%small_filter, pt)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
@@ -53,30 +51,29 @@ contains
       end do
       call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! ----------------------------------------------------------------------
-      if (time_is_alerted('moist')) then
-        call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds, mesh%full_jde
-            do i = mesh%full_ids, mesh%full_ide
-              qv(i,j,k) = qv(i,j,k) * dmg(i,j,k)
+      if (time_is_alerted('moist') .or. time_is_alerted('cam_cnst')) then
+        call tracer_get_array(block%id, q)
+        do m = 1, ntracers
+          do k = mesh%full_kds, mesh%full_kde
+            do j = mesh%full_jds, mesh%full_jde
+              do i = mesh%full_ids, mesh%full_ide
+                q(i,j,k,m) = q(i,j,k,m) * dmg(i,j,k)
+              end do
             end do
           end do
-        end do
-        call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
-        ! call laplace_damp_on_cell(block%filter_mesh, block%filter_halo, 4, qv, lon_coef=decay_from_pole, coef=c)
-        call filter_on_cell(block%small_filter, qv)
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds, mesh%full_jde
-            do i = mesh%full_ids, mesh%full_ide
-              qv(i,j,k) = qv(i,j,k) / dmg(i,j,k)
+          call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
+                         south_halo=.false., north_halo=.false.)
+          call filter_on_cell(block%small_filter, q(:,:,:,m))
+          do k = mesh%full_kds, mesh%full_kde
+            do j = mesh%full_jds, mesh%full_jde
+              do i = mesh%full_ids, mesh%full_ide
+                q(i,j,k,m) = q(i,j,k,m) / dmg(i,j,k)
+              end do
             end do
           end do
+          call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
         end do
-        call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end if
-      ! ----------------------------------------------------------------------
-      ! call laplace_damp_on_lon_edge(block%filter_mesh, block%filter_halo, 4, u_lon, lon_coef=decay_from_pole, coef=c)
-      ! call laplace_damp_on_lat_edge(block%filter_mesh, block%filter_halo, 4, v_lat, lon_coef=decay_from_pole, coef=c)
       ! ----------------------------------------------------------------------
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%full_lat_deg(j)), r8))
