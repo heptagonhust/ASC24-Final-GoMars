@@ -263,6 +263,7 @@ contains
     integer i, j, k
 
     if (.not. allocated(tracers)) return
+    if (.not. allocated(tracers(block%id)%qm)) return
 
     associate (mesh => block%mesh, &
                qm   => tracers(block%id)%qm)   ! out
