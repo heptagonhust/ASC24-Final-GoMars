@@ -246,6 +246,8 @@ contains
     integer, intent(in) :: iblk
     real(r8), intent(out), pointer :: q(:,:,:,:)
 
+    if (.not. allocated(tracers)) return
+
     associate (mesh => tracers(iblk)%filter_mesh)
     ! NOTE: q is on filter_mesh.
     q(mesh%full_ims:mesh%full_ime, &
@@ -339,6 +341,9 @@ contains
 
     integer, intent(in) :: iblk
     real(r8), intent(out), pointer :: qm(:,:,:)
+
+    if (.not. allocated(tracers)) return
+    if (.not. allocated(tracers(iblk)%qm)) return
 
     associate (mesh => tracers(iblk)%mesh)
     ! NOTE: qm is on mesh. This is different from q which is on filter_mesh.
