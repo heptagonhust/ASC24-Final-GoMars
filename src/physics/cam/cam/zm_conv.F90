@@ -1,156 +1,148 @@
 module zm_conv
 
-!---------------------------------------------------------------------------------
-! Purpose:
-!
-! Interface from Zhang-McFarlane convection scheme, includes evaporation of convective
-! precip from the ZM scheme
-!
-! Apr 2006: RBN: Code added to perform a dilute ascent for closure of the CM mass flux
-!                based on an entraining plume a la Raymond and Blythe (1992)
-!
-! Author: Byron Boville, from code in tphysbc
-!
-!---------------------------------------------------------------------------------
-  use shr_kind_mod,    only: r8 => shr_kind_r8
-  use spmd_utils,      only: masterproc
-  use ppgrid,          only: pcols, pver, pverp
-  use cloud_fraction,  only: cldfrc_fice
-  use physconst,       only: cpair, epsilo, gravit, latice, latvap, tmelt, rair, &
+  !---------------------------------------------------------------------------------
+  ! Purpose:
+  !
+  ! Interface from Zhang-McFarlane convection scheme, includes evaporation of convective
+  ! precipitation from the ZM scheme.
+  !
+  ! Apr 2006: RBN: Code added to perform a dilute ascent for closure of the CM mass flux
+  !                based on an entraining plume a la Raymond and Blythe (1992)
+  !
+  ! Author: Byron Boville, from code in tphysbc
+  !
+  !---------------------------------------------------------------------------------
+
+  use shr_kind_mod   , only: r8 => shr_kind_r8
+  use spmd_utils     , only: masterproc
+  use ppgrid         , only: pcols, pver, pverp
+  use cloud_fraction , only: cldfrc_fice
+  use physconst      , only: cpair, epsilo, gravit, latice, latvap, tmelt, rair, &
                              cpwv, cpliq, rh2o
-  use cam_abortutils,  only: endrun
-  use cam_logfile,     only: iulog
+  use cam_abortutils , only: endrun
+  use cam_logfile    , only: iulog
   use zm_microphysics, only: zm_mphy, zm_aero_t, zm_conv_t
 
   implicit none
 
   save
-  private                         ! Make default type private to the module
-!
-! PUBLIC: interfaces
-!
+
+  private
+
   public zm_convi                 ! ZM schemea
   public zm_convr                 ! ZM schemea
-  public zm_conv_evap             ! evaporation of precip from ZM schemea
-  public convtran                 ! convective transport
-  public momtran                  ! convective momentum transport
+  public zm_conv_evap             ! Evaporation of precip from ZM schemea
+  public convtran                 ! Convective transport
+  public momtran                  ! Convective momentum transport
 
-!
-! Private data
-!
-   real(r8) rl         ! wg latent heat of vaporization.
-   real(r8) cpres      ! specific heat at constant pressure in j/kg-degk.
-   real(r8), parameter :: capelmt = 70._r8  ! threshold value for cape for deep convection.
-   real(r8) :: ke           ! Tunable evaporation efficiency set from namelist input zmconv_ke
-   real(r8) :: ke_lnd
-   real(r8) :: c0_lnd       ! set from namelist input zmconv_c0_lnd
-   real(r8) :: c0_ocn       ! set from namelist input zmconv_c0_ocn
-   integer  :: num_cin      ! set from namelist input zmconv_num_cin
-                            ! The number of negative buoyancy regions that are allowed
-                            ! before the convection top and CAPE calculations are completed.
-   logical  :: zm_org
-   real(r8) tau   ! convective time scale
-   real(r8),parameter :: c1 = 6.112_r8
-   real(r8),parameter :: c2 = 17.67_r8
-   real(r8),parameter :: c3 = 243.5_r8
-   real(r8) :: tfreez
-   real(r8) :: eps1
-   real(r8) :: momcu
-   real(r8) :: momcd
+  real(r8), parameter :: capelmt    = 70.0_r8  ! threshold value for cape for deep convection.
+  real(r8), parameter :: tiedke_add = 0.5_r8
+  real(r8), parameter :: c1         = 6.112_r8
+  real(r8), parameter :: c2         = 17.67_r8
+  real(r8), parameter :: c3         = 243.5_r8
 
-   logical :: zmconv_microp
+  real(r8) rl                     ! wg latent heat of vaporization.
+  real(r8) cpres                  ! Specific heat at constant pressure in j/kg-degk.
+  real(r8) ke                     ! Tunable evaporation efficiency set from namelist input zmconv_ke
+  real(r8) ke_lnd
+  real(r8) c0_lnd                 ! Set from namelist input zmconv_c0_lnd
+  real(r8) c0_ocn                 ! Set from namelist input zmconv_c0_ocn
+  integer  num_cin                ! Set from namelist input zmconv_num_cin
+                                  ! The number of negative buoyancy regions that are allowed
+                                  ! Before the convection top and CAPE calculations are completed.
+  logical  zm_org
+  real(r8) tau                   ! Convective time scale
+  real(r8) tfreez
+  real(r8) eps1
+  real(r8) momcu
+  real(r8) momcd
 
-   logical :: no_deep_pbl ! default = .false.
-                          ! no_deep_pbl = .true. eliminates deep convection entirely within PBL
+  logical  zmconv_microp
 
+  logical  no_deep_pbl ! default = .false.
+                       ! no_deep_pbl = .true. eliminates deep convection entirely within PBL
 
-!moved from moistconvection.F90
-   real(r8) :: rgrav       ! reciprocal of grav
-   real(r8) :: rgas        ! gas constant for dry air
-   real(r8) :: grav        ! = gravit
-   real(r8) :: cp          ! = cpres = cpair
+  ! moved from moistconvection.F90
+  real(r8) rgrav       ! reciprocal of grav
+  real(r8) rgas        ! gas constant for dry air
+  real(r8) grav        ! = gravit
+  real(r8) cp          ! = cpres = cpair
 
-   integer  limcnv       ! top interface level limit for convection
-
-   real(r8),parameter ::  tiedke_add = 0.5_r8
+  integer  limcnv      ! top interface level limit for convection
 
 contains
 
+  subroutine zm_convi(limcnv_in, zmconv_c0_lnd, zmconv_c0_ocn, zmconv_ke, zmconv_ke_lnd, &
+                      zmconv_momcu, zmconv_momcd, zmconv_num_cin, zmconv_org, &
+                      zmconv_microp_in, no_deep_pbl_in)
 
-subroutine zm_convi(limcnv_in, zmconv_c0_lnd, zmconv_c0_ocn, zmconv_ke, zmconv_ke_lnd, &
-                    zmconv_momcu, zmconv_momcd, zmconv_num_cin, zmconv_org, &
-                    zmconv_microp_in, no_deep_pbl_in)
-
-   integer, intent(in)           :: limcnv_in       ! top interface level limit for convection
-   integer, intent(in)           :: zmconv_num_cin  ! Number negative buoyancy regions that are allowed
-                                                    ! before the convection top and CAPE calculations are completed.
-   real(r8),intent(in)           :: zmconv_c0_lnd
-   real(r8),intent(in)           :: zmconv_c0_ocn
-   real(r8),intent(in)           :: zmconv_ke
-   real(r8),intent(in)           :: zmconv_ke_lnd
-   real(r8),intent(in)           :: zmconv_momcu
-   real(r8),intent(in)           :: zmconv_momcd
-   logical                       :: zmconv_org
-   logical, intent(in)           :: zmconv_microp_in
-   logical, intent(in), optional :: no_deep_pbl_in  ! no_deep_pbl = .true. eliminates ZM convection entirely within PBL
+    integer, intent(in)           :: limcnv_in       ! top interface level limit for convection
+    integer, intent(in)           :: zmconv_num_cin  ! Number negative buoyancy regions that are allowed
+                                                     ! before the convection top and CAPE calculations are completed.
+    real(r8),intent(in)           :: zmconv_c0_lnd
+    real(r8),intent(in)           :: zmconv_c0_ocn
+    real(r8),intent(in)           :: zmconv_ke
+    real(r8),intent(in)           :: zmconv_ke_lnd
+    real(r8),intent(in)           :: zmconv_momcu
+    real(r8),intent(in)           :: zmconv_momcd
+    logical                       :: zmconv_org
+    logical, intent(in)           :: zmconv_microp_in
+    logical, intent(in), optional :: no_deep_pbl_in  ! no_deep_pbl = .true. eliminates ZM convection entirely within PBL
 
 
-   ! Initialization of ZM constants
-   limcnv = limcnv_in
-   tfreez = tmelt
-   eps1   = epsilo
-   rl     = latvap
-   cpres  = cpair
-   rgrav  = 1.0_r8/gravit
-   rgas   = rair
-   grav   = gravit
-   cp     = cpres
+    ! Initialization of ZM constants
+    limcnv  = limcnv_in
+    tfreez  = tmelt
+    eps1    = epsilo
+    rl      = latvap
+    cpres   = cpair
+    rgrav   = 1.0_r8/gravit
+    rgas    = rair
+    grav    = gravit
+    cp      = cpres
+    c0_lnd  = zmconv_c0_lnd
+    c0_ocn  = zmconv_c0_ocn
+    num_cin = zmconv_num_cin
+    ke      = zmconv_ke
+    ke_lnd  = zmconv_ke_lnd
+    zm_org  = zmconv_org
+    momcu   = zmconv_momcu
+    momcd   = zmconv_momcd
 
-   c0_lnd  = zmconv_c0_lnd
-   c0_ocn  = zmconv_c0_ocn
-   num_cin = zmconv_num_cin
-   ke      = zmconv_ke
-   ke_lnd  = zmconv_ke_lnd
-   zm_org  = zmconv_org
-   momcu   = zmconv_momcu
-   momcd   = zmconv_momcd
+    zmconv_microp = zmconv_microp_in
 
-   zmconv_microp = zmconv_microp_in
-
-   if ( present(no_deep_pbl_in) )  then
+    if (present(no_deep_pbl_in))  then
       no_deep_pbl = no_deep_pbl_in
-   else
+    else
       no_deep_pbl = .false.
-   endif
+    end if
 
-   tau = 3600._r8
+    tau = 3600._r8
 
-   if ( masterproc ) then
-      write(iulog,*) 'tuning parameters zm_convi: tau',tau
-      write(iulog,*) 'tuning parameters zm_convi: c0_lnd',c0_lnd, ', c0_ocn', c0_ocn
-      write(iulog,*) 'tuning parameters zm_convi: num_cin', num_cin
-      write(iulog,*) 'tuning parameters zm_convi: ke',ke
-      write(iulog,*) 'tuning parameters zm_convi: no_deep_pbl',no_deep_pbl
-   endif
+    if (masterproc) then
+      write(iulog, *) 'tuning parameters zm_convi: tau', tau
+      write(iulog, *) 'tuning parameters zm_convi: c0_lnd', c0_lnd, ', c0_ocn', c0_ocn
+      write(iulog, *) 'tuning parameters zm_convi: num_cin', num_cin
+      write(iulog, *) 'tuning parameters zm_convi: ke', ke
+      write(iulog, *) 'tuning parameters zm_convi: no_deep_pbl', no_deep_pbl
+    end if
 
-   if (masterproc) write(iulog,*)'**** ZM: DILUTE Buoyancy Calculation ****'
+    if (masterproc) write(iulog, *) '**** ZM: DILUTE Buoyancy Calculation ****'
 
-end subroutine zm_convi
+  end subroutine zm_convi
 
-
-
-subroutine zm_convr(lchnk   ,ncol    , &
-                    t       ,qh      ,prec    ,jctop   ,jcbot   , &
-                    pblh    ,zm      ,geos    ,zi      ,qtnd    , &
-                    heat    ,pap     ,paph    ,dpp     , &
-                    delt    ,mcon    ,cme     ,cape    , &
-                    tpert   ,dlf     ,pflx    ,zdu     ,rprd    , &
-                    mu      ,md      ,du      ,eu      ,ed      , &
-                    dp      ,dsubcld ,jt      ,maxg    ,ideep   , &
-                    ql      ,rliq    ,landfrac,                   &
-                    org     ,orgt    ,org2d   ,  &
-                    dif     ,dnlf    ,dnif    ,conv    , &
-                    aero    , rice)
+  subroutine zm_convr(lchnk   ,ncol    , &
+                      t       ,qh      ,prec    ,jctop   ,jcbot   , &
+                      pblh    ,zm      ,geos    ,zi      ,qtnd    , &
+                      heat    ,pap     ,paph    ,dpp     , &
+                      delt    ,mcon    ,cme     ,cape    , &
+                      tpert   ,dlf     ,pflx    ,zdu     ,rprd    , &
+                      mu      ,md      ,du      ,eu      ,ed      , &
+                      dp      ,dsubcld ,jt      ,maxg    ,ideep   , &
+                      ql      ,rliq    ,landfrac,                   &
+                      org     ,orgt    ,org2d   ,  &
+                      dif     ,dnlf    ,dnif    ,conv    , &
+                      aero    , rice)
 !-----------------------------------------------------------------------
 !
 ! Purpose:
