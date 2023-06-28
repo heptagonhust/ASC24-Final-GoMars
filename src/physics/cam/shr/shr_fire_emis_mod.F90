@@ -42,7 +42,7 @@ module shr_fire_emis_mod
      character(len=name_len)             :: name            ! emissions component name (in fire emissions input table)
      integer                             :: index
      real(r8), pointer                   :: emis_factors(:) ! function of plant-function-type (PFT)
-     real(r8)                            :: coeff           ! emissions component coeffecient
+     real(r8)                            :: coeff           ! emissions component coefficient
      real(r8)                            :: molec_weight    ! molecular weight of the fire emissions compound (g/mole)
      type(shr_fire_emis_comp_t), pointer :: next_emiscomp   ! points to next member in the linked list
   endtype shr_fire_emis_comp_t
@@ -96,7 +96,7 @@ contains
     !     corresponding chemical tracers.
     !
     !-------------------------------------------------------------------------
-    
+
     ! input/output variables
     character(len=*), intent(in)  :: NLFileName  ! name of namelist file
     integer         , intent(out) :: emis_nflds
@@ -125,12 +125,12 @@ contains
     ! If other processes have already initialized megan - then the info will just be re-initialized
 
     call ESMF_VMGetCurrent(vm, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=__FILE__)) return 
+    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=__FILE__)) return
 
     call ESMF_VMGet(vm, localPet=localPet, mpiCommunicator=mpicom, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=__FILE__)) return 
+    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=__FILE__)) return
 
-    ! Note the following still needs to be called on all processors since the mpi_bcast is a collective 
+    ! Note the following still needs to be called on all processors since the mpi_bcast is a collective
     ! call on all the pes of mpicom
     if (localPet==0) then
        inquire( file=trim(NLFileName), exist=exists)

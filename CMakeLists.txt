@@ -27,6 +27,7 @@ if (ENSURE_ORDER)
   message(STATUS "Ensure computation order in parallel.")
 endif ()
 
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR})
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_Fortran_COMPILER_VERSION STREQUAL 13.1.0)
     message(FATAL_ERROR "GCC 13.1.0 is not supported! Use previous versions > 7.0!")
@@ -368,9 +369,9 @@ if (USE_CAM AND HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)
   add_definitions(-DCLUBB_REAL_TYPE=8)
   set(USE_CLUBB_SGS ON)
   add_definitions(-DMODAL_AERO_3MODE)
+  add_definitions(-DHAS_CAM)
   add_subdirectory(src/physics/cam)
   add_subdirectory(src/chemistry)
-  add_definitions(-DHAS_CAM)
 else ()
   message(WARNING "GPTL, PIO, LAPACK, ESMF, and/or MCT are not found. Skipping CAM physics and chemistry.")
 endif ()
@@ -388,6 +389,8 @@ add_executable(gmcore_adv_driver.exe src/drivers/gmcore_adv_driver.F90)
 target_link_libraries(gmcore_adv_driver.exe gmcore)
 
 if (HAS_ESMF)
+  add_subdirectory(src/components/lnd/clm)
+
   add_executable(gmcore_esmf_driver.exe
     src/coupler/esmf/comp_wrapper_mod.F90
     src/coupler/esmf/atm_comp_mod.F90
@@ -397,5 +400,5 @@ if (HAS_ESMF)
     src/coupler/esmf/cpl_comp_mod.F90
     src/drivers/gmcore_esmf_driver.F90
   )
-  target_link_libraries(gmcore_esmf_driver.exe gmcore piof pioc)
+  target_link_libraries(gmcore_esmf_driver.exe gmcore clm)
 endif ()

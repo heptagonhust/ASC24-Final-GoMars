@@ -2,6 +2,8 @@ module lnd_comp_mod
 
   use esmf
   use comp_wrapper_mod
+  use clm_comp_shr, only: mesh, model_clock
+  use clm_initializeMod, only: initialize1, initialize2
 
   implicit none
 
@@ -33,7 +35,19 @@ contains
     type(ESMF_Clock) clock
     integer, intent(out) :: rc
 
+    type(comp_info_wrapper_type) info
+
     rc = ESMF_SUCCESS
+
+    call ESMF_GridCompGetInternalState(comp, info, rc)
+    if (rc /= ESMF_SUCCESS) then
+      call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+    end if
+
+    call initialize1(int(info%p%dt_atm_lnd))
+
+    mesh => info%p%mesh
+    model_clock = clock
 
   end subroutine lnd_comp_init
 

@@ -17,6 +17,9 @@ module comp_wrapper_mod
   sequence
     character(256) :: namelist_path = 'N/A'
     type(ESMF_Grid) grid
+    type(ESMF_Mesh) mesh ! FIXME: Use grid or mesh?
+    real(8) :: dt_atm_lnd = 0
+    real(8) :: dt_atm_ocn = 0
   end type comp_info_type
 
   type comp_info_wrapper_type

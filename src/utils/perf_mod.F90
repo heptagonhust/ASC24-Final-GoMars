@@ -6,7 +6,6 @@ module perf_mod
   use gptl
 #endif
   use mpi
-  use flogger
 
   implicit none
 
@@ -33,7 +32,7 @@ contains
 
 #ifdef HAS_GPTL
     if (GPTLinitialize() < 0) then
-      call log_error('Failed to call GPTLinitialize!', __FILE__, __LINE__)
+      stop 'Failed to initialize GPTL!'
     end if
 #endif
 
@@ -47,7 +46,7 @@ contains
 
 #ifdef HAS_GPTL
     if (GPTLstart(event) /= 0) then
-      call log_error('Failed to call GPTLstart!', __FILE__, __LINE__)
+      stop 'Failed to call GPTLstart!'
     end if
 #endif
 
@@ -59,7 +58,7 @@ contains
 
 #ifdef HAS_GPTL
     if (GPTLstop(event) /= 0) then
-      call log_error('Failed to call GPTLstop!', __FILE__, __LINE__)
+      stop 'Failed to call GPTLstop!'
     end if
 #endif
 
@@ -71,7 +70,7 @@ contains
     if (.not. initialized) return
     if (disable_depth == 0) then
       if (GPTLdisable() /= 0) then
-        call log_error('Failed to call GPTLdisable!', __FILE__, __LINE__)
+        stop 'Failed to call GPTLdisable!'
       end if
     end if
     disable_depth = disable_depth + 1
@@ -86,7 +85,7 @@ contains
     if (disable_depth > 0) then
       if (disable_depth == 1) then
         if (GPTLenable() /= 0) then
-          call log_error('Failed to call GPTLenable!', __FILE__, __LINE__)
+          stop 'Failed to call GPTLenable!'
         end if
       end if
       disable_depth = disable_depth - 1
@@ -141,7 +140,7 @@ contains
 
 #ifdef HAS_GPTL
     if (GPTLfinalize() /= 0) then
-      call log_error('Failed to call GPTLfinalize!', __FILE__, __LINE__)
+      stop 'Failed to call GPTLfinalize!'
     end if
 #endif
 
