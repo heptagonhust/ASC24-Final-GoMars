@@ -13,11 +13,12 @@ module topo_reader_mod
 
   public topo_reader_run
   public topo_reader_final
-  public topo_lon, topo_lat, topo_gzs
+  public topo_lon, topo_lat, topo_gzs, topo_mask
 
-  real(r8), allocatable :: topo_lon(:)   ! Longitude (degree)
-  real(r8), allocatable :: topo_lat(:)   ! Latitude (degree)
-  real(r8), allocatable :: topo_gzs(:,:) ! Geopotential (m2 s-2)
+  real(r8), allocatable :: topo_lon (:)   ! Longitude (degree)
+  real(r8), allocatable :: topo_lat (:)   ! Latitude (degree)
+  real(r8), allocatable :: topo_gzs (:,:) ! Geopotential (m2 s-2)
+  real(r8), allocatable :: topo_mask(:,:) ! Land mask (0: ocean, 1: land)
 
 contains
 
@@ -40,9 +41,10 @@ contains
       call fiona_set_dim('topo', 'x', span=[-180, 180], cyclic=.true.)
       call fiona_set_dim('topo', 'y', span=[-90, 90])
       call fiona_start_input('topo')
-      call fiona_input_range('topo', 'x', topo_lon, coord_range=[min_lon,max_lon])
-      call fiona_input_range('topo', 'y', topo_lat, coord_range=[min_lat,max_lat])
-      call fiona_input_range('topo', 'z', topo_gzs, coord_range_1=[min_lon,max_lon], coord_range_2=[min_lat,max_lat])
+      call fiona_input_range('topo', 'x'   , topo_lon , coord_range=[min_lon,max_lon])
+      call fiona_input_range('topo', 'y'   , topo_lat , coord_range=[min_lat,max_lat])
+      call fiona_input_range('topo', 'z'   , topo_gzs , coord_range_1=[min_lon,max_lon], coord_range_2=[min_lat,max_lat])
+      call fiona_input_range('topo', 'mask', topo_mask, coord_range_1=[min_lon,max_lon], coord_range_2=[min_lat,max_lat])
       topo_gzs = topo_gzs * g
     case ('gmted')
       if (planet /= 'earth') call log_error('Topography file ' // trim(topo_file) // ' is used for the Earth!')
@@ -71,9 +73,10 @@ contains
 
   subroutine topo_reader_final()
 
-    if (allocated(topo_lon)) deallocate(topo_lon)
-    if (allocated(topo_lat)) deallocate(topo_lat)
-    if (allocated(topo_gzs)) deallocate(topo_gzs)
+    if (allocated(topo_lon )) deallocate(topo_lon )
+    if (allocated(topo_lat )) deallocate(topo_lat )
+    if (allocated(topo_gzs )) deallocate(topo_gzs )
+    if (allocated(topo_mask)) deallocate(topo_mask)
 
   end subroutine topo_reader_final
 

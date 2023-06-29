@@ -50,9 +50,16 @@ contains
           if (topo_lon(i) < lon1 .or. topo_lon(i) > lon2 .or. topo_lat(j) < lat1 .or. topo_lat(j) > lat2) then
             stop 999
           end if
-          if (topo_gzs(i,j) > 0) then
-            gzs = gzs + topo_gzs(i,j)
-            std = std + topo_gzs(i,j)**2
+          if (allocated(topo_mask)) then
+            if (topo_mask(i,j) == 1) then
+              gzs = gzs + topo_gzs(i,j)
+              std = std + topo_gzs(i,j)**2
+            end if
+          else
+            if (topo_gzs(i,j) > 0) then
+              gzs = gzs + topo_gzs(i,j)
+              std = std + topo_gzs(i,j)**2
+            end if
           end if
         end do
       end do
