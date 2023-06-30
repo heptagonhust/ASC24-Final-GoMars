@@ -77,13 +77,62 @@ contains
     call this%big_filter%init(this%filter_mesh, 'big_filter')
     call this%small_filter%init(this%filter_mesh, 'small_filter')
 
-    ! cell_dims = [this%mesh%full_nlon,this%mesh%full_nlat,this%mesh%full_nlev]
-    ! call accum%init('daily_avg_t', 'K', 'Daily averaged temperature', freq_daily, stat_avg, cell_dims)
-    ! call this%accum_list%append(accum)
-    ! call accum%init('daily_max_t', 'K', 'Daily maximum temperature' , freq_daily, stat_max, cell_dims)
-    ! call this%accum_list%append(accum)
-    ! call accum%init('daily_min_t', 'K', 'Daily minimum temperature' , freq_daily, stat_min, cell_dims)
-    ! call this%accum_list%append(accum)
+    cell_dims = [this%mesh%full_nlon,this%mesh%full_nlat,this%mesh%full_nlev]
+    call accum%init(                                &
+      name='daily_avg_t'                          , &
+      units='K'                                   , &
+      long_name='Daily averaged temperature'      , &
+      from='dstate'                               , &
+      var_name='t'                                , &
+      freq=freq_daily                             , &
+      stat=stat_avg                               , &
+      array_shape=cell_dims                       , &
+      active=.false.)
+    call this%accum_list%append(accum)
+    call accum%init(                                &
+      name='daily_max_t'                          , &
+      units='K'                                   , &
+      long_name='Daily maximum temperature'       , &
+      from='dstate'                               , &
+      var_name='t'                                , &
+      freq=freq_daily                             , &
+      stat=stat_max                               , &
+      array_shape=cell_dims                       , &
+      active=.false.)
+    call this%accum_list%append(accum)
+    call accum%init(                                &
+      name='daily_min_t'                          , &
+      units='K'                                   , &
+      long_name='Daily minimum temperature'       , &
+      from='dstate'                               , &
+      var_name='t'                                , &
+      freq=freq_daily                             , &
+      stat=stat_min                               , &
+      array_shape=cell_dims                       , &
+      active=.false.)
+    call this%accum_list%append(accum)
+    call accum%init(                                &
+      name='daily_avg_u'                          , &
+      units='m s-1'                               , &
+      long_name='Daily averaged u-component speed', &
+      from='dstate'                               , &
+      var_name='u'                                , &
+      freq=freq_daily                             , &
+      stat=stat_avg                               , &
+      array_shape=cell_dims                       , &
+      active=.false.)
+    call this%accum_list%append(accum)
+    call accum%init(                                &
+      name='daily_avg_v'                          , &
+      units='m s-1'                               , &
+      long_name='Daily averaged v-component speed', &
+      from='dstate'                               , &
+      var_name='v'                                , &
+      freq=freq_daily                             , &
+      stat=stat_avg                               , &
+      array_shape=cell_dims                       , &
+      active=.false.)
+    call this%accum_list%append(accum)
 
   end subroutine block_init_stage_1
 
@@ -174,18 +223,26 @@ contains
     integer, intent(in) :: itime
 
     integer i, is, ie, js, je, ks, ke
-    class(*), pointer :: accum
 
     is = this%mesh%full_ids; ie = this%mesh%full_ide
     js = this%mesh%full_jds; je = this%mesh%full_jde
     ks = this%mesh%full_kds; ke = this%mesh%full_kde
 
     do i = 1, this%accum_list%size
-      accum => this%accum_list%value_at(i)
-      select type (accum)
+      select type (accum => this%accum_list%value_at(i))
       type is (accum_type)
-        print *, accum%name, accum%freq, accum%stat
-        call accum%accum_run_3d(this%dstate(itime)%t(is:ie,js:je,ks:ke))
+        if (.not. accum%active) cycle
+        select case (accum%from)
+        case ('dstate')
+          select case (accum%var_name)
+          case ('t')
+            call accum%accum_run_3d(this%dstate(itime)%t(is:ie,js:je,ks:ke))
+          case ('u')
+            call accum%accum_run_3d(this%dstate(itime)%u(is:ie,js:je,ks:ke))
+          case ('v')
+            call accum%accum_run_3d(this%dstate(itime)%v(is:ie,js:je,ks:ke))
+          end select
+        end select
       end select
     end do
 

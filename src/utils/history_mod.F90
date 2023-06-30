@@ -277,6 +277,7 @@ contains
     do k = 1, blocks(1)%accum_list%size
       select type (accum => blocks(1)%accum_list%value_at(k))
       type is (accum_type)
+        if (.not. accum%active) cycle
         call fiona_add_var('h0', accum%name, accum%units, accum%long_name, dim_names=cell_dims_3d, dtype=output_h0_dtype)
       end select
     end do
@@ -581,6 +582,7 @@ contains
       do k = 1, accum_list%size
         select type (accum => accum_list%value_at(k))
         type is (accum_type)
+          if (.not. accum%active) cycle
           call fiona_output('h0', accum%name, accum%array(:,:,:,1), start=start, count=count)
         end select
       end do

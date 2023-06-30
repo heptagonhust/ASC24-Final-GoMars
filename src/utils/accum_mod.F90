@@ -25,10 +25,14 @@ module accum_mod
     character(30) :: name = 'N/A'
     character(30) :: units = 'N/A'
     character(50) :: long_name = 'N/A'
+    character(30) :: from = 'N/A'
+    character(30) :: var_name = 'N/A'
+    logical :: active = .true.
     integer :: freq = 0
     integer :: stat = 0
     integer :: time_steps = 0
     logical :: tick = .false.
+    type(timedelta_type) dt
     type(datetime_type) last_time
     real(r8), allocatable, dimension(:,:,:,:) :: array
   contains
@@ -46,23 +50,31 @@ module accum_mod
 
 contains
 
-  subroutine accum_init(this, name, units, long_name, freq, stat, array_shape)
+  subroutine accum_init(this, name, units, long_name, from, var_name, freq, stat, array_shape, active)
 
     class(accum_type), intent(inout) :: this
     character(*), intent(in) :: name
     character(*), intent(in) :: units
     character(*), intent(in) :: long_name
+    character(*), intent(in) :: from
+    character(*), intent(in) :: var_name
     integer, intent(in) :: freq
     integer, intent(in) :: stat
     integer, intent(in) :: array_shape(:)
+    logical, intent(in) :: active
+
+    integer, parameter :: calendar = datetime_noleap_calendar
 
     call this%clear()
 
     this%name = name
     this%units = units
     this%long_name = long_name
+    this%from = from
+    this%var_name = var_name
     this%freq = freq
     this%stat = stat
+    this%active = active
     this%last_time = curr_time
 
     associate (s => array_shape)
@@ -81,6 +93,17 @@ contains
       end if
     end select
     end associate
+
+    select case (this%freq)
+    case (freq_hourly)
+      call this%dt%init(days=0, hours=1)
+    case (freq_daily)
+      call this%dt%init(days=1)
+    case (freq_monthly)
+      call this%dt%init(days=days_of_month(this%last_time%year, this%last_time%month, calendar))
+    case (freq_yearly)
+      call this%dt%init(days=days_of_year(this%last_time%year, calendar))
+    end select
 
     select case (stat)
     case (stat_avg)
@@ -105,33 +128,17 @@ contains
 
     class(accum_type), intent(inout) :: this
 
-    integer, parameter :: calendar = datetime_noleap_calendar
-    type(timedelta_type) dt
-
-    select case (this%freq)
-    case (freq_hourly)
-      call dt%init(days=0, hours=1)
-    case (freq_daily)
-      call dt%init(days=1)
-    case (freq_monthly)
-      call dt%init(days=days_of_month(this%last_time%year, this%last_time%month, calendar))
-    case (freq_yearly)
-      call dt%init(days=days_of_year(this%last_time%year, calendar))
-    end select
-
     if (this%tick) then
       select case (this%stat)
       case (stat_avg)
         this%array = 0
       case (stat_max)
         this%array = -inf
-        stop 999
       case (stat_min)
         this%array = inf
       end select
       this%tick = .false.
     end if
-    this%tick = curr_time - this%last_time >= dt
 
   end subroutine accum_run_start
 
@@ -140,8 +147,11 @@ contains
     class(accum_type), intent(inout) :: this
 
     this%time_steps = this%time_steps + 1
+    this%tick = curr_time - this%last_time >= this%dt
     if (this%tick) then
-      if (this%stat == stat_avg) this%array = this%array / this%time_steps
+      if (this%stat == stat_avg) then
+        this%array = this%array / this%time_steps
+      end if
       this%last_time = curr_time
       this%time_steps = 0
     end if
@@ -195,7 +205,6 @@ contains
       this%array(:,:,:,1) = this%array(:,:,:,1) + array
     case (stat_max)
       this%array(:,:,:,1) = max(this%array(:,:,:,1), array)
-      print *, minval(this%array), maxval(this%array)
     case (stat_min)
       this%array(:,:,:,1) = min(this%array(:,:,:,1), array)
     end select
