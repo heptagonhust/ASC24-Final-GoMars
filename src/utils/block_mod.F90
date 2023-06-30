@@ -222,6 +222,7 @@ contains
     class(block_type), intent(inout) :: this
     integer, intent(in) :: itime
 
+    class(*), pointer :: accum
     integer i, is, ie, js, je, ks, ke
 
     is = this%mesh%full_ids; ie = this%mesh%full_ide
@@ -229,7 +230,8 @@ contains
     ks = this%mesh%full_kds; ke = this%mesh%full_kde
 
     do i = 1, this%accum_list%size
-      select type (accum => this%accum_list%value_at(i))
+      accum => this%accum_list%value_at(i)
+      select type (accum)
       type is (accum_type)
         if (.not. accum%active) cycle
         select case (accum%from)
