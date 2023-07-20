@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 import subprocess
 
 parser = argparse.ArgumentParser(description='Pulls all or some submodules from external repositories.')
 parser.add_argument('--libs', nargs='+', help='The libraries to pull.', choices=('ccpp',), default=[])
 args = parser.parse_args()
 
-def pull(lib_path, resursive=False):
-	if resursive:
-		cmd = f'git submodule update --resursive --init {lib_path}'
-	else:
-		cmd = f'git submodule update --init {lib_path}'
+def run(cmd):
 	print(f'==> {cmd}')
 	res = subprocess.run(cmd, shell=True, check=True)
+
+def pull(lib_path, recursive=False):
+	if recursive:
+		cmd = f'git submodule update --recursive --init {lib_path}'
+	else:
+		cmd = f'git submodule update --init {lib_path}'
+	run(cmd)
 	
 pull('lib/container')
 pull('lib/datetime')
@@ -22,5 +26,7 @@ pull('lib/flogger')
 pull('lib/string')
 
 if 'ccpp' in args.libs:
-	pull('src/physics/ccpp/ccpp-framework')
-	pull('src/physics/ccpp/ccpp-physics', resursive=True)
+	pull('src/physics/ccpp/framework')
+	pull('src/physics/ccpp/physics', recursive=True)
+	os.chdir('src/physics/ccpp')
+	run('./run.sh')
