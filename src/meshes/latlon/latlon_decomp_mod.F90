@@ -1,6 +1,8 @@
 module latlon_decomp_mod
 
   use mpi
+  use string
+  use flogger
   use math_mod, only: round_robin
   use latlon_mesh_mod
   use latlon_parallel_types_mod
@@ -44,7 +46,7 @@ contains
       if (proc%np < global_mesh%full_nlon / 2) then
         nproc_lat(1) = proc%np
       else
-        nproc_lat(1) = global_mesh%full_nlat / 2
+        nproc_lat(1) = global_mesh%full_nlat / 3
       end if
       if (mod(proc%np, nproc_lat(1)) /= 0) then
         ierr = 3
@@ -76,6 +78,9 @@ contains
     else
       proc%cart_dims = [merge(1, proc%np, cart_dim_lon == 1), merge(proc%np, 1, cart_dim_lat == 2)]
       proc%idom = 1
+    end if
+    if (proc%is_root()) then
+      call log_notice('Process layout is ' // to_str(nproc_lon(1)) // 'x' // to_str(nproc_lat(1)) // '.')
     end if
     ! Check decomposition dimensions.
     if (proc%cart_dims(cart_dim_lon) /= 1 .and. mod(proc%cart_dims(cart_dim_lon), 2) /= 0) then

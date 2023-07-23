@@ -351,6 +351,7 @@ contains
       write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
       write(*, *) 'filter_min_width    = ', filter_min_width
+      write(*, *) 'filter_ptend        = ', to_str(filter_ptend)
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'adv_scheme          = ', trim(adv_scheme)
       write(*, *) 'depart_point_scheme = ', trim(depart_point_scheme)
