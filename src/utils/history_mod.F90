@@ -180,6 +180,7 @@ contains
     call fiona_add_dim('h0', 'ilat' , size=global_mesh%half_nlat, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilev' , size=global_mesh%half_nlev, add_var=.true., decomp=.false.)
     ! Variables
+    call fiona_add_var('h0', 'z', long_name='Geopotential height', units='m', dim_names=cell_dims_3d, dtype=output_h0_dtype)
     do i = 1, ntracers
       call fiona_add_var('h0', tracer_names(i), long_name=tracer_long_names(i), units=tracer_units(i), dim_names=cell_dims_3d, dtype=output_h0_dtype)
     end do
@@ -466,6 +467,7 @@ contains
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
+      call fiona_output('h0', 'z', blocks(1)%dstate(itime)%gz(is:ie,js:je,ks:ke) / g, start=start, count=count)
       do i = 1, ntracers
         call fiona_output('h0', tracer_names(i), tracers(iblk)%q(is:ie,js:je,ks:ke,i), start=start, count=count)
       end do
