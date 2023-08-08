@@ -125,9 +125,19 @@ contains
     real(8), intent(in), optional :: coarse_pole_mul
     logical, intent(in), optional :: keep_lev
 
+    integer nlev_opt, id_opt, lon_hw_opt, lat_hw_opt
+    real(8) coarse_pole_decay_opt, coarse_pole_mul_opt
+    logical keep_lev_opt
     real(8) dlat0
     real(16) x(3), y(3), z(3)
     integer i, j, ierr
+
+    nlev_opt              =  1; if (present(nlev             )) nlev_opt              = nlev
+    id_opt                = -1; if (present(id               )) id_opt                = id
+    lon_hw_opt            =  3; if (present(lon_hw           )) lon_hw_opt            = lon_hw
+    lat_hw_opt            =  3; if (present(lat_hw           )) lat_hw_opt            = lat_hw
+    coarse_pole_decay_opt =  0; if (present(coarse_pole_decay)) coarse_pole_decay_opt = coarse_pole_decay
+    coarse_pole_mul_opt   =  0; if (present(coarse_pole_mul  )) coarse_pole_mul_opt   = coarse_pole_mul
 
     call this%clear(keep_lev)
 
@@ -143,16 +153,16 @@ contains
     this%full_jde  = this%full_nlat
     this%half_jds  = 1
     this%half_jde  = this%half_nlat
-    this%full_nlev = merge(nlev, 1, present(nlev))
+    this%full_nlev = nlev_opt
     this%half_nlev = this%full_nlev + 1
     this%full_kds  = 1
     this%full_kde  = this%full_nlev
     this%half_kds  = 1
     this%half_kde  = this%half_nlev
 
-    this%id        = merge(id            , -1, present(id))
-    this%lon_hw    = merge(lon_hw,  1, present(lon_hw))
-    this%lat_hw    = merge(lat_hw,  1, present(lat_hw))
+    this%id        = id_opt
+    this%lon_hw    = lon_hw_opt
+    this%lat_hw    = lat_hw_opt
     this%start_lon = 0
     this%end_lon   =  pi2
     this%start_lat = -pi05
@@ -175,11 +185,11 @@ contains
       if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0
     end do
 
-    if (merge(coarse_pole_mul, 0.0d0, present(coarse_pole_mul)) /= 0) then
+    if (coarse_pole_mul_opt /= 0) then
       ! Calculate real dlat which is large at polar region.
       dlat0 = this%dlon
       do j = 1, this%half_nlat
-        this%dlat(j) = dlat0 * (1 + (coarse_pole_mul - 1) * exp(-coarse_pole_decay * (abs(this%half_lat(j)) - pi05)**2))
+        this%dlat(j) = dlat0 * (1 + (coarse_pole_mul_opt - 1) * exp(-coarse_pole_decay_opt * (abs(this%half_lat(j)) - pi05)**2))
       end do
       this%dlat(1:this%half_nlat) = this%dlat(1:this%half_nlat) / sum(this%dlat(1:this%half_nlat)) * pi
     else
@@ -720,7 +730,15 @@ contains
     class(latlon_mesh_type), intent(inout) :: this
     logical, intent(in), optional :: keep_lev
 
-    if (.not. merge(keep_lev, .false., present(keep_lev))) then
+    logical keep_lev_opt
+
+    if (present(keep_lev)) then
+      keep_lev_opt = keep_lev
+    else
+      keep_lev_opt = .false.
+    end if
+
+    if (.not. keep_lev_opt) then
       if (allocated(this%full_dlev      )) deallocate(this%full_dlev      )
       if (allocated(this%half_dlev      )) deallocate(this%half_dlev      )
       if (allocated(this%half_dlev_upper)) deallocate(this%half_dlev_upper)

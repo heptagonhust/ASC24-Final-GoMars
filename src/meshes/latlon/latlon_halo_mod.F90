@@ -66,6 +66,8 @@ contains
     logical, intent(in), optional :: at_south_pole
     logical, intent(in), optional :: at_north_pole
 
+    logical at_south_pole_opt
+    logical at_north_pole_opt
     integer full_ids, full_ide
     integer full_jds, full_jde
     integer half_ids, half_ide
@@ -78,6 +80,9 @@ contains
     integer nlev(2)
     integer i, j, k, ierr
 
+    at_south_pole_opt = .false.; if (present(at_south_pole)) at_south_pole_opt = at_south_pole
+    at_north_pole_opt = .false.; if (present(at_north_pole)) at_north_pole_opt = at_north_pole
+
     if (present(ngb_proc_id)) then
       this%proc_id = ngb_proc_id
     else if (present(iblk)) then
@@ -87,8 +92,8 @@ contains
     this%host_id = host_id
     this%dtype = dtype
 
-    this%lon_hw = merge(lon_hw, mesh%lon_hw, present(lon_hw))
-    this%lat_hw = merge(lat_hw, mesh%lat_hw, present(lat_hw))
+    this%lon_hw = mesh%lon_hw; if (present(lon_hw)) this%lon_hw = lon_hw
+    this%lat_hw = mesh%lat_hw; if (present(lat_hw)) this%lat_hw = lat_hw
     ! Calculate the start and end indices of halo for MPI.
     ! NOTE: MPI array index starts from zero.
     if (present(ids) .and. present(ide)) then
@@ -197,7 +202,7 @@ contains
         send_subarray_start(:,2,2) = [half_ids-this%lon_hw,half_jds,0]
         recv_subarray_start(:,2,2) = [half_ids            ,half_jds,0]
       case (south)
-        if (merge(at_south_pole, .false., present(at_south_pole))) then
+        if (at_south_pole_opt) then
           ! full_lon + full_lat
           send_subarray_start(:,1,1) = [full_ids,full_jde+2,0]
           recv_subarray_start(:,1,1) = [full_ids,full_jds  ,0]
@@ -225,7 +230,7 @@ contains
           recv_subarray_start(:,2,2) = [half_ids,half_jds  ,0]
         end if
       case (north)
-        if (merge(at_north_pole, .false., present(at_north_pole))) then
+        if (at_north_pole_opt) then
           ! full_lon + full_lat
           send_subarray_start(:,1,1) = [full_ids,full_jds-this%lat_hw-1,0]
           recv_subarray_start(:,1,1) = [full_ids,full_jds              ,0]

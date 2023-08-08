@@ -801,15 +801,16 @@ contains
     call allocate_array(mesh, this%dmf            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%omg            , full_lon=.true., full_lat=.true., full_lev=.true.)
 
+    call allocate_array(this%mesh, this% dudt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this% dvdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%dptdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+
   end subroutine aux_array_init
 
   subroutine aux_array_init_phys(this)
 
     class(aux_array_type), intent(inout) :: this
 
-    call allocate_array(this%mesh, this% dudt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this% dvdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%dptdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(this%mesh, this% dqdt_smag, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
 
     if (trim(physics_suite) /= '') then

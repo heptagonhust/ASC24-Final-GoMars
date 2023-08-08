@@ -253,26 +253,26 @@ contains
     real(r8)    , intent(in), optional :: minutes
     real(r8)    , intent(in), optional :: seconds
 
-    real(r8) months_
-    real(r8) days_
-    real(r8) sol_
-    real(r8) hours_
-    real(r8) minutes_
-    real(r8) seconds_
+    real(r8) months_opt
+    real(r8) days_opt
+    real(r8) sol_opt
+    real(r8) hours_opt
+    real(r8) minutes_opt
+    real(r8) seconds_opt
     type(alert_type) alert
 
-    months_  = merge(months , 0.0_r8, present(months ))
-    days_    = merge(days   , 0.0_r8, present(days   ))
-    sol_     = merge(sol    , 0.0_r8, present(sol    ))
-    hours_   = merge(hours  , 0.0_r8, present(hours  ))
-    minutes_ = merge(minutes, 0.0_r8, present(minutes))
-    seconds_ = merge(seconds, 0.0_r8, present(seconds))
+    months_opt  = 0; if (present(months )) months_opt  = months
+    days_opt    = 0; if (present(days   )) days_opt    = days
+    sol_opt     = 0; if (present(sol    )) sol_opt     = sol
+    hours_opt   = 0; if (present(hours  )) hours_opt   = hours
+    minutes_opt = 0; if (present(minutes)) minutes_opt = minutes
+    seconds_opt = 0; if (present(seconds)) seconds_opt = seconds
 
     select case (planet)
     case ('earth')
-      call alert%period%init(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
+      call alert%period%init(months=months_opt, days=days_opt, hours=hours_opt, minutes=minutes_opt, seconds=seconds_opt)
     case ('mars')
-      call alert%period%init(sol=sol_, hours=hours_, minutes=minutes_, seconds=seconds_)
+      call alert%period%init(sol=sol_opt, hours=hours_opt, minutes=minutes_opt, seconds=seconds_opt)
     end select
     alert%last_time = start_time
     call alerts%insert(trim(name), alert)
