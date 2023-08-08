@@ -224,8 +224,8 @@ contains
     call fiona_add_var('h0', 'pt'     , long_name='potential temperature'       , units='K'     , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 't'      , long_name='temperature'                 , units='K'     , dim_names=cell_dims_3d)
     call fiona_add_var('h0', 'z'      , long_name='height'                      , units='m'     , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
-    ! call fiona_add_var('h0', 'ph'     , long_name='hydrostatic pressure'        , units='Pa'    , dim_names=cell_dims_3d)
-    call fiona_add_var('h0', 'vor'    , long_name='relative vorticity'          , units='s-1'   , dim_names= vtx_dims_3d)
+    ! call fiona_add_var('h0', 'ph'     , long_name='hydrostatic pressure'        , units='Pa'    , dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'vor'    , long_name='relative vorticity'          , units='s-1'   , dim_names= vtx_dims_3d, dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'div'    , long_name='divergence'                  , units='s-1'   , dim_names=cell_dims_3d)
     ! call fiona_add_var('h0', 'landmask', long_name='land mask'                  , units=''      , dim_names=['lon', 'lat'])
 
@@ -370,7 +370,7 @@ contains
     if (physics_suite /= 'N/A') then
       call fiona_add_var('h1', 'dudt_phys'  , long_name='physics tendency for u'                        , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'dvdt_phys'  , long_name='physics tendency for v'                        , units='', dim_names=cell_dims_3d)
-      call fiona_add_var('h1', 'dtdt_phys'  , long_name='physics tendency for t'                        , units='', dim_names=cell_dims_3d)
+      call fiona_add_var('h1', 'dptdt_phys' , long_name='physics tendency for pt'                       , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'dqdt_phys'  , long_name='physics tendency for q'                        , units='', dim_names=cell_dims_3d)
     end if
 
@@ -825,10 +825,10 @@ contains
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-      call fiona_output('h1', 'dudt_phys', aux%dudt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
-      call fiona_output('h1', 'dvdt_phys', aux%dvdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
-      call fiona_output('h1', 'dtdt_phys', aux%dtdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
-      call fiona_output('h1', 'dqdt_phys', aux%dqdt_phys(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
+      call fiona_output('h1',  'dudt_phys', aux% dudt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1',  'dvdt_phys', aux% dvdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1', 'dptdt_phys', aux%dptdt_phys(is:ie,js:je,ks:ke       ), start=start, count=count)
+      call fiona_output('h1',  'dqdt_phys', aux% dqdt_phys(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
     end if
     end associate
 

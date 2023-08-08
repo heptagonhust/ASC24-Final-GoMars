@@ -149,7 +149,7 @@ contains
 
   subroutine gmcore_run()
 
-    integer i, j, iblk, itime
+    integer i, j, m, iblk, itime
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &
@@ -182,12 +182,11 @@ contains
       ! ------------------------------------------------------------------------
       !                              Dynamical Core
       do iblk = 1, size(blocks)
+        call damp_run(blocks(iblk), blocks(iblk)%dstate(old), dt_dyn)
         call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
-        call physics_update_state(blocks(iblk), blocks(iblk)%dstate(new), dt_dyn)
-        call damp_run(blocks(iblk), blocks(iblk)%dstate(new), blocks(iblk)%dtend(new), dt_dyn)
+        if (pdc_type == 1) call physics_update_dynamics(blocks(iblk), blocks(iblk)%dstate(new), dt_dyn)
         call blocks(iblk)%dstate(new)%c2a()
       end do
-
       ! Advance to n+1 time level.
       ! NOTE: Time indices are swapped, e.g. new <=> old.
       call time_advance(dt_dyn)

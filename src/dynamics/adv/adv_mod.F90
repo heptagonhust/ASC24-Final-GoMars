@@ -15,6 +15,7 @@ module adv_mod
   use upwind_mod
   use weno_mod
   use tvd_mod
+  use physics_mod
 
   implicit none
 
@@ -184,15 +185,17 @@ contains
     if (.not. allocated(blocks(1)%adv_batches)) return
 
     do iblk = 1, size(blocks)
-      associate (block  => blocks(iblk)                  , &
-                 dstate => blocks(iblk)%dstate(itime)    , &
-                 mesh   => blocks(iblk)%filter_mesh      , &
-                 m_new  => blocks(iblk)%dstate(itime)%dmg)
+      associate (block     => blocks(iblk)                  , &
+                 dstate    => blocks(iblk)%dstate(itime)    , &
+                 mesh      => blocks(iblk)%filter_mesh      , &
+                 m_new     => blocks(iblk)%dstate(itime)%dmg, &
+                 dqdt_smag => blocks(iblk)%aux%dqdt_smag    )
       allocate(q_old(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
       allocate(work(mesh%full_ids:mesh%full_ide,mesh%full_nlev))
       allocate(pole(mesh%full_nlev))
       do m = 1, size(block%adv_batches)
         if (time_is_alerted(block%adv_batches(m)%name)) then
+          if (m == 1 .and. pdc_type == 2) call physics_update_dynamics(block, dstate, dt_adv)
           associate (batch => block%adv_batches(m), &
                      is    => mesh%full_ims       , &
                      ie    => mesh%full_ime       , &
@@ -302,7 +305,7 @@ contains
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv
+                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k) + dqdt_smag(i,j,k,batch%idx(l))) * dt_adv
                 end do
               end do
             end do
@@ -335,6 +338,7 @@ contains
               end do
             end if
             call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+            if (pdc_type == 1 .or. pdc_type == 2) call physics_update_tracers(block, dstate, dt_adv, batch%idx(l))
             end associate
           end do
           end associate

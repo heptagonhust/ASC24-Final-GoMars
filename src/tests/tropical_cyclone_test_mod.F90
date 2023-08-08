@@ -185,7 +185,12 @@ CONTAINS
     end do
     call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
-    mgs = ps
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
+        mgs(i,j) = ps(i,j)
+      end do
+    end do
+    call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine tropical_cyclone_test_set_ic

@@ -6,6 +6,7 @@ module smag_damp_mod
   use namelist_mod
   use latlon_parallel_mod
   use block_mod
+  use tracer_mod
 
   implicit none
 
@@ -42,28 +43,34 @@ contains
 
   end subroutine smag_damp_final
 
-  subroutine smag_damp_run(block, dt, dtend, dstate)
+  subroutine smag_damp_run(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
+    type(dstate_type), intent(in) :: dstate
     real(r8), intent(in) :: dt
-    type(dtend_type), intent(inout) :: dtend
-    type(dstate_type), intent(inout) :: dstate
 
-    integer i, j, k
+    integer i, j, k, m
     real(r8) ls2
+    real(r8), pointer :: q(:,:,:,:)
 
-    associate (mesh      => block%mesh       , &
-               smag_t    => block%aux%smag_t , & ! working array
-               smag_s    => block%aux%smag_s , & ! working array
-               kmh_lon   => block%aux%kmh_lon, & ! working array
-               kmh_lat   => block%aux%kmh_lat, & ! working array
-               kmh       => block%aux%kmh    , & ! working array
-               dudt      => dtend%du         , & ! working array
-               dvdt      => dtend%dv         , & ! working array
-               dptdt     => dtend%dpt        , & ! working array
-               u         => dstate%u_lon     , & ! inout
-               v         => dstate%v_lat     , & ! inout
-               pt        => dstate%pt        )   ! inout
+    associate (mesh      => block%mesh          , &
+               smag_t    => block%aux%smag_t    , & ! working array
+               smag_s    => block%aux%smag_s    , & ! working array
+               kmh_lon   => block%aux%kmh_lon   , & ! working array
+               kmh_lat   => block%aux%kmh_lat   , & ! working array
+               kmh       => block%aux%kmh       , & ! working array
+               dmg       => dstate%dmg          , & ! working array
+               dudt      => block%aux%dudt_smag , & ! out
+               dvdt      => block%aux%dvdt_smag , & ! out
+               dptdt     => block%aux%dptdt_smag, & ! out
+               dqdt      => block%aux%dqdt_smag , & ! out
+               u         => dstate%u_lon        , & ! inout
+               v         => dstate%v_lat        , & ! inout
+               pt        => dstate%pt           )   ! inout
+    ! Horizontal tension strain on centers
+    ! ∂u   ∂v
+    ! -- - --
+    ! ∂x   ∂y
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
@@ -78,6 +85,10 @@ contains
     end do
     call fill_halo(block%halo, smag_t, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
 
+    ! Horizontal shearing strain on vertices
+    ! ∂u   ∂v
+    ! -- + --
+    ! ∂y   ∂x
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%half_ids, mesh%half_ide
@@ -116,19 +127,19 @@ contains
       end do
     end do
 
-    ! do k = mesh%full_kds, mesh%full_kde
-    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-    !     ls2 = smag_damp_coef / (1 / mesh%de_lon(j)**2 + 1 / mesh%le_lon(j)**2) * decay_from_top(k)
-    !     do i = mesh%full_ids, mesh%full_ide
-    !       kmh(i,j,k) = ls2 * sqrt(                        &
-    !         smag_t(i,j,k)**2 + 0.25_r8 * (                &
-    !           smag_s(i-1,j-1,k)**2 + smag_s(i-1,j,k)**2 + &
-    !           smag_s(i  ,j-1,k)**2 + smag_s(i  ,j,k)**2   &
-    !         )                                             &
-    !       )
-    !     end do
-    !   end do
-    ! end do
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        ls2 = smag_damp_coef / (1 / mesh%de_lon(j)**2 + 1 / mesh%le_lon(j)**2) * decay_from_top(k)
+        do i = mesh%full_ids, mesh%full_ide
+          kmh(i,j,k) = ls2 * sqrt(                        &
+            smag_t(i,j,k)**2 + 0.25_r8 * (                &
+              smag_s(i-1,j-1,k)**2 + smag_s(i-1,j,k)**2 + &
+              smag_s(i  ,j-1,k)**2 + smag_s(i  ,j,k)**2   &
+            )                                             &
+          )
+        end do
+      end do
+    end do
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -138,18 +149,10 @@ contains
             ((u(i,j+1,k) - u(i,j  ,k)) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) - &
              (u(i,j  ,k) - u(i,j-1,k)) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)   &
             ) / mesh%le_lon(j) / mesh%full_cos_lat(j)                                &
-          )
+          ) / dt
         end do
       end do
     end do
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          u(i,j,k) = u(i,j,k) + dt * dudt(i,j,k)
-        end do
-      end do
-    end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
@@ -157,7 +160,7 @@ contains
           do i = mesh%full_ids, mesh%full_ide
             dvdt(i,j,k) = kmh_lat(i,j,k) * (                                           &
               (v(i-1,j,k) - 2 * v(i,j,k) + v(i+1,j,k)) / mesh%le_lat(j)**2             &
-            )
+            ) / dt
           end do
         else
           do i = mesh%full_ids, mesh%full_ide
@@ -166,40 +169,48 @@ contains
               ((v(i,j+1,k) - v(i,j  ,k)) / mesh%le_lon(j+1) * mesh%full_cos_lat(j+1) - &
                (v(i,j  ,k) - v(i,j-1,k)) / mesh%le_lon(j  ) * mesh%full_cos_lat(j  )   &
               ) / mesh%de_lat(j) / mesh%half_cos_lat(j)                                &
-            )
+            ) / dt
           end do
         end if
       end do
     end do
+
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds, mesh%half_jde
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
-          v(i,j,k) = v(i,j,k) + dt * dvdt(i,j,k)
+          dptdt(i,j,k) = kmh(i,j,k) * (                           &
+            (dmg(i-1,j,k) * pt(i-1,j,k) - 2 *                     &
+             dmg(i  ,j,k) * pt(i  ,j,k) +                         &
+             dmg(i+1,j,k) * pt(i+1,j,k)) / mesh%de_lon(j)**2 +    &
+            ((dmg(i,j+1,k) * pt(i,j+1,k) - dmg(i,j,k) * pt(i,j,k) &
+             ) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) -      &
+             (dmg(i,j,k) * pt(i,j,k) - dmg(i,j-1,k) * pt(i,j-1,k) &
+             ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)        &
+            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)             &
+          ) / dt
         end do
       end do
     end do
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
 
-    ! do k = mesh%full_kds, mesh%full_kde
-    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-    !     do i = mesh%full_ids, mesh%full_ide
-    !       dptdt(i,j,k) = kmh(i,j,k) * (                                                &
-    !         (pt(i-1,j,k) - 2 * pt(i,j,k) + pt(i+1,j,k)) / mesh%de_lon(j)**2 +          &
-    !         ((pt(i,j+1,k) - pt(i,j  ,k)) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) - &
-    !          (pt(i,j  ,k) - pt(i,j-1,k)) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)   &
-    !         ) / mesh%le_lon(j) / mesh%full_cos_lat(j)                                  &
-    !       )
-    !     end do
-    !   end do
-    ! end do
-    ! do k = mesh%full_kds, mesh%full_kde
-    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-    !     do i = mesh%full_ids, mesh%full_ide
-    !       pt(i,j,k) = pt(i,j,k) + dt * dptdt(i,j,k)
-    !     end do
-    !   end do
-    ! end do
-    ! call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call tracer_get_array(block%id, q)
+    do m = 1, ntracers
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%full_ids, mesh%full_ide
+            dqdt(i,j,k,m) = kmh(i,j,k) * (                            &
+              (dmg(i-1,j,k) * q(i-1,j,k,m) - 2 *                      &
+               dmg(i  ,j,k) * q(i  ,j,k,m) +                          &
+               dmg(i+1,j,k) * q(i+1,j,k,m)) / mesh%de_lon(j)**2 +     &
+              ((dmg(i,j+1,k) * q(i,j+1,k,m) - dmg(i,j,k) * q(i,j,k,m) &
+               ) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) -        &
+               (dmg(i,j,k) * q(i,j,k,m) - dmg(i,j-1,k) * q(i,j-1,k,m) &
+               ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)          &
+              ) / mesh%le_lon(j) / mesh%full_cos_lat(j)               &
+            ) / dt
+          end do
+        end do
+      end do
+    end do
     end associate
 
   end subroutine smag_damp_run

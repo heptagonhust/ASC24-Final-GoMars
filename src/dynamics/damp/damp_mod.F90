@@ -38,18 +38,17 @@ contains
 
   end subroutine damp_final
 
-  subroutine damp_run(block, dstate, dtend, dt)
+  subroutine damp_run(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-    type(dtend_type), intent(inout) :: dtend
     real(r8), intent(in) :: dt
 
     if (use_div_damp) then
       call div_damp_run(block, dstate)
     end if
     if (use_smag_damp) then
-      call smag_damp_run(block, dt, dtend, dstate)
+      call smag_damp_run(block, dstate, dt)
     end if
     if (use_pole_damp .or. nudge_pole_v) then
       call pole_damp_run(block, dstate)

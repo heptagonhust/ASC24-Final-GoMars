@@ -548,8 +548,8 @@ contains
     this%half_ime = this%half_ide + this%lon_hw
     this%half_jms = this%half_jds - this%lat_hw
     this%half_jme = this%half_jde + this%lat_hw
-    this%full_kms = this%full_kds - 2
-    this%full_kme = this%full_kde + 2
+    this%full_kms = this%full_kds - 3
+    this%full_kme = this%full_kde + 3
     this%half_kms = this%half_kds
     this%half_kme = this%half_kde
 

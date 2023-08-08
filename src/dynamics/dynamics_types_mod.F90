@@ -165,10 +165,15 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: dmf
     real(r8), allocatable, dimension(:,:,:) :: omg               ! Vertical pressure velocity (Pa s-1)
+    ! Tendencies from Smagorinsky diffusion
+    real(r8), allocatable, dimension(:,:,:  ) :: dudt_smag
+    real(r8), allocatable, dimension(:,:,:  ) :: dvdt_smag
+    real(r8), allocatable, dimension(:,:,:  ) :: dptdt_smag
+    real(r8), allocatable, dimension(:,:,:,:) :: dqdt_smag
     ! Tendencies from physics
     real(r8), allocatable, dimension(:,:,:  ) :: dudt_phys
     real(r8), allocatable, dimension(:,:,:  ) :: dvdt_phys
-    real(r8), allocatable, dimension(:,:,:  ) :: dtdt_phys
+    real(r8), allocatable, dimension(:,:,:  ) :: dptdt_phys
     real(r8), allocatable, dimension(:,:,:,:) :: dqdt_phys
   contains
     procedure :: init      => aux_array_init
@@ -204,10 +209,10 @@ contains
     call allocate_array(mesh, this%tv               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mg               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mg_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%mgs              , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
 
+    call allocate_array(filter_mesh, this%mgs       , full_lon=.true., full_lat=.true.                 )
     call allocate_array(filter_mesh, this%pt        , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (baroclinic) then
@@ -802,17 +807,22 @@ contains
 
     class(aux_array_type), intent(inout) :: this
 
+    call allocate_array(this%mesh, this% dudt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this% dvdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%dptdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this% dqdt_smag, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
+
     if (trim(physics_suite) /= '') then
       if (filter_ptend) then
-        call allocate_array(this%filter_mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(this%filter_mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(this%filter_mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(this%filter_mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
+        call allocate_array(this%filter_mesh, this% dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%filter_mesh, this% dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%filter_mesh, this%dptdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%filter_mesh, this% dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
       else
-        call allocate_array(this%mesh, this%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(this%mesh, this%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(this%mesh, this%dtdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(this%mesh, this%dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
+        call allocate_array(this%mesh, this% dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%mesh, this% dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%mesh, this%dptdt_phys, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%mesh, this% dqdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
       end if
     end if
 
@@ -849,9 +859,13 @@ contains
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%dmf              )) deallocate(this%dmf              )
     if (allocated(this%omg              )) deallocate(this%omg              )
+    if (allocated(this%dudt_smag        )) deallocate(this%dudt_smag        )
+    if (allocated(this%dvdt_smag        )) deallocate(this%dvdt_smag        )
+    if (allocated(this%dptdt_smag       )) deallocate(this%dptdt_smag       )
+    if (allocated(this%dqdt_smag        )) deallocate(this%dqdt_smag        )
     if (allocated(this%dudt_phys        )) deallocate(this%dudt_phys        )
     if (allocated(this%dvdt_phys        )) deallocate(this%dvdt_phys        )
-    if (allocated(this%dtdt_phys        )) deallocate(this%dtdt_phys        )
+    if (allocated(this%dptdt_phys       )) deallocate(this%dptdt_phys       )
     if (allocated(this%dqdt_phys        )) deallocate(this%dqdt_phys        )
 
   end subroutine aux_array_clear

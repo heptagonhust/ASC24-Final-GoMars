@@ -20,6 +20,12 @@ module namelist_mod
   real(r8)        :: dt_dyn               = 0
   real(r8)        :: dt_adv               = 0
   real(r8)        :: dt_phys              = 0
+  ! PDC type
+  ! 1: Update dynamics and tracers after their own calculation.
+  ! 2: Update dynamics and tracers after advection (moisture).
+  ! 3: Update dynamics and tracers after physics.
+  ! 4: Update dynamics at RK sub-steps and tracers after advection.
+  integer         :: pdc_type             = 1
 
   character(256)  :: case_desc            = 'N/A'
   character(256)  :: case_name            = 'N/A'
@@ -49,7 +55,7 @@ module namelist_mod
   character(30)   :: mp_scheme            = 'N/A'
   character(30)   :: pbl_scheme           = 'N/A'
   character(256)  :: cam_namelist_path    = 'N/A'
-  logical         :: filter_ptend         = .true.
+  logical         :: filter_ptend         = .false.
 
   character(256)  :: gmcore_data_dir      = 'N/A'
 
@@ -182,6 +188,7 @@ module namelist_mod
     dt_dyn                    , &
     dt_adv                    , &
     dt_phys                   , &
+    pdc_type                  , &
     run_years                 , &
     run_my                    , &
     run_sol                   , &
@@ -345,6 +352,7 @@ contains
       write(*, *) 'dt_dyn              = ', to_str(dt_dyn , 2)
       write(*, *) 'dt_adv              = ', to_str(dt_adv , 2)
       write(*, *) 'dt_phys             = ', to_str(dt_phys, 2)
+      write(*, *) 'pdc_type            = ', pdc_type
       write(*, *) 'max_wave_speed      = ', max_wave_speed
       write(*, *) 'max_cfl             = ', max_cfl
       write(*, *) 'filter_coef_a       = ', filter_coef_a

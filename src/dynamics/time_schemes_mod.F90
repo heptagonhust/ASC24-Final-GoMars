@@ -128,7 +128,10 @@ contains
 
     integer i, j, k
 
-    associate (mesh => block%mesh)
+    associate (mesh       => block%mesh          , &
+               dptdt_smag => block%aux%dptdt_smag, &
+               dudt_smag  => block%aux%dudt_smag , &
+               dvdt_smag  => block%aux%dvdt_smag )
     if (baroclinic) then
       if (dtend%update_mgs) then
         ! ----------------------------------------------------------------------
@@ -140,7 +143,7 @@ contains
             new_state%mgs(i,j) = old_state%mgs(i,j) + dt * dtend%dmgs(i,j)
           end do
         end do
-        call fill_halo(block%halo, new_state%mgs, full_lon=.true., full_lat=.true.)
+        call fill_halo(block%filter_halo, new_state%mgs, full_lon=.true., full_lat=.true.)
         new_state%mgs = new_state%mgs
         call calc_mg (block, new_state)
         call calc_dmg(block, new_state)
@@ -163,7 +166,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%dmg(i,j,k) + dt * dtend%dpt(i,j,k)) / new_state%dmg(i,j,k)
+              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%dmg(i,j,k) + dt * (dtend%dpt(i,j,k) + dptdt_smag(i,j,k))) / new_state%dmg(i,j,k)
             end do
           end do
         end do
@@ -201,14 +204,14 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * dtend%du(i,j,k)
+            new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * (dtend%du(i,j,k) + dudt_smag(i,j,k))
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * dtend%dv(i,j,k)
+            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * (dtend%dv(i,j,k) + dvdt_smag(i,j,k))
           end do
         end do
       end do
