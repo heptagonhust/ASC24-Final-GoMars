@@ -76,10 +76,14 @@ contains
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           mgs(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs(i,j) / Rd / teq)
+          phs(i,j) = mgs(i,j)
         end do
       end do
-      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
-      phs = mgs
+      if (pole_damp_mgs) then
+        call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+      else
+        call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+      end if
 
       call calc_mg(block, block%dstate(1))
 

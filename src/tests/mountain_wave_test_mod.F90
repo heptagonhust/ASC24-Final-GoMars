@@ -85,7 +85,11 @@ contains
                    (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * gzs(i,j))
       end do
     end do
-    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    if (pole_damp_mgs) then
+      call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+    else
+      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    end if
 
     call calc_mg(block, block%dstate(1))
 

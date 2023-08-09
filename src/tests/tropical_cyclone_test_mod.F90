@@ -40,6 +40,7 @@ MODULE tropical_cyclone_test_mod
 !=======================================================================
 
   use const_mod, only: r8
+  use namelist_mod
 
   IMPLICIT NONE
 
@@ -190,7 +191,11 @@ CONTAINS
         mgs(i,j) = ps(i,j)
       end do
     end do
-    call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+    if (pole_damp_mgs) then
+      call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+    else
+      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    end if
     end associate
 
   end subroutine tropical_cyclone_test_set_ic

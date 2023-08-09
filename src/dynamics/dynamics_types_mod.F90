@@ -212,7 +212,11 @@ contains
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
 
-    call allocate_array(filter_mesh, this%mgs       , full_lon=.true., full_lat=.true.                 )
+    if (pole_damp_mgs) then
+      call allocate_array(filter_mesh, this%mgs     , full_lon=.true., full_lat=.true.                 )
+    else
+      call allocate_array(       mesh, this%mgs     , full_lon=.true., full_lat=.true.                 )
+    end if
     call allocate_array(filter_mesh, this%pt        , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (baroclinic) then

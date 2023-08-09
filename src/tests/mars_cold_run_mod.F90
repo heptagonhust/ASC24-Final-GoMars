@@ -1,8 +1,8 @@
 module mars_cold_run_mod
 
   use flogger
-  use namelist_mod, only: topo_file, use_topo_smooth, ptop
   use const_mod
+  use namelist_mod
   use latlon_parallel_mod
   use block_mod
   use vert_coord_mod
@@ -54,9 +54,14 @@ contains
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         mgs(i,j) = ps0 * exp(-gzs(i,j) / (Rd * t0)) - ptop
+        phs(i,j) = mgs(i,j)
       end do
     end do
-    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    if (pole_damp_mgs) then
+      call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+    else
+      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    end if
 
     call calc_mg(block, block%dstate(1))
 
@@ -68,8 +73,6 @@ contains
       end do
     end do
     call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-
-    phs = mgs
     end associate
 
   end subroutine mars_cold_run_set_ic

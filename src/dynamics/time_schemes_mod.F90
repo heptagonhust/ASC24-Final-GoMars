@@ -143,7 +143,11 @@ contains
             new_state%mgs(i,j) = old_state%mgs(i,j) + dt * dtend%dmgs(i,j)
           end do
         end do
-        call fill_halo(block%filter_halo, new_state%mgs, full_lon=.true., full_lat=.true.)
+        if (pole_damp_mgs) then
+          call fill_halo(block%filter_halo, new_state%mgs, full_lon=.true., full_lat=.true.)
+        else
+          call fill_halo(block%halo, new_state%mgs, full_lon=.true., full_lat=.true.)
+        end if
         new_state%mgs = new_state%mgs
         call calc_mg (block, new_state)
         call calc_dmg(block, new_state)

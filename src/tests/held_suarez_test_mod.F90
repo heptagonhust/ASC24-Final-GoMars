@@ -2,6 +2,7 @@ module held_suarez_test_mod
 
   use flogger
   use const_mod, only: r8, Rd_o_cpd
+  use namelist_mod
   use formula_mod
   use vert_coord_mod
   use block_mod
@@ -47,7 +48,11 @@ contains
         mgs(i,j) = mgs(i,j) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
       end do
     end do
-    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    if (pole_damp_mgs) then
+      call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+    else
+      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    end if
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde

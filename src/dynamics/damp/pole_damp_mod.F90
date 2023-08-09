@@ -34,8 +34,10 @@ contains
                u_lon   => dstate%u_lon, &
                v_lat   => dstate%v_lat)
     if (use_pole_damp .and. baroclinic) then
-      call filter_on_cell(block%small_filter, mgs)
-      call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+      if (pole_damp_mgs) then
+        call filter_on_cell(block%small_filter, mgs)
+        call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
+      end if
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide

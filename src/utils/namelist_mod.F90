@@ -140,7 +140,7 @@ module namelist_mod
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 3.0_r8
-  real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
+  real(r8)        :: div_damp_coef2       = 0.001_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
@@ -149,6 +149,7 @@ module namelist_mod
   logical         :: use_pole_damp        = .false.
   logical         :: nudge_pole_v         = .true.
   real(r8)        :: nudge_pole_v_coef    = 0.2_r8
+  logical         :: pole_damp_mgs        = .false.
 
   ! Input settings
   integer         :: input_ngroup         = 0
@@ -276,6 +277,7 @@ module namelist_mod
     use_pole_damp             , &
     nudge_pole_v              , &
     nudge_pole_v_coef         , &
+    pole_damp_mgs             , &
     input_ngroup              , &
     output_h0                 , &
     output_h0_dtype           , &
@@ -400,6 +402,7 @@ contains
       write(*, *) 'smag_damp_coef      = ', smag_damp_coef
     end if
       write(*, *) 'use_pole_damp       = ', to_str(use_pole_damp)
+      write(*, *) 'pole_damp_mgs       = ', to_str(pole_damp_mgs)
       write(*, *) '========================================================='
 
   end subroutine print_namelist
