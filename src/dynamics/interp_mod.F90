@@ -87,8 +87,11 @@ contains
                                         mesh%full_kms:mesh%full_kme)
     real(r8), intent(in), optional :: upwind_wgt_
 
+    logical reversed_area_opt
     real(r8) beta
     integer i, j, k
+
+    reversed_area_opt = .false.; if (present(reversed_area)) reversed_area_opt = reversed_area
 
     if (present(u)) then
       ! WENO interpolation
@@ -104,7 +107,7 @@ contains
         return
       end select
       ! Upwind-biased interpolation
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      beta = upwind_wgt; if (present(upwind_wgt_)) beta = upwind_wgt_
       select case (upwind_order)
       case (1)
         do k = mesh%full_kds, mesh%full_kde
@@ -127,7 +130,7 @@ contains
       end select
     end if
 
-    if (merge(reversed_area, .false., present(reversed_area))) then
+    if (reversed_area_opt) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -137,7 +140,7 @@ contains
           end do
         end do
       end do
-    else ! reversed_area == .false.
+    else ! reversed_area_opt == .false.
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -166,11 +169,14 @@ contains
                                         mesh%full_kms:mesh%full_kme)
     real(r8), intent(in), optional :: upwind_wgt_
 
+    logical reversed_area_opt
     real(r8) beta
     integer i, j, k
 
+    reversed_area_opt = .false.; if (present(reversed_area)) reversed_area_opt = reversed_area
+
     if (present(v)) then
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      beta = upwind_wgt; if (present(upwind_wgt_)) beta = upwind_wgt_
       ! WENO interpolation
       select case (weno_order)
       case (3)
@@ -206,7 +212,7 @@ contains
       end select
     end if
 
-    if (merge(reversed_area, .false., present(reversed_area))) then
+    if (reversed_area_opt) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -216,7 +222,7 @@ contains
           end do
         end do
       end do
-    else ! reversed_area == .false.
+    else ! reversed_area_opt == .false.
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -336,7 +342,7 @@ contains
         return
       end select
       ! Upwind-biased interpolation
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      beta = upwind_wgt; if (present(upwind_wgt_)) beta = upwind_wgt_
       select case (upwind_order)
       case (1)
         do k = mesh%half_kds, mesh%half_kde
@@ -388,7 +394,7 @@ contains
     integer i, j, k
 
     if (present(v)) then
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      beta = upwind_wgt; if (present(upwind_wgt_)) beta = upwind_wgt_
       ! WENO interpolation
       select case (weno_order)
       case (3)
@@ -736,19 +742,19 @@ contains
                                  mesh%full_jms:mesh%full_jme)
     logical, intent(in), optional :: logp
 
-    logical logp_
+    logical logp_opt
     real(r8) p0, dp1, dp2
     integer i, j, k
 
-    logp_ = merge(logp, .false., present(logp))
+    logp_opt = .false.; if (present(logp)) logp_opt = logp
 
-    p0 = merge(log(po), po, logp_)
+    p0 = merge(log(po), po, logp_opt)
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         do k = mesh%full_kde, mesh%full_kds + 1, -1
           if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
-            if (logp_) then
+            if (logp_opt) then
               dp1 = p0 - log(p(i,j,k-1))
               dp2 = log(p(i,j,k)) - p0
             else
@@ -778,19 +784,19 @@ contains
                                mesh%full_jms:mesh%full_jme)
     logical, intent(in), optional :: logp
 
-    logical logp_
+    logical logp_opt
     real(r8) p0, dp1, dp2, x1, x2
     integer i, j, k
 
-    logp_ = merge(logp, .false., present(logp))
+    logp_opt = .false.; if (present(logp)) logp_opt = logp
 
-    p0 = merge(log(po), po, logp_)
+    p0 = merge(log(po), po, logp_opt)
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         do k = mesh%full_kde, mesh%full_kds + 1, -1
           if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
-            if (logp_) then
+            if (logp_opt) then
               dp1 = p0 - log(p(i,j,k-1))
               dp2 = log(p(i,j,k)) - p0
             else
@@ -822,19 +828,19 @@ contains
                                mesh%full_jms:mesh%full_jme)
     logical, intent(in), optional :: logp
 
-    logical logp_
+    logical logp_opt
     real(r8) p0, dp1, dp2, x1, x2
     integer i, j, k
 
-    logp_ = merge(logp, .false., present(logp))
+    logp_opt = .false.; if (present(logp)) logp_opt = logp
 
-    p0 = merge(log(po), po, logp_)
+    p0 = merge(log(po), po, logp_opt)
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         do k = mesh%full_kde, mesh%full_kds + 1, -1
           if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
-            if (logp_) then
+            if (logp_opt) then
               dp1 = p0 - log(p(i,j,k-1))
               dp2 = log(p(i,j,k)) - p0
             else
@@ -866,19 +872,19 @@ contains
                                mesh%full_jms:mesh%full_jme)
     logical, intent(in), optional :: logp
 
-    logical logp_
+    logical logp_opt
     real(r8) p0, dp1, dp2, x1, x2
     integer i, j, k
 
-    logp_ = merge(logp, .false., present(logp))
+    logp_opt = .false.; if (present(logp)) logp_opt = logp
 
-    p0 = merge(log(po), po, logp_)
+    p0 = merge(log(po), po, logp_opt)
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         do k = mesh%half_kde, mesh%half_kds + 1, -1
           if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
-            if (logp_) then
+            if (logp_opt) then
               dp1 = p0 - log(p(i,j,k-1))
               dp2 = log(p(i,j,k)) - p0
             else
@@ -953,8 +959,11 @@ contains
                                        mesh%half_kms:mesh%half_kme)
     logical, intent(in), optional :: handle_top_bottom
 
+    logical handle_top_bottom_opt
     integer i, j, k
     real(r8) x1, x2, x3, a, b, c
+
+    handle_top_bottom_opt = .false.; if (present(handle_top_bottom)) handle_top_bottom_opt = handle_top_bottom
 
     ! -------
     !
@@ -975,7 +984,7 @@ contains
       end do
     end do
 
-    if (merge(handle_top_bottom, .false., present(handle_top_bottom))) then
+    if (handle_top_bottom_opt) then
       k = mesh%half_kds
       ! ---?--- 1
       !
@@ -1037,8 +1046,11 @@ contains
                                        mesh%half_kms:mesh%half_kme)
     logical, intent(in), optional :: handle_top_bottom
 
+    logical handle_top_bottom_opt
     integer i, j, k
     real(r8) x1, x2, x3, a, b, c
+
+    handle_top_bottom_opt = .false.; if (present(handle_top_bottom)) handle_top_bottom_opt = handle_top_bottom
 
     ! -------
     !
@@ -1059,7 +1071,7 @@ contains
       end do
     end do
 
-    if (merge(handle_top_bottom, .false., present(handle_top_bottom))) then
+    if (handle_top_bottom_opt) then
       k = mesh%half_kds
       ! ---?--- 1
       !
