@@ -21,7 +21,7 @@ module hybrid_coord_test_mod
   public hybrid_coord_dcmip21_l60
   public hybrid_coord_dcmip31_l10
   public hybrid_coord_waccm_l70
-  public hybrid_coord_dcmip_l60
+  public hybrid_coord_dcmip12
   public hybrid_coord_cam_l32
 
 contains
@@ -499,31 +499,27 @@ contains
 
   end subroutine hybrid_coord_wrf_l60
 
-  subroutine hybrid_coord_dcmip_l60(p0, ptop, hyai, hybi)
+  subroutine hybrid_coord_dcmip12(p0, ptop, hyai, hybi)
 
     real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
-    real(r8), intent(out) :: hyai(61)
-    real(r8), intent(out) :: hybi(61)
-    real(r8), parameter :: ztop = 12000.0_r8
-    real(r8), parameter :: t0   = 300.0_r8
+    real(r8), intent(out) :: hyai(:)
+    real(r8), intent(out) :: hybi(:)
+    real(r8), parameter :: ztop = 12000
+    real(r8), parameter :: t0   = 300
     real(r8) eta_top, deta, eta
     integer k
 
-    if (global_mesh%full_nlev /= 60 .and. proc%is_root()) then
-      call log_error('nlev should be 60 in namelist!')
-    end if
-
     ptop = p0 * exp(-g * ztop / rd / t0)
-    eta_top = exp(-g * ztop / rd / t0)
+    eta_top = ptop / p0
     deta = (1 - eta_top) / global_mesh%full_nlev
     do k = 1, global_mesh%half_nlev
       eta = eta_top + (k - 1) * deta
-      hybi(k) = (eta - eta_top) / (1.0 - eta_top)
-      hyai(k) = eta - hybi(k)
+      hyai(k) = eta
+      hybi(k) = 0
     end do
 
-  end subroutine hybrid_coord_dcmip_l60
+  end subroutine hybrid_coord_dcmip12
 
   subroutine hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
 
