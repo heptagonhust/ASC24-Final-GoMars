@@ -80,14 +80,14 @@ program gmcore_adv_driver
 
   call history_setup_h0_adv(blocks)
   call output(old)
-  call diagnose()
+  call diagnose(old)
   if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
   time1 = MPI_WTIME()
   do while (.not. time_is_finished())
     call set_uv(elapsed_seconds + dt_adv, new)
     call adv_run(new)
-    call diagnose()
+    call diagnose(new)
     if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call time_advance(dt_adv)
     call output(old)
@@ -99,19 +99,21 @@ program gmcore_adv_driver
 
 contains
 
-  subroutine diagnose()
+  subroutine diagnose(itime)
+
+    integer, intent(in) :: itime
 
     integer i, j, k, l, iblk
     real(r8) qm
 
     do iblk = 1, size(blocks)
-      associate (mesh => blocks(iblk)%mesh)
+      associate (mesh => blocks(iblk)%mesh, dstate => blocks(iblk)%dstate(itime))
       do l = 1, ntracers
         qm = 0
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              qm = qm + tracers(iblk)%q(i,j,k,l) * mesh%area_cell(j)
+              qm = qm + dstate%dmg(i,j,k) * tracers(iblk)%q(i,j,k,l) * mesh%area_cell(j)
             end do
           end do
         end do

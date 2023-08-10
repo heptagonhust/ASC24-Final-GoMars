@@ -99,7 +99,7 @@ contains
       end select
     end if
 
-    if ((baroclinic .or. advection) .and. global_mesh%full_nlev > 1 .and. all(hyai == 0)) then
+    if ((baroclinic .or. advection) .and. global_mesh%full_nlev > 1 .and. (all(hyai == 0) .and. all(hybi == 0))) then
       call log_error('Hybrid coordinate parameters are not set!', __FILE__, __LINE__, pid=proc%id)
     end if
 

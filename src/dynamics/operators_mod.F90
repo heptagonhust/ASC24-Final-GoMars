@@ -1145,11 +1145,11 @@ contains
     end if
     ! --------------------------------- FFSL -----------------------------------
     ! Set upper and lower boundary conditions.
-    do k = mesh%full_kds - 1, mesh%full_kds - 2, -1
-      pt(:,:,k) = 2 * pt(:,:,k+1) - pt(:,:,k+2)
+    do k = mesh%full_kds - 1, mesh%full_kms, -1
+      pt(:,:,k) = pt(:,:,mesh%full_kds)
     end do
-    do k = mesh%full_kde + 1, mesh%full_kde + 2
-      pt(:,:,k) = 2 * pt(:,:,k-1) - pt(:,:,k-2)
+    do k = mesh%full_kde + 1, mesh%full_kme
+      pt(:,:,k) = pt(:,:,mesh%full_kde)
     end do
     call adv_calc_tracer_vflx(block, block%adv_batch_pt, pt, ptf_lev, dt)
     do k = mesh%full_kds, mesh%full_kde

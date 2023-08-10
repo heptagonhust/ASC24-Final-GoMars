@@ -190,12 +190,12 @@ contains
 
     real(r8) work(this%mesh%full_ids:this%mesh%full_ide,this%mesh%full_nlev)
     real(r8) pole(this%mesh%full_nlev)
-    real(r8) dt_
+    real(r8) dt_opt
     real(r8) dx, x0, x1, x2, x3, u1, u2, u3, u4
     real(r8) dy, y0, y1, y2, y3, v1, v2, v3, v4
     integer i, j, k, l
 
-    dt_ = merge(dt, this%dt, present(dt))
+    dt_opt = this%dt; if (present(dt)) dt_opt = dt
 
     associate (mesh => this%mesh)
     if (this%uv_step == -1) then
@@ -222,13 +222,13 @@ contains
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           dx = mesh%de_lon(j)
           do i = mesh%half_ids, mesh%half_ide
-            this%cflx(i,j,k) = this%u(i,j,k) * dt_ / dx
+            this%cflx(i,j,k) = this%u(i,j,k) * dt_opt / dx
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           dy = mesh%de_lat(j)
           do i = mesh%full_ids, mesh%full_ide
-            this%cfly(i,j,k) = this%v(i,j,k) * dt_ / dy
+            this%cfly(i,j,k) = this%v(i,j,k) * dt_opt / dy
           end do
         end do
       end do
@@ -317,7 +317,7 @@ contains
                                this%mesh%half_kms:this%mesh%half_kme)
     real(r8), intent(in), optional :: dt
 
-    real(r8) dt_
+    real(r8) dt_opt
     real(r8) z0, z1, z2, z3, w1, w2, w3, w4, deta
     integer i, j, k, l, ks, ke, s
     real(r8), parameter :: alpha_max = 1.1, &
@@ -327,7 +327,7 @@ contains
     real(r8) work(this%mesh%full_ids:this%mesh%full_ide,this%mesh%full_nlev)
     real(r8) pole(this%mesh%full_nlev)
 
-    dt_ = merge(dt, this%dt, present(dt))
+    dt_opt = this%dt; if (present(dt)) dt_opt = dt
 
     associate (mesh => this%mesh)
     if (this%we_step == -1) then
@@ -353,7 +353,7 @@ contains
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            this%cflz(i,j,k) = this%we(i,j,k) / this%m(i,j,k) * dt_
+            this%cflz(i,j,k) = this%we(i,j,k) / this%m(i,j,k) * dt_opt
           end do
         end do
       end do
@@ -362,17 +362,17 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               if (this%we(i,j,k) >= 0.0) then
-                alpha_h = dt_ * ((max(this%u(i,j  ,k-1), 0.) - min(this%u(i-1,j,k-1), 0.)) * mesh%le_lon(j) + &
+                alpha_h = dt_opt * ((max(this%u(i,j  ,k-1), 0.) - min(this%u(i-1,j,k-1), 0.)) * mesh%le_lon(j) + &
                                  (max(this%v(i,j  ,k-1), 0.) * mesh%le_lat(j  ) - &
                                   min(this%v(i,j-1,k-1), 0.) * mesh%le_lat(j-1))) / mesh%area_cell(j)
               else
-                alpha_h = dt_ * ((max(this%u(i,j  ,k), 0.) - min(this%u(i-1,j,k), 0.)) * mesh%le_lon(j) + &
+                alpha_h = dt_opt * ((max(this%u(i,j  ,k), 0.) - min(this%u(i-1,j,k), 0.)) * mesh%le_lon(j) + &
                                  (max(this%v(i,j  ,k), 0.) * mesh%le_lat(j  ) - &
                                   min(this%v(i,j-1,k), 0.) * mesh%le_lat(j-1))) / mesh%area_cell(j)
               end if
               alpha_star_max = alpha_max - kesi * alpha_h
               alpha_star_min = alpha_min * alpha_star_max / alpha_max
-              alpha_v = dt_ * abs(this%we(i,j,k) / this%m(i,j,k))
+              alpha_v = dt_opt * abs(this%we(i,j,k) / this%m(i,j,k))
               if (alpha_v <= alpha_star_min) then
                 beta = 1
               else if (alpha_v > alpha_star_min .and. alpha_v <= 2 * alpha_star_max - alpha_star_min) then
@@ -403,10 +403,10 @@ contains
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
           do k = mesh%half_kds + 1, mesh%half_kde - 1
-            alpha_h = dt_ * pole(k) * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+            alpha_h = dt_opt * pole(k) * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
             alpha_star_max = alpha_max - kesi * alpha_h
             alpha_star_min = alpha_min * alpha_star_max / alpha_max
-            alpha_v = dt_ * abs(this%we(mesh%full_ids,j,k) / this%m(mesh%full_ids,j,k))
+            alpha_v = dt_opt * abs(this%we(mesh%full_ids,j,k) / this%m(mesh%full_ids,j,k))
             if (alpha_v <= alpha_star_min) then
               beta = 1
             else if (alpha_v > alpha_star_min .and. alpha_v <= 2 * alpha_star_max - alpha_star_min) then
@@ -436,10 +436,10 @@ contains
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
           do k = mesh%half_kds + 1, mesh%half_kde - 1
-            alpha_h = dt_ * pole(k) * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+            alpha_h = dt_opt * pole(k) * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
             alpha_star_max = alpha_max - kesi * alpha_h
             alpha_star_min = alpha_min * alpha_star_max / alpha_max
-            alpha_v = dt_ * abs(this%we(mesh%full_ids,j,k) / this%m(mesh%full_ids,j,k))
+            alpha_v = dt_opt * abs(this%we(mesh%full_ids,j,k) / this%m(mesh%full_ids,j,k))
             if (alpha_v <= alpha_star_min) then
               beta = 1
             else if (alpha_v > alpha_star_min .and. alpha_v <= 2 * alpha_star_max - alpha_star_min) then

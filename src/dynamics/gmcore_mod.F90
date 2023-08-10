@@ -199,6 +199,7 @@ contains
       if (baroclinic) then
         do iblk = 1, size(blocks)
           call physics_run(blocks(iblk), old, dt_phys)
+          if (pdc_type == 3) call physics_update(blocks(iblk), blocks(iblk)%dstate(old), dt_phys)
         end do
       end if
       ! ------------------------------------------------------------------------

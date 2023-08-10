@@ -116,9 +116,9 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
-    real(r8) dt_
+    real(r8) dt_opt
 
-    dt_ = merge(dt, batch%dt, present(dt))
+    dt_opt = batch%dt; if (present(dt)) dt_opt = dt
 
     associate (mesh => block%mesh, &
                u    => batch%u   , & ! in
@@ -141,14 +141,14 @@ contains
               mfx(i,j,k) - mfx(i-1,j,k)              &
             ) * mesh%le_lon(j) / mesh%area_cell(j) - &
             divx(i,j,k) * m(i,j,k)                   &
-          ) * dt_
+          ) * dt_opt
           my(i,j,k) = m(i,j,k) - 0.5_r8 * (     &
             (                                   &
               mfy(i,j  ,k) * mesh%le_lat(j  ) - &
               mfy(i,j-1,k) * mesh%le_lat(j-1)   &
             ) / mesh%area_cell(j) -             &
             divy(i,j,k) * m(i,j,k)              &
-          ) * dt_
+          ) * dt_opt
         end do
       end do
     end do
@@ -165,7 +165,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           mx(i,j,k) = m(i,j,k)
-          my(i,j,k) = m(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt_
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt_opt
         end do
       end do
     end if
@@ -181,7 +181,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           mx(i,j,k) = m(i,j,k)
-          my(i,j,k) = m(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt_
+          my(i,j,k) = m(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt_opt
         end do
       end do
     end if
@@ -227,9 +227,9 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
-    real(r8) dt_
+    real(r8) dt_opt
 
-    dt_ = merge(dt, batch%dt, present(dt))
+    dt_opt = batch%dt; if (present(dt)) dt_opt = dt
 
     associate (mesh => block%mesh, &
                u    => batch%u   , & ! in
@@ -254,14 +254,14 @@ contains
               qmfx(i,j,k) - qmfx(i-1,j,k)            &
             ) * mesh%le_lon(j) / mesh%area_cell(j) - &
             divx(i,j,k) * q(i,j,k)                   &
-          ) * dt_
+          ) * dt_opt
           qy(i,j,k) = q(i,j,k) - 0.5_r8 * (      &
             (                                    &
               qmfy(i,j  ,k) * mesh%le_lat(j  ) - &
               qmfy(i,j-1,k) * mesh%le_lat(j-1)   &
             ) / mesh%area_cell(j) -              &
             divy(i,j,k) * q(i,j,k)               &
-          ) * dt_
+          ) * dt_opt
         end do
       end do
     end do
@@ -278,7 +278,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           qx(i,j,k) = q(i,j,k)
-          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_opt
         end do
       end do
     end if
@@ -294,7 +294,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           qx(i,j,k) = q(i,j,k)
-          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_
+          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_opt
         end do
       end do
     end if
@@ -602,12 +602,6 @@ contains
 
     associate (mesh => block%mesh, &
                cflz => batch%cflz)   ! in
-    do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-        end do
-      end do
-    end do
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide

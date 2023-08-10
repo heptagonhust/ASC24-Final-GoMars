@@ -295,7 +295,7 @@ contains
               end do
             end do
             ! Set upper and lower boundary conditions.
-            do k = mesh%full_kms, mesh%full_kds - 1
+            do k = mesh%full_kds - 1, mesh%full_kms, -1
               q_new(:,:,k) = q_new(:,:,mesh%full_kds)
             end do
             do k = mesh%full_kde + 1, mesh%full_kme
