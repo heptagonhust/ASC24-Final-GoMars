@@ -1090,7 +1090,7 @@ contains
     real(r8) work(dstate%mesh%full_ids:dstate%mesh%full_ide,dstate%mesh%full_nlev)
     real(r8) pole(dstate%mesh%full_nlev)
 
-    associate (mesh     => block%mesh       , &
+    associate (mesh     => block%filter_mesh, &
                pt       => dstate%pt        , & ! in
                ptf_lon  => block%aux%ptf_lon, & ! out
                ptf_lat  => block%aux%ptf_lat, & ! out
@@ -1144,13 +1144,7 @@ contains
       end do
     end if
     ! --------------------------------- FFSL -----------------------------------
-    ! Set upper and lower boundary conditions.
-    do k = mesh%full_kds - 1, mesh%full_kms, -1
-      pt(:,:,k) = pt(:,:,mesh%full_kds)
-    end do
-    do k = mesh%full_kde + 1, mesh%full_kme
-      pt(:,:,k) = pt(:,:,mesh%full_kde)
-    end do
+    call adv_fill_vhalo(mesh, pt)
     call adv_calc_tracer_vflx(block, block%adv_batch_pt, pt, ptf_lev, dt)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde

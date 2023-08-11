@@ -25,6 +25,7 @@ module adv_mod
   public adv_prepare
   public adv_run
   public adv_final
+  public adv_fill_vhalo
   public adv_accum_wind
   public adv_calc_mass_hflx
   public adv_calc_mass_vflx
@@ -263,6 +264,22 @@ contains
                 end do
               end do
             end if
+            do k = mesh%full_kds, mesh%full_kde
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
+                end do
+              end do
+            end do
+            call adv_fill_vhalo(mesh, q_new)
+            call adv_calc_tracer_vflx(block, block%adv_batches(m), q_new, qmf_lev)
+            do k = mesh%full_kds, mesh%full_kde
+              do j = mesh%full_jds, mesh%full_jde
+                do i = mesh%full_ids, mesh%full_ide
+                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k) + dqdt_smag(i,j,k,batch%idx(l))) * dt_adv
+                end do
+              end do
+            end do
             ! Fill possible negative values.
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
@@ -294,49 +311,6 @@ contains
                 end do
               end do
             end do
-            ! Set upper and lower boundary conditions.
-            do k = mesh%full_kds - 1, mesh%full_kms, -1
-              q_new(:,:,k) = q_new(:,:,mesh%full_kds)
-            end do
-            do k = mesh%full_kde + 1, mesh%full_kme
-              q_new(:,:,k) = q_new(:,:,mesh%full_kde)
-            end do
-            call adv_calc_tracer_vflx(block, block%adv_batches(m), q_new, qmf_lev)
-            do k = mesh%full_kds, mesh%full_kde
-              do j = mesh%full_jds, mesh%full_jde
-                do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k) + dqdt_smag(i,j,k,batch%idx(l))) * dt_adv
-                end do
-              end do
-            end do
-            if (use_ieva) then
-              do j = mesh%full_jds, mesh%full_jde
-                do i = mesh%full_ids, mesh%full_ide
-                  a(1) = 0
-                  c(mesh%full_kde) = 0
-                  do k = mesh%full_kds + 1, mesh%full_kde
-                    a(k)   = -dt_adv * we_imp(i,j,k) * (1 + sign(1.0_r8, we_imp(i,j,k)))
-                    c(k-1) =  dt_adv * we_imp(i,j,k) * (1 - sign(1.0_r8, we_imp(i,j,k)))
-                  end do
-                  do k = mesh%full_kds, mesh%full_kde
-                    b(k) = dt_adv * we_imp(i,j,k+1) * (1 + sign(1.0_r8, we_imp(i,j,k+1))) - &
-                           dt_adv * we_imp(i,j,k  ) * (1 - sign(1.0_r8, we_imp(i,j,k  ))) + &
-                           2 * m_new(i,j,k)
-                    r(k) = 2 * q_new(i,j,k)
-                  end do
-                  call tridiag_thomas(a, b, c, r, q_new(i,j,mesh%full_kds:mesh%full_kde))
-                end do
-              end do
-            end if
-            if (.not. use_ieva) then
-              do k = mesh%full_kds, mesh%full_kde
-                do j = mesh%full_jds, mesh%full_jde
-                  do i = mesh%full_ids, mesh%full_ide
-                    q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
-                  end do
-                end do
-              end do
-            end if
             call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
             if (pdc_type == 1 .or. pdc_type == 2) call physics_update_tracers(block, dstate, dt_adv, batch%idx(l))
             end associate
@@ -351,6 +325,37 @@ contains
     end do
 
   end subroutine adv_run
+
+  subroutine adv_fill_vhalo(mesh, array)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(inout) :: array(mesh%full_ims:mesh%full_ime, &
+                                     mesh%full_jms:mesh%full_jme, &
+                                     mesh%full_kms:mesh%full_kme)
+
+    integer i, j, k
+
+    ! Set upper and lower boundary conditions.
+    do k = mesh%full_kds - 1, mesh%full_kms, -1
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          ! array(i,j,k) = array(i,j,mesh%full_kds)
+          ! array(i,j,k) = 2 * array(i,j,k+1) - array(i,j,k+2)
+          array(i,j,k) = 4.5 * array(i,j,k+1) - 7.5 * array(i,j,k+2) + 4 * array(i,j,k+3)
+        end do
+      end do
+    end do
+    do k = mesh%full_kde + 1, mesh%full_kme
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          ! array(i,j,k) = array(i,j,mesh%full_kde)
+          ! array(i,j,k) = 2 * array(i,j,k-1) - array(i,j,k-2)
+          array(i,j,k) = 4.5 * array(i,j,k-1) - 7.5 * array(i,j,k-2) + 4 * array(i,j,k-3)
+        end do
+      end do
+    end do
+
+  end subroutine adv_fill_vhalo
 
   subroutine adv_accum_wind(itime)
 
