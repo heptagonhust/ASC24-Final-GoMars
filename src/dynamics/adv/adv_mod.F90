@@ -341,7 +341,7 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           ! array(i,j,k) = array(i,j,mesh%full_kds)
           ! array(i,j,k) = 2 * array(i,j,k+1) - array(i,j,k+2)
-          array(i,j,k) = 4.5 * array(i,j,k+1) - 7.5 * array(i,j,k+2) + 4 * array(i,j,k+3)
+          array(i,j,k) = 3 * array(i,j,k+1) - 3 * array(i,j,k+2) + array(i,j,k+3)
         end do
       end do
     end do
@@ -350,7 +350,7 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           ! array(i,j,k) = array(i,j,mesh%full_kde)
           ! array(i,j,k) = 2 * array(i,j,k-1) - array(i,j,k-2)
-          array(i,j,k) = 4.5 * array(i,j,k-1) - 7.5 * array(i,j,k-2) + 4 * array(i,j,k-3)
+          array(i,j,k) = 3 * array(i,j,k-1) - 3 * array(i,j,k-2) + array(i,j,k-3)
         end do
       end do
     end do
