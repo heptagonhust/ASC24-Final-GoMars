@@ -208,7 +208,6 @@ contains
             q_old(is:ie,js:je,ks:ke) =  tracers(block%id)%q(:,:,:,batch%idx(l))
             q_new(is:ie,js:je,ks:ke) => tracers(block%id)%q(:,:,:,batch%idx(l))
             associate (m_old   => batch%old_m  , & ! inout
-                       we_imp  => batch%we_imp , & ! in
                        qmf_lon => batch%qmf_lon, & ! working array
                        qmf_lat => batch%qmf_lat, & ! working array
                        qmf_lev => batch%qmf_lev)   ! working array

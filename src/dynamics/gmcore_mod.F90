@@ -1,3 +1,22 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+! Description:
+!
+!   This is the main module of GMCORE, which provides initialization, run,
+!   finalization subroutines.
+!
+! Authors:
+!
+!   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
+!   - Jianghao Li
+! ==============================================================================
+
 module gmcore_mod
 
   use mpi
@@ -16,7 +35,6 @@ module gmcore_mod
   use operators_mod
   use tracer_mod
   use interp_mod
-  use debug_mod
   use gas_mod
   use adv_mod
   use pgf_mod

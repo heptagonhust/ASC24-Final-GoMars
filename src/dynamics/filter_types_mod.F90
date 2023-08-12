@@ -1,3 +1,21 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+! Description:
+!
+!   This module setups Gaussian convolution filter for each zonal circle to
+!   improve the polar stability of lat-lon grid.
+!
+! Authors:
+!
+!   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
+! ==============================================================================
+
 module filter_types_mod
 
   use const_mod

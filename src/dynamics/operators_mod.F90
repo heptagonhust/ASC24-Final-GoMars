@@ -284,7 +284,8 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
-    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_jds:block%mesh%full_jde)
+    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide, &
+                     block%mesh%full_jds:block%mesh%full_jde)
 
     associate (mesh       => block%mesh          , &
                dmf        => block%aux%dmf       , & ! in

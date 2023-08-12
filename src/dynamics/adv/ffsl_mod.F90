@@ -1,3 +1,21 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+! Description:
+!
+!   This module implements FFSL (Flux-Form Semi-Lagrangian) advection scheme on
+!   the lat-lon grid.
+!
+! Authors:
+!
+!   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
+! ==============================================================================
+
 module ffsl_mod
 
   use const_mod
