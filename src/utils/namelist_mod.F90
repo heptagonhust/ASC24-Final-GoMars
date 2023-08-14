@@ -308,6 +308,7 @@ contains
       hydrostatic    = .false.
       baroclinic     = .false.
       nonhydrostatic = .false.
+      pdc_type       = 0
     end if
 
     if (dt_dyn  == 0) dt_dyn  = dt_adv

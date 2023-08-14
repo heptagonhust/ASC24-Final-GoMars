@@ -196,7 +196,7 @@ contains
       allocate(pole(mesh%full_nlev))
       do m = 1, size(block%adv_batches)
         if (time_is_alerted(block%adv_batches(m)%name)) then
-          if (m == 1 .and. pdc_type == 2) call physics_update_dynamics(block, dstate, dt_adv)
+          if (m == 1 .and. pdc_type == 2) call physics_update_dynamics(block, itime, dt_adv)
           associate (batch => block%adv_batches(m), &
                      is    => mesh%full_ims       , &
                      ie    => mesh%full_ime       , &
@@ -275,43 +275,16 @@ contains
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) * m_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k) + dqdt_smag(i,j,k,batch%idx(l))) * dt_adv
+                  q_new(i,j,k) = q_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k) + dqdt_smag(i,j,k,batch%idx(l))) * dt_adv / m_new(i,j,k)
                 end do
               end do
             end do
-            ! Fill possible negative values.
-            do k = mesh%full_kds, mesh%full_kde
-              do j = mesh%full_jds, mesh%full_jde
-                do i = mesh%full_ids, mesh%full_ide
-                  if (q_new(i,j,k) < 0) then
-                    qm0 = q_new(i,j,k)
-                    qm1 = merge(q_new(i,j,k-1), 0.0_r8, k > mesh%full_kds)
-                    qm2 = merge(q_new(i,j,k+1), 0.0_r8, k < mesh%full_kde)
-                    qm0_half = 0.5_r8 * qm0
-                    if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
-                      if (qm1 > 0) q_new(i,j,k-1) = qm1 - qm0_half
-                      if (qm2 > 0) q_new(i,j,k+1) = qm2 - qm0_half
-                    else if (qm1 > qm0) then
-                      if (qm1 > 0) q_new(i,j,k-1) = qm1 - qm0
-                    else if (qm2 > qm0) then
-                      if (qm2 > 0) q_new(i,j,k+1) = qm2 - qm0
-                    else
-                      call log_error('Negative tracer at i=' // to_str(i) // ', j=' // to_str(j) // '!', __FILE__, __LINE__)
-                    end if
-                    q_new(i,j,k) = 0
-                  end if
-                end do
-              end do
-            end do
-            do k = mesh%full_kds, mesh%full_kde
-              do j = mesh%full_jds, mesh%full_jde
-                do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
-                end do
-              end do
-            end do
-            call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-            if (pdc_type == 1 .or. pdc_type == 2) call physics_update_tracers(block, dstate, dt_adv, batch%idx(l))
+            if (pdc_type == 1 .or. pdc_type == 2) then
+              call physics_update_tracers(block, itime, dt_adv, batch%idx(l))
+            else
+              call tracer_fill_negative_values(block, itime, q_new)
+              call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+            end if
             end associate
           end do
           end associate

@@ -202,7 +202,7 @@ contains
       do iblk = 1, size(blocks)
         call damp_run(blocks(iblk), blocks(iblk)%dstate(old), dt_dyn)
         call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
-        if (pdc_type == 1) call physics_update_dynamics(blocks(iblk), blocks(iblk)%dstate(new), dt_dyn)
+        if (pdc_type == 1) call physics_update_dynamics(blocks(iblk), new, dt_dyn)
         call blocks(iblk)%dstate(new)%c2a()
       end do
       ! Advance to n+1 time level.
@@ -217,7 +217,7 @@ contains
       if (baroclinic) then
         do iblk = 1, size(blocks)
           call physics_run(blocks(iblk), old, dt_phys)
-          if (pdc_type == 3) call physics_update(blocks(iblk), blocks(iblk)%dstate(old), dt_phys)
+          if (pdc_type == 3) call physics_update(blocks(iblk), old, dt_phys)
         end do
       end if
       ! ------------------------------------------------------------------------

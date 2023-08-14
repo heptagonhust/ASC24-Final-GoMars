@@ -66,6 +66,12 @@ contains
 
     res = t * (1 + rv_o_rd * qv) / (1 + qm)
 
+    ! If qv is wet mixing ratio, the formula is:
+    !
+    !   t * (1 + (rv_o_rd - 1) * qv)
+    !
+    ! where rv_o_rd - 1 approximates to 0.608.
+
   end function virtual_temperature
 
   pure elemental real(r8) function virtual_temperature_from_modified_potential_temperature(pt, pk, qm) result(res)

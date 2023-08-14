@@ -40,21 +40,21 @@ contains
     case default
       call tracer_get_array(block%id, q)
       call tracer_get_array_qm(block%id, qm)
-      associate (mesh        => block%mesh                   , &
-                 pstate      => block%pstate                 , & ! out
-                 u           => block%dstate(itime)%u        , & ! in
-                 v           => block%dstate(itime)%v        , & ! in
-                 pt          => block%dstate(itime)%pt       , & ! in (modified potential temperature)
-                 t           => block%dstate(itime)%t        , & ! in
-                 tv          => block%dstate(itime)%tv       , & ! in (virtual temperature)
-                 p           => block%dstate(itime)%ph       , & ! in (hydrostatic full pressure)
-                 p_lev       => block%dstate(itime)%ph_lev   , & ! in
-                 ps          => block%dstate(itime)%phs      , & ! in (surface hydrostatic pressure)
-                 dmg         => block%dstate(itime)%dmg      , & ! in (dry air weight within each layer)
-                 omg         => block%aux%omg                , & ! in (vertical pressure velocity)
-                 gz          => block%dstate(itime)%gz       , & ! in (geopotential)
-                 gz_lev      => block%dstate(itime)%gz_lev   , & ! in
-                 land        => block%static%landmask        )   ! in
+      associate (mesh   => block%mesh                , &
+                 pstate => block%pstate              , & ! out
+                 u      => block%dstate(itime)%u     , & ! in
+                 v      => block%dstate(itime)%v     , & ! in
+                 pt     => block%dstate(itime)%pt    , & ! in (modified potential temperature)
+                 t      => block%dstate(itime)%t     , & ! in
+                 tv     => block%dstate(itime)%tv    , & ! in (virtual temperature)
+                 ph     => block%dstate(itime)%ph    , & ! in (hydrostatic full pressure)
+                 ph_lev => block%dstate(itime)%ph_lev, & ! in
+                 phs    => block%dstate(itime)%phs   , & ! in (surface hydrostatic pressure)
+                 dmg    => block%dstate(itime)%dmg   , & ! in (dry air weight within each layer)
+                 omg    => block%aux%omg             , & ! in (vertical pressure velocity)
+                 gz     => block%dstate(itime)%gz    , & ! in (geopotential)
+                 gz_lev => block%dstate(itime)%gz_lev, & ! in
+                 land   => block%static%landmask     )   ! in
       ! Full levels
       do k = mesh%full_kds, mesh%full_kde
         icol = 0
@@ -66,18 +66,18 @@ contains
             pstate%pt       (icol,k)   = pt(i,j,k) ! FIXME: What does physics need? Dry air potential temperature or just modified one?
             pstate%t        (icol,k)   = t (i,j,k)
             pstate%tv       (icol,k)   = tv(i,j,k)
-            pstate%ptv      (icol,k)   = virtual_potential_temperature(tv(i,j,k), p(i,j,k))
+            pstate%ptv      (icol,k)   = virtual_potential_temperature(tv(i,j,k), ph(i,j,k))
             pstate%q        (icol,k,:) = wet_mixing_ratio(q(i,j,k,:), qm(i,j,k))
-            pstate%p        (icol,k)   = p    (i,j,k)
-            pstate%p_lev    (icol,k)   = p_lev(i,j,k)
-            pstate%pk       (icol,k)   = p    (i,j,k)**rd_o_cpd / pk0
-            pstate%pk_lev   (icol,k)   = p_lev(i,j,k)**rd_o_cpd / pk0
-            pstate%dp       (icol,k)   = p_lev(i,j,k+1) - p_lev(i,j,k)
+            pstate%p        (icol,k)   = ph    (i,j,k)
+            pstate%p_lev    (icol,k)   = ph_lev(i,j,k)
+            pstate%pk       (icol,k)   = ph    (i,j,k)**rd_o_cpd / pk0
+            pstate%pk_lev   (icol,k)   = ph_lev(i,j,k)**rd_o_cpd / pk0
+            pstate%dp       (icol,k)   = ph_lev(i,j,k+1) - ph_lev(i,j,k)
             pstate%rdp      (icol,k)   = 1.0_r8 / pstate%dp(icol,k)
             pstate%omg      (icol,k)   = omg(i,j,k)
             pstate%z        (icol,k)   = gz(i,j,k) / g
             pstate%dz       (icol,k)   = (gz_lev(i,j,k+1) - gz_lev(i,j,k)) / g
-            pstate%rho      (icol,k)   = moist_air_density(t(i,j,k), p(i,j,k), pstate%qv(icol,k), qm(i,j,k))
+            pstate%rho      (icol,k)   = moist_air_density(t(i,j,k), ph(i,j,k), pstate%qv(icol,k), qm(i,j,k))
             pstate%cp       (icol,k)   = (1 - pstate%qv(icol,k)) * cpd + pstate%qv(icol,k) * cpv ! FIXME: Add specific heat capacities of other water species.
             pstate%cv       (icol,k)   = (1 - pstate%qv(icol,k)) * cvd + pstate%qv(icol,k) * cvv ! FIXME: Add specific heat capacities of other water species.
             tmp = gz(i,j,k) + 0.5_r8 * (u(i,j,k)**2 + v(i,j,k)**2)
@@ -92,8 +92,8 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
-            pstate%p_lev   (icol,k) = p_lev(i,j,k)
-            pstate%lnp_lev (icol,k) = log(p_lev(i,j,k))
+            pstate%p_lev   (icol,k) = ph_lev(i,j,k)
+            pstate%lnp_lev (icol,k) = log(ph_lev(i,j,k))
             pstate%z_lev   (icol,k) = gz_lev(i,j,k) / g
             if (mesh%half_kds < k .and. k < mesh%half_kde) then
               pstate%n2_lev(icol,k) = buoyancy_frequency( &
@@ -118,7 +118,7 @@ contains
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           icol = icol + 1
-          pstate%ps  (icol) = ps(i,j)
+          pstate%ps  (icol) = phs(i,j)
           pstate%wsb (icol) = sqrt(u(i,j,mesh%full_kde)**2 + v(i,j,mesh%full_kde)**2)
           pstate%land(icol) = land(i,j)
         end do
@@ -186,7 +186,7 @@ contains
             do i = mesh%full_ids, mesh%full_ide
               icol = icol + 1
               ! Convert to modified potential temperature tendency and multiply dmg.
-              dptdt(i,j,k) = dmg(i,j,k) * pk0 / ph(i,j,k)**rd_o_cpd * ( &
+              dptdt(i,j,k) = dmg(i,j,k) * (p0 / ph(i,j,k))**rd_o_cpd * ( &
                 (1 + rv_o_rd * q(i,j,k)) * ptend%dtdt(icol,k) + &
                 rv_o_rd * t(i,j,k) * dqdt(i,j,k,idx_qv))
             end do

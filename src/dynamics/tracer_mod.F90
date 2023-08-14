@@ -1,5 +1,7 @@
 module tracer_mod
 
+  use flogger
+  use string
   use const_mod, only: r8
   use namelist_mod, only: mp_scheme, dt_adv
   use block_mod
@@ -20,6 +22,7 @@ module tracer_mod
   public tracer_get_array
   public tracer_get_array_qm
   public tracer_calc_qm
+  public tracer_fill_negative_values
   public ntracers
   public ntracers_water
   public nbatches
@@ -353,5 +356,49 @@ contains
     end associate
 
   end subroutine tracer_get_array_qm
+
+  subroutine tracer_fill_negative_values(block, itime, q)
+
+    type(block_type), intent(in) :: block
+    integer, intent(in) :: itime
+    real(r8), intent(inout) :: q(block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%full_kms:block%filter_mesh%full_kme)
+
+    integer i, j, k
+    real(r8) neg_qm, pos_qm
+
+    associate (mesh => block%filter_mesh, &
+               dmg  => block%dstate(itime)%dmg)
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
+        neg_qm = 0
+        pos_qm = 0
+        do k = mesh%full_kds, mesh%full_kde
+          if (q(i,j,k) < 0) then
+            neg_qm = neg_qm + dmg(i,j,k) * q(i,j,k)
+          else
+            pos_qm = pos_qm + dmg(i,j,k) * q(i,j,k)
+          end if
+        end do
+        if (neg_qm < 0) then
+          if (pos_qm >= -neg_qm) then
+            do k = mesh%full_kds, mesh%full_kde
+              if (q(i,j,k) < 0) then
+                q(i,j,k) = 0
+              else
+                q(i,j,k) = q(i,j,k) * (1 + neg_qm / pos_qm)
+              end if
+            end do
+          else
+            call log_warning('Negative tracer mass is larger than positive one!', __FILE__, __LINE__)
+            q(i,j,:) = 0
+          end if
+        end if
+      end do
+    end do
+    end associate
+
+  end subroutine tracer_fill_negative_values
 
 end module tracer_mod

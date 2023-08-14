@@ -90,6 +90,8 @@ contains
         call hybrid_coord_dcmip12(p0, ptop, hyai, hybi)
       case ('cam_l32')
         call hybrid_coord_cam_l32(p0, ptop, hyai, hybi)
+      case ('cam_l30')
+        call hybrid_coord_cam_l30(p0, ptop, hyai, hybi)
       case ('ncep')
         call hybrid_coord_ncep(p0, ptop, hyai, hybi)
       case default
