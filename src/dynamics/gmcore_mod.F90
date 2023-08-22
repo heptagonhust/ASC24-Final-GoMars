@@ -189,6 +189,7 @@ contains
       end associate
     end do
 
+    call pgf_init_after_ic()
     call operators_prepare(blocks, old, dt_dyn)
     call adv_prepare(old)
     if (nonhydrostatic) call nh_prepare(blocks)
@@ -240,6 +241,7 @@ contains
     call gas_mixture_final()
     call vert_coord_final()
     call tracer_final()
+    call pgf_final()
     call adv_final()
     call damp_final()
     call diag_state_final()

@@ -224,7 +224,7 @@ contains
     call fiona_add_var('h0', 'pt'     , long_name='potential temperature'       , units='K'     , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 't'      , long_name='temperature'                 , units='K'     , dim_names=cell_dims_3d)
     call fiona_add_var('h0', 'z'      , long_name='height'                      , units='m'     , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
-    ! call fiona_add_var('h0', 'ph'     , long_name='hydrostatic pressure'        , units='Pa'    , dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'ph'     , long_name='hydrostatic pressure'        , units='Pa'    , dim_names=cell_dims_3d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'vor'    , long_name='relative vorticity'          , units='s-1'   , dim_names= vtx_dims_3d, dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'div'    , long_name='divergence'                  , units='s-1'   , dim_names=cell_dims_3d)
     ! call fiona_add_var('h0', 'landmask', long_name='land mask'                  , units=''      , dim_names=['lon', 'lat'])
@@ -282,6 +282,10 @@ contains
         call fiona_add_var('h0', accum%name, accum%units, accum%long_name, dim_names=cell_dims_3d, dtype=output_h0_dtype)
       end select
     end do
+
+    if (test_case == 'tropical_cyclone') then
+      call fiona_add_var('h0', 'precl', '', 'Large-scale precipitation', dim_names=cell_dims_2d, dtype=output_h0_dtype)
+    end if
 
   end subroutine history_setup_h0_hydrostatic
 
@@ -518,7 +522,7 @@ contains
       call fiona_output('h0', 'v'       , dstate%v      (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'z'       , dstate%gz     (is:ie,js:je,ks:ke) / g , start=start, count=count)
       call fiona_output('h0', 'phs'     , dstate%phs    (is:ie,js:je)           , start=start, count=count)
-      ! call fiona_output('h0', 'ph'      , dstate%ph     (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'ph'      , dstate%ph     (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'pt'      , dstate%pt     (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 't'       , dstate%t      (is:ie,js:je,ks:ke)     , start=start, count=count)
       ! call fiona_output('h0', 'div'     , aux%div       (is:ie,js:je,ks:ke)     , start=start, count=count)
@@ -588,6 +592,15 @@ contains
           call fiona_output('h0', accum%name, accum%array(:,:,:,1), start=start, count=count)
         end select
       end do
+
+      if (test_case == 'tropical_cyclone') then
+        is = mesh%full_ids; ie = mesh%full_ide
+        js = mesh%full_jds; je = mesh%full_jde
+        ks = mesh%full_kds; ke = mesh%full_kde
+        start = [is,js,ks]
+        count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
+        call fiona_output('h0', 'precl', reshape(pstate%precl, count(1:2)), start=start(1:2), count=count(1:2))
+      end if
       end associate
     end do
 

@@ -8,6 +8,7 @@ module formula_mod
 
   public wet_mixing_ratio
   public dry_mixing_ratio
+  public dry_potential_temperature
   public modified_potential_temperature
   public temperature
   public virtual_temperature
@@ -37,6 +38,15 @@ contains
     res = qv * (1 + qm)
 
   end function dry_mixing_ratio
+
+  pure elemental real(r8) function dry_potential_temperature(t, p) result(res)
+
+    real(r8), intent(in) :: t   ! Temperature (K)
+    real(r8), intent(in) :: p   ! Full pressure (Pa)
+
+    res = t * (p0 / p)**rd_o_cpd
+
+  end function dry_potential_temperature
 
   pure elemental real(r8) function modified_potential_temperature(t, p, qv) result(res)
 

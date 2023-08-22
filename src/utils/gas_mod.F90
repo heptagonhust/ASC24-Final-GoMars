@@ -60,6 +60,20 @@ contains
       call gases(5)%init('h2o', n_atom=3, m=m_h2o, v_ratio=999.0_r8   , dof=6.0_r8)
       call major_gas%init('dry_air', gases(1:4))
       call minor_gas%init('water_vapor', gases(5:5))
+
+      ! Testing fixed constants.
+      major_gas%r     = 287.0_r8
+      major_gas%cp    = 1004.0_r8
+      major_gas%cv    = 717.0_r8
+      major_gas%gamma = major_gas%cp / major_gas%cv
+      major_gas%kappa = major_gas%r / major_gas%cp
+      minor_gas%r     = 461.0_r8
+      minor_gas%cp    = 1810.0_r8
+      minor_gas%cv    = 1348.5_r8
+      minor_gas%gamma = minor_gas%cp / minor_gas%cv
+      minor_gas%kappa = minor_gas%r / minor_gas%cp
+      minor_gas%l     = 2.5e6_r8
+
     case ('mars')
       allocate(gases(4))
       ! NOTE: DOF is calculated at 200K.

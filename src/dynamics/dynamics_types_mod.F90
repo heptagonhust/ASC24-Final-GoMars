@@ -43,6 +43,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure (dry air and water vapor) on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure (dry air and water vapor) on half levels
     real(r8), pointer    , dimension(:,:  ) :: phs               ! Surface hydrostatic pressure (dry air and water vapor)
+    real(r8), allocatable, dimension(:,:,:) :: rhod              ! Dry air density
     ! Nonhydrostatic variables
     real(r8), allocatable, dimension(:,:,:) :: we
     real(r8), allocatable, dimension(:,:,:) :: w                 ! Vertical wind speed
@@ -51,7 +52,6 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: w_lev_lat         ! Vertical wind speed
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lon        ! Geopotential
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lat        ! Geopotential
-    real(r8), allocatable, dimension(:,:,:) :: rhod              ! Dry air density
     real(r8), pointer    , dimension(:,:,:) :: p                 ! Full pressure on full levels
     real(r8), pointer    , dimension(:,:,:) :: p_lev             ! Full pressure on half levels
     real(r8), allocatable, dimension(:,:  ) :: ps                ! Surface full pressure
@@ -175,6 +175,11 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:  ) :: dvdt_phys
     real(r8), allocatable, dimension(:,:,:  ) :: dptdt_phys
     real(r8), allocatable, dimension(:,:,:,:) :: dqdt_phys
+    ! Perturbed quantities for calculating HPGF
+    real(r8), allocatable, dimension(:,:,:  ) :: p_ptb
+    real(r8), allocatable, dimension(:,:,:  ) :: gz_ptb
+    real(r8), allocatable, dimension(:,:,:  ) :: dp_ptb
+    real(r8), allocatable, dimension(:,:,:  ) :: alp_ptb
   contains
     procedure :: init      => aux_array_init
     procedure :: init_phys => aux_array_init_phys
@@ -211,6 +216,7 @@ contains
     call allocate_array(mesh, this%mg_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%rhod             , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (pole_damp_mgs) then
       call allocate_array(filter_mesh, this%mgs     , full_lon=.true., full_lat=.true.                 )
@@ -231,7 +237,6 @@ contains
       call allocate_array(mesh, this%w_lev_lat      , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%gz_lev_lon     , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%gz_lev_lat     , full_lon=.true., half_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%rhod           , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%p              , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%p_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%p_lev_lon      , half_lon=.true., full_lat=.true., half_lev=.true.)
@@ -271,6 +276,7 @@ contains
     if (allocated(this%mgs              )) deallocate(this%mgs              )
     if (allocated(this%ph               )) deallocate(this%ph               )
     if (allocated(this%ph_lev           )) deallocate(this%ph_lev           )
+    if (allocated(this%rhod             )) deallocate(this%rhod             )
 
     if (allocated(this%we               )) deallocate(this%we               )
     if (allocated(this%w                )) deallocate(this%w                )
@@ -279,7 +285,6 @@ contains
     if (allocated(this%w_lev_lat        )) deallocate(this%w_lev_lat        )
     if (allocated(this%gz_lev_lon       )) deallocate(this%gz_lev_lon       )
     if (allocated(this%gz_lev_lat       )) deallocate(this%gz_lev_lat       )
-    if (allocated(this%rhod             )) deallocate(this%rhod             )
     if (allocated(this%p_lev_lon        )) deallocate(this%p_lev_lon        )
     if (allocated(this%p_lev_lat        )) deallocate(this%p_lev_lat        )
     if (allocated(this%u_lev_lon        )) deallocate(this%u_lev_lon        )
@@ -809,6 +814,13 @@ contains
     call allocate_array(this%mesh, this% dvdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(this%mesh, this%dptdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
 
+    if (pgf_scheme == 'ptb') then
+      call allocate_array(mesh, this%p_ptb        , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%gz_ptb       , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dp_ptb       , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%alp_ptb      , full_lon=.true., full_lat=.true., full_lev=.true.)
+    end if
+
   end subroutine aux_array_init
 
   subroutine aux_array_init_phys(this)
@@ -872,6 +884,10 @@ contains
     if (allocated(this%dvdt_phys        )) deallocate(this%dvdt_phys        )
     if (allocated(this%dptdt_phys       )) deallocate(this%dptdt_phys       )
     if (allocated(this%dqdt_phys        )) deallocate(this%dqdt_phys        )
+    if (allocated(this%p_ptb            )) deallocate(this%p_ptb            )
+    if (allocated(this%gz_ptb           )) deallocate(this%gz_ptb           )
+    if (allocated(this%dp_ptb           )) deallocate(this%dp_ptb           )
+    if (allocated(this%alp_ptb          )) deallocate(this%alp_ptb          )
 
   end subroutine aux_array_clear
 

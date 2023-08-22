@@ -74,7 +74,7 @@ contains
 
     select case (planet)
     case ('earth')
-      omega      = 2 * pi / earth_day_seconds
+      omega      = 7.2921e-5_r8
       radius     = 6.37122d6
       periheli   = 147.1d0
       apheli     = 145.1d0
@@ -83,6 +83,7 @@ contains
       rv         = minor_gas%r
       cpv        = minor_gas%cp
       cvv        = minor_gas%cv
+      lv         = minor_gas%l
       lapse_rate = 0.006d0
       rd_o_rv    = rd / rv
       rv_o_rd    = rv / rd

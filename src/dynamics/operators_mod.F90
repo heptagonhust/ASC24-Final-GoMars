@@ -26,6 +26,7 @@ module operators_mod
   public calc_omg
   public calc_dmg
   public calc_t
+  public calc_rhod
   public calc_gz_lev
   public calc_we_lev
   public calc_div
@@ -90,6 +91,7 @@ contains
       call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       if (hydrostatic) call calc_gz_lev   (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (hydrostatic) call calc_rhod     (blocks(iblk), blocks(iblk)%dstate(itime))
       call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
       call tracer_calc_qm                 (blocks(iblk))
     end do
@@ -115,6 +117,7 @@ contains
       call calc_pv                        (block, dstate)
       call interp_pv                      (block, dstate, dt)
       if (hydrostatic) call calc_gz_lev   (block, dstate)
+      if (hydrostatic) call calc_rhod     (block, dstate)
       call pgf_prepare                    (block, dstate)
     ! --------------------------------------------------------------------------
     case (forward_pass)
@@ -127,6 +130,7 @@ contains
       if (hydrostatic) then
         call calc_t                       (block, dstate)
         call calc_gz_lev                  (block, dstate)
+        call calc_rhod                    (block, dstate)
       end if
       call pgf_prepare                    (block, dstate)
     end select
@@ -275,6 +279,28 @@ contains
     end associate
 
   end subroutine calc_t
+
+  subroutine calc_rhod(block, dstate)
+
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
+
+    integer i, j, k
+
+    associate (mesh   => block%mesh   , &
+               gz_lev => dstate%gz_lev, & ! in
+               dmg    => dstate%dmg   , & ! in
+               rhod   => dstate%rhod  )   ! out
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          rhod(i,j,k) = dmg(i,j,k) / (gz_lev(i,j,k) - gz_lev(i,j,k+1))
+        end do
+      end do
+    end do
+    end associate
+
+  end subroutine calc_rhod
 
   subroutine calc_we_lev(block, dstate, dtend, dt)
 
@@ -559,6 +585,9 @@ contains
         end do
       end do
     end do
+    if (pgf_scheme == 'ptb') then
+      call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+    end if
     end associate
 
   end subroutine calc_gz_lev

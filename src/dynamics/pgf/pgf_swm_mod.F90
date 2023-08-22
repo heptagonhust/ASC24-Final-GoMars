@@ -9,7 +9,7 @@ contains
 
   subroutine pgf_swm_prepare(block, dstate)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
 
   end subroutine pgf_swm_prepare

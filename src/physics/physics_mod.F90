@@ -92,10 +92,10 @@ contains
         .true.                , & ! RJ2012_precip
         .false.                 & ! TC_PBL_mod
       )
-      ptend%updated_u    = .true.
-      ptend%updated_v    = .true.
-      ptend%updated_t    = .true.
-      ptend%updated_q(1) = .true.
+      ptend%updated_u         = .true.
+      ptend%updated_v         = .true.
+      ptend%updated_t         = .true.
+      ptend%updated_q(idx_qv) = .true.
 #ifdef HAS_CCPP
     case ('ccpp')
       call ccpp_driver_run()

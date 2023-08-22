@@ -4,19 +4,22 @@ module pgf_mod
   use process_mod, only: proc
   use pgf_swm_mod
   use pgf_lin97_mod
+  use pgf_ptb_mod
 
   implicit none
 
   private
 
   public pgf_init
+  public pgf_init_after_ic
+  public pgf_final
   public pgf_prepare
   public pgf_run
 
   interface
     subroutine pgf_prepare_interface(block, dstate)
       import block_type, dstate_type
-      type(block_type), intent(in) :: block
+      type(block_type), intent(inout) :: block
       type(dstate_type), intent(inout) :: dstate
     end subroutine pgf_prepare_interface
 
@@ -40,6 +43,9 @@ contains
       case ('lin97')
         pgf_prepare => pgf_lin97_prepare
         pgf_run => pgf_lin97_run
+      case ('ptb')
+        pgf_prepare => pgf_ptb_prepare
+        pgf_run => pgf_ptb_run
       case default
         if (proc%is_root()) call log_error('Unknown PGF scheme ' // trim(pgf_scheme) // '!')
       end select
@@ -49,5 +55,27 @@ contains
     end if
 
   end subroutine pgf_init
+
+  subroutine pgf_init_after_ic()
+
+    if (baroclinic) then
+      select case (pgf_scheme)
+      case ('ptb')
+        call pgf_ptb_init_after_ic()
+      end select
+    end if
+
+  end subroutine pgf_init_after_ic
+
+  subroutine pgf_final()
+
+    if (baroclinic) then
+      select case (pgf_scheme)
+      case ('ptb')
+        call pgf_ptb_final()
+      end select
+    end if
+
+  end subroutine pgf_final
 
 end module pgf_mod
