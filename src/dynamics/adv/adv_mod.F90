@@ -36,6 +36,7 @@ module adv_mod
 
   public upwind1
   public upwind3
+  public upwind5
   public weno3
   public weno5
   public tvd

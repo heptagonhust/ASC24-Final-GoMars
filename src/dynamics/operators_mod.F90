@@ -897,8 +897,25 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
+            b = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
             pv_lat(i,j,k) = b * upwind3(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-2:i+1,j,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i-1,j,k) + pv(i,j,k))
+          end do
+        end do
+      end do
+    case (5)
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
+            b = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
+            pv_lon(i,j,k) = b * upwind5(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-3:j+2,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
+          end do
+        end do
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
+            b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
+            pv_lat(i,j,k) = b * upwind5(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-3:i+2,j,k)) + &
                             (1 - b) * 0.5_r8 * (pv(i-1,j,k) + pv(i,j,k))
           end do
         end do
@@ -1231,52 +1248,24 @@ contains
                we_lev_lat => block%aux%we_lev_lat, & ! in
                du         => dtend%du            , & ! out
                dv         => dtend%dv            )   ! out
-    do k = mesh%full_kds + 1, mesh%full_kde - 1
+    do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
           du(i,j,k) = du(i,j,k) - (                         &
-            we_lev_lon(i,j,k+1) * (u(i,j,k+1) - u(i,j,k)) + &
-            we_lev_lon(i,j,k  ) * (u(i,j,k) - u(i,j,k-1))   &
+            we_lev_lon(i,j,k+1) * (u(i,j,k+1) - u(i,j,k)) - &
+            we_lev_lon(i,j,k  ) * (u(i,j,k-1) - u(i,j,k))   &
           ) / dmg_lon(i,j,k) / 2.0_r8
         end do
       end do
     end do
-    k = mesh%full_kds
-    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      do i = mesh%half_ids, mesh%half_ide
-        du(i,j,k) = du(i,j,k) - (we_lev_lon(i,j,k+1) * &
-          (u(i,j,k+1) - u(i,j,k))) / dmg_lon(i,j,k) / 2.0_r8
-      end do
-    end do
-    k = mesh%full_kde
-    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      do i = mesh%half_ids, mesh%half_ide
-        du(i,j,k) = du(i,j,k) - (we_lev_lon(i,j,k  ) * &
-          (u(i,j,k) - u(i,j,k-1))) / dmg_lon(i,j,k) / 2.0_r8
-      end do
-    end do
-    do k = mesh%full_kds + 1, mesh%full_kde - 1
+    do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          dv(i,j,k) = dv(i,j,k) - (                           &
-            we_lev_lat(i,j,k+1) * (v(i,j,k+1) - v(i,j,k  )) + &
-            we_lev_lat(i,j,k  ) * (v(i,j,k  ) - v(i,j,k-1))   &
+          dv(i,j,k) = dv(i,j,k) - (                         &
+            we_lev_lat(i,j,k+1) * (v(i,j,k+1) - v(i,j,k)) - &
+            we_lev_lat(i,j,k  ) * (v(i,j,k-1) - v(i,j,k))   &
           ) / dmg_lat(i,j,k) / 2.0_r8
         end do
-      end do
-    end do
-    k = mesh%full_kds
-    do j = mesh%half_jds, mesh%half_jde
-      do i = mesh%full_ids, mesh%full_ide
-        dv(i,j,k) = dv(i,j,k) - (we_lev_lat(i,j,k+1) * &
-          (v(i,j,k+1) - v(i,j,k))) / dmg_lat(i,j,k) / 2.0_r8
-      end do
-    end do
-    k = mesh%full_kde
-    do j = mesh%half_jds, mesh%half_jde
-      do i = mesh%full_ids, mesh%full_ide
-        dv(i,j,k) = dv(i,j,k) - (we_lev_lat(i,j,k  ) * &
-          (v(i,j,k) - v(i,j,k-1))) / dmg_lat(i,j,k) / 2.0_r8
       end do
     end do
     end associate

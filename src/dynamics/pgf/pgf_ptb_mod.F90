@@ -193,6 +193,7 @@ contains
           tmp3 = (gz_ptb(i+1,j,k) - gz_ptb(i,j,k)) / mesh%de_lon(j)
           tmp4 = 0.5_r8 * (dp_ptb(i,j,k) / dmg(i,j,k) + dp_ptb(i+1,j,k) / dmg(i+1,j,k)) * &
                  (gz(i+1,j,k) - gz(i,j,k)) / mesh%de_lon(j)
+          ! FIXME: Add moisture impact factor.
           du(i,j,k) = du(i,j,k) - (tmp1 + tmp2 + tmp3 + tmp4)
         end do
       end do
@@ -204,6 +205,7 @@ contains
           tmp3 = (gz_ptb(i,j+1,k) - gz_ptb(i,j,k)) / mesh%de_lat(j)
           tmp4 = 0.5_r8 * (dp_ptb(i,j,k) / dmg(i,j,k) + dp_ptb(i,j+1,k) / dmg(i,j+1,k)) * &
                  (gz(i,j+1,k) - gz(i,j,k)) / mesh%de_lat(j)
+          ! FIXME: Add moisture impact factor.
           dv(i,j,k) = dv(i,j,k) - (tmp1 + tmp2 + tmp3 + tmp4)
         end do
       end do
