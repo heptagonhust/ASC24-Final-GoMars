@@ -215,7 +215,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
-    real(r8) sum_dmf(dstate%mesh%full_ids:dstate%mesh%full_ide,dstate%mesh%full_jds:dstate%mesh%full_jde)
+    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide, &
+                     block%mesh%full_jds:block%mesh%full_jde)
 
     associate (mesh  => block%mesh   , &
                ph    => dstate%ph    , &
@@ -310,8 +311,8 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
-    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide, &
-                     block%mesh%full_jds:block%mesh%full_jde)
+    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide+1, &
+                     block%mesh%full_jds:block%mesh%full_jde+1)
 
     associate (mesh       => block%mesh          , &
                dmf        => block%aux%dmf       , & ! in
@@ -555,7 +556,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, l
-    real(r8) dgz(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_jds:block%mesh%full_jde)
+    real(r8) dgz(block%mesh%full_ids:block%mesh%full_ide+1, &
+                 block%mesh%full_jds:block%mesh%full_jde+1)
 
     associate (mesh   => block%mesh      , &
                gzs    => block%static%gzs, & ! in
@@ -575,15 +577,12 @@ contains
     call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     ! For output
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
           gz(i,j,k) = 0.5_r8 * (gz_lev(i,j,k) + gz_lev(i,j,k+1))
         end do
       end do
     end do
-    if (pgf_scheme == 'ptb') then
-      call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
-    end if
     end associate
 
   end subroutine calc_gz_lev
@@ -855,12 +854,13 @@ contains
     real(r8), intent(in) :: dt
     integer, intent(in) :: substep
 
+    real(r8) b
     integer i, j, k
 
-    if (substep < total_substeps) then
-      call interp_pv_midpoint(block, dstate, dt, substep)
-      return
-    end if
+    ! if (substep < total_substeps) then
+    !   call interp_pv_midpoint(block, dstate, dt, substep)
+    !   return
+    ! end if
 
     associate (mesh   => block%mesh      , &
                un     => dstate%u_lon    , & ! in
@@ -875,12 +875,16 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            pv_lon(i,j,k) = upwind1(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-1:j,k))
+            b = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
+            pv_lon(i,j,k) = b * upwind1(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-1:j,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            pv_lat(i,j,k) = upwind1(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-1:i,j,k))
+            b = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
+            pv_lat(i,j,k) = b * upwind1(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-1:i,j,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i-1,j,k) + pv(i,j,k))
           end do
         end do
       end do
@@ -888,12 +892,16 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            pv_lon(i,j,k) = upwind3(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-2:j+1,k))
+            b = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
+            pv_lon(i,j,k) = b * upwind3(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-2:j+1,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            pv_lat(i,j,k) = upwind3(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-2:i+1,j,k))
+            b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
+            pv_lat(i,j,k) = b * upwind3(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-2:i+1,j,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i-1,j,k) + pv(i,j,k))
           end do
         end do
       end do
@@ -901,12 +909,16 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            pv_lon(i,j,k) = upwind5(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-3:j+2,k))
+            b = abs(vt(i,j,k)) / (sqrt(un(i,j,k)**2 + vt(i,j,k)**2) + eps)
+            pv_lon(i,j,k) = b * upwind5(sign(1.0_r8, vt(i,j,k)), upwind_wgt_pv, pv(i,j-3:j+2,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            pv_lat(i,j,k) = upwind5(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-3:i+2,j,k))
+            b = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
+            pv_lat(i,j,k) = b * upwind5(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-3:i+2,j,k)) + &
+                            (1 - b) * 0.5_r8 * (pv(i-1,j,k) + pv(i,j,k))
           end do
         end do
       end do
