@@ -86,6 +86,16 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
     real(r8), allocatable, dimension(:,:  ) :: dmgs
+#ifdef OUTPUT_H1_DTEND
+    real(r8), allocatable, dimension(:,:,:) :: dudt_coriolis
+    real(r8), allocatable, dimension(:,:,:) :: dvdt_coriolis
+    real(r8), allocatable, dimension(:,:,:) :: dudt_wedudeta
+    real(r8), allocatable, dimension(:,:,:) :: dvdt_wedvdeta
+    real(r8), allocatable, dimension(:,:,:) :: dudt_dkedx
+    real(r8), allocatable, dimension(:,:,:) :: dvdt_dkedy
+    real(r8), allocatable, dimension(:,:,:) :: dudt_pgf
+    real(r8), allocatable, dimension(:,:,:) :: dvdt_pgf
+#endif
     logical :: update_u   = .false.
     logical :: update_v   = .false.
     logical :: update_gz  = .false.
@@ -179,7 +189,7 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:  ) :: p_ptb
     real(r8), allocatable, dimension(:,:,:  ) :: gz_ptb
     real(r8), allocatable, dimension(:,:,:  ) :: dp_ptb
-    real(r8), allocatable, dimension(:,:,:  ) :: alp_ptb
+    real(r8), allocatable, dimension(:,:,:  ) :: ad_ptb
   contains
     procedure :: init      => aux_array_init
     procedure :: init_phys => aux_array_init_phys
@@ -451,6 +461,17 @@ contains
       call allocate_array(mesh, this%adv_w , full_lon=.true., full_lat=.true., half_lev=.true.)
     end if
 
+#ifdef OUTPUT_H1_DTEND
+    call allocate_array(mesh, this%dudt_coriolis, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dvdt_coriolis, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dudt_wedudeta, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dvdt_wedvdeta, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dudt_dkedx   , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dvdt_dkedy   , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dudt_pgf     , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dvdt_pgf     , full_lon=.true., half_lat=.true., full_lev=.true.)
+#endif
+
   end subroutine dtend_init
 
   subroutine dtend_reset_flags(this)
@@ -483,6 +504,17 @@ contains
 
     if (allocated(this%adv_gz  )) deallocate(this%adv_gz  )
     if (allocated(this%adv_w   )) deallocate(this%adv_w   )
+
+#ifdef OUTPUT_H1_DTEND
+    if (allocated(this%dudt_coriolis)) deallocate(this%dudt_coriolis)
+    if (allocated(this%dvdt_coriolis)) deallocate(this%dvdt_coriolis)
+    if (allocated(this%dudt_wedudeta)) deallocate(this%dudt_wedudeta)
+    if (allocated(this%dvdt_wedvdeta)) deallocate(this%dvdt_wedvdeta)
+    if (allocated(this%dudt_dkedx   )) deallocate(this%dudt_dkedx   )
+    if (allocated(this%dvdt_dkedy   )) deallocate(this%dvdt_dkedy   )
+    if (allocated(this%dudt_pgf     )) deallocate(this%dudt_pgf     )
+    if (allocated(this%dvdt_pgf     )) deallocate(this%dvdt_pgf     )
+#endif
 
   end subroutine dtend_clear
 
@@ -728,7 +760,7 @@ contains
         this%half_tangent_wgt(1,j) = this%mesh%le_lon(j  ) / this%mesh%de_lat(j) * 0.25d0
         this%half_tangent_wgt(2,j) = this%mesh%le_lon(j+1) / this%mesh%de_lat(j) * 0.25d0
       end do
-    case ('thuburn09')
+    case ('th09')
       do j = this%mesh%full_jds_no_pole, this%mesh%full_jde_no_pole
         this%full_tangent_wgt(1,j) = this%mesh%le_lat(j-1) / this%mesh%de_lon(j) * this%mesh%area_subcell(2,j  ) / this%mesh%area_cell(j  )
         this%full_tangent_wgt(2,j) = this%mesh%le_lat(j  ) / this%mesh%de_lon(j) * this%mesh%area_subcell(1,j  ) / this%mesh%area_cell(j  )
@@ -818,7 +850,7 @@ contains
       call allocate_array(mesh, this%p_ptb        , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%gz_ptb       , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%dp_ptb       , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%alp_ptb      , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%ad_ptb       , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
   end subroutine aux_array_init
@@ -887,7 +919,7 @@ contains
     if (allocated(this%p_ptb            )) deallocate(this%p_ptb            )
     if (allocated(this%gz_ptb           )) deallocate(this%gz_ptb           )
     if (allocated(this%dp_ptb           )) deallocate(this%dp_ptb           )
-    if (allocated(this%alp_ptb          )) deallocate(this%alp_ptb          )
+    if (allocated(this%ad_ptb           )) deallocate(this%ad_ptb           )
 
   end subroutine aux_array_clear
 

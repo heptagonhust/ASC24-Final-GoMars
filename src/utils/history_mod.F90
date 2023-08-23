@@ -357,6 +357,8 @@ contains
     call fiona_add_dim('h1', 'ilat' , size=global_mesh%half_nlat, add_var=.true., decomp=.true.)
     call fiona_add_dim('h1', 'ilev' , size=global_mesh%half_nlev, add_var=.true., decomp=.false.)
     ! Variables
+    call fiona_add_var('h1', 'u_lon'        , long_name='u wind component'                              , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'v_lat'        , long_name='v wind component'                              , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dudt'         , long_name='u wind component tendency'                     , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'dvdt'         , long_name='v wind component tendency'                     , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmgsdt'       , long_name='surface hydrostatic pressure tendency'         , units='', dim_names=cell_dims_2d)
@@ -367,9 +369,23 @@ contains
     call fiona_add_var('h1', 'mfx_lon'      , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'mfy_lat'      , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmg'          , long_name='dry-air weight on full levels'                 , units='', dim_names=cell_dims_3d)
+    call fiona_add_var('h1', 'dmg_lon'      , long_name='dry-air weight on U grid'                      , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'dmg_lat'      , long_name='dry-air weight on V grid'                      , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'dmg_vtx'      , long_name='dry-air weight on PV grid'                     , units='', dim_names= vtx_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'n2_lev'       , long_name='square of buoyancy frequency'                  , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'ri_lev'       , long_name='local Richardson number'                       , units='', dim_names= lev_dims_3d)
+
+#ifdef OUTPUT_H1_DTEND
+    call fiona_add_var('h1', 'dudt_coriolis', long_name='Nonlinear Coriolis tendency'                   , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'dvdt_coriolis', long_name='Nonlinear Coriolis tendency'                   , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'dudt_wedudeta', long_name='Vertical advection tendency of U'              , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'dvdt_wedvdeta', long_name='Vertical advection tendency of V'              , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'dudt_dkedx'   , long_name='Kinetic energy gradient tendency of U'         , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'dvdt_dkedy'   , long_name='Kinetic energy gradient tendency of V'         , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'dudt_pgf'     , long_name='Horizontal PGF tendency of U'                  , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'dvdt_pgf'     , long_name='Horizontal PGF tendency of V'                  , units='', dim_names= lat_dims_3d)
+#endif
 
     if (physics_suite /= 'N/A') then
       call fiona_add_var('h1', 'dudt_phys'  , long_name='physics tendency for u'                        , units='', dim_names=cell_dims_3d)
@@ -408,9 +424,8 @@ contains
 
   end subroutine history_setup_h1_nonhydrostatic
 
-  subroutine history_write_h0_swm(blocks, itime)
+  subroutine history_write_h0_swm(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je
@@ -449,9 +464,8 @@ contains
 
   end subroutine history_write_h0_swm
 
-  subroutine history_write_h0_adv(blocks, itime)
+  subroutine history_write_h0_adv(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je, ks, ke, i
@@ -480,9 +494,8 @@ contains
 
   end subroutine history_write_h0_adv
 
-  subroutine history_write_h0_hydrostatic(blocks, itime)
+  subroutine history_write_h0_hydrostatic(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je, ks, ke, k
@@ -553,8 +566,8 @@ contains
       count = [mesh%half_nlon,mesh%half_nlat,mesh%full_nlev]
       call fiona_output('h0', 'vor'     , aux%vor       (is:ie,js:je,ks:ke)     , start=start, count=count)
 
-      call fiona_output('h0', 'tm'   , dstate%tm)
-      call fiona_output('h0', 'te'   , dstate%te)
+      ! call fiona_output('h0', 'tm'   , dstate%tm)
+      ! call fiona_output('h0', 'te'   , dstate%te)
 
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
@@ -606,9 +619,8 @@ contains
 
   end subroutine history_write_h0_hydrostatic
 
-  subroutine history_write_h0_nonhydrostatic(blocks, itime)
+  subroutine history_write_h0_nonhydrostatic(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     integer iblk, is, ie, js, je, ks, ke
@@ -665,9 +677,8 @@ contains
 
   end subroutine history_write_h0_nonhydrostatic
 
-  subroutine history_write_h0(blocks, itime)
+  subroutine history_write_h0(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     real(8) time1, time2
@@ -691,13 +702,13 @@ contains
     end select
 
     if (advection) then
-      call history_write_h0_adv(blocks, itime)
+      call history_write_h0_adv(itime)
     else if (hydrostatic) then
-      call history_write_h0_hydrostatic(blocks, itime)
+      call history_write_h0_hydrostatic(itime)
     else if (nonhydrostatic) then
-      call history_write_h0_nonhydrostatic(blocks, itime)
+      call history_write_h0_nonhydrostatic(itime)
     else
-      call history_write_h0_swm(blocks, itime)
+      call history_write_h0_swm(itime)
     end if
 
     call fiona_end_output('h0', keep_dataset=.true.)
@@ -709,9 +720,8 @@ contains
 
   end subroutine history_write_h0
 
-  subroutine history_write_h1_swm(blocks, itime)
+  subroutine history_write_h1_swm(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     integer is, ie, js, je, ks, ke
@@ -761,9 +771,8 @@ contains
 
   end subroutine history_write_h1_swm
 
-  subroutine history_write_h1_hydrostatic(blocks, itime)
+  subroutine history_write_h1_hydrostatic(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     integer is, ie, js, je, ks, ke
@@ -806,22 +815,39 @@ contains
     ks = mesh%full_kds; ke = mesh%full_kde
     start = [is,js,ks]
     count = [mesh%half_nlon,mesh%half_nlat,mesh%full_nlev]
+    call fiona_output('h1', 'dmg_vtx' ,    aux%dmg_vtx  (is:ie,js:je,ks:ke), start=start, count=count)
 
     is = mesh%half_ids; ie = mesh%half_ide
     js = mesh%full_jds; je = mesh%full_jde
     ks = mesh%full_kds; ke = mesh%full_kde
     start = [is,js,ks]
     count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
+    call fiona_output('h1', 'u_lon'   , dstate%u_lon    (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dudt   ' ,  dtend%du       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mfx_lon' , dstate%mfx_lon  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dmg_lon' ,    aux%dmg_lon  (is:ie,js:je,ks:ke), start=start, count=count)
+#ifdef OUTPUT_H1_DTEND
+    call fiona_output('h1', 'dudt_coriolis', dtend%dudt_coriolis(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dudt_wedudeta', dtend%dudt_wedudeta(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dudt_dkedx'   , dtend%dudt_dkedx   (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dudt_pgf'     , dtend%dudt_pgf     (is:ie,js:je,ks:ke), start=start, count=count)
+#endif
 
     is = mesh%full_ids; ie = mesh%full_ide
     js = mesh%half_jds; je = mesh%half_jde
     ks = mesh%full_kds; ke = mesh%full_kde
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
+    call fiona_output('h1', 'v_lat'   , dstate%v_lat    (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dvdt'    ,  dtend%dv       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mfy_lat' , dstate%mfy_lat  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dmg_lat' ,    aux%dmg_lat  (is:ie,js:je,ks:ke), start=start, count=count)
+#ifdef OUTPUT_H1_DTEND
+    call fiona_output('h1', 'dvdt_coriolis', dtend%dvdt_coriolis(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dvdt_wedvdeta', dtend%dvdt_wedvdeta(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dvdt_dkedy'   , dtend%dvdt_dkedy   (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dvdt_pgf'     , dtend%dvdt_pgf     (is:ie,js:je,ks:ke), start=start, count=count)
+#endif
 
     is = mesh%full_ids; ie = mesh%full_ide
     js = mesh%full_jds; je = mesh%full_jde
@@ -849,9 +875,8 @@ contains
 
   end subroutine history_write_h1_hydrostatic
 
-  subroutine history_write_h1_nonhydrostatic(blocks, itime)
+  subroutine history_write_h1_nonhydrostatic(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     integer is, ie, js, je, ks, ke
@@ -917,17 +942,16 @@ contains
 
   end subroutine history_write_h1_nonhydrostatic
 
-  subroutine history_write_h1(blocks, itime)
+  subroutine history_write_h1(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
     if (hydrostatic) then
-      call history_write_h1_hydrostatic(blocks, itime)
+      call history_write_h1_hydrostatic(itime)
     else if (nonhydrostatic) then
-      call history_write_h1_nonhydrostatic(blocks, itime)
+      call history_write_h1_nonhydrostatic(itime)
     else
-      call history_write_h1_swm(blocks, itime)
+      call history_write_h1_swm(itime)
     end if
 
   end subroutine history_write_h1

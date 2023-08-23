@@ -56,6 +56,7 @@ module const_mod
   integer, parameter :: backward_pass = 2
   integer, parameter :: nh_pass_1     = 3
   integer, parameter :: nh_pass_2     = 4
+  integer            :: total_substeps = 0
 
   real(r8)           :: min_lon
   real(r8)           :: max_lon

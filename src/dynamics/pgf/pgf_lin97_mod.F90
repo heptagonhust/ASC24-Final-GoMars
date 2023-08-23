@@ -24,7 +24,7 @@ contains
     type(dstate_type), intent(in) :: dstate
     type(dtend_type), intent(inout) :: dtend
 
-    real(r8) dph1, dph2, dgz1, dgz2, dpp1, dpp2, dp1, dp2, L
+    real(r8) dph1, dph2, dgz1, dgz2, dpp1, dpp2, dp1, dp2, L, tmp
     integer i, j, k
 
     !                    o
@@ -74,7 +74,11 @@ contains
             dph2 = pkh_lev(i  ,j,k+1) - pkh_lev(i+1,j,k  ) ! 1 - 3
             dgz1 = gz_lev (i  ,j,k+1) - gz_lev (i+1,j,k  ) ! 1 - 3
             dgz2 = gz_lev (i  ,j,k  ) - gz_lev (i+1,j,k+1) ! 4 - 2
-            du(i,j,k) = du(i,j,k) + (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lon(j) / (dph1 + dph2) / L
+            tmp = (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lon(j) / (dph1 + dph2) / L
+            du(i,j,k) = du(i,j,k) + tmp
+#ifdef OUTPUT_H1_DTEND
+            dtend%dudt_pgf(i,j,k) = tmp
+#endif
           end do
         end do
         !
@@ -97,7 +101,11 @@ contains
             dph2 = pkh_lev(i,j  ,k+1) - pkh_lev(i,j+1,k  ) ! 1 - 3
             dgz1 = gz_lev (i,j  ,k+1) - gz_lev (i,j+1,k  ) ! 1 - 3
             dgz2 = gz_lev (i,j  ,k  ) - gz_lev (i,j+1,k+1) ! 4 - 2
-            dv(i,j,k) = dv(i,j,k) + (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2) / L
+            tmp = (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2) / L
+            dv(i,j,k) = dv(i,j,k) + tmp
+#ifdef OUTPUT_H1_DTEND
+            dtend%dvdt_pgf(i,j,k) = tmp
+#endif
           end do
         end do
       end do

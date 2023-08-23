@@ -20,7 +20,7 @@ module time_schemes_mod
   public space_operators_interface
 
   interface
-    subroutine space_operators_interface(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
+    subroutine space_operators_interface(block, old_state, star_state, new_state, tend1, tend2, dt, pass, substep)
       import block_type, dstate_type, dtend_type, r8
       type(block_type ), intent(inout) :: block
       type(dstate_type), intent(in   ) :: old_state
@@ -30,9 +30,10 @@ module time_schemes_mod
       type(dtend_type ), intent(in   ) :: tend2
       real(r8), intent(in) :: dt
       integer, intent(in) :: pass
+      integer, intent(in) :: substep
     end subroutine space_operators_interface
 
-    subroutine step_interface(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
+    subroutine step_interface(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt, substep)
       import space_operators_interface, block_type, dstate_type, dtend_type, r8
       procedure(space_operators_interface) space_operators
       type(block_type ), intent(inout) :: block
@@ -42,6 +43,7 @@ module time_schemes_mod
       type(dtend_type ), intent(inout) :: tend1
       type(dtend_type ), intent(inout) :: tend2
       real(r8), intent(in) :: dt
+      integer, intent(in) :: substep
     end subroutine step_interface
 
     subroutine time_integrator_interface(space_operators, block, old, new, dt)
@@ -66,14 +68,19 @@ contains
     select case (time_scheme)
     case ('euler')
       time_integrator => euler
+      total_substeps = 1
     case ('rk2')
       time_integrator => rk2
+      total_substeps = 2
     case ('pc2')
       time_integrator => pc2
+      total_substeps = 3
     case ('wrfrk3')
       time_integrator => wrfrk3
+      total_substeps = 3
     case default
       time_integrator => pc2
+      total_substeps = 3
     end select
 
     step => step_forward_backward
@@ -84,7 +91,7 @@ contains
 
   end subroutine time_scheme_final
 
-  subroutine step_all(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
+  subroutine step_all(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt, substep)
 
     procedure(space_operators_interface) space_operators
     type(block_type ), intent(inout) :: block
@@ -94,13 +101,14 @@ contains
     type(dtend_type ), intent(inout) :: tend1
     type(dtend_type ), intent(inout) :: tend2
     real(r8), intent(in) :: dt
+    integer, intent(in) :: substep
 
-    call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, all_pass)
+    call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, all_pass, substep)
     call update_state(block, tend1, old_state, new_state, dt)
 
   end subroutine step_all
 
-  subroutine step_forward_backward(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
+  subroutine step_forward_backward(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt, substep)
 
     procedure(space_operators_interface) space_operators
     type(block_type ), intent(inout) :: block
@@ -110,10 +118,11 @@ contains
     type(dtend_type ), intent(inout) :: tend1
     type(dtend_type ), intent(inout) :: tend2
     real(r8), intent(in) :: dt
+    integer, intent(in) :: substep
 
-    call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, forward_pass)
+    call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, forward_pass, substep)
     call update_state(block, tend1, old_state, new_state, dt)
-    call space_operators(block, old_state, star_state, new_state, tend2, tend1, dt, backward_pass)
+    call space_operators(block, old_state, star_state, new_state, tend2, tend1, dt, backward_pass, substep)
     call update_state(block, tend2, old_state, new_state, dt)
 
   end subroutine step_forward_backward
@@ -237,8 +246,8 @@ contains
     real(r8), intent(in) :: dt
 
     associate (dstate => block%dstate, dtend => block%dtend)
-    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 2.0_r8)
-    call step(space_operators, block, dstate(old), dstate(new), dstate(new), dtend(old), dtend(new), dt         )
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 2.0_r8, 1)
+    call step(space_operators, block, dstate(old), dstate(new), dstate(new), dtend(old), dtend(new), dt         , 2)
     end associate
 
   end subroutine rk2
@@ -252,9 +261,9 @@ contains
     real(r8), intent(in) :: dt
 
     associate (dstate => block%dstate, dtend => block%dtend)
-    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 2.0_r8)
-    call step(space_operators, block, dstate(old), dstate(new), dstate(3  ), dtend(old), dtend(new), dt / 2.0_r8)
-    call step(space_operators, block, dstate(old), dstate(3  ), dstate(new), dtend(old), dtend(new), dt         )
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 2.0_r8, 1)
+    call step(space_operators, block, dstate(old), dstate(new), dstate(3  ), dtend(old), dtend(new), dt / 2.0_r8, 2)
+    call step(space_operators, block, dstate(old), dstate(3  ), dstate(new), dtend(old), dtend(new), dt         , 3)
     end associate
 
   end subroutine pc2
@@ -268,9 +277,9 @@ contains
     real(r8), intent(in) :: dt
 
     associate (dstate => block%dstate, dtend => block%dtend)
-    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 3.0_r8)
-    call step(space_operators, block, dstate(old), dstate(new), dstate(3  ), dtend(old), dtend(new), dt / 2.0_r8)
-    call step(space_operators, block, dstate(old), dstate(3  ), dstate(new), dtend(old), dtend(new), dt         )
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt / 3.0_r8, 1)
+    call step(space_operators, block, dstate(old), dstate(new), dstate(3  ), dtend(old), dtend(new), dt / 2.0_r8, 2)
+    call step(space_operators, block, dstate(old), dstate(3  ), dstate(new), dtend(old), dtend(new), dt         , 3)
     end associate
 
   end subroutine wrfrk3
@@ -284,7 +293,7 @@ contains
     real(r8), intent(in) :: dt
 
     associate (dstate => block%dstate, dtend => block%dtend)
-    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt)
+    call step(space_operators, block, dstate(old), dstate(old), dstate(new), dtend(old), dtend(new), dt, 1)
     end associate
 
   end subroutine euler

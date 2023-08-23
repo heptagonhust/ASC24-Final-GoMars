@@ -127,6 +127,15 @@ contains
           end do
         end do
         return
+      case (5)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%half_ids, mesh%half_ide
+              x_lon(i,j,k) = upwind5(sign(1.0_r8, u(i,j,k)), beta, x(i-2:i+3,j,k))
+            end do
+          end do
+        end do
+        return
       end select
     end if
 
@@ -205,6 +214,15 @@ contains
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
               x_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x(i,j-1:j+2,k))
+            end do
+          end do
+        end do
+        return
+      case (5)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%half_jds, mesh%half_jde
+            do i = mesh%full_ids, mesh%full_ide
+              x_lat(i,j,k) = upwind5(sign(1.0_r8, v(i,j,k)), beta, x(i,j-2:j+3,k))
             end do
           end do
         end do

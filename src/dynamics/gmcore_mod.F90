@@ -292,8 +292,8 @@ contains
         if (proc%is_root()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
-      if (output_h0) call history_write_h0(blocks, itime)
-      if (output_h1) call history_write_h1(blocks, itime)
+      if (output_h0) call history_write_h0(itime)
+      if (output_h1) call history_write_h1(itime)
     end if
     if (time_is_alerted('restart_write')) then
       call restart_write(itime)
@@ -422,7 +422,7 @@ contains
 
   end subroutine diagnose
 
-  subroutine space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
+  subroutine space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, pass, substep)
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(in) :: old_state
@@ -432,6 +432,7 @@ contains
     type(dtend_type), intent(in) :: tend2
     real(r8), intent(in) :: dt
     integer, intent(in) :: pass
+    integer, intent(in) :: substep
 
     integer i, j, k
 
@@ -440,7 +441,7 @@ contains
     associate (mesh => block%mesh)
     select case (pass)
     case (all_pass)
-      call operators_prepare(block, star_state, dt, pass)
+      call operators_prepare(block, star_state, dt, pass, substep)
       if (hydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
         call calc_dmgsdt           (block, star_state, tend1, dt)
@@ -493,7 +494,7 @@ contains
         tend1%update_gz = .true.
       end if
     case (forward_pass)
-      call operators_prepare(block, star_state, dt, pass)
+      call operators_prepare(block, star_state, dt, pass, substep)
       if (hydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
         call calc_dmgsdt           (block, star_state, tend1, dt)
@@ -523,7 +524,7 @@ contains
         tend1%update_gz = .true.
       end if
     case (backward_pass)
-      call operators_prepare(block, new_state, dt, pass)
+      call operators_prepare(block, new_state, dt, pass, substep)
       if (hydrostatic) then
         call pgf_run(block, new_state, tend1)
 
@@ -531,12 +532,22 @@ contains
           do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
             do i = mesh%half_ids, mesh%half_ide
               tend1%du(i,j,k) = tend1%du(i,j,k) + tend2%du(i,j,k)
+#ifdef OUTPUT_H1_DTEND
+              tend1%dudt_coriolis(i,j,k) = tend2%dudt_coriolis(i,j,k)
+              tend1%dudt_wedudeta(i,j,k) = tend2%dudt_wedudeta(i,j,k)
+              tend1%dudt_dkedx   (i,j,k) = tend2%dudt_dkedx   (i,j,k)
+#endif
             end do
           end do
 
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
               tend1%dv(i,j,k) = tend1%dv(i,j,k) + tend2%dv(i,j,k)
+#ifdef OUTPUT_H1_DTEND
+              tend1%dvdt_coriolis(i,j,k) = tend2%dvdt_coriolis(i,j,k)
+              tend1%dvdt_wedvdeta(i,j,k) = tend2%dvdt_wedvdeta(i,j,k)
+              tend1%dvdt_dkedy   (i,j,k) = tend2%dvdt_dkedy   (i,j,k)
+#endif
             end do
           end do
         end do

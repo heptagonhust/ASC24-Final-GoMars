@@ -139,7 +139,7 @@ contains
         if (proc%is_root()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
-      call history_write_h0(blocks, itime)
+      call history_write_h0(itime)
     end if
 
   end subroutine output
