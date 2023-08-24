@@ -256,7 +256,7 @@ contains
 
   end subroutine laplace_damp_on_cell_3d
 
-  subroutine laplace_damp_on_lon_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
+  subroutine laplace_damp_on_lon_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef, fill)
 
     type(mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
@@ -268,6 +268,7 @@ contains
     real(r8), intent(in), optional, target :: lon_coef(global_mesh%full_nlat)
     real(r8), intent(in), optional, target :: lat_coef(global_mesh%full_nlat)
     real(r8), intent(in), optional, target :: lev_coef(global_mesh%full_nlev)
+    logical, intent(in), optional :: fill
 
     real(r8) g1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme)
     real(r8) g2(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme)
@@ -276,6 +277,7 @@ contains
     real(r8) c0, s
     real(r8) work(mesh%half_ids:mesh%half_ide), pole
     real(r8), pointer :: ci(:), cj(:), ck(:)
+    logical fill_opt
     integer i, j, k, l
 
     c0 = 1.0_r8; if (present(coef)) c0 = coef
@@ -387,11 +389,12 @@ contains
         end do
       end do
     end do
-    call fill_halo(halo, f, full_lon=.false., full_lat=.true., full_lev=.true.)
+    fill_opt = .true.; if (present(fill)) fill_opt = fill
+    if (fill_opt) call fill_halo(halo, f, full_lon=.false., full_lat=.true., full_lev=.true.)
 
   end subroutine laplace_damp_on_lon_edge
 
-  subroutine laplace_damp_on_lat_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef)
+  subroutine laplace_damp_on_lat_edge(mesh, halo, order, f, coef, lon_coef, lat_coef, lev_coef, fill)
 
     type(mesh_type), intent(in) :: mesh
     type(halo_type), intent(in) :: halo(:)
@@ -403,6 +406,7 @@ contains
     real(r8), intent(in), optional, target :: lon_coef(global_mesh%full_nlat)
     real(r8), intent(in), optional, target :: lat_coef(global_mesh%full_nlat)
     real(r8), intent(in), optional, target :: lev_coef(global_mesh%full_nlev)
+    logical, intent(in), optional :: fill
 
     real(r8) g1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme)
     real(r8) g2(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme)
@@ -410,6 +414,7 @@ contains
     real(r8) fy(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme)
     real(r8) c0, ci_, cj_, s
     real(r8), pointer :: ci(:), cj(:), ck(:)
+    logical fill_opt
     integer i, j, k, l
 
     c0 = 1.0_r8; if (present(coef)) c0 = coef
@@ -499,7 +504,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(halo, f, full_lon=.true., full_lat=.false., full_lev=.true.)
+    fill_opt = .true.; if (present(fill)) fill_opt = fill
+    if (fill_opt) call fill_halo(halo, f, full_lon=.true., full_lat=.false., full_lev=.true.)
 
   end subroutine laplace_damp_on_lat_edge
 
