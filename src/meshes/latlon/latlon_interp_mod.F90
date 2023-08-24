@@ -35,7 +35,10 @@ contains
     integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
     real(r8), allocatable :: xwgt1(:), xwgt2(:), ywgt1(:), ywgt2(:)
     real(r8) tmp1, tmp2, pole
-    logical is_found
+    logical is_found, extrap_opt, zero_pole_opt
+
+    extrap_opt = .true.; if (present(extrap)) extrap_opt = extrap
+    zero_pole_opt = .false.; if (present(zero_pole)) zero_pole_opt = zero_pole
 
     nx1 = size(src_lon)
     ny1 = size(src_lat)
@@ -97,7 +100,7 @@ contains
           end if
         end do
         if (.not. is_found) then
-          if (merge(extrap, .true., present(extrap))) then
+          if (extrap_opt) then
             if (y2(j) < y1(jj)) then ! south
               j1(j) = jj
               j2(j) = jj + 1
@@ -139,7 +142,7 @@ contains
 
     ! Handle pole grids.
     if (dst_mesh%has_south_pole()) then
-      if (merge(zero_pole, .false., present(zero_pole))) then
+      if (zero_pole_opt) then
         dst_data(:,dst_mesh%full_jds) = 0.0_r8
       else
         call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_ids:dst_mesh%full_ide,dst_mesh%full_jds), pole)
@@ -147,7 +150,7 @@ contains
       end if
     end if
     if (dst_mesh%has_north_pole()) then
-      if (merge(zero_pole, .false., present(zero_pole))) then
+      if (zero_pole_opt) then
         dst_data(:,dst_mesh%full_jde) = 0.0_r8
       else
         call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_ids:dst_mesh%full_ide,dst_mesh%full_jde), pole)
@@ -175,7 +178,10 @@ contains
     integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
     real(r8), allocatable :: xwgt1(:), xwgt2(:), ywgt1(:), ywgt2(:)
     real(r8) tmp1, tmp2, pole
-    logical is_found
+    logical is_found, extrap_opt, zero_pole_opt
+
+    extrap_opt = .true.; if (present(extrap)) extrap_opt = extrap
+    zero_pole_opt = .false.; if (present(zero_pole)) zero_pole_opt = zero_pole
 
     nx1 = size(src_lon)
     ny1 = size(src_lat)
@@ -237,7 +243,7 @@ contains
           end if
         end do
         if (.not. is_found) then
-          if (merge(extrap, .true., present(extrap))) then
+          if (extrap_opt) then
             if (y2(j) < y1(jj)) then ! south
               j1(j) = jj
               j2(j) = jj + 1
@@ -289,7 +295,7 @@ contains
 
     ! Handle pole grids.
     if (dst_mesh%has_south_pole()) then
-      if (merge(zero_pole, .false., present(zero_pole))) then
+      if (zero_pole_opt) then
         dst_data(:,dst_mesh%full_jds) = 0.0_r8
       else
         call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_ids:dst_mesh%half_ide,dst_mesh%full_jds), pole)
@@ -297,7 +303,7 @@ contains
       end if
     end if
     if (dst_mesh%has_north_pole()) then
-      if (merge(zero_pole, .false., present(zero_pole))) then
+      if (zero_pole_opt) then
         dst_data(:,dst_mesh%full_jde) = 0.0_r8
       else
         call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_ids:dst_mesh%half_ide,dst_mesh%full_jde), pole)
@@ -325,7 +331,10 @@ contains
     integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
     real(r8), allocatable :: xwgt1(:), xwgt2(:), ywgt1(:), ywgt2(:)
     real(r8) tmp1, tmp2
-    logical is_found
+    logical is_found, extrap_opt, zero_pole_opt
+
+    extrap_opt = .true.; if (present(extrap)) extrap_opt = extrap
+    zero_pole_opt = .false.; if (present(zero_pole)) zero_pole_opt = zero_pole
 
     nx1 = size(src_lon)
     ny1 = size(src_lat)
@@ -387,7 +396,7 @@ contains
           end if
         end do
         if (.not. is_found) then
-          if (merge(extrap, .true., present(extrap))) then
+          if (extrap_opt) then
             if (y2(j) < y1(jj)) then ! south
               j1(j) = jj
               j2(j) = jj + 1
@@ -439,19 +448,19 @@ contains
 
     ! Handle pole grids.
     if (dst_mesh%has_south_pole()) then
-      if (merge(zero_pole, .false., present(zero_pole))) then
+      if (zero_pole_opt) then
         dst_data(:,dst_mesh%half_jds) = 0.0_r8
       end if
     end if
     if (dst_mesh%has_north_pole()) then
-      if (merge(zero_pole, .false., present(zero_pole))) then
+      if (zero_pole_opt) then
         dst_data(:,dst_mesh%half_jde) = 0.0_r8
       end if
     end if
 
   end subroutine latlon_interp_bilinear_lat_edge
 
-  subroutine latlon_interp_bilinear_column(src_lon, src_lat, src_data, dst_lon, dst_lat, dst_data, extrap, zero_pole, ierr)
+  subroutine latlon_interp_bilinear_column(src_lon, src_lat, src_data, dst_lon, dst_lat, dst_data, extrap, ierr)
 
     real(r8), intent(in) :: src_lon(:)
     real(r8), intent(in) :: src_lat(:)
@@ -460,7 +469,6 @@ contains
     real(r8), intent(in) :: dst_lat(:)
     real(r8), intent(out) :: dst_data(:)
     logical, intent(in), optional :: extrap
-    logical, intent(in), optional :: zero_pole
     integer, intent(out), optional :: ierr
 
     integer nx1, ny1, nc2
@@ -468,7 +476,9 @@ contains
     integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
     real(r8), allocatable :: xwgt1(:), xwgt2(:), ywgt1(:), ywgt2(:)
     real(r8) tmp1, tmp2
-    logical is_found
+    logical is_found, extrap_opt, zero_pole_opt
+
+    extrap_opt = .true.; if (present(extrap)) extrap_opt = extrap
 
     nx1 = size(src_lon)
     ny1 = size(src_lat)
@@ -528,7 +538,7 @@ contains
         end if
       end do
       if (.not. is_found) then
-        if (merge(extrap, .true., present(extrap))) then
+        if (extrap_opt) then
           if (y2(j) < y1(jj)) then ! south
             j1(j) = jj
             j2(j) = jj + 1

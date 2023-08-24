@@ -92,9 +92,10 @@ contains
     real(r8) c0, s
     real(r8) work(mesh%full_ids:mesh%full_ide), pole
     real(r8), pointer :: ci(:), cj(:)
+    logical fill_opt
     integer i, j, l
 
-    c0 = merge(coef, 1.0_r8, present(coef))
+    c0 = 1.0_r8; if (present(coef)) c0 = coef
     if (present(lon_coef)) then
       ci => lon_coef
     else
@@ -219,7 +220,8 @@ contains
         f(i,j) = f(i,j) - pole
       end do
     end if
-    if (merge(fill, .true., present(fill))) call fill_halo(halo, f, full_lon=.true., full_lat=.true.)
+    fill_opt = .true.; if (present(fill)) fill_opt = fill
+    if (fill_opt) call fill_halo(halo, f, full_lon=.true., full_lat=.true.)
 
   end subroutine laplace_damp_on_cell_2d
 
@@ -276,7 +278,7 @@ contains
     real(r8), pointer :: ci(:), cj(:), ck(:)
     integer i, j, k, l
 
-    c0 = merge(coef, 1.0_r8, present(coef))
+    c0 = 1.0_r8; if (present(coef)) c0 = coef
     if (present(lon_coef)) then
       ci => lon_coef
     else
@@ -410,7 +412,7 @@ contains
     real(r8), pointer :: ci(:), cj(:), ck(:)
     integer i, j, k, l
 
-    c0 = merge(coef, 1.0_r8, present(coef))
+    c0 = 1.0_r8; if (present(coef)) c0 = coef
     if (present(lon_coef)) then
       ci => lon_coef
     else
