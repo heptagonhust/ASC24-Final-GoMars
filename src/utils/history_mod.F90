@@ -533,7 +533,9 @@ contains
       ! call fiona_output('h0', 'landmask', static%landmask(is:ie,js:je)          , start=start, count=count)
       call fiona_output('h0', 'u'       , dstate%u      (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'v'       , dstate%v      (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call fiona_output('h0', 'z'       , dstate%gz     (is:ie,js:je,ks:ke) / g , start=start, count=count)
+      dstate%gz = dstate%gz / g
+      call fiona_output('h0', 'z'       , dstate%gz     (is:ie,js:je,ks:ke)     , start=start, count=count)
+      dstate%gz = dstate%gz * g
       call fiona_output('h0', 'phs'     , dstate%phs    (is:ie,js:je)           , start=start, count=count)
       call fiona_output('h0', 'ph'      , dstate%ph     (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'pt'      , dstate%pt     (is:ie,js:je,ks:ke)     , start=start, count=count)
