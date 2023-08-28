@@ -1,6 +1,6 @@
 module tropical_cyclone_test_mod
 
-!=======================================================================
+! ======================================================================
 !
 !  Date:  July 29, 2015
 !
@@ -37,10 +37,14 @@ module tropical_cyclone_test_mod
 !          Stony Brook University
 !          Email: kevin.a.reed@stonybrook.edu
 !
-!=======================================================================
+! ======================================================================
+! Revision history:
+!
+!   2023-08: Revised by Li Dong following Yi Zhang's work.
+! ======================================================================
 
   use flogger
-  use const_mod, only: r8, pi, rad
+  use const_mod, only: r8, pi, rad, deg, rd, g, cpd, omega, a => radius
   use namelist_mod
   use latlon_parallel_mod
 
@@ -80,15 +84,9 @@ module tropical_cyclone_test_mod
 !=======================================================================
 
   real(r8), parameter ::   &
-    a     = 6371220.0d0  , & ! Reference Earth's Radius (m)
-    Rd    = 287.0d0      , & ! Ideal gas const dry air (J kg^-1 K^1)
-    g     = 9.80616d0    , & ! Gravity (m s^2)
-    cp    = 1004.5d0     , & ! Specific heat capacity (J kg^-1 K^1)
     Lvap  = 2.5d6        , & ! Latent heat of vaporization of water
-    Rvap  = 461.5d0      , & ! Ideal gas constnat for water vapor
     Mvap  = 0.608d0      , & ! Ratio of molar mass of dry air/water
-    p0    = 100000.0d0   , & ! surface pressure (Pa)
-    omega = 7.29212d-5       ! Reference rotation rate of the Earth (s^-1)
+    p0    = 100000.0d0       ! surface pressure (Pa)
 
 !=======================================================================
 !    Test case parameters
@@ -101,8 +99,8 @@ module tropical_cyclone_test_mod
     gamma    = 0.007d0   , & ! lapse rate
     Ts0      = 302.15d0  , & ! Surface temperature (SST)
     p00      = 101500.d0 , & ! global mean surface pressure
-    cen_lat  = 10.d0     , & ! Center latitude of initial vortex
-    cen_lon  = 180.d0    , & ! Center longitufe of initial vortex
+    cen_lat  = 10 * rad  , & ! Center latitude of initial vortex
+    cen_lon  = 180 * rad , & ! Center longitufe of initial vortex
     zq1      = 3000.d0   , & ! Height 1 for q calculation
     zq2      = 8000.d0   , & ! Height 2 for q calculation
     exppr    = 1.5d0     , & ! Exponent for r dependence of p
@@ -112,17 +110,15 @@ module tropical_cyclone_test_mod
     rfpi     = 1000000.d0, & ! Radius within which to use fixed-point iteration
     constTv  = 0.608d0   , & ! Constant for Virtual Temp Conversion
     deltaz   = 2.d-13    , & ! Small number to ensure convergence in FPI
-    epsilon  = 1.d-25    , & ! Small number to aviod dividing by zero in wind calc
-    exponent = Rd * gamma / g          , & ! exponent
-    T0       = Ts0 * (1 + constTv * q0), & ! Surface temp
-    Ttrop    = T0 - gamma * ztrop      , & ! Tropopause temp
-    ptrop    = p00 * (Ttrop / T0)**(1.d0 / exponent) ! Tropopause pressure
+    T0       = Ts0 * (1 + constTv * q0), & ! Surface temperature
+    Ttrop    = T0 - gamma * ztrop          ! Tropopause temperature
+  real(r8) exponent          ! rd * gamma / g
+  real(r8) ptrop             ! Tropopause pressure
 
 contains
 
   subroutine tropical_cyclone_test_set_diag(blocks)
 
-    use const_mod, only: r8
     use diag_state_mod
     use block_mod, only: block_type
 
@@ -161,11 +157,23 @@ contains
       call tropical_cyclone_test(lon, lat, p, zg, 1, u, v, t, ptv, gzs, ps, rho, qv)
       ! Remove water vapor from integration.
       ! Note: qv is wet mixing ratio or specific humidity here.
-      res = res + a * gaussw(jgw) * g * rho * (1 - qv)
+      res = res + gaussw(jgw) * rho * (1 - qv)
     end do
-    res = res + ptop
+    res = a * g * res + ptop
 
   end function get_dry_air_pressure
+
+  real(r8) function get_pressure(lon, lat, z) result(res)
+
+    real(r8), intent(in) :: lon
+    real(r8), intent(in) :: lat
+    real(r8), intent(inout) :: z
+
+    real(r8) u, v, t, ptv, gzs, ps, rho, qv
+
+    call tropical_cyclone_test(lon, lat, res, z, 1, u, v, t, ptv, gzs, ps, rho, qv)
+
+  end function get_pressure
 
   real(r8) function get_height(lon, lat, ptop, ztop, p) result(res)
 
@@ -200,7 +208,6 @@ contains
 
   subroutine tropical_cyclone_test_set_ic(block)
 
-    use const_mod, only: r8
     use block_mod
     use tracer_mod
     use formula_mod
@@ -209,8 +216,13 @@ contains
     type(block_type), intent(inout), target :: block
 
     integer i, j, k, jgw
-    real(r8), pointer :: qv(:,:,:), qm(:,:,:)
+    real(r8), pointer :: qv(:,:,:)
     real(r8) ztop, ps, rho, ptv
+
+    real(r8) tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8
+
+    exponent = rd * gamma / g
+    ptrop = p00 * (Ttrop / T0)**(1.d0 / exponent)
 
     associate (mesh   => block%mesh,             &
                lon    => block%mesh%full_lon   , &
@@ -218,6 +230,7 @@ contains
                mgs    => block%dstate(1)%mgs   , &
                mg_lev => block%dstate(1)%mg_lev, &
                ph     => block%dstate(1)%ph    , &
+               ph_lev => block%dstate(1)%ph_lev, &
                z      => block%dstate(1)%gz    , &
                z_lev  => block%dstate(1)%gz_lev, &
                u      => block%dstate(1)%u     , &
@@ -228,12 +241,11 @@ contains
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static%gzs      )
     call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
-    call tracer_get_array_qm(block%id, qm)
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         ! 1. Get model top height.
         call tropical_cyclone_test(lon(i), lat(j), ptop, ztop, 0, &
-          u(i,j,1), v(i,j,1), t(i,j,1), ptv, gzs(i,j), ps, rho, qv(i,j,1))
+          tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8)
         ! 2. Get dry air surface pressure from temperature and moisture
         !    profiles by using Gaussian quadrature.
         mgs(i,j) = get_dry_air_pressure(lon(i), lat(j), ptop, ztop, 0.0_r8)
@@ -280,6 +292,7 @@ contains
     else
       call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
     end if
+    call tracer_calc_qm(block)
     end associate
 
   end subroutine tropical_cyclone_test_set_ic
@@ -327,10 +340,10 @@ contains
     !   Coriolis parameter (f)
     !------------------------------------------------
     ! Coriolis parameter
-    f  = 2 * omega * sin(cen_lat * rad)
+    f  = 2 * omega * sin(cen_lat)
     ! Great circle radius
-    gr = a * acos(sin(cen_lat * rad) * sin(lat) + &
-         (cos(cen_lat * rad) * cos(lat) * cos(lon - cen_lon * rad)))
+    gr = a * acos(sin(cen_lat) * sin(lat) + &
+         (cos(cen_lat) * cos(lat) * cos(lon - cen_lon)))
 
     !------------------------------------------------
     !   Initialize PS (surface pressure)
@@ -344,7 +357,7 @@ contains
     if (zcoords == 1) then
       ! Eqn (8):
       if (z > ztrop) then
-        p = ptrop * exp(-(g * (z - ztrop))/(Rd * Ttrop))
+        p = ptrop * exp(-(g * (z - ztrop))/(rd * Ttrop))
       else
         p = (p00 - dp * exp(-(gr / rp)**exppr) &
             * exp(-(z / zp)**exppz)) &
@@ -352,7 +365,13 @@ contains
       end if
     else
       ! Eqn (24):
-      z = (T0 / gamma) * (1 - (p / ps)**exponent)
+      if (ps >= p .and. p >= ptrop) then
+        z = (T0 / gamma) * (1 - (p / ps)**exponent)
+      else if (ptrop >= p) then
+        z = ztrop + rd * Ttrop / g * log(ptrop / p)
+      else
+        call log_error('p < ps!', __FILE__, __LINE__)
+      end if
       ! If inside a certain distance of the center of the storm
       ! perform a Fixed-point iteration to calculate the height
       ! more accurately
@@ -368,16 +387,28 @@ contains
           end if
         end do
         z = zn
+
+        ! n = 1
+        ! 20 continue
+        ! n = n + 1
+        ! zn = z - fpif(p, gr, z) / fpidfdz(gr, z)
+        ! if (n > 20) then
+        !   write(*, *) 'FPI did not converge after 20 interations in q & T!!!'
+        ! else if (abs(zn - z) / abs(zn) > deltaz) then
+        !   z = zn
+        !   goto 20
+        ! end if
+        ! z = zn
       end if
     end if
 
     !------------------------------------------------
     !   Initialize U and V (wind components)
     !------------------------------------------------
-    d1 = sin(cen_lat * rad) * cos(lat) - &
-         cos(cen_lat * rad) * sin(lat) * cos(lon - cen_lon * rad)
-    d2 = cos(cen_lat * rad) * sin(lon - cen_lon * rad)
-    d  = max(epsilon, sqrt(d1**2 + d2**2))
+    d1 = sin(cen_lat) * cos(lat) - &
+         cos(cen_lat) * sin(lat) * cos(lon - cen_lon)
+    d2 = cos(cen_lat) * sin(lon - cen_lon)
+    d  = max(1.0e-25_r8, sqrt(d1**2 + d2**2))
     ufac = d1 / d
     vfac = d2 / d
 
@@ -386,12 +417,12 @@ contains
       v = 0
     else
       v = vfac * (-f * gr / 2.d0 + sqrt((f * gr / 2.d0)**2 &
-          - exppr * (gr / rp)**exppr * Rd * (T0 - gamma * z) &
-          / (exppz * z * Rd * (T0 - gamma * z) / (g * zp**exppz) &
+          - exppr * (gr / rp)**exppr * rd * (T0 - gamma * z) &
+          / (exppz * z * rd * (T0 - gamma * z) / (g * zp**exppz) &
           + (1 - p00 / dp * exp((gr / rp)**exppr) * exp((z / zp)**exppz)))))
       u = ufac * (-f * gr / 2.d0 + sqrt((f * gr / 2.d0)**2 &
-          - exppr * (gr / rp)**exppr * Rd * (T0 - gamma * z) &
-          / (exppz * z * Rd * (T0 - gamma * z) / (g * zp**exppz) &
+          - exppr * (gr / rp)**exppr * rd * (T0 - gamma * z) &
+          / (exppz * z * rd * (T0 - gamma * z) / (g * zp**exppz) &
           + (1 - p00 / dp * exp((gr / rp)**exppr) * exp((z / zp)**exppz)))))
     end if
 
@@ -411,7 +442,7 @@ contains
       t = Ttrop
     else
       t = (T0 - gamma * z) / (1 + constTv * q) &
-          / (1 + exppz * Rd * (T0 - gamma * z) * z &
+          / (1 + exppz * rd * (T0 - gamma * z) * z &
           / (g * zp**exppz * (1 - p00 / dp * exp((gr / rp)**exppr) &
           * exp((z / zp)**exppz))))
     end if
@@ -419,7 +450,7 @@ contains
     !-----------------------------------------------------
     !   Initialize virtual potential temperature (ptv)
     !-----------------------------------------------------
-    ptv = t * (1 + constTv * q) * (p0 / p)**(Rd / cp)
+    ptv = t * (1 + constTv * q) * (p0 / p)**(rd / cpd)
 
     !-----------------------------------------------------
     !   Initialize surface geopotential (PHIS)
@@ -429,34 +460,38 @@ contains
     !-----------------------------------------------------
     !   Initialize density (rho)
     !-----------------------------------------------------
-    rho = p / (Rd * t * (1 + constTv * q))
+    rho = p / (rd * t * (1 + constTv * q))
 
   end subroutine tropical_cyclone_test
 
 !-----------------------------------------------------------------------
 !    First function for fixed point iterations
 !-----------------------------------------------------------------------
-  real(r8) function fpif(phere, gr, zhere) result(res)
+  real(r8) function fpif(p, gr, z) result(res)
 
-    real(r8), intent(in) :: phere, gr, zhere
+    real(r8), intent(in) :: p, gr, z
 
-    res = phere - (p00 - dp * exp(-(gr / rp)**exppr) &
-        * exp(-(zhere / zp)**exppz)) &
-        * ((T0 - gamma * zhere) / T0)**(g / (Rd * gamma))
+    if (z >= 0 .and. z <= ztrop) then
+      res = p - (p00 - dp * exp(-(gr / rp)**exppr) &
+          * exp(-(z / zp)**exppz)) &
+          * ((T0 - gamma * z) / T0)**(g / (rd * gamma))
+    else
+      res = p - (ptrop * exp(-g * (z - ztrop) / (rd * Ttrop)))
+    end if
 
   end function fpif
 
 !-----------------------------------------------------------------------
 !    Second function for fixed point iterations
 !-----------------------------------------------------------------------
-  real(r8) function fpidfdz(gr, zhere) result(res)
+  real(r8) function fpidfdz(gr, z) result(res)
 
-    real(r8), intent(in) :: gr, zhere
+    real(r8), intent(in) :: gr, z
 
-    res = -exppz * dp * zhere / (zp**2) * exp(-(gr / rp)**exppr) &
-        * exp(-(zhere / zp)**exppz) * ((T0 - gamma * zhere) / T0)**(g / (Rd * gamma)) &
-        + g / (Rd * T0) * (p00 - dp * exp(-(gr / rp)**exppr) * exp(-(zhere / zp)**exppz)) &
-        * ((T0 - gamma * zhere) / T0)**(g / (Rd * gamma) - 1)
+    res = -exppz * dp * z / (zp**2) * exp(-(gr / rp)**exppr) &
+        * exp(-(z / zp)**exppz) * ((T0 - gamma * z) / T0)**(g / (rd * gamma)) &
+        + g / (rd * T0) * (p00 - dp * exp(-(gr / rp)**exppr) * exp(-(z / zp)**exppz)) &
+        * ((T0 - gamma * z) / T0)**(g / (rd * gamma) - 1)
 
   end function fpidfdz
 

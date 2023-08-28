@@ -270,13 +270,14 @@ contains
     if (.not. allocated(tracers)) return
     if (.not. allocated(tracers(block%id)%qm)) return
 
-    associate (mesh => block%mesh, &
+    associate (mesh => block%mesh          , &
+               q    => tracers(block%id)%q , & ! in
                qm   => tracers(block%id)%qm)   ! out
     if (idx_qv > 0) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = tracers(block%id)%q(i,j,k,idx_qv)
+            qm(i,j,k) = q(i,j,k,idx_qv)
           end do
         end do
       end do
@@ -285,7 +286,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + tracers(block%id)%q(i,j,k,idx_qc)
+            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qc)
           end do
         end do
       end do
@@ -294,7 +295,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + tracers(block%id)%q(i,j,k,idx_qi)
+            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qi)
           end do
         end do
       end do
@@ -303,7 +304,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + tracers(block%id)%q(i,j,k,idx_qr)
+            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qr)
           end do
         end do
       end do
@@ -312,7 +313,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + tracers(block%id)%q(i,j,k,idx_qs)
+            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qs)
           end do
         end do
       end do
@@ -321,7 +322,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + tracers(block%id)%q(i,j,k,idx_qg)
+            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qg)
           end do
         end do
       end do
@@ -330,7 +331,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + tracers(block%id)%q(i,j,k,idx_qh)
+            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qh)
           end do
         end do
       end do
