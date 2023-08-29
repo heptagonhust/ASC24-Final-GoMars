@@ -14,6 +14,7 @@ module history_mod
   use block_mod
   use diag_state_mod
   use tracer_mod
+  use operators_mod, only: calc_div
 
   implicit none
 
