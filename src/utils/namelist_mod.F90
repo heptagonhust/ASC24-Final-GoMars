@@ -20,12 +20,12 @@ module namelist_mod
   real(r8)        :: dt_dyn               = 0
   real(r8)        :: dt_adv               = 0
   real(r8)        :: dt_phys              = 0
-  ! PDC type
+  ! Physics-dynamics coupling type
   ! 1: Update dynamics and tracers after their own calculation.
   ! 2: Update dynamics and tracers after advection (moisture).
   ! 3: Update dynamics and tracers after physics.
   ! 4: Update dynamics at RK sub-steps and tracers after advection.
-  integer         :: pdc_type             = 1
+  integer         :: pdc_type             = 2
 
   character(256)  :: case_desc            = 'N/A'
   character(256)  :: case_name            = 'N/A'

@@ -299,12 +299,12 @@ contains
 
   end subroutine adv_run
 
-  subroutine adv_fill_vhalo(mesh, array)
+  subroutine adv_fill_vhalo(mesh, f)
 
     type(mesh_type), intent(in) :: mesh
-    real(r8), intent(inout) :: array(mesh%full_ims:mesh%full_ime, &
-                                     mesh%full_jms:mesh%full_jme, &
-                                     mesh%full_kms:mesh%full_kme)
+    real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &
+                                 mesh%full_jms:mesh%full_jme, &
+                                 mesh%full_kms:mesh%full_kme)
 
     integer i, j, k
 
@@ -312,18 +312,20 @@ contains
     do k = mesh%full_kds - 1, mesh%full_kms, -1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ! array(i,j,k) = array(i,j,mesh%full_kds)
-          array(i,j,k) = 2 * array(i,j,k+1) - array(i,j,k+2)
-          ! array(i,j,k) = 3 * array(i,j,k+1) - 3 * array(i,j,k+2) + array(i,j,k+3)
+          ! f(i,j,k) = f(i,j,mesh%full_kds)
+          ! f(i,j,k) = 2 * f(i,j,k+1) - f(i,j,k+2)
+          f(i,j,k) = 3 * f(i,j,k+1) - 3 * f(i,j,k+2) + f(i,j,k+3)
+          ! f(i,j,k) = 4 * f(i,j,k+1) - 6 * f(i,j,k+2) + 4 * f(i,j,k+3) - f(i,j,k+4)
         end do
       end do
     end do
     do k = mesh%full_kde + 1, mesh%full_kme
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          ! array(i,j,k) = array(i,j,mesh%full_kde)
-          array(i,j,k) = 2 * array(i,j,k-1) - array(i,j,k-2)
-          ! array(i,j,k) = 3 * array(i,j,k-1) - 3 * array(i,j,k-2) + array(i,j,k-3)
+          ! f(i,j,k) = f(i,j,mesh%full_kde)
+          ! f(i,j,k) = 2 * f(i,j,k-1) - f(i,j,k-2)
+          f(i,j,k) = 3 * f(i,j,k-1) - 3 * f(i,j,k-2) + f(i,j,k-3)
+          ! f(i,j,k) = 4 * f(i,j,k-1) - 6 * f(i,j,k-2) + 4 * f(i,j,k-3) - f(i,j,k-4)
         end do
       end do
     end do

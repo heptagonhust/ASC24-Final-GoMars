@@ -364,6 +364,8 @@ contains
     call fiona_add_var('h1', 'dmgsdt'       , long_name='surface hydrostatic pressure tendency'         , units='', dim_names=cell_dims_2d)
     call fiona_add_var('h1', 'dptdt'        , long_name='potential temperature tendency'                , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'we_lev'       , long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'gz_lev'       , long_name='Geopotential on half levels'                   , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'ph_lev'       , long_name='Hydrostatic pressure on half levels'           , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'dmf'          , long_name='mass flux divergence'                          , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'omg'          , long_name='vertical pressure velocity'                    , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'mfx_lon'      , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
@@ -373,6 +375,7 @@ contains
     call fiona_add_var('h1', 'dmg_lat'      , long_name='dry-air weight on V grid'                      , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmg_vtx'      , long_name='dry-air weight on PV grid'                     , units='', dim_names= vtx_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
+    call fiona_add_var('h1', 'tv'           , long_name='Virtual temperature'                           , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'n2_lev'       , long_name='square of buoyancy frequency'                  , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'ri_lev'       , long_name='local Richardson number'                       , units='', dim_names= lev_dims_3d)
 
@@ -690,6 +693,10 @@ contains
       time1 = MPI_WTIME()
     end if
 
+    if (.not. use_div_damp) then
+      call calc_div(blocks(1), blocks(1)%dstate(itime))
+    end if
+
     if (.not. time_has_alert('h0_new_file')) then
       call fiona_start_output('h0', dble(elapsed_seconds), new_file=time_step==0)
     else if (time_is_alerted('h0_new_file')) then
@@ -808,6 +815,7 @@ contains
     call fiona_output('h1', 'dmf'     ,    aux%dmf      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'omg'     ,    aux%omg      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ke'      ,    aux%ke       (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'tv'      , dstate%tv       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmg'     , dstate%dmg      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmgsdt'  ,  dtend%dmgs     (is:ie,js:je      ), start=start, count=count)
     call fiona_output('h1', 'dptdt'   ,  dtend%dpt      (is:ie,js:je,ks:ke), start=start, count=count)
@@ -857,6 +865,8 @@ contains
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
     call fiona_output('h1', 'we_lev', dstate%we_lev(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'gz_lev', dstate%gz_lev(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'ph_lev', dstate%ph_lev(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'n2_lev', reshape(pstate%n2_lev, count), start=start, count=count)
     call fiona_output('h1', 'ri_lev', reshape(pstate%ri_lev, count), start=start, count=count)
 

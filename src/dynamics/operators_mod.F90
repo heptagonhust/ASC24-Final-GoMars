@@ -523,8 +523,10 @@ contains
         end do
       end do
     end if
-    call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false., south_halo=.false.)
-    call filter_on_cell(block%small_filter, div)
+    if (use_div_damp) then
+      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false., south_halo=.false.)
+      call filter_on_cell(block%small_filter, div)
+    end if
     if (div_damp_order == 4) then
       call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
     else
@@ -556,8 +558,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, l
-    real(r8) dgz(block%mesh%full_ids:block%mesh%full_ide+1, &
-                 block%mesh%full_jds:block%mesh%full_jde+1)
+    real(r8) dgz(block%mesh%full_ids:block%mesh%full_ide, &
+                 block%mesh%full_jds:block%mesh%full_jde)
 
     associate (mesh   => block%mesh      , &
                gzs    => block%static%gzs, & ! in
