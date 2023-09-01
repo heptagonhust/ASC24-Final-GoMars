@@ -292,7 +292,6 @@ contains
     else
       call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
     end if
-    call tracer_calc_qm(block)
     end associate
 
   end subroutine tropical_cyclone_test_set_ic
@@ -342,8 +341,7 @@ contains
     ! Coriolis parameter
     f  = 2 * omega * sin(cen_lat)
     ! Great circle radius
-    gr = a * acos(sin(cen_lat) * sin(lat) + &
-         (cos(cen_lat) * cos(lat) * cos(lon - cen_lon)))
+    gr = a * acos(sin(cen_lat) * sin(lat) + cos(cen_lat) * cos(lat) * cos(lon - cen_lon))
 
     !------------------------------------------------
     !   Initialize PS (surface pressure)

@@ -32,8 +32,6 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: gz_lev            ! Geopotential height on half levels (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: dmg               ! Mass
     real(r8), allocatable, dimension(:,:,:) :: dmg_lev           ! Mass on half levels
-    real(r8), allocatable, dimension(:,:,:) :: mfx_lon           ! Normal mass flux on zonal edge
-    real(r8), allocatable, dimension(:,:,:) :: mfy_lat           ! Normal mass flux on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: pt                ! Potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: tv                ! Virtual temperature
@@ -167,6 +165,8 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: ptf_lon           ! Potential temperature on the zonal edge
     real(r8), allocatable, dimension(:,:,:) :: ptf_lat           ! Potential temperature on the merdional edge
     real(r8), allocatable, dimension(:,:,:) :: ptf_lev           ! Potential temperature on the vertical edge
+    real(r8), allocatable, dimension(:,:,:) :: mfx_lon           ! Normal mass flux on zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: mfy_lat           ! Normal mass flux on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: mfx_lat           ! Tangient mass flux on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: mfy_lon           ! Tangient mass flux on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: vor               ! Vorticity (s-1)
@@ -175,6 +175,9 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: dmf
     real(r8), allocatable, dimension(:,:,:) :: omg               ! Vertical pressure velocity (Pa s-1)
+    ! Tendencies from divergence damping
+    real(r8), allocatable, dimension(:,:,:) :: dudt_div
+    real(r8), allocatable, dimension(:,:,:) :: dvdt_div
     ! Tendencies from Smagorinsky diffusion
     real(r8), allocatable, dimension(:,:,:  ) :: dudt_smag
     real(r8), allocatable, dimension(:,:,:  ) :: dvdt_smag
@@ -218,8 +221,6 @@ contains
     call allocate_array(mesh, this%gz_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%dmg              , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dmg_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%mfx_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%mfy_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%tv               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mg               , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -276,8 +277,6 @@ contains
     if (allocated(this%gz_lev           )) deallocate(this%gz_lev           )
     if (allocated(this%dmg              )) deallocate(this%dmg              )
     if (allocated(this%dmg_lev          )) deallocate(this%dmg_lev          )
-    if (allocated(this%mfx_lon          )) deallocate(this%mfx_lon          )
-    if (allocated(this%mfy_lat          )) deallocate(this%mfy_lat          )
     if (allocated(this%pt               )) deallocate(this%pt               )
     if (allocated(this%t                )) deallocate(this%t                )
     if (allocated(this%tv               )) deallocate(this%tv               )
@@ -831,19 +830,24 @@ contains
     call allocate_array(mesh, this%ptf_lon        , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lat        , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lev        , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%mfx_lon        , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mfy_lat        , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfx_lat        , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfy_lon        , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor            , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv             , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(filter_mesh, this%div     , full_lon=.true., full_lat=.true., full_lev=.true.)
-    if (div_damp_order == 4) then
-      call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
+    if (use_div_damp .and. div_damp_order == 4) then
+      call allocate_array(mesh, this%div2, full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
     call allocate_array(mesh, this%dmf            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%omg            , full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    call allocate_array(this%mesh, this% dudt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this% dvdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%dudt_div  , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%dvdt_div  , full_lon=.true., half_lat=.true., full_lev=.true.)
+
+    call allocate_array(this%mesh, this% dudt_smag, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this% dvdt_smag, full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(this%mesh, this%dptdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (pgf_scheme == 'ptb') then
@@ -900,6 +904,8 @@ contains
     if (allocated(this%ptf_lon          )) deallocate(this%ptf_lon          )
     if (allocated(this%ptf_lat          )) deallocate(this%ptf_lat          )
     if (allocated(this%ptf_lev          )) deallocate(this%ptf_lev          )
+    if (allocated(this%mfx_lon          )) deallocate(this%mfx_lon          )
+    if (allocated(this%mfy_lat          )) deallocate(this%mfy_lat          )
     if (allocated(this%mfx_lat          )) deallocate(this%mfx_lat          )
     if (allocated(this%mfy_lon          )) deallocate(this%mfy_lon          )
     if (allocated(this%vor              )) deallocate(this%vor              )
@@ -908,6 +914,8 @@ contains
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%dmf              )) deallocate(this%dmf              )
     if (allocated(this%omg              )) deallocate(this%omg              )
+    if (allocated(this%dudt_div         )) deallocate(this%dudt_div         )
+    if (allocated(this%dvdt_div         )) deallocate(this%dvdt_div         )
     if (allocated(this%dudt_smag        )) deallocate(this%dudt_smag        )
     if (allocated(this%dvdt_smag        )) deallocate(this%dvdt_smag        )
     if (allocated(this%dptdt_smag       )) deallocate(this%dptdt_smag       )

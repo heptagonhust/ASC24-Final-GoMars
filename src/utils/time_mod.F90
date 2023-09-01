@@ -22,6 +22,8 @@ module time_mod
   public time_is_finished
   public time_add_alert
   public time_has_alert
+  public time_get_alert_last_time_timestamp
+  public time_set_alert_last_time
   public time_is_alerted
 
   public start_time
@@ -203,7 +205,7 @@ contains
     case ('seconds')
       call curr_time%add_seconds(time_value)
     case default
-      call log_error('Unsupported time units ' // trim(time_units) // '!')
+      call log_error('Unsupported time units "' // trim(time_units) // '"!', __FILE__, __LINE__)
     end select
 
     skipped_time = curr_time - start_time
@@ -290,6 +292,30 @@ contains
     res = associated(alert)
 
   end function time_has_alert
+
+  function time_get_alert_last_time_timestamp(name) result(res)
+
+    character(*), intent(in) :: name
+    real(8) res
+
+    type(alert_type), pointer :: alert => null()
+
+    alert => get_alert(name)
+    res = alert%last_time%timestamp()
+
+  end function time_get_alert_last_time_timestamp
+
+  subroutine time_set_alert_last_time(name, timestamp)
+
+    character(*), intent(in) :: name
+    real(8), intent(in) :: timestamp
+
+    type(alert_type), pointer :: alert => null()
+
+    alert => get_alert(name)
+    call alert%last_time%init(timestamp=timestamp)
+
+  end subroutine time_set_alert_last_time
 
   function time_is_alerted(name) result(res)
 

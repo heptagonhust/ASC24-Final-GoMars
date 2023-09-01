@@ -156,18 +156,19 @@ contains
 
     integer iblk, m
 
-    do iblk = 1, size(blocks)
-      associate (block  => blocks(iblk)              , &
-                 dstate => blocks(iblk)%dstate(itime))
-      if (allocated(block%adv_batches)) then
-        do m = 1, size(block%adv_batches)
-          call block%adv_batches(m)%copy_old_m(dstate%dmg)
-        end do
-      end if
-      call block%adv_batch_pt%copy_old_m(dstate%dmg)
-      end associate
-    end do
-    if (.not. restart) call adv_accum_wind(itime)
+    if (.not. restart) then
+      do iblk = 1, size(blocks)
+        associate (block  => blocks(iblk)              , &
+                  dstate => blocks(iblk)%dstate(itime))
+        if (allocated(block%adv_batches)) then
+          do m = 1, size(block%adv_batches)
+            call block%adv_batches(m)%copy_old_m(dstate%dmg)
+          end do
+        end if
+        call block%adv_batch_pt%copy_old_m(dstate%dmg)
+        end associate
+      end do
+    end if
 
   end subroutine adv_prepare
 
@@ -181,8 +182,6 @@ contains
     real(r8), allocatable :: work(:,:), pole(:)
     real(r8) qm0, qm1, qm2, qm0_half
     real(r8), dimension(nlev) :: a, b, c, r
-
-    call adv_accum_wind(itime)
 
     if (.not. allocated(blocks(1)%adv_batches)) return
 
@@ -289,8 +288,8 @@ contains
             end associate
           end do
           end associate
+          call block%adv_batches(m)%copy_old_m(m_new)
         end if
-        call block%adv_batches(m)%copy_old_m(m_new)
       end do
       deallocate(q_old, work, pole)
       call tracer_calc_qm(block)
@@ -342,8 +341,8 @@ contains
       associate (block   => blocks(iblk)                      , &
                  u_lon   => blocks(iblk)%dstate(itime)%u_lon  , &
                  v_lat   => blocks(iblk)%dstate(itime)%v_lat  , &
-                 mfx_lon => blocks(iblk)%dstate(itime)%mfx_lon, &
-                 mfy_lat => blocks(iblk)%dstate(itime)%mfy_lat, &
+                 mfx_lon => blocks(iblk)%aux%mfx_lon          , &
+                 mfy_lat => blocks(iblk)%aux%mfy_lat          , &
                  we_lev  => blocks(iblk)%dstate(itime)%we_lev , &
                  dmg_lev => blocks(iblk)%dstate(itime)%dmg_lev)
       if (allocated(block%adv_batches)) then

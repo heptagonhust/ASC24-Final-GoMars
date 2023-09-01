@@ -103,8 +103,8 @@ contains
                  gz      => blocks(iblk)%dstate(itime)%gz     , &
                  u       => blocks(iblk)%dstate(itime)%u_lon  , &
                  v       => blocks(iblk)%dstate(itime)%v_lat  , &
-                 mfx_lon => blocks(iblk)%dstate(itime)%mfx_lon, &
-                 mfy_lat => blocks(iblk)%dstate(itime)%mfy_lat, &
+                 mfx_lon => blocks(iblk)%aux%mfx_lon          , &
+                 mfy_lat => blocks(iblk)%aux%mfy_lat          , &
                  we      => blocks(iblk)%dstate(itime)%we_lev )
       mgs = p0
       call calc_mg(block, dstate)

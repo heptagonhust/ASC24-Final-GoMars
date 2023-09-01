@@ -1,3 +1,22 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+! Description:
+!
+!   This module implements time integration schemes, including PC2 and WRFRK3,
+!   and with forward-backward technique.
+!
+! Authors:
+!
+!   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
+!   - Jianghao Li
+! ==============================================================================
+
 module time_schemes_mod
 
   use flogger
@@ -138,6 +157,10 @@ contains
     integer i, j, k
 
     associate (mesh       => block%mesh          , &
+               dudt       => dtend%du            , &
+               dvdt       => dtend%dv            , &
+               dudt_div   => block%aux%dudt_div  , &
+               dvdt_div   => block%aux%dvdt_div  , &
                dptdt_smag => block%aux%dptdt_smag, &
                dudt_smag  => block%aux%dudt_smag , &
                dvdt_smag  => block%aux%dvdt_smag )
@@ -208,30 +231,42 @@ contains
     end if
 
     if (dtend%update_u .and. dtend%update_v) then
-      ! ----------------------------------------------------------------------
-      call fill_halo(block%filter_halo, dtend%du, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-      call filter_on_lon_edge(block%big_filter, dtend%du)
-      call fill_halo(block%filter_halo, dtend%dv, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
-      call filter_on_lat_edge(block%big_filter, dtend%dv)
-      ! ----------------------------------------------------------------------
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * (dtend%du(i,j,k) + dudt_smag(i,j,k))
+            dudt(i,j,k) = dudt(i,j,k) + dudt_div(i,j,k) + dudt_smag(i,j,k)
+          end do
+        end do
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
+            dvdt(i,j,k) = dvdt(i,j,k) + dvdt_div(i,j,k) + dvdt_smag(i,j,k)
+          end do
+        end do
+      end do
+      ! ------------------------------------------------------------------------
+      call fill_halo(block%filter_halo, dudt, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call filter_on_lon_edge(block%big_filter, dudt)
+      call fill_halo(block%filter_halo, dvdt, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call filter_on_lat_edge(block%big_filter, dvdt)
+      ! ------------------------------------------------------------------------
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
+            new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * dudt(i,j,k)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * (dtend%dv(i,j,k) + dvdt_smag(i,j,k))
+            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * dvdt(i,j,k)
           end do
         end do
       end do
-      ! ----------------------------------------------------------------------
+      ! ------------------------------------------------------------------------
       call fill_halo(block%halo, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block%halo, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-      ! ----------------------------------------------------------------------
+      ! ------------------------------------------------------------------------
     end if
     end associate
 

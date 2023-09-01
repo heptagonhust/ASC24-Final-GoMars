@@ -45,7 +45,7 @@ contains
     real(r8), intent(in) :: dt
 
     if (use_div_damp) then
-      call div_damp_run(block, dstate)
+      call div_damp_run(block, dstate, dt)
     end if
     if (use_smag_damp) then
       call smag_damp_run(block, dstate, dt)

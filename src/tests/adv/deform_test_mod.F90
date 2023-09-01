@@ -134,13 +134,13 @@ contains
     real(r8) lon, lat, k, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                      , &
-                 mesh  => blocks(iblk)%mesh                 , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon  , &
-                 v     => blocks(iblk)%dstate(itime)%v_lat  , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg    , &
-                 mfx   => blocks(iblk)%dstate(itime)%mfx_lon, &
-                 mfy   => blocks(iblk)%dstate(itime)%mfy_lat)
+      associate (block => blocks(iblk)                    , &
+                 mesh  => blocks(iblk)%mesh               , &
+                 u     => blocks(iblk)%dstate(itime)%u_lon, &
+                 v     => blocks(iblk)%dstate(itime)%v_lat, &
+                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
+                 mfx   => blocks(iblk)%aux%mfx_lon        , &
+                 mfy   => blocks(iblk)%aux%mfy_lat        )
       dmg = 1
       k = 10.0_r8 * radius / period
       cos_t = cos(pi * time_in_seconds / period)
@@ -176,13 +176,13 @@ contains
     real(r8) lon, lat, k, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                      , &
-                 mesh  => blocks(iblk)%mesh                 , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg    , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon  , &
-                 v     => blocks(iblk)%dstate(itime)%v_lat  , &
-                 mfx   => blocks(iblk)%dstate(itime)%mfx_lon, &
-                 mfy   => blocks(iblk)%dstate(itime)%mfy_lat)
+      associate (block => blocks(iblk)                    , &
+                 mesh  => blocks(iblk)%mesh               , &
+                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
+                 u     => blocks(iblk)%dstate(itime)%u_lon, &
+                 v     => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx   => blocks(iblk)%aux%mfx_lon        , &
+                 mfy   => blocks(iblk)%aux%mfy_lat        )
       dmg = 1
       k = 10.0_r8 * radius / period
       cos_t = cos(pi * time_in_seconds / period)
@@ -218,13 +218,13 @@ contains
     real(r8) lon, lat, k, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                      , &
-                 mesh  => blocks(iblk)%mesh                 , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg    , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon  , &
-                 v     => blocks(iblk)%dstate(itime)%v_lat  , &
-                 mfx   => blocks(iblk)%dstate(itime)%mfx_lon, &
-                 mfy   => blocks(iblk)%dstate(itime)%mfy_lat)
+      associate (block => blocks(iblk)                    , &
+                 mesh  => blocks(iblk)%mesh               , &
+                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
+                 u     => blocks(iblk)%dstate(itime)%u_lon, &
+                 v     => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx   => blocks(iblk)%aux%mfx_lon        , &
+                 mfy   => blocks(iblk)%aux%mfy_lat        )
       dmg = 1
       k = 5.0_r8 * radius / period
       cos_t = cos(pi * time_in_seconds / period)
@@ -260,13 +260,13 @@ contains
     real(r8) lon, lat, k, c1, c2, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                      , &
-                 mesh  => blocks(iblk)%mesh                 , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg    , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon  , &
-                 v     => blocks(iblk)%dstate(itime)%v_lat  , &
-                 mfx   => blocks(iblk)%dstate(itime)%mfx_lon, &
-                 mfy   => blocks(iblk)%dstate(itime)%mfy_lat)
+      associate (block => blocks(iblk)                    , &
+                 mesh  => blocks(iblk)%mesh               , &
+                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
+                 u     => blocks(iblk)%dstate(itime)%u_lon, &
+                 v     => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx   => blocks(iblk)%aux%mfx_lon        , &
+                 mfy   => blocks(iblk)%aux%mfy_lat        )
       dmg = 1
       k = 10.0_r8 * radius / period
       c1 = pi2 * time_in_seconds / period

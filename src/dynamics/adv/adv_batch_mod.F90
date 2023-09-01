@@ -209,9 +209,7 @@ contains
 
     real(r8) work(this%mesh%full_ids:this%mesh%full_ide,this%mesh%full_nlev)
     real(r8) pole(this%mesh%full_nlev)
-    real(r8) dt_opt
-    real(r8) dx, x0, x1, x2, x3, u1, u2, u3, u4
-    real(r8) dy, y0, y1, y2, y3, v1, v2, v3, v4
+    real(r8) dt_opt, dx, dy
     integer i, j, k
 
     dt_opt = this%dt; if (present(dt)) dt_opt = dt

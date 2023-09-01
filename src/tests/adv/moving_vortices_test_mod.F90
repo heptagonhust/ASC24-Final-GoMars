@@ -87,13 +87,13 @@ contains
     call rotate_back(lonp0, latp0, lonv, latv, lonvr, latvr)
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                      , &
-                 mesh  => blocks(iblk)%mesh                 , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg    , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon  , &
-                 v     => blocks(iblk)%dstate(itime)%v_lat  , &
-                 mfx   => blocks(iblk)%dstate(itime)%mfx_lon, &
-                 mfy   => blocks(iblk)%dstate(itime)%mfy_lat)
+      associate (block => blocks(iblk)                    , &
+                 mesh  => blocks(iblk)%mesh               , &
+                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
+                 u     => blocks(iblk)%dstate(itime)%u_lon, &
+                 v     => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx   => blocks(iblk)%aux%mfx_lon        , &
+                 mfy   => blocks(iblk)%aux%mfy_lat        )
       dmg = 1
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         lat = mesh%full_lat(j)

@@ -61,12 +61,16 @@ contains
     case (4)
       do k = global_mesh%full_kds, global_mesh%full_kde
         do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
-          c_lon(j,k) = div_damp_coef4 * global_mesh%le_lon(j)**2 * global_mesh%de_lon(j)**2
+          c_lon(j,k) = div_damp_coef4 * &
+            ! exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
+            global_mesh%le_lon(j)**2 * global_mesh%de_lon(j)**2
         end do
       end do
       do k = global_mesh%full_kds, global_mesh%full_kde
         do j = global_mesh%half_jds, global_mesh%half_jde
-          c_lat(j,k) = div_damp_coef4 * global_mesh%le_lat(j)**2 * global_mesh%de_lat(j)**2
+          c_lat(j,k) = div_damp_coef4 * &
+            ! exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
+            global_mesh%le_lat(j)**2 * global_mesh%de_lat(j)**2
         end do
       end do
     case default
@@ -82,33 +86,36 @@ contains
 
   end subroutine div_damp_final
 
-  subroutine div_damp_run(block, dstate)
+  subroutine div_damp_run(block, dstate, dt)
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
+    real(r8), intent(in) :: dt
 
     integer i, j, k
 
     call calc_div(block, dstate)
 
-    associate (mesh => block%mesh  , &
-               div  => block%aux%div , &
-               div2 => block%aux%div2, &
-               u    => dstate%u_lon, &
-               v    => dstate%v_lat)
+    associate (mesh => block%mesh        , &
+               div  => block%aux%div     , &
+               div2 => block%aux%div2    , &
+               dudt => block%aux%dudt_div, &
+               dvdt => block%aux%dvdt_div, &
+               u    => dstate%u_lon      , &
+               v    => dstate%v_lat      )
     select case (div_damp_order)
     case (2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) + c_lon(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j)
+            dudt(i,j,k) = c_lon(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j) / dt
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) + c_lat(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j)
+            dvdt(i,j,k) = c_lat(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j) / dt
           end do
         end do
       end do
@@ -116,20 +123,18 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) - c_lon(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
+            dudt(i,j,k) = -c_lon(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j) / dt
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) - c_lat(j,k) * (div2(i,j+1,k) - div2(i,j,k)) / mesh%de_lat(j)
+            dvdt(i,j,k) = -c_lat(j,k) * (div2(i,j+1,k) - div2(i,j,k)) / mesh%de_lat(j) / dt
           end do
         end do
       end do
     end select
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine div_damp_run

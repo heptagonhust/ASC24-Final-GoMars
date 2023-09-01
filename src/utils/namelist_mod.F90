@@ -308,12 +308,15 @@ contains
       hydrostatic    = .false.
       baroclinic     = .false.
       nonhydrostatic = .false.
-      pdc_type       = 0
     end if
 
     if (dt_dyn  == 0) dt_dyn  = dt_adv
     if (dt_adv  == 0) dt_adv  = dt_dyn
     if (dt_phys == 0) dt_phys = dt_dyn
+
+    if (physics_suite == 'N/A') then
+      pdc_type       = 0
+    end if
 
     select case (planet)
     case ('earth')

@@ -186,6 +186,7 @@ contains
       end if
       call dstate%c2a()
       call calc_div(block, dstate)
+      call tracer_calc_qm(block)
       end associate
     end do
 
@@ -194,24 +195,19 @@ contains
     call adv_prepare(old)
     if (nonhydrostatic) call nh_prepare(blocks)
     call diagnose(blocks, old)
-    call output(old)
     if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
     model_main_loop: do while (.not. time_is_finished())
       ! ------------------------------------------------------------------------
-      !                              Dynamical Core
-      do iblk = 1, size(blocks)
-        call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
-        call damp_run(blocks(iblk), blocks(iblk)%dstate(new), dt_dyn)
-        if (pdc_type == 1) call physics_update_dynamics(blocks(iblk), new, dt_dyn)
-        call blocks(iblk)%dstate(new)%c2a()
-      end do
-      ! Advance to n+1 time level.
-      ! NOTE: Time indices are swapped, e.g. new <=> old.
-      call time_advance(dt_dyn)
+      call diagnose(blocks, old)
+      if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+      call blocks(1)%accum(old)
+      call output(old)
       ! ------------------------------------------------------------------------
-      !                            Tracer Advection
-      call adv_run(old)
+      !                                Damping
+      do iblk = 1, size(blocks)
+        call damp_run(blocks(iblk), blocks(iblk)%dstate(old), dt_dyn)
+      end do
       ! ------------------------------------------------------------------------
       !                                Physics
       call test_forcing_run(dt_dyn, old)
@@ -222,14 +218,26 @@ contains
         end do
       end if
       ! ------------------------------------------------------------------------
-      call diagnose(blocks, old)
-      if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call blocks(1)%accum(old)
-      call output(old)
+      !                            Tracer Advection
+      call adv_accum_wind(old)
+      call adv_run(old)
+      ! ------------------------------------------------------------------------
+      !                              Dynamical Core
+      do iblk = 1, size(blocks)
+        call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
+        if (pdc_type == 1) call physics_update_dynamics(blocks(iblk), new, dt_dyn)
+        call blocks(iblk)%dstate(new)%c2a()
+      end do
+      ! ------------------------------------------------------------------------
+      ! Advance to n+1 time level.
+      ! NOTE: Time indices are swapped, e.g. new <=> old.
+      call time_advance(dt_dyn)
     end do model_main_loop
-
-    ! Write a restart file at last.
-    ! call restart_write(old)
+    ! Last output.
+    call diagnose(blocks, old)
+    if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+    call blocks(1)%accum(old)
+    call output(old)
 
   end subroutine gmcore_run
 
@@ -281,14 +289,15 @@ contains
 
     integer, intent(in) :: itime
 
-    real(8), save :: time1 = 0, time2
+    logical, save :: first_call = .true.
+    real(8), save :: time1, time2
     integer i, j, k, iblk
 
-    if (time_step == 0 .or. time_is_alerted('history_write')) then
-      if (time_step == 0) time1 = MPI_WTIME()
+    if (first_call .or. time_is_alerted('history_write')) then
+      if (first_call) time1 = MPI_WTIME()
       call process_barrier()
       time2 = MPI_WTIME()
-      if (time_step /= 0) then
+      if (.not. first_call) then
         if (proc%is_root()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
@@ -298,6 +307,7 @@ contains
     if (time_is_alerted('restart_write')) then
       call restart_write(itime)
     end if
+    first_call = .false.
 
   end subroutine output
 
@@ -320,6 +330,7 @@ contains
     do iblk = 1, size(blocks)
       associate (block  => blocks(iblk)              , &
                  mesh   => blocks(iblk)%mesh         , &
+                 aux    => blocks(iblk)%aux          , &
                  dstate => blocks(iblk)%dstate(itime), &
                  static => blocks(iblk)%static)
       do k = mesh%full_kds, mesh%full_kde
@@ -333,12 +344,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            te_ke = te_ke + dstate%mfx_lon(i,j,k) * 0.5_r8 * dstate%u_lon(i,j,k) * mesh%area_lon(j) * 2
+            te_ke = te_ke + aux%mfx_lon(i,j,k) * 0.5_r8 * dstate%u_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            te_ke = te_ke + dstate%mfy_lat(i,j,k) * 0.5_r8 * dstate%v_lat(i,j,k) * mesh%area_lat(j) * 2
+            te_ke = te_ke + aux%mfy_lat(i,j,k) * 0.5_r8 * dstate%v_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do

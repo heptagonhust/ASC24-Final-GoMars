@@ -66,8 +66,6 @@ contains
       interp_pv => interp_pv_midpoint
     case ('upwind')
       interp_pv => interp_pv_upwind
-    case ('tvd')
-      interp_pv => interp_pv_tvd
     case default
       call log_error('Invalid pv_scheme ' // trim(pv_scheme) // '!', pid=proc%id)
     end select
@@ -87,7 +85,6 @@ contains
       call calc_dmg                       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%dstate(itime))
-      call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt, total_substeps)
@@ -323,13 +320,14 @@ contains
                we_lev_lat => block%aux%we_lev_lat)   ! out
     sum_dmf = 0
     do k = mesh%half_kds + 1, mesh%half_kde - 1
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_ids, mesh%full_ide + 1
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
           sum_dmf(i,j) = sum_dmf(i,j) + dmf(i,j,k-1)
           we_lev(i,j,k) = -vert_coord_calc_dmgdt_lev(k, dmgs(i,j)) - sum_dmf(i,j)
         end do
       end do
     end do
+    call fill_halo(block%halo, we_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
 
     call block%adv_batch_pt%accum_we_lev(we_lev, dmg_lev, dt)
 
@@ -523,30 +521,31 @@ contains
         end do
       end do
     end if
+    call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
+                   south_halo=.false., north_halo=.false.)
+    call filter_on_cell(block%big_filter, div)
     if (use_div_damp) then
-      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false., south_halo=.false.)
-      call filter_on_cell(block%small_filter, div)
-    end if
-    if (div_damp_order == 4) then
-      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
-    else
-      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
-    end if
-
-    if (div_damp_order == 4) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%full_ids, mesh%full_ide
-            div2(i,j,k) = (                                                               &
-              div(i+1,j,k) - 2 * div(i,j,k) + div(i-1,j,k)                                &
-            ) / mesh%de_lon(j)**2 + (                                                     &
-              (div(i,j+1,k) - div(i,j  ,k)) * mesh%half_cos_lat(j  ) / mesh%de_lat(j  ) - &
-              (div(i,j  ,k) - div(i,j-1,k)) * mesh%half_cos_lat(j-1) / mesh%de_lat(j-1)   &
-            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
+      select case (div_damp_order)
+      case (2)
+        call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
+                       west_halo=.false., south_halo=.false.)
+      case (4)
+        call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%full_ids, mesh%full_ide
+              div2(i,j,k) = (                                                               &
+                div(i+1,j,k) - 2 * div(i,j,k) + div(i-1,j,k)                                &
+              ) / mesh%de_lon(j)**2 + (                                                     &
+                (div(i,j+1,k) - div(i,j  ,k)) * mesh%half_cos_lat(j  ) / mesh%de_lat(j  ) - &
+                (div(i,j  ,k) - div(i,j-1,k)) * mesh%half_cos_lat(j-1) / mesh%de_lat(j-1)   &
+              ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
+            end do
           end do
         end do
-      end do
-      call fill_halo(block%halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+        call fill_halo(block%halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., &
+                       west_halo=.false., south_halo=.false.)
+      end select
     end if
     end associate
 
@@ -680,8 +679,8 @@ contains
                v_lat   => dstate%v_lat     , & ! in
                u_lat   => block%aux%u_lat  , & ! out
                v_lon   => block%aux%v_lon  , & ! out
-               mfx_lon => dstate%mfx_lon   , & ! out
-               mfy_lat => dstate%mfy_lat   , & ! out
+               mfx_lon => block%aux%mfx_lon, & ! out
+               mfy_lat => block%aux%mfy_lat, & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
     call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
@@ -931,42 +930,6 @@ contains
 
   end subroutine interp_pv_upwind
 
-  subroutine interp_pv_tvd(block, dstate, dt, substep)
-
-    type(block_type), intent(inout) :: block
-    type(dstate_type), intent(inout) :: dstate
-    real(r8), intent(in) :: dt
-    integer, intent(in) :: substep
-
-    real(r8) cfl
-    integer i, j, k
-
-    associate (mesh     => block%mesh      , &
-               ut       => block%aux%u_lat , & ! in
-               vt       => block%aux%v_lon , & ! in
-               pv       => block%aux%pv    , & ! in
-               pv_lon   => block%aux%pv_lon, & ! out
-               pv_lat   => block%aux%pv_lat)   ! out
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          cfl = vt(i,j,k) * dt / mesh%le_lon(j)
-          pv_lon(i,j,k) = tvd(cfl, pv(i,j-2,k), pv(i,j-1,k), pv(i,j,k), pv(i,j+1,k))
-        end do
-      end do
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          cfl = ut(i,j,k) * dt / mesh%le_lat(j)
-          pv_lat(i,j,k) = tvd(cfl, pv(i-2,j,k), pv(i-1,j,k), pv(i,j,k), pv(i+1,j,k))
-        end do
-      end do
-    end do
-    call fill_halo(block%halo, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
-    call fill_halo(block%halo, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
-    end associate
-
-  end subroutine interp_pv_tvd
-
   subroutine calc_coriolis(block, dstate, dtend, dt)
 
     type(block_type), intent(inout) :: block
@@ -978,8 +941,8 @@ contains
     integer i, j, k
 
     associate (mesh    => block%mesh       , &
-               mfx_lon => dstate%mfx_lon   , & ! in
-               mfy_lat => dstate%mfy_lat   , & ! in
+               mfx_lon => block%aux%mfx_lon, & ! in
+               mfy_lat => block%aux%mfy_lat, & ! in
                mfy_lon => block%aux%mfy_lon, & ! in
                mfx_lat => block%aux%mfx_lat, & ! in
                pv_lon  => block%aux%pv_lon , & ! in
@@ -1099,10 +1062,10 @@ contains
     real(r8) work(dstate%mesh%full_ids:dstate%mesh%full_ide,dstate%mesh%full_nlev)
     real(r8) pole(dstate%mesh%full_nlev)
 
-    associate (mesh    => block%mesh    , &
-               mfx_lon => dstate%mfx_lon, & ! in
-               mfy_lat => dstate%mfy_lat, & ! in
-               dmf     => block%aux%dmf )   ! out
+    associate (mesh    => block%mesh       , &
+               mfx_lon => block%aux%mfx_lon, & ! in
+               mfy_lat => block%aux%mfy_lat, & ! in
+               dmf     => block%aux%dmf    )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide

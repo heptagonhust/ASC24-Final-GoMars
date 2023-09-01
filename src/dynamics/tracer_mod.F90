@@ -392,8 +392,7 @@ contains
               end if
             end do
           else
-            call log_warning('Negative tracer mass is larger than positive one!', __FILE__, __LINE__)
-            q(i,j,:) = 0
+            call log_error('Negative tracer mass is larger than positive one!', __FILE__, __LINE__)
           end if
         end if
       end do
