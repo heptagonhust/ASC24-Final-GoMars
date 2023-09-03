@@ -308,8 +308,6 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
-    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide+1, &
-                     block%mesh%full_jds:block%mesh%full_jde+1)
 
     associate (mesh       => block%mesh          , &
                dmf        => block%aux%dmf       , & ! in
@@ -318,16 +316,15 @@ contains
                we_lev     => dstate%we_lev       , & ! out
                we_lev_lon => block%aux%we_lev_lon, & ! out
                we_lev_lat => block%aux%we_lev_lat)   ! out
-    sum_dmf = 0
     do k = mesh%half_kds + 1, mesh%half_kde - 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          sum_dmf(i,j) = sum_dmf(i,j) + dmf(i,j,k-1)
-          we_lev(i,j,k) = -vert_coord_calc_dmgdt_lev(k, dmgs(i,j)) - sum_dmf(i,j)
+          we_lev(i,j,k) = -vert_coord_calc_dmgdt_lev(k, dmgs(i,j)) - sum(dmf(i,j,1:k-1))
         end do
       end do
     end do
-    call fill_halo(block%halo, we_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
+    call fill_halo(block%halo, we_lev, full_lon=.true., full_lat=.true., full_lev=.false., &
+                   west_halo=.false., south_halo=.false.)
 
     call block%adv_batch_pt%accum_we_lev(we_lev, dmg_lev, dt)
 
@@ -427,12 +424,12 @@ contains
       j = mesh%full_jds
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          ! work(i,k) = v(i,j,k)**2
-          work(i,k) = ke_cell_wgt * v(i,j,k)**2 + (      &
-            mesh%area_lat_west (j  ) * v(i  ,j  ,k)**2 + &
-            mesh%area_lat_east (j  ) * v(i+1,j  ,k)**2 + &
-            mesh%area_lon_south(j+1) * u(i  ,j+1,k)**2   &
-          ) / mesh%area_vtx(j) * (1 - ke_cell_wgt)
+          work(i,k) = v(i,j,k)**2
+          ! work(i,k) = ke_cell_wgt * v(i,j,k)**2 + (      &
+          !   mesh%area_lat_west (j  ) * v(i  ,j  ,k)**2 + &
+          !   mesh%area_lat_east (j  ) * v(i+1,j  ,k)**2 + &
+          !   mesh%area_lon_south(j+1) * u(i  ,j+1,k)**2   &
+          ! ) / mesh%area_vtx(j) * (1 - ke_cell_wgt)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -447,12 +444,12 @@ contains
       j = mesh%full_jde
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          ! wwork(i,k) = v(i,j-1,k)**2
-          work(i,k) = ke_cell_wgt * v(i,j-1,k)**2 + (    &
-            mesh%area_lat_west (j-1) * v(i  ,j-1,k)**2 + &
-            mesh%area_lat_east (j-1) * v(i+1,j-1,k)**2 + &
-            mesh%area_lat_north(j-1) * u(i  ,j-1,k)**2   &
-          ) / mesh%area_vtx(j-1) * (1 - ke_cell_wgt)
+          work(i,k) = v(i,j-1,k)**2
+          ! work(i,k) = ke_cell_wgt * v(i,j-1,k)**2 + (    &
+          !   mesh%area_lat_west (j-1) * v(i  ,j-1,k)**2 + &
+          !   mesh%area_lat_east (j-1) * v(i+1,j-1,k)**2 + &
+          !   mesh%area_lat_north(j-1) * u(i  ,j-1,k)**2   &
+          ! ) / mesh%area_vtx(j-1) * (1 - ke_cell_wgt)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -556,9 +553,7 @@ contains
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    integer i, j, k, l
-    real(r8) dgz(block%mesh%full_ids:block%mesh%full_ide, &
-                 block%mesh%full_jds:block%mesh%full_jde)
+    integer i, j, k
 
     associate (mesh   => block%mesh      , &
                gzs    => block%static%gzs, & ! in
@@ -566,12 +561,10 @@ contains
                ph_lev => dstate%ph_lev   , & ! in
                gz_lev => dstate%gz_lev   , & ! out
                gz     => dstate%gz       )   ! out
-    dgz = 0
     do k = mesh%half_kde - 1, mesh%half_kds, -1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dgz(i,j) = dgz(i,j) + rd * tv(i,j,k) * log(ph_lev(i,j,k+1) / ph_lev(i,j,k))
-          gz_lev(i,j,k) = gzs(i,j) + dgz(i,j)
+          gz_lev(i,j,k) = gz_lev(i,j,k+1) + rd * tv(i,j,k) * log(ph_lev(i,j,k+1) / ph_lev(i,j,k))
         end do
       end do
     end do

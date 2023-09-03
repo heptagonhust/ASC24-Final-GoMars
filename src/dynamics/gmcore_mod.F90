@@ -344,12 +344,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            te_ke = te_ke + aux%mfx_lon(i,j,k) * 0.5_r8 * dstate%u_lon(i,j,k) * mesh%area_lon(j) * 2
+            te_ke = te_ke + aux%dmg_lon(i,j,k) * 0.5_r8 * dstate%u_lon(i,j,k)**2 * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            te_ke = te_ke + aux%mfy_lat(i,j,k) * 0.5_r8 * dstate%v_lat(i,j,k) * mesh%area_lat(j) * 2
+            te_ke = te_ke + aux%dmg_lat(i,j,k) * 0.5_r8 * dstate%v_lat(i,j,k)**2 * mesh%area_lat(j) * 2
           end do
         end do
       end do
@@ -377,12 +377,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            tpe = tpe + block%aux%dmg_lon(i,j,k) * block%aux%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
+            tpe = tpe + aux%dmg_lon(i,j,k) * aux%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            tpe = tpe + block%aux%dmg_lat(i,j,k) * block%aux%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
+            tpe = tpe + aux%dmg_lat(i,j,k) * aux%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
           end do
         end do
       end do

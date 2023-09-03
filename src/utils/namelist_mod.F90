@@ -126,8 +126,8 @@ module namelist_mod
   ! Filter settings
   real(r8)        :: max_wave_speed       = 300
   real(r8)        :: max_cfl              = 0.5
-  real(r8)        :: filter_coef_a        = 1.5
-  real(r8)        :: filter_coef_b        = 0.2
+  real(r8)        :: filter_coef_a        = 1.7
+  real(r8)        :: filter_coef_b        = 0.3
   real(r8)        :: filter_coef_c        = 0.1
   real(r8)        :: filter_min_width     = 0.0
 
@@ -139,7 +139,7 @@ module namelist_mod
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 3.0_r8
-  real(r8)        :: div_damp_coef2       = 0.001_r8
+  real(r8)        :: div_damp_coef2       = 0.005_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
