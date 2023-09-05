@@ -320,7 +320,7 @@ contains
               (fx(i+1,j) - fx(i,j)) * mesh%le_lon(j) + &
                fy(i,j  ) * mesh%le_lat(j  ) -          &
                fy(i,j-1) * mesh%le_lat(j-1)            &
-            ) / mesh%area_lon(j)
+            ) / mesh%area_lon(j) / 2
           end do
         end do
         ! Handle poles.
@@ -385,7 +385,7 @@ contains
               fy(i,j  ) * mesh%le_lat(j  ) - &
               fy(i,j-1) * mesh%le_lat(j-1)   &
             )                                &
-          ) / mesh%area_lon(j)
+          ) / mesh%area_lon(j) / 2
         end do
       end do
     end do
@@ -457,7 +457,7 @@ contains
               (fx(i,j) - fx(i-1,j)) * mesh%de_lat(j) + &
                fy(i,j+1) * mesh%de_lon(j+1) -          &
                fy(i,j  ) * mesh%de_lon(j  )            &
-            ) / mesh%area_lat(j)
+            ) / mesh%area_lat(j) / 2
           end do
         end do
         call fill_halo(halo, g2, full_lon=.true., full_lat=.false.)
@@ -500,7 +500,7 @@ contains
               fy(i,j+1) * mesh%le_lon(j+1) - &
               fy(i,j  ) * mesh%le_lon(j  )   &
             )                                &
-          ) / mesh%area_lat(j)
+          ) / mesh%area_lat(j) / 2
         end do
       end do
     end do
