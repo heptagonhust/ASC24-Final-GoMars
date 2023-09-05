@@ -190,7 +190,7 @@ contains
                  dstate    => blocks(iblk)%dstate(itime)    , &
                  mesh      => blocks(iblk)%filter_mesh      , &
                  m_new     => blocks(iblk)%dstate(itime)%dmg, &
-                 dqdt_smag => blocks(iblk)%aux%dqdt_smag    )
+                 dqdt_damp => blocks(iblk)%aux%dqdt_damp    )
       allocate(q_old(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
       allocate(work(mesh%full_ids:mesh%full_ide,mesh%full_nlev))
       allocate(pole(mesh%full_nlev))
@@ -275,7 +275,8 @@ contains
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k) + dqdt_smag(i,j,k,batch%idx(l))) * dt_adv / m_new(i,j,k)
+                  q_new(i,j,k) = q_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k) + &
+                    dqdt_damp(i,j,k,batch%idx(l))) * dt_adv / m_new(i,j,k)
                 end do
               end do
             end do
@@ -285,6 +286,8 @@ contains
               call tracer_fill_negative_values(block, itime, q_new)
               call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
             end if
+            ! Reset damping tendency.
+            dqdt_damp(i,j,k,batch%idx(l)) = 0
             end associate
           end do
           end associate

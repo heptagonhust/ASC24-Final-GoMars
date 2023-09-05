@@ -159,11 +159,9 @@ contains
     associate (mesh       => block%mesh          , &
                dudt       => dtend%du            , &
                dvdt       => dtend%dv            , &
-               dudt_div   => block%aux%dudt_div  , &
-               dvdt_div   => block%aux%dvdt_div  , &
-               dptdt_smag => block%aux%dptdt_smag, &
-               dudt_smag  => block%aux%dudt_smag , &
-               dvdt_smag  => block%aux%dvdt_smag )
+               dptdt_damp => block%aux%dptdt_damp, &
+               dudt_damp  => block%aux%dudt_damp , &
+               dvdt_damp  => block%aux%dvdt_damp )
     if (baroclinic) then
       if (dtend%update_mgs) then
         ! ----------------------------------------------------------------------
@@ -195,6 +193,13 @@ contains
 
       if (dtend%update_pt) then
         if (.not. dtend%update_mgs .and. .not. dtend%copy_mgs .and. proc%is_root()) call log_error('Mass is not updated or copied!')
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              dtend%dpt(i,j,k) = dtend%dpt(i,j,k) + dptdt_damp(i,j,k)
+            end do
+          end do
+        end do
         ! ----------------------------------------------------------------------
         call fill_halo(block%filter_halo, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block%big_filter, dtend%dpt)
@@ -202,7 +207,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%dmg(i,j,k) + dt * (dtend%dpt(i,j,k) + dptdt_smag(i,j,k))) / new_state%dmg(i,j,k)
+              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%dmg(i,j,k) + dt * dtend%dpt(i,j,k)) / new_state%dmg(i,j,k)
             end do
           end do
         end do
@@ -234,19 +239,16 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            dudt(i,j,k) = dudt(i,j,k) + dudt_div(i,j,k) + dudt_smag(i,j,k)
-          end do
-        end do
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            dvdt(i,j,k) = dvdt(i,j,k) + dvdt_div(i,j,k) + dvdt_smag(i,j,k)
+            dudt(i,j,k) = dudt(i,j,k) + dudt_damp(i,j,k)
           end do
         end do
       end do
       ! ------------------------------------------------------------------------
-      call fill_halo(block%filter_halo, dudt, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%filter_halo, dudt, full_lon=.false., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
       call filter_on_lon_edge(block%big_filter, dudt)
-      call fill_halo(block%filter_halo, dvdt, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%filter_halo, dvdt, full_lon=.true., full_lat=.false., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
       call filter_on_lat_edge(block%big_filter, dvdt)
       ! ------------------------------------------------------------------------
       do k = mesh%full_kds, mesh%full_kde
@@ -259,7 +261,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * dvdt(i,j,k)
+            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * (dvdt(i,j,k) + dvdt_damp(i,j,k))
           end do
         end do
       end do

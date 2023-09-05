@@ -136,11 +136,11 @@ module namelist_mod
   real(r8)        :: topo_max_slope       = 0.12_r8
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
-  integer         :: div_damp_order       = 2
+  integer         :: div_damp_order       = 4
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 3.0_r8
   real(r8)        :: div_damp_coef2       = 0.005_r8
-  real(r8)        :: div_damp_coef4       = 0.001_r8
+  real(r8)        :: div_damp_coef4       = 0.005_r8
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
@@ -318,6 +318,10 @@ contains
       pdc_type       = 0
     end if
 
+    if (.not. use_div_damp) then
+      div_damp_order = 0
+    end if
+
     select case (planet)
     case ('earth')
       time_scale = 1
@@ -352,13 +356,13 @@ contains
       write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
       write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
       write(*, *) 'ptop                = ', to_str(ptop, 4)
-      write(*, *) 'hybrid_coord_p0     = ', hybrid_coord_p0
+      write(*, *) 'hybrid_coord_p0     = ', to_str(hybrid_coord_p0, 2)
       write(*, *) 'dt_dyn              = ', to_str(dt_dyn , 2)
       write(*, *) 'dt_adv              = ', to_str(dt_adv , 2)
       write(*, *) 'dt_phys             = ', to_str(dt_phys, 2)
-      write(*, *) 'pdc_type            = ', pdc_type
-      write(*, *) 'max_wave_speed      = ', max_wave_speed
-      write(*, *) 'max_cfl             = ', max_cfl
+      write(*, *) 'pdc_type            = ', to_str(pdc_type)
+      write(*, *) 'max_wave_speed      = ', to_str(max_wave_speed, 2)
+      write(*, *) 'max_cfl             = ', to_str(max_cfl, 2)
       write(*, *) 'filter_coef_a       = ', filter_coef_a
       write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
@@ -389,8 +393,12 @@ contains
       write(*, *) 'topo_smooth_cycles  = ', to_str(topo_smooth_cycles)
     end if
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
-    if (use_div_damp) then
+    if (div_damp_order == 2) then
       write(*, *) 'div_damp_coef2      = ', div_damp_coef2
+    else if (div_damp_order == 4) then
+      write(*, *) 'div_damp_coef4      = ', div_damp_coef4
+    end if
+    if (use_div_damp) then
       write(*, *) 'div_damp_top        = ', to_str(div_damp_top, 3)
     end if
     if (nonhydrostatic) then

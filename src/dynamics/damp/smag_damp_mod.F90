@@ -60,10 +60,10 @@ contains
                kmh_lat   => block%aux%kmh_lat   , & ! working array
                kmh       => block%aux%kmh       , & ! working array
                dmg       => dstate%dmg          , & ! working array
-               dudt      => block%aux%dudt_smag , & ! out
-               dvdt      => block%aux%dvdt_smag , & ! out
-               dptdt     => block%aux%dptdt_smag, & ! out
-               dqdt      => block%aux%dqdt_smag , & ! out
+               dudt      => block%aux%dudt_damp , & ! out
+               dvdt      => block%aux%dvdt_damp , & ! out
+               dptdt     => block%aux%dptdt_damp, & ! out
+               dqdt      => block%aux%dqdt_damp , & ! out
                u         => dstate%u_lon        , & ! inout
                v         => dstate%v_lat        , & ! inout
                pt        => dstate%pt           )   ! inout
@@ -144,7 +144,7 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          dudt(i,j,k) = kmh_lon(i,j,k) * (                                           &
+          dudt(i,j,k) = dudt(i,j,k) + kmh_lon(i,j,k) * (                             &
             (u(i-1,j,k) - 2 * u(i,j,k) + u(i+1,j,k)) / mesh%de_lon(j)**2 +           &
             ((u(i,j+1,k) - u(i,j  ,k)) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) - &
              (u(i,j  ,k) - u(i,j-1,k)) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)   &
@@ -158,13 +158,13 @@ contains
       do j = mesh%half_jds, mesh%half_jde
         if (j == global_mesh%half_jds .or. j == global_mesh%half_jde) then
           do i = mesh%full_ids, mesh%full_ide
-            dvdt(i,j,k) = kmh_lat(i,j,k) * (                                           &
+            dvdt(i,j,k) = dvdt(i,j,k) + kmh_lat(i,j,k) * (                             &
               (v(i-1,j,k) - 2 * v(i,j,k) + v(i+1,j,k)) / mesh%le_lat(j)**2             &
             ) / dt
           end do
         else
           do i = mesh%full_ids, mesh%full_ide
-            dvdt(i,j,k) = kmh_lat(i,j,k) * (                                           &
+            dvdt(i,j,k) = dvdt(i,j,k) + kmh_lat(i,j,k) * (                             &
               (v(i-1,j,k) - 2 * v(i,j,k) + v(i+1,j,k)) / mesh%le_lat(j)**2 +           &
               ((v(i,j+1,k) - v(i,j  ,k)) / mesh%le_lon(j+1) * mesh%full_cos_lat(j+1) - &
                (v(i,j  ,k) - v(i,j-1,k)) / mesh%le_lon(j  ) * mesh%full_cos_lat(j  )   &
@@ -178,7 +178,7 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
-          dptdt(i,j,k) = kmh(i,j,k) * (                           &
+          dptdt(i,j,k) = dptdt(i,j,k) + kmh(i,j,k) * (            &
             (dmg(i-1,j,k) * pt(i-1,j,k) - 2 *                     &
              dmg(i  ,j,k) * pt(i  ,j,k) +                         &
              dmg(i+1,j,k) * pt(i+1,j,k)) / mesh%de_lon(j)**2 +    &
@@ -197,7 +197,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%full_ids, mesh%full_ide
-            dqdt(i,j,k,m) = kmh(i,j,k) * (                            &
+            dqdt(i,j,k,m) = dqdt(i,j,k,m) + kmh(i,j,k) * (            &
               (dmg(i-1,j,k) * q(i-1,j,k,m) - 2 *                      &
                dmg(i  ,j,k) * q(i  ,j,k,m) +                          &
                dmg(i+1,j,k) * q(i+1,j,k,m)) / mesh%de_lon(j)**2 +     &

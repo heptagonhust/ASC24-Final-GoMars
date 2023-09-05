@@ -518,31 +518,31 @@ contains
         end do
       end do
     end if
-    call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
-                   south_halo=.false., north_halo=.false.)
-    call filter_on_cell(block%big_filter, div)
-    if (use_div_damp) then
-      select case (div_damp_order)
-      case (2)
-        call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
-                       west_halo=.false., south_halo=.false.)
-      case (4)
-        call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-            do i = mesh%full_ids, mesh%full_ide
-              div2(i,j,k) = (                                                               &
-                div(i+1,j,k) - 2 * div(i,j,k) + div(i-1,j,k)                                &
-              ) / mesh%de_lon(j)**2 + (                                                     &
-                (div(i,j+1,k) - div(i,j  ,k)) * mesh%half_cos_lat(j  ) / mesh%de_lat(j  ) - &
-                (div(i,j  ,k) - div(i,j-1,k)) * mesh%half_cos_lat(j-1) / mesh%de_lat(j-1)   &
-              ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
-            end do
+    if (div_damp_order == 2) then
+      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%small_filter, div)
+      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     west_halo=.false., south_halo=.false.)
+    else if (div_damp_order == 4) then
+      call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%full_ids, mesh%full_ide
+            div2(i,j,k) = (                                                               &
+              div(i+1,j,k) - 2 * div(i,j,k) + div(i-1,j,k)                                &
+            ) / mesh%de_lon(j)**2 + (                                                     &
+              (div(i,j+1,k) - div(i,j  ,k)) * mesh%half_cos_lat(j  ) / mesh%de_lat(j  ) - &
+              (div(i,j  ,k) - div(i,j-1,k)) * mesh%half_cos_lat(j-1) / mesh%de_lat(j-1)   &
+            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
           end do
         end do
-        call fill_halo(block%halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., &
-                       west_halo=.false., south_halo=.false.)
-      end select
+      end do
+      call fill_halo(block%filter_halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%small_filter, div2)
+      call fill_halo(block%filter_halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., &
+                     west_halo=.false., south_halo=.false.)
     end if
     end associate
 

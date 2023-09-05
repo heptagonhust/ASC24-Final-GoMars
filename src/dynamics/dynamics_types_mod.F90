@@ -175,14 +175,11 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: dmf
     real(r8), allocatable, dimension(:,:,:) :: omg               ! Vertical pressure velocity (Pa s-1)
-    ! Tendencies from divergence damping
-    real(r8), allocatable, dimension(:,:,:) :: dudt_div
-    real(r8), allocatable, dimension(:,:,:) :: dvdt_div
     ! Tendencies from Smagorinsky diffusion
-    real(r8), allocatable, dimension(:,:,:  ) :: dudt_smag
-    real(r8), allocatable, dimension(:,:,:  ) :: dvdt_smag
-    real(r8), allocatable, dimension(:,:,:  ) :: dptdt_smag
-    real(r8), allocatable, dimension(:,:,:,:) :: dqdt_smag
+    real(r8), allocatable, dimension(:,:,:  ) :: dudt_damp
+    real(r8), allocatable, dimension(:,:,:  ) :: dvdt_damp
+    real(r8), allocatable, dimension(:,:,:  ) :: dptdt_damp
+    real(r8), allocatable, dimension(:,:,:,:) :: dqdt_damp
     ! Tendencies from physics
     real(r8), allocatable, dimension(:,:,:  ) :: dudt_phys
     real(r8), allocatable, dimension(:,:,:  ) :: dvdt_phys
@@ -836,19 +833,20 @@ contains
     call allocate_array(mesh, this%mfy_lon        , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor            , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv             , half_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(filter_mesh, this%div     , full_lon=.true., full_lat=.true., full_lev=.true.)
-    if (use_div_damp .and. div_damp_order == 4) then
-      call allocate_array(mesh, this%div2, full_lon=.true., full_lat=.true., full_lev=.true.)
+    if (div_damp_order == 2) then
+      call allocate_array(filter_mesh, this%div   , full_lon=.true., full_lat=.true., full_lev=.true.)
+    else
+      call allocate_array(mesh       , this%div   , full_lon=.true., full_lat=.true., full_lev=.true.)
+    end if
+    if (div_damp_order == 4) then
+      call allocate_array(filter_mesh, this%div2  , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
     call allocate_array(mesh, this%dmf            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%omg            , full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    call allocate_array(this%mesh, this%dudt_div  , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%dvdt_div  , full_lon=.true., half_lat=.true., full_lev=.true.)
-
-    call allocate_array(this%mesh, this% dudt_smag, half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this% dvdt_smag, full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%dptdt_smag, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this% dudt_damp, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this% dvdt_damp, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%dptdt_damp, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (pgf_scheme == 'ptb') then
       call allocate_array(mesh, this%p_ptb        , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -863,7 +861,7 @@ contains
 
     class(aux_array_type), intent(inout) :: this
 
-    call allocate_array(this%mesh, this% dqdt_smag, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
+    call allocate_array(this%mesh, this% dqdt_damp, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
 
     if (trim(physics_suite) /= '') then
       if (filter_ptend) then
@@ -914,12 +912,10 @@ contains
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%dmf              )) deallocate(this%dmf              )
     if (allocated(this%omg              )) deallocate(this%omg              )
-    if (allocated(this%dudt_div         )) deallocate(this%dudt_div         )
-    if (allocated(this%dvdt_div         )) deallocate(this%dvdt_div         )
-    if (allocated(this%dudt_smag        )) deallocate(this%dudt_smag        )
-    if (allocated(this%dvdt_smag        )) deallocate(this%dvdt_smag        )
-    if (allocated(this%dptdt_smag       )) deallocate(this%dptdt_smag       )
-    if (allocated(this%dqdt_smag        )) deallocate(this%dqdt_smag        )
+    if (allocated(this%dudt_damp        )) deallocate(this%dudt_damp        )
+    if (allocated(this%dvdt_damp        )) deallocate(this%dvdt_damp        )
+    if (allocated(this%dptdt_damp       )) deallocate(this%dptdt_damp       )
+    if (allocated(this%dqdt_damp        )) deallocate(this%dqdt_damp        )
     if (allocated(this%dudt_phys        )) deallocate(this%dudt_phys        )
     if (allocated(this%dvdt_phys        )) deallocate(this%dvdt_phys        )
     if (allocated(this%dptdt_phys       )) deallocate(this%dptdt_phys       )

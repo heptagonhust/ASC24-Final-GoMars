@@ -44,6 +44,10 @@ contains
     type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: dt
 
+    block%aux%dudt_damp  = 0
+    block%aux%dvdt_damp  = 0
+    block%aux%dptdt_damp = 0
+
     if (use_div_damp) then
       call div_damp_run(block, dstate, dt)
     end if
