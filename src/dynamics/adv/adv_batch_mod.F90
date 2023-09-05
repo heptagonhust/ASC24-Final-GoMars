@@ -75,7 +75,10 @@ module adv_batch_mod
     procedure :: clear         => adv_batch_clear
     procedure :: copy_old_m    => adv_batch_copy_old_m
     procedure :: accum_uv_cell => adv_batch_accum_uv_cell
+    procedure :: accum_uv_lev  => adv_batch_accum_uv_lev
     procedure :: accum_mf_cell => adv_batch_accum_mf_cell
+    procedure :: accum_mf_lev  => adv_batch_accum_mf_lev
+    procedure :: accum_we_cell => adv_batch_accum_we_cell
     procedure :: accum_we_lev  => adv_batch_accum_we_lev
     final :: adv_batch_final
   end type adv_batch_type
@@ -131,6 +134,31 @@ contains
       case ('ffsl')
         call allocate_array(filter_mesh, this%qx, full_lon=.true., full_lat=.true., full_lev=.true.)
         call allocate_array(filter_mesh, this%qy, full_lon=.true., full_lat=.true., full_lev=.true.)
+      end select
+    case ('lev')
+      call allocate_array(mesh, this%old_m  , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%mfx    , half_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%mfy    , full_lon=.true., half_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%m      , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%m0     , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%u      , half_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%u0     , half_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%v      , full_lon=.true., half_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%v0     , full_lon=.true., half_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%we     , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%we0    , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cflx   , half_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%cfly   , full_lon=.true., half_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%cflz   , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%divx   , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%divy   , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%qmf_lon, half_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%qmf_lat, full_lon=.true., half_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%qmf_lev, full_lon=.true., full_lat=.true., full_lev=.true.)
+      select case (adv_scheme)
+      case ('ffsl')
+        call allocate_array(filter_mesh, this%qx, full_lon=.true., full_lat=.true., half_lev=.true.)
+        call allocate_array(filter_mesh, this%qy, full_lon=.true., full_lat=.true., half_lev=.true.)
       end select
     case default
       call log_error('Invalid grid location ' // trim(loc) // '!', __FILE__, __LINE__)
@@ -188,9 +216,7 @@ contains
   subroutine adv_batch_copy_old_m(this, m)
 
     class(adv_batch_type), intent(inout) :: this
-    real(r8), intent(in) :: m(this%mesh%full_ims:this%mesh%full_ime, &
-                              this%mesh%full_jms:this%mesh%full_jme, &
-                              this%mesh%full_kms:this%mesh%full_kme)
+    real(r8), intent(in) :: m(:,:,:) ! Assume caller knows what the array shape is.
 
     this%old_m = m
 
@@ -293,6 +319,103 @@ contains
 
   end subroutine adv_batch_accum_uv_cell
 
+  subroutine adv_batch_accum_uv_lev(this, u, v, dt)
+
+    class(adv_batch_type), intent(inout) :: this
+    real(r8), intent(in) :: u(this%mesh%half_ims:this%mesh%half_ime, &
+                              this%mesh%full_jms:this%mesh%full_jme, &
+                              this%mesh%half_kms:this%mesh%half_kme)
+    real(r8), intent(in) :: v(this%mesh%full_ims:this%mesh%full_ime, &
+                              this%mesh%half_jms:this%mesh%half_jme, &
+                              this%mesh%half_kms:this%mesh%half_kme)
+    real(r8), intent(in), optional :: dt
+
+    real(r8) work(this%mesh%full_ids:this%mesh%full_ide,this%mesh%half_nlev-1)
+    real(r8) pole(this%mesh%half_nlev-1)
+    real(r8) dt_opt, dx, dy
+    integer i, j, k
+
+    dt_opt = this%dt; if (present(dt)) dt_opt = dt
+
+    associate (mesh => this%mesh)
+    if (this%uv_step == -1) then
+      this%u = this%u0
+      this%v = this%v0
+      this%uv_step = 1
+    end if
+    if (this%uv_step == 0) then
+      this%u = u
+      this%v = v
+    else if (this%uv_step == this%nstep) then
+      this%u = (this%u + u) / (this%nstep + 1)
+      this%v = (this%v + v) / (this%nstep + 1)
+      this%u0 = u
+      this%v0 = v
+    else
+      this%u = this%u + u
+      this%v = this%v + v
+    end if
+    this%uv_step = merge(0, this%uv_step + 1, this%dynamic)
+    if (this%dynamic .or. this%uv_step > this%nstep) then
+      if (.not. this%dynamic) this%uv_step = -1
+      do k = mesh%half_kds, mesh%half_kde - 1
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          dx = mesh%de_lon(j)
+          do i = mesh%half_ids, mesh%half_ide
+            this%cflx(i,j,k) = this%u(i,j,k) * dt_opt / dx
+          end do
+        end do
+        do j = mesh%half_jds, mesh%half_jde
+          dy = mesh%de_lat(j)
+          do i = mesh%full_ids, mesh%full_ide
+            this%cfly(i,j,k) = this%v(i,j,k) * dt_opt / dy
+          end do
+        end do
+      end do
+      do k = mesh%half_kds, mesh%half_kde - 1
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%full_ids, mesh%full_ide
+            this%divx(i,j,k) = (this%u(i,j,k) - this%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
+            this%divy(i,j,k) = (this%v(i,j  ,k) * mesh%le_lat(j  ) - &
+                                this%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
+          end do
+        end do
+      end do
+      if (mesh%has_south_pole()) then
+        j = mesh%full_jds
+        do k = mesh%half_kds, mesh%half_kde - 1
+          do i = mesh%full_ids, mesh%full_ide
+            work(i,k) = this%v(i,j,k)
+          end do
+        end do
+        call zonal_sum(proc%zonal_circle, work, pole)
+        pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+        do k = mesh%half_kds, mesh%half_kde - 1
+          do i = mesh%full_ids, mesh%full_ide
+            this%divy(i,j,k) = pole(k)
+          end do
+        end do
+      end if
+      if (mesh%has_north_pole()) then
+        j = mesh%full_jde
+        do k = mesh%half_kds, mesh%half_kde - 1
+          do i = mesh%full_ids, mesh%full_ide
+            work(i,k) = -this%v(i,j-1,k)
+          end do
+        end do
+        call zonal_sum(proc%zonal_circle, work, pole)
+        pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+        do k = mesh%half_kds, mesh%half_kde - 1
+          do i = mesh%full_ids, mesh%full_ide
+            this%divy(i,j,k) = pole(k)
+          end do
+        end do
+      end if
+    end if
+    end associate
+
+  end subroutine adv_batch_accum_uv_lev
+
   subroutine adv_batch_accum_mf_cell(this, mfx, mfy)
 
     class(adv_batch_type), intent(inout) :: this
@@ -322,6 +445,85 @@ contains
     if (.not. this%dynamic .and. this%mf_step > this%nstep) this%mf_step = -1
 
   end subroutine adv_batch_accum_mf_cell
+
+  subroutine adv_batch_accum_mf_lev(this, mfx, mfy)
+
+    class(adv_batch_type), intent(inout) :: this
+    real(r8), intent(in) :: mfx(this%mesh%half_ims:this%mesh%half_ime, &
+                                this%mesh%full_jms:this%mesh%full_jme, &
+                                this%mesh%half_kms:this%mesh%half_kme)
+    real(r8), intent(in) :: mfy(this%mesh%full_ims:this%mesh%full_ime, &
+                                this%mesh%half_jms:this%mesh%half_jme, &
+                                this%mesh%half_kms:this%mesh%half_kme)
+
+    if (this%mf_step == -1) then
+      this%mfx = 0
+      this%mfy = 0
+      this%mf_step = 1
+    end if
+    if (this%mf_step == 0) then
+      this%mfx = mfx
+      this%mfy = mfy
+    else if (this%mf_step == this%nstep) then
+      this%mfx = (this%mfx + mfx) / this%nstep
+      this%mfy = (this%mfy + mfy) / this%nstep
+    else
+      this%mfx = this%mfx + mfx
+      this%mfy = this%mfy + mfy
+    end if
+    this%mf_step = merge(0, this%mf_step + 1, this%dynamic)
+    if (.not. this%dynamic .and. this%mf_step > this%nstep) this%mf_step = -1
+
+  end subroutine adv_batch_accum_mf_lev
+
+  subroutine adv_batch_accum_we_cell(this, we, m, dt)
+
+    class(adv_batch_type), intent(inout) :: this
+    real(r8), intent(in) :: we(this%mesh%full_ims:this%mesh%full_ime, &
+                               this%mesh%full_jms:this%mesh%full_jme, &
+                               this%mesh%full_kms:this%mesh%full_kme)
+    real(r8), intent(in) :: m (this%mesh%full_ims:this%mesh%full_ime, &
+                               this%mesh%full_jms:this%mesh%full_jme, &
+                               this%mesh%full_kms:this%mesh%full_kme)
+    real(r8), intent(in), optional :: dt
+
+    real(r8) dt_opt
+    integer i, j, k
+
+    dt_opt = this%dt; if (present(dt)) dt_opt = dt
+
+    associate (mesh => this%mesh)
+    if (this%we_step == -1) then
+      this%we = this%we0
+      this%m  = this%m0
+      this%we_step = 1
+    end if
+    if (this%we_step == 0) then
+      this%we = we
+      this%m  = m
+    else if (this%we_step == this%nstep) then
+      this%we = (this%we + we) / (this%nstep + 1)
+      this%m  = (this%m  + m ) / (this%nstep + 1)
+      this%we0 = we
+      this%m0  = m
+    else
+      this%we = this%we + we
+      this%m  = this%m  + m
+    end if
+    this%we_step = merge(0, this%we_step + 1, this%dynamic)
+    if (this%dynamic .or. this%we_step > this%nstep) then
+      if (.not. this%dynamic) this%we_step = -1
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            this%cflz(i,j,k) = this%we(i,j,k) / this%m(i,j,k) * dt_opt
+          end do
+        end do
+      end do
+    end if
+    end associate
+
+  end subroutine adv_batch_accum_we_cell
 
   subroutine adv_batch_accum_we_lev(this, we, m, dt)
 

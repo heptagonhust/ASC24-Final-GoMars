@@ -57,6 +57,21 @@ module adv_mod
                                    block%mesh%full_kms:block%mesh%full_kme)
       real(r8), intent(in), optional :: dt
     end subroutine calc_hflx_interface
+    subroutine calc_hflx_lev_interface(block, batch, m, mfx, mfy, dt)
+      import block_type, adv_batch_type, r8
+      type(block_type    ), intent(in   ) :: block
+      type(adv_batch_type), intent(inout) :: batch
+      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
+      real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(out) :: mfy(block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%half_jms:block%mesh%half_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(in), optional :: dt
+    end subroutine calc_hflx_lev_interface
     subroutine calc_vflx_interface(block, batch, m, mfz, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
@@ -86,6 +101,7 @@ module adv_mod
   procedure(calc_hflx_interface    ), pointer :: adv_calc_mass_hflx       => null()
   procedure(calc_vflx_interface    ), pointer :: adv_calc_mass_vflx       => null()
   procedure(calc_hflx_interface    ), pointer :: adv_calc_tracer_hflx     => null()
+  procedure(calc_hflx_lev_interface), pointer :: adv_calc_tracer_hflx_lev => null()
   procedure(calc_vflx_interface    ), pointer :: adv_calc_tracer_vflx     => null()
   procedure(calc_vflx_lev_interface), pointer :: adv_calc_tracer_vflx_lev => null()
 
@@ -103,6 +119,7 @@ contains
       adv_calc_mass_hflx       => ffsl_calc_mass_hflx
       adv_calc_mass_vflx       => ffsl_calc_mass_vflx
       adv_calc_tracer_hflx     => ffsl_calc_tracer_hflx
+      adv_calc_tracer_hflx_lev => ffsl_calc_tracer_hflx_lev
       adv_calc_tracer_vflx     => ffsl_calc_tracer_vflx
       adv_calc_tracer_vflx_lev => ffsl_calc_tracer_vflx_lev
     case default

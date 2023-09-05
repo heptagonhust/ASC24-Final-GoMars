@@ -35,6 +35,7 @@ module ffsl_mod
   public ffsl_calc_mass_hflx
   public ffsl_calc_mass_vflx
   public ffsl_calc_tracer_hflx
+  public ffsl_calc_tracer_hflx_lev
   public ffsl_calc_tracer_vflx
   public ffsl_calc_tracer_vflx_lev
 
@@ -62,6 +63,29 @@ module ffsl_mod
                                    block%mesh%half_jms:block%mesh%half_jme, &
                                    block%mesh%full_kms:block%mesh%full_kme)
     end subroutine hflx_interface
+    subroutine hflx_lev_interface(block, batch, u, v, mx, my, mfx, mfy)
+      import block_type, adv_batch_type, r8
+      type(block_type    ), intent(in   ) :: block
+      type(adv_batch_type), intent(inout) :: batch
+      real(r8), intent(in ) :: u  (block%mesh%half_ims:block%mesh%half_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(in ) :: v  (block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%half_jms:block%mesh%half_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(in ) :: mx (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
+      real(r8), intent(in ) :: my (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
+      real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+      real(r8), intent(out) :: mfy(block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%half_jms:block%mesh%half_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+    end subroutine hflx_lev_interface
     subroutine vflx_interface(block, batch, w, m, mfz)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
@@ -93,6 +117,7 @@ module ffsl_mod
   end interface
 
   procedure(hflx_interface    ), pointer :: hflx     => null()
+  procedure(hflx_lev_interface), pointer :: hflx_lev => null()
   procedure(vflx_interface    ), pointer :: vflx     => null()
   procedure(vflx_lev_interface), pointer :: vflx_lev => null()
 
@@ -106,6 +131,7 @@ contains
       vflx     => vflx_van_leer
     case ('ppm')
       hflx     => hflx_ppm
+      hflx_lev => hflx_ppm_lev
       vflx     => vflx_ppm
       vflx_lev => vflx_ppm_lev
     case default
@@ -323,6 +349,103 @@ contains
     end associate
 
   end subroutine ffsl_calc_tracer_hflx
+
+  subroutine ffsl_calc_tracer_hflx_lev(block, batch, q, qmfx, qmfy, dt)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: q    (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
+    real(r8), intent(out) :: qmfx (block%mesh%half_ims:block%mesh%half_ime, &
+                                   block%mesh%full_jms:block%mesh%full_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+    real(r8), intent(out) :: qmfy (block%mesh%full_ims:block%mesh%full_ime, &
+                                   block%mesh%half_jms:block%mesh%half_jme, &
+                                   block%mesh%half_kms:block%mesh%half_kme)
+    real(r8), intent(in), optional :: dt
+
+    integer i, j, k
+    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%half_nlev-1)
+    real(r8) pole(block%mesh%half_nlev-1)
+    real(r8) dt_opt
+
+    dt_opt = batch%dt; if (present(dt)) dt_opt = dt
+
+    associate (mesh => block%mesh, &
+               u    => batch%u   , & ! in
+               v    => batch%v   , & ! in
+               mfx  => batch%mfx , & ! in
+               mfy  => batch%mfy , & ! in
+               divx => batch%divx, & ! in
+               divy => batch%divy, & ! in
+               qx   => batch%qx  , & ! work array
+               qy   => batch%qy)     ! work array
+    ! Run inner advective operators.
+    call hflx_lev(block, batch, u, v, q, q, qmfx, qmfy)
+    call fill_halo(block%halo, qmfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block%halo, qmfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    ! Calculate intermediate tracer density due to advective operators.
+    do k = mesh%half_kds, mesh%half_kde - 1
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%full_ids, mesh%full_ide
+          ! Subtract divergence terms from flux to form advective operators.
+          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (          &
+            (                                        &
+              qmfx(i,j,k) - qmfx(i-1,j,k)            &
+            ) * mesh%le_lon(j) / mesh%area_cell(j) - &
+            divx(i,j,k) * q(i,j,k)                   &
+          ) * dt_opt
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (      &
+            (                                    &
+              qmfy(i,j  ,k) * mesh%le_lat(j  ) - &
+              qmfy(i,j-1,k) * mesh%le_lat(j-1)   &
+            ) / mesh%area_cell(j) -              &
+            divy(i,j,k) * q(i,j,k)               &
+          ) * dt_opt
+        end do
+      end do
+    end do
+    ! Handle the Pole boundary conditions.
+    if (mesh%has_south_pole()) then
+      j = mesh%full_jds
+      do k = mesh%half_kds, mesh%half_kde - 1
+        do i = mesh%full_ids, mesh%full_ide
+          work(i,k) = qmfy(i,j,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+      do k = mesh%half_kds, mesh%half_kde - 1
+        do i = mesh%full_ids, mesh%full_ide
+          qx(i,j,k) = q(i,j,k)
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_opt
+        end do
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%full_jde
+      do k = mesh%half_kds, mesh%half_kde - 1
+        do i = mesh%full_ids, mesh%full_ide
+          work(i,k) = qmfy(i,j-1,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+      do k = mesh%half_kds, mesh%half_kde - 1
+        do i = mesh%full_ids, mesh%full_ide
+          qx(i,j,k) = q(i,j,k)
+          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_opt
+        end do
+      end do
+    end if
+    call fill_halo(block%filter_halo, qx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false., cross_pole=.true.)
+    call fill_halo(block%filter_halo, qy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false., cross_pole=.true.)
+    ! Run outer flux form operators.
+    call hflx_lev(block, batch, mfx, mfy, qy, qx, qmfx, qmfy)
+    end associate
+
+  end subroutine ffsl_calc_tracer_hflx_lev
 
   subroutine ffsl_calc_tracer_vflx(block, batch, q, qmfz, dt)
 
@@ -548,6 +671,95 @@ contains
     end associate
 
   end subroutine hflx_ppm
+
+  subroutine hflx_ppm_lev(block, batch, u, v, mx, my, mfx, mfy)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: u  (block%mesh%half_ims:block%mesh%half_ime, &
+                                 block%mesh%full_jms:block%mesh%full_jme, &
+                                 block%mesh%half_kms:block%mesh%half_kme)
+    real(r8), intent(in ) :: v  (block%mesh%full_ims:block%mesh%full_ime, &
+                                 block%mesh%half_jms:block%mesh%half_jme, &
+                                 block%mesh%half_kms:block%mesh%half_kme)
+    real(r8), intent(in ) :: mx (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%half_kms:block%filter_mesh%half_kme)
+    real(r8), intent(in ) :: my (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
+                                 block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
+                                 block%filter_mesh%half_kms:block%filter_mesh%half_kme)
+    real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
+                                 block%mesh%full_jms:block%mesh%full_jme, &
+                                 block%mesh%half_kms:block%mesh%half_kme)
+    real(r8), intent(out) :: mfy(block%mesh%full_ims:block%mesh%full_ime, &
+                                 block%mesh%half_jms:block%mesh%half_jme, &
+                                 block%mesh%half_kms:block%mesh%half_kme)
+
+    integer i, j, k, iu, ju, ci
+    real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
+
+    associate (mesh => block%mesh, &
+               cflx => batch%cflx, & ! in
+               cfly => batch%cfly)   ! in
+    do k = mesh%half_kds, mesh%half_kde - 1
+      ! Along x-axis
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%half_ids, mesh%half_ide
+          ci = int(cflx(i,j,k))
+          cf = cflx(i,j,k) - ci
+          if (cflx(i,j,k) > 0) then
+            iu = i - ci
+            call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
+            s1 = 1 - cf
+            s2 = 1
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+          else if (cflx(i,j,k) < 0) then
+            iu = i - ci + 1
+            call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
+            s1 = 0
+            s2 = -cf
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+          else
+            mfx(i,j,k) = 0
+          end if
+        end do
+      end do
+      ! Along y-axis
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
+          if (cfly(i,j,k) > 0) then
+            ju = j
+            call ppm(my(i,ju-2,k), my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k), my(i,ju+2,k), ml, dm, m6)
+            s1 = 1 - cfly(i,j,k)
+            s2 = 1
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfy(i,j,k) =  v(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+          else if (cfly(i,j,k) < 0) then
+            ju = j + 1
+            call ppm(my(i,ju-2,k), my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k), my(i,ju+2,k), ml, dm, m6)
+            s1 = 0
+            s2 = -cfly(i,j,k)
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfy(i,j,k) = -v(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+          else
+            mfy(i,j,k) = 0
+          end if
+        end do
+      end do
+    end do
+    end associate
+
+  end subroutine hflx_ppm_lev
 
   subroutine vflx_ppm(block, batch, w, m, mfz)
 
