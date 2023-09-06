@@ -182,7 +182,6 @@ contains
             call block%adv_batches(m)%copy_old_m(dstate%dmg)
           end do
         end if
-        call block%adv_batch_pt%copy_old_m(dstate%dmg)
         end associate
       end do
     end if
@@ -238,15 +237,15 @@ contains
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = m_old(i,j,k) * q_old(i,j,k) - ( &
-                    (                                            &
-                      qmf_lon(i  ,j,k) -                         &
-                      qmf_lon(i-1,j,k)                           &
-                    ) * mesh%le_lon(j) + (                       &
-                      qmf_lat(i,j  ,k) * mesh%le_lat(j  ) -      &
-                      qmf_lat(i,j-1,k) * mesh%le_lat(j-1)        &
-                    )                                            &
-                  ) / mesh%area_cell(j) * dt_adv
+                  q_new(i,j,k) = (m_old(i,j,k) * q_old(i,j,k) - ( &
+                    (                                             &
+                      qmf_lon(i  ,j,k) -                          &
+                      qmf_lon(i-1,j,k)                            &
+                    ) * mesh%le_lon(j) + (                        &
+                      qmf_lat(i,j  ,k) * mesh%le_lat(j  ) -       &
+                      qmf_lat(i,j-1,k) * mesh%le_lat(j-1)         &
+                    )                                             &
+                  ) / mesh%area_cell(j) * dt_adv) / m_new(i,j,k)
                 end do
               end do
             end do
@@ -261,7 +260,7 @@ contains
               pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
               do k = mesh%full_kds, mesh%full_kde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = m_old(i,j,k) * q_old(i,j,k) - pole(k)
+                  q_new(i,j,k) = (m_old(i,j,k) * q_old(i,j,k) - pole(k)) / m_new(i,j,k)
                 end do
               end do
             end if
@@ -276,17 +275,10 @@ contains
               pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
               do k = mesh%full_kds, mesh%full_kde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = m_old(i,j,k) * q_old(i,j,k) + pole(k)
+                  q_new(i,j,k) = (m_old(i,j,k) * q_old(i,j,k) + pole(k)) / m_new(i,j,k)
                 end do
               end do
             end if
-            do k = mesh%full_kds, mesh%full_kde
-              do j = mesh%full_jds, mesh%full_jde
-                do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) / m_new(i,j,k)
-                end do
-              end do
-            end do
             call adv_fill_vhalo(mesh, q_new)
             call adv_calc_tracer_vflx(block, block%adv_batches(m), q_new, qmf_lev)
             do k = mesh%full_kds, mesh%full_kde

@@ -16,6 +16,11 @@
 !   The batch type allocates necessary arrays, and provides wind accumulation
 !   subroutines.
 !
+! Note:
+!
+!   - It needs to verify the wind and mass flux accumulation manners:
+!     Averaging wind and mass flux on n + 1/2 time level, or n time level.
+!
 ! Authors:
 !
 !   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
@@ -53,12 +58,12 @@ module adv_batch_mod
     real(r8) :: dt            ! Advection time step size in seconds
     integer , allocatable, dimension(:    ) :: idx   ! Global index of tracers in this batch
     real(r8), allocatable, dimension(:,:,:) :: old_m ! Recorded old mass for converting mixing ratio
-    real(r8), allocatable, dimension(:,:,:) :: mfx
-    real(r8), allocatable, dimension(:,:,:) :: mfy
-    real(r8), allocatable, dimension(:,:,:) :: m , m0
-    real(r8), allocatable, dimension(:,:,:) :: u , u0
-    real(r8), allocatable, dimension(:,:,:) :: v , v0
-    real(r8), allocatable, dimension(:,:,:) :: we, we0
+    real(r8), allocatable, dimension(:,:,:) :: mfx, mfx0
+    real(r8), allocatable, dimension(:,:,:) :: mfy, mfy0
+    real(r8), allocatable, dimension(:,:,:) :: m  , m0
+    real(r8), allocatable, dimension(:,:,:) :: u  , u0
+    real(r8), allocatable, dimension(:,:,:) :: v  , v0
+    real(r8), allocatable, dimension(:,:,:) :: we , we0
     real(r8), allocatable, dimension(:,:,:) :: cflx ! CFL number along x-axis
     real(r8), allocatable, dimension(:,:,:) :: cfly ! CFL number along y-axis
     real(r8), allocatable, dimension(:,:,:) :: cflz ! CFL number along z-axis
@@ -111,17 +116,21 @@ contains
 
     select case (loc)
     case ('cell')
-      call allocate_array(mesh, this%old_m  , full_lon=.true., full_lat=.true., full_lev=.true.)
+      if (.not. this%dynamic) then
+        call allocate_array(mesh, this%old_m, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%mfx0 , half_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%mfy0 , full_lon=.true., half_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%m0   , full_lon=.true., full_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%u0   , half_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%v0   , full_lon=.true., half_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%we0  , full_lon=.true., full_lat=.true., half_lev=.true.)
+      end if
       call allocate_array(mesh, this%mfx    , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%mfy    , full_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%m      , full_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%m0     , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%u      , half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%u0     , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%v      , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%v0     , full_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%we     , full_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%we0    , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%cflx   , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%cfly   , full_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%cflz   , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -136,17 +145,21 @@ contains
         call allocate_array(filter_mesh, this%qy, full_lon=.true., full_lat=.true., full_lev=.true.)
       end select
     case ('lev')
-      call allocate_array(mesh, this%old_m  , full_lon=.true., full_lat=.true., half_lev=.true.)
+      if (.not. dynamic) then
+        call allocate_array(mesh, this%old_m, full_lon=.true., full_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%mfx0 , half_lon=.true., full_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%mfy0 , full_lon=.true., half_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%m0   , full_lon=.true., full_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%u0   , half_lon=.true., full_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%v0   , full_lon=.true., half_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%we0  , full_lon=.true., full_lat=.true., full_lev=.true.)
+      end if
       call allocate_array(mesh, this%mfx    , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mfy    , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%m      , full_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%m0     , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%u      , half_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%u0     , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%v      , full_lon=.true., half_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%v0     , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%we     , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%we0    , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%cflx   , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%cfly   , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%cflz   , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -192,8 +205,11 @@ contains
     if (allocated(this%idx    )) deallocate(this%idx    )
     if (allocated(this%old_m  )) deallocate(this%old_m  )
     if (allocated(this%mfx    )) deallocate(this%mfx    )
+    if (allocated(this%mfx0   )) deallocate(this%mfx0   )
     if (allocated(this%mfy    )) deallocate(this%mfy    )
+    if (allocated(this%mfy0   )) deallocate(this%mfy0   )
     if (allocated(this%m      )) deallocate(this%m      )
+    if (allocated(this%m0     )) deallocate(this%m0     )
     if (allocated(this%u      )) deallocate(this%u      )
     if (allocated(this%u0     )) deallocate(this%u0     )
     if (allocated(this%v      )) deallocate(this%v      )
@@ -242,14 +258,20 @@ contains
 
     associate (mesh => this%mesh)
     if (this%uv_step == -1) then
+      ! this%u = this%u0 * 0.5_r8
+      ! this%v = this%v0 * 0.5_r8
       this%u = this%u0
       this%v = this%v0
       this%uv_step = 1
     end if
     if (this%uv_step == 0) then
+      ! this%u = u * 0.5_r8
+      ! this%v = v * 0.5_r8
       this%u = u
       this%v = v
     else if (this%uv_step == this%nstep) then
+      ! this%u = (this%u + u * 0.5_r8) / this%nstep
+      ! this%v = (this%v + v * 0.5_r8) / this%nstep
       this%u = (this%u + u) / (this%nstep + 1)
       this%v = (this%v + v) / (this%nstep + 1)
       this%u0 = u
@@ -339,14 +361,20 @@ contains
 
     associate (mesh => this%mesh)
     if (this%uv_step == -1) then
+      ! this%u = this%u0 * 0.5_r8
+      ! this%v = this%v0 * 0.5_r8
       this%u = this%u0
       this%v = this%v0
       this%uv_step = 1
     end if
     if (this%uv_step == 0) then
+      ! this%u = u * 0.5_r8
+      ! this%v = v * 0.5_r8
       this%u = u
       this%v = v
     else if (this%uv_step == this%nstep) then
+      ! this%u = (this%u + u * 0.5_r8) / this%nstep
+      ! this%v = (this%v + v * 0.5_r8) / this%nstep
       this%u = (this%u + u) / (this%nstep + 1)
       this%v = (this%v + v) / (this%nstep + 1)
       this%u0 = u
@@ -427,16 +455,24 @@ contains
                                 this%mesh%full_kms:this%mesh%full_kme)
 
     if (this%mf_step == -1) then
-      this%mfx = 0
-      this%mfy = 0
+      ! this%mfx = this%mfx0 * 0.5_r8
+      ! this%mfy = this%mfy0 * 0.5_r8
+      this%mfx = this%mfx0
+      this%mfy = this%mfy0
       this%mf_step = 1
     end if
     if (this%mf_step == 0) then
+      ! this%mfx = mfx * 0.5_r8
+      ! this%mfy = mfy * 0.5_r8
       this%mfx = mfx
       this%mfy = mfy
     else if (this%mf_step == this%nstep) then
-      this%mfx = (this%mfx + mfx) / this%nstep
-      this%mfy = (this%mfy + mfy) / this%nstep
+      ! this%mfx = (this%mfx + mfx * 0.5_r8) / this%nstep
+      ! this%mfy = (this%mfy + mfy * 0.5_r8) / this%nstep
+      this%mfx = (this%mfx + mfx) / (this%nstep + 1)
+      this%mfy = (this%mfy + mfy) / (this%nstep + 1)
+      this%mfx0 = mfx
+      this%mfy0 = mfy
     else
       this%mfx = this%mfx + mfx
       this%mfy = this%mfy + mfy
@@ -457,16 +493,24 @@ contains
                                 this%mesh%half_kms:this%mesh%half_kme)
 
     if (this%mf_step == -1) then
-      this%mfx = 0
-      this%mfy = 0
+      ! this%mfx = this%mfx0 * 0.5_r8
+      ! this%mfy = this%mfy0 * 0.5_r8
+      this%mfx = this%mfx0
+      this%mfy = this%mfy0
       this%mf_step = 1
     end if
     if (this%mf_step == 0) then
+      ! this%mfx = mfx * 0.5_r8
+      ! this%mfy = mfy * 0.5_r8
       this%mfx = mfx
       this%mfy = mfy
     else if (this%mf_step == this%nstep) then
-      this%mfx = (this%mfx + mfx) / this%nstep
-      this%mfy = (this%mfy + mfy) / this%nstep
+      ! this%mfx = (this%mfx + mfx * 0.5_r8) / this%nstep
+      ! this%mfy = (this%mfy + mfy * 0.5_r8) / this%nstep
+      this%mfx = (this%mfx + mfx) / (this%nstep + 1)
+      this%mfy = (this%mfy + mfy) / (this%nstep + 1)
+      this%mfx0 = mfx
+      this%mfy0 = mfy
     else
       this%mfx = this%mfx + mfx
       this%mfy = this%mfy + mfy
@@ -494,14 +538,20 @@ contains
 
     associate (mesh => this%mesh)
     if (this%we_step == -1) then
+      ! this%we = this%we0 * 0.5_r8
+      ! this%m  = this%m0  * 0.5_r8
       this%we = this%we0
       this%m  = this%m0
       this%we_step = 1
     end if
     if (this%we_step == 0) then
+      ! this%we = we * 0.5_r8
+      ! this%m  = m  * 0.5_r8
       this%we = we
       this%m  = m
     else if (this%we_step == this%nstep) then
+      ! this%we = (this%we + we * 0.5_r8) / this%nstep
+      ! this%m  = (this%m  + m  * 0.5_r8) / this%nstep
       this%we = (this%we + we) / (this%nstep + 1)
       this%m  = (this%m  + m ) / (this%nstep + 1)
       this%we0 = we
@@ -543,14 +593,20 @@ contains
 
     associate (mesh => this%mesh)
     if (this%we_step == -1) then
+      ! this%we = this%we0 * 0.5_r8
+      ! this%m  = this%m0  * 0.5_r8
       this%we = this%we0
       this%m  = this%m0
       this%we_step = 1
     end if
     if (this%we_step == 0) then
+      ! this%we = we * 0.5_r8
+      ! this%m  = m  * 0.5_r8
       this%we = we
       this%m  = m
     else if (this%we_step == this%nstep) then
+      ! this%we = (this%we + we * 0.5_r8) / this%nstep
+      ! this%m  = (this%m  + m  * 0.5_r8) / this%nstep
       this%we = (this%we + we) / (this%nstep + 1)
       this%m  = (this%m  + m ) / (this%nstep + 1)
       this%we0 = we

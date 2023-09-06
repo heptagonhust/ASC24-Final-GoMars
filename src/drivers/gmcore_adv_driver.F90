@@ -76,6 +76,7 @@ program gmcore_adv_driver
   call set_uv(elapsed_seconds, old)
   call set_ic()
   call adv_init()
+  call adv_prepare(old)
   call adv_accum_wind(old)
 
   call history_setup_h0_adv(blocks)
@@ -86,10 +87,11 @@ program gmcore_adv_driver
   time1 = MPI_WTIME()
   do while (.not. time_is_finished())
     call set_uv(elapsed_seconds + dt_adv, new)
-    call adv_run(new)
-    call diagnose(new)
-    if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call time_advance(dt_adv)
+    call adv_accum_wind(old)
+    call adv_run(old)
+    call diagnose(old)
+    if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call output(old)
   end do
   time2 = MPI_WTIME()

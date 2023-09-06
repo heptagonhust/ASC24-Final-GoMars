@@ -3,7 +3,7 @@ module tracer_mod
   use flogger
   use string
   use const_mod, only: r8
-  use namelist_mod, only: mp_scheme, dt_adv
+  use namelist_mod, only: mp_scheme, dt_adv, advection
   use block_mod
   use latlon_parallel_mod
   use process_mod, only: proc
@@ -368,6 +368,8 @@ contains
 
     integer i, j, k
     real(r8) neg_qm, pos_qm
+
+    if (advection) return
 
     associate (mesh => block%filter_mesh, &
                dmg  => block%dstate(itime)%dmg)

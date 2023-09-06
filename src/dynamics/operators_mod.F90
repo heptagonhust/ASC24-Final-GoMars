@@ -677,9 +677,6 @@ contains
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
     call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
-    ! call adv_calc_mass_hflx(block, block%adv_batch_pt, dmg, mfx_lon, mfy_lat, dt)
-    ! call fill_halo(block%halo, mfx_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
-    ! call fill_halo(block%halo, mfy_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_ids - 1, mesh%half_ide
