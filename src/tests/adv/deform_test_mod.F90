@@ -86,7 +86,7 @@ contains
           end if
         end do
       end do
-      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! Slotted cylinders
       qmax = 1.0_r8; qmin = 0.1_r8; r = radius * 0.5_r8
       do j = mesh%full_jds, mesh%full_jde
@@ -107,7 +107,7 @@ contains
           end if
         end do
       end do
-      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,3), full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,3), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       ! Gaussian hills
       qmax = 0.95_r8; c = 5.0_r8
       do j = mesh%full_jds, mesh%full_jde
@@ -119,7 +119,7 @@ contains
           tracers(iblk)%q(i,j,1,4) = qmax * (exp(-c * dot_product(x - x1, x - x1)) + exp(-c * dot_product(x - x2, x - x2)))
         end do
       end do
-      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,4), full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,4), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -134,14 +134,16 @@ contains
     real(r8) lon, lat, k, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                    , &
-                 mesh  => blocks(iblk)%mesh               , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon, &
-                 v     => blocks(iblk)%dstate(itime)%v_lat, &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
-                 mfx   => blocks(iblk)%aux%mfx_lon        , &
-                 mfy   => blocks(iblk)%aux%mfy_lat        )
-      dmg = 1
+      associate (block   => blocks(iblk)                    , &
+                 mesh    => blocks(iblk)%mesh               , &
+                 dmg     => blocks(iblk)%dstate(itime)%dmg  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon        , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat        , &
+                 u       => blocks(iblk)%dstate(itime)%u_lon, &
+                 v       => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx     => blocks(iblk)%aux%mfx_lon        , &
+                 mfy     => blocks(iblk)%aux%mfy_lat        )
+      dmg = 1; dmg_lon = 1; dmg_lat = 1
       k = 10.0_r8 * radius / period
       cos_t = cos(pi * time_in_seconds / period)
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -149,19 +151,19 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           lon = mesh%half_lon(i)
           u(i,j,1) = k * sin(lon / 2.0_r8)**2 * sin(2 * lat) * cos_t
-          mfx(i,j,1) = u(i,j,1)
         end do
       end do
       call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      mfx = u * dmg_lon
       do j = mesh%half_jds, mesh%half_jde
         lat = mesh%half_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
           v(i,j,1) = k / 2.0_r8 * sin(lon) * cos(lat) * cos_t
-          mfy(i,j,1) = v(i,j,1)
         end do
       end do
       call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      mfy = v * dmg_lat
       end associate
     end do
 
@@ -176,14 +178,16 @@ contains
     real(r8) lon, lat, k, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                    , &
-                 mesh  => blocks(iblk)%mesh               , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon, &
-                 v     => blocks(iblk)%dstate(itime)%v_lat, &
-                 mfx   => blocks(iblk)%aux%mfx_lon        , &
-                 mfy   => blocks(iblk)%aux%mfy_lat        )
-      dmg = 1
+      associate (block   => blocks(iblk)                    , &
+                 mesh    => blocks(iblk)%mesh               , &
+                 dmg     => blocks(iblk)%dstate(itime)%dmg  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon        , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat        , &
+                 u       => blocks(iblk)%dstate(itime)%u_lon, &
+                 v       => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx     => blocks(iblk)%aux%mfx_lon        , &
+                 mfy     => blocks(iblk)%aux%mfy_lat        )
+      dmg = 1; dmg_lon = 1; dmg_lat = 1
       k = 10.0_r8 * radius / period
       cos_t = cos(pi * time_in_seconds / period)
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -191,19 +195,19 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           lon = mesh%half_lon(i)
           u(i,j,1) = k * sin(lon)**2 * sin(2 * lat) * cos_t
-          mfx(i,j,1) = u(i,j,1)
         end do
       end do
       call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      mfx = u * dmg_lon
       do j = mesh%half_jds, mesh%half_jde
         lat = mesh%half_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
           v(i,j,1) = k * sin(2 * lon) * cos(lat) * cos_t
-          mfy(i,j,1) = v(i,j,1)
         end do
       end do
       call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      mfy = v * dmg_lat
       end associate
     end do
 
@@ -218,14 +222,16 @@ contains
     real(r8) lon, lat, k, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                    , &
-                 mesh  => blocks(iblk)%mesh               , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon, &
-                 v     => blocks(iblk)%dstate(itime)%v_lat, &
-                 mfx   => blocks(iblk)%aux%mfx_lon        , &
-                 mfy   => blocks(iblk)%aux%mfy_lat        )
-      dmg = 1
+      associate (block   => blocks(iblk)                    , &
+                 mesh    => blocks(iblk)%mesh               , &
+                 dmg     => blocks(iblk)%dstate(itime)%dmg  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon        , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat        , &
+                 u       => blocks(iblk)%dstate(itime)%u_lon, &
+                 v       => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx     => blocks(iblk)%aux%mfx_lon        , &
+                 mfy     => blocks(iblk)%aux%mfy_lat        )
+      dmg = 1; dmg_lon = 1; dmg_lat = 1
       k = 5.0_r8 * radius / period
       cos_t = cos(pi * time_in_seconds / period)
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -233,19 +239,19 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           lon = mesh%half_lon(i)
           u(i,j,1) = -k * sin(lon / 2.0_r8)**2 * sin(2 * lat) * cos(lat)**2 * cos_t
-          mfx(i,j,1) = u(i,j,1)
         end do
       end do
       call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      mfx = u * dmg_lon
       do j = mesh%half_jds, mesh%half_jde
         lat = mesh%half_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
           v(i,j,1) = k / 2.0_r8 * sin(lon) * cos(lat)**3 * cos_t
-          mfy(i,j,1) = v(i,j,1)
         end do
       end do
       call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      mfy = v * dmg_lat
       end associate
     end do
 
@@ -260,14 +266,16 @@ contains
     real(r8) lon, lat, k, c1, c2, cos_t
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                    , &
-                 mesh  => blocks(iblk)%mesh               , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon, &
-                 v     => blocks(iblk)%dstate(itime)%v_lat, &
-                 mfx   => blocks(iblk)%aux%mfx_lon        , &
-                 mfy   => blocks(iblk)%aux%mfy_lat        )
-      dmg = 1
+      associate (block   => blocks(iblk)                    , &
+                 mesh    => blocks(iblk)%mesh               , &
+                 dmg     => blocks(iblk)%dstate(itime)%dmg  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon        , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat        , &
+                 u       => blocks(iblk)%dstate(itime)%u_lon, &
+                 v       => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx     => blocks(iblk)%aux%mfx_lon        , &
+                 mfy     => blocks(iblk)%aux%mfy_lat        )
+      dmg = 1; dmg_lon = 1; dmg_lat = 1
       k = 10.0_r8 * radius / period
       c1 = pi2 * time_in_seconds / period
       c2 = pi2 * radius / period
@@ -277,19 +285,19 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           lon = mesh%half_lon(i) - c1
           u(i,j,1) = k * sin(lon)**2 * sin(2 * lat) * cos_t + c2 * cos(lat)
-          mfx(i,j,1) = u(i,j,1)
         end do
       end do
       call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      mfx = u * dmg_lon
       do j = mesh%half_jds, mesh%half_jde
         lat = mesh%half_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i) - c1
           v(i,j,1) = k * sin(2 * lon) * cos(lat) * cos_t
-          mfy(i,j,1) = v(i,j,1)
         end do
       end do
       call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      mfy = v * dmg_lat
       end associate
     end do
 

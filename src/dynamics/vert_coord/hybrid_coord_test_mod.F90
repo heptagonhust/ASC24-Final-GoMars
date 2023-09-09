@@ -2,8 +2,8 @@ module hybrid_coord_test_mod
 
   use flogger
   use const_mod
-  use process_mod
   use latlon_mesh_mod
+  use latlon_parallel_types_mod
 
   implicit none
 

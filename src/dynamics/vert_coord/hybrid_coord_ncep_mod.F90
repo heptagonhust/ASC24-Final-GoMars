@@ -3,7 +3,7 @@ module hybrid_coord_ncep_mod
   use flogger
   use const_mod
   use namelist_mod
-  use process_mod
+  use latlon_parallel_types_mod
 
   implicit none
 

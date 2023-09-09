@@ -2,8 +2,8 @@ module smooth_coord_mod
 
   use const_mod
   use namelist_mod
-  use block_mod
   use wrf_vert_coord_mod
+  use latlon_mesh_mod, only: global_mesh
 
   implicit none
 

@@ -73,14 +73,16 @@ contains
     real(r8) lon, lat
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                    , &
-                 mesh  => blocks(iblk)%mesh               , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon, &
-                 v     => blocks(iblk)%dstate(itime)%v_lat, &
-                 mfx   => blocks(iblk)%aux%mfx_lon        , &
-                 mfy   => blocks(iblk)%aux%mfy_lat        )
-      dmg = 1
+      associate (block   => blocks(iblk)                    , &
+                 mesh    => blocks(iblk)%mesh               , &
+                 dmg     => blocks(iblk)%dstate(itime)%dmg  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon        , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat        , &
+                 u       => blocks(iblk)%dstate(itime)%u_lon, &
+                 v       => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx     => blocks(iblk)%aux%mfx_lon        , &
+                 mfy     => blocks(iblk)%aux%mfy_lat        )
+      dmg = 1; dmg_lon = 1; dmg_lat = 1
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         lat = mesh%full_lat(j)
         do i = mesh%half_ids, mesh%half_ide

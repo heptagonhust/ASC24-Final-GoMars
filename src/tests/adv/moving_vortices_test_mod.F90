@@ -68,7 +68,7 @@ contains
           tracers(iblk)%q(i,j,1,2) = 1 - tanh(rho(latr) / gamma * sin(lonr))
         end do
       end do
-      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -87,14 +87,16 @@ contains
     call rotate_back(lonp0, latp0, lonv, latv, lonvr, latvr)
 
     do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)                    , &
-                 mesh  => blocks(iblk)%mesh               , &
-                 dmg   => blocks(iblk)%dstate(itime)%dmg  , &
-                 u     => blocks(iblk)%dstate(itime)%u_lon, &
-                 v     => blocks(iblk)%dstate(itime)%v_lat, &
-                 mfx   => blocks(iblk)%aux%mfx_lon        , &
-                 mfy   => blocks(iblk)%aux%mfy_lat        )
-      dmg = 1
+      associate (block   => blocks(iblk)                    , &
+                 mesh    => blocks(iblk)%mesh               , &
+                 dmg     => blocks(iblk)%dstate(itime)%dmg  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon        , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat        , &
+                 u       => blocks(iblk)%dstate(itime)%u_lon, &
+                 v       => blocks(iblk)%dstate(itime)%v_lat, &
+                 mfx     => blocks(iblk)%aux%mfx_lon        , &
+                 mfy     => blocks(iblk)%aux%mfy_lat        )
+      dmg = 1; dmg_lon = 1; dmg_lat = 1
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         lat = mesh%full_lat(j)
         do i = mesh%half_ids, mesh%half_ide
@@ -106,7 +108,7 @@ contains
         end do
       end do
       call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-      mfx = u
+      mfx = u * dmg_lon
       do j = mesh%half_jds, mesh%half_jde
         lat = mesh%half_lat(j)
         do i = mesh%full_ids, mesh%full_ide
@@ -117,7 +119,7 @@ contains
         end do
       end do
       call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
-      mfy = v
+      mfy = v * dmg_lat
       end associate
     end do
 

@@ -514,16 +514,16 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          if (cflx(i,j,k) > 0) then
+          if (abs(cflx(i,j,k)) < 1.0e-16_r8) then
+            mfx(i,j,k) = 0
+          else if (cflx(i,j,k) > 0) then
             iu = i - ci
             dm = slope(mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k))
             mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx(i+1-ci:i,j,k))) / cflx(i,j,k)
-          else if (cflx(i,j,k) < 0) then
+          else
             iu = i - ci + 1
             dm = slope(mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k))
             mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx(i+1:i-ci,j,k))) / cflx(i,j,k)
-          else
-            mfx(i,j,k) = 0
           end if
         end do
       end do
@@ -565,16 +565,16 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           ci = int(cflz(i,j,k))
           cf = cflz(i,j,k) - ci
-          if (cflz(i,j,k) > 0) then
+          if (abs(cflz(i,j,k)) < 1.0e-16_r8) then
+            mfz(i,j,k) = 0
+          else if (cflz(i,j,k) > 0) then
             ku = k - ci - 1
             dm = slope(m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1))
             mfz(i,j,k) = w(i,j,k) * (cf * (m(i,j,ku) + dm * 0.5_r8 * (1 - cf)) + sum(m(i,j,k-ci:k-1))) / cflz(i,j,k)
-          else if (cflz(i,j,k) < 0) then
+          else
             ku = k - ci
             dm = slope(m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1))
             mfz(i,j,k) = w(i,j,k) * (cf * (m(i,j,ku) - dm * 0.5_r8 * (1 + cf)) - sum(m(i,j,k:k-ci-1))) / cflz(i,j,k)
-          else
-            mfz(i,j,k) = 0
           end if
         end do
       end do
@@ -618,7 +618,9 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          if (cflx(i,j,k) > 0) then
+          if (abs(cflx(i,j,k)) < 1.0e-16_r8) then
+            mfx(i,j,k) = 0
+          else if (cflx(i,j,k) > 0) then
             iu = i - ci
             call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
             s1 = 1 - cf
@@ -627,7 +629,7 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
-          else if (cflx(i,j,k) < 0) then
+          else
             iu = i - ci + 1
             call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
             s1 = 0
@@ -636,15 +638,15 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
-          else
-            mfx(i,j,k) = 0
           end if
         end do
       end do
       ! Along y-axis
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          if (cfly(i,j,k) > 0) then
+          if (abs(cfly(i,j,k)) < 1.0e-16_r8) then
+            mfy(i,j,k) = 0
+          else if (cfly(i,j,k) > 0) then
             ju = j
             call ppm(my(i,ju-2,k), my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k), my(i,ju+2,k), ml, dm, m6)
             s1 = 1 - cfly(i,j,k)
@@ -662,8 +664,6 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfy(i,j,k) = -v(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
-          else
-            mfy(i,j,k) = 0
           end if
         end do
       end do
@@ -707,7 +707,9 @@ contains
         do i = mesh%half_ids, mesh%half_ide
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          if (cflx(i,j,k) > 0) then
+          if (abs(cflx(i,j,k)) < 1.0e-16_r8) then
+            mfx(i,j,k) = 0
+          else if (cflx(i,j,k) > 0) then
             iu = i - ci
             call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
             s1 = 1 - cf
@@ -716,7 +718,7 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
-          else if (cflx(i,j,k) < 0) then
+          else
             iu = i - ci + 1
             call ppm(mx(iu-2,j,k), mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k), mx(iu+2,j,k), ml, dm, m6)
             s1 = 0
@@ -725,15 +727,15 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
-          else
-            mfx(i,j,k) = 0
           end if
         end do
       end do
       ! Along y-axis
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          if (cfly(i,j,k) > 0) then
+          if (abs(cfly(i,j,k)) < 1.0e-16_r8) then
+            mfy(i,j,k) = 0
+          else if (cfly(i,j,k) > 0) then
             ju = j
             call ppm(my(i,ju-2,k), my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k), my(i,ju+2,k), ml, dm, m6)
             s1 = 1 - cfly(i,j,k)
@@ -742,7 +744,7 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfy(i,j,k) =  v(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
-          else if (cfly(i,j,k) < 0) then
+          else
             ju = j + 1
             call ppm(my(i,ju-2,k), my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k), my(i,ju+2,k), ml, dm, m6)
             s1 = 0
@@ -751,8 +753,6 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfy(i,j,k) = -v(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
-          else
-            mfy(i,j,k) = 0
           end if
         end do
       end do
@@ -785,7 +785,9 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           ci = int(cflz(i,j,k))
           cf = cflz(i,j,k) - ci
-          if (cflz(i,j,k) > 0) then
+          if (abs(cflz(i,j,k)) < 1.0e-16_r8) then
+            mfz(i,j,k) = 0
+          else if (cflz(i,j,k) > 0) then
             ku = k - ci - 1
             call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 1 - cf
@@ -794,7 +796,7 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci:k-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
-          else if (cflz(i,j,k) < 0) then
+          else
             ku = k - ci
             call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 0
@@ -803,8 +805,6 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k:k-ci-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
-          else
-            mfz(i,j,k) = 0
           end if
         end do
       end do
@@ -837,7 +837,9 @@ contains
         do i = mesh%full_ids, mesh%full_ide
           ci = int(cflz(i,j,k))
           cf = cflz(i,j,k) - ci
-          if (cflz(i,j,k) > 0) then
+          if (abs(cflz(i,j,k)) < 1.0e-16_r8) then
+            mfz(i,j,k) = (m(i,j,k) + m(i,j,k+1)) * 0.5_r8
+          else if (cflz(i,j,k) > 0) then
             ku = k - ci
             call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 1 - cf
@@ -846,7 +848,7 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci+1:k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
-          else if (cflz(i,j,k) < 0) then
+          else
             ku = k - ci + 1
             call ppm(m(i,j,ku-2), m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1), m(i,j,ku+2), ml, dm, m6)
             s1 = 0
@@ -855,8 +857,6 @@ contains
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
             mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k+1:k-ci)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
-          else
-            mfz(i,j,k) = (m(i,j,k) + m(i,j,k+1)) * 0.5_r8
           end if
         end do
       end do

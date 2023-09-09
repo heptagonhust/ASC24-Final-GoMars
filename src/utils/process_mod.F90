@@ -73,15 +73,16 @@ contains
 
     integer i, ierr
 
-    do i = 1, size(blocks)
-      call blocks(i)%clear()
-    end do
-
     if (allocated(proc%ngb)) deallocate(proc%ngb)
     if (allocated(proc%grid_proc_idmap)) deallocate(proc%grid_proc_idmap)
     if (allocated(proc%global_grid_id)) deallocate(proc%global_grid_id)
     if (allocated(proc%local_grid_id)) deallocate(proc%local_grid_id)
-    if (allocated(blocks)) deallocate(blocks)
+    if (allocated(blocks)) then
+      do i = 1, size(blocks)
+        call blocks(i)%clear()
+      end do
+      deallocate(blocks)
+    end if
     if (proc%group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%group, ierr)
     if (proc%cart_group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%cart_group, ierr)
 

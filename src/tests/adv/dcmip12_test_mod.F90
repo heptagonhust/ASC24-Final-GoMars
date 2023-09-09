@@ -70,7 +70,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -120,11 +120,11 @@ contains
           do i = mesh%half_ids, mesh%half_ide
             lon = mesh%half_lon(i)
             u(i,j,k) = u0 * cos(lat)
-            mfx_lon(i,j,k) = u(i,j,k) * dmg_lon(i,j,k)
           end do
         end do
       end do
       call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      mfx_lon = u * dmg_lon
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           lat = mesh%half_lat(j)
@@ -133,11 +133,11 @@ contains
             rho = mg(i,j,k) / (rd * T0)
             v(i,j,k) = -radius * w0 * pi * rho0 / (K0 * ztop * rho) * &
               cos(lat) * sin(K0 * lat) * cos(pi * gz(i,j,k) / (g * ztop)) * cos_t
-            mfy_lat(i,j,k) = v(i,j,k) * dmg_lat(i,j,k)
           end do
         end do
       end do
       call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      mfy_lat = v * dmg_lat
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           lat = mesh%full_lat(j)

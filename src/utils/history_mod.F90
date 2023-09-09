@@ -350,6 +350,9 @@ contains
 
   subroutine history_setup_h1_hydrostatic()
 
+    integer m
+    character(30) tag
+
     call fiona_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, ngroup=output_ngroup)
     ! Dimensions
     call fiona_add_att('h1', 'time_step_size', dt)
@@ -400,6 +403,15 @@ contains
       call fiona_add_var('h1', 'dptdt_phys' , long_name='physics tendency for pt'                       , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'dqdt_phys'  , long_name='physics tendency for q'                        , units='', dim_names=cell_dims_3d)
     end if
+
+    do m = 1, size(blocks(1)%adv_batches)
+      tag = blocks(1)%adv_batches(m)%name
+      call fiona_add_var('h1', trim(tag)//'_mfx' , long_name='', units='', dim_names=lon_dims_3d)
+      call fiona_add_var('h1', trim(tag)//'_mfy' , long_name='', units='', dim_names=lat_dims_3d)
+      call fiona_add_var('h1', trim(tag)//'_cflx', long_name='', units='', dim_names=lon_dims_3d)
+      call fiona_add_var('h1', trim(tag)//'_cfly', long_name='', units='', dim_names=lat_dims_3d)
+      call fiona_add_var('h1', trim(tag)//'_cflz', long_name='', units='', dim_names=lev_dims_3d)
+    end do
 
   end subroutine history_setup_h1_hydrostatic
 
@@ -794,8 +806,9 @@ contains
 
     integer, intent(in) :: itime
 
-    integer is, ie, js, je, ks, ke
+    integer is, ie, js, je, ks, ke, m
     integer start(3), count(3)
+    character(30) tag
 
     if (.not. time_has_alert('h0_new_file')) then
       call fiona_start_output('h1', dble(elapsed_seconds), new_file=time_step==0)
@@ -852,6 +865,11 @@ contains
     call fiona_output('h1', 'dudt_dkedx'   , dtend%dudt_dkedx   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dudt_pgf'     , dtend%dudt_pgf     (is:ie,js:je,ks:ke), start=start, count=count)
 #endif
+    do m = 1, size(blocks(1)%adv_batches)
+      tag = blocks(1)%adv_batches(m)%name
+      call fiona_output('h1', trim(tag)//'_mfx' , blocks(1)%adv_batches(m)%mfx (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', trim(tag)//'_cflx', blocks(1)%adv_batches(m)%cflx(is:ie,js:je,ks:ke), start=start, count=count)
+    end do
 
     is = mesh%full_ids; ie = mesh%full_ide
     js = mesh%half_jds; je = mesh%half_jde
@@ -868,6 +886,11 @@ contains
     call fiona_output('h1', 'dvdt_dkedy'   , dtend%dvdt_dkedy   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dvdt_pgf'     , dtend%dvdt_pgf     (is:ie,js:je,ks:ke), start=start, count=count)
 #endif
+    do m = 1, size(blocks(1)%adv_batches)
+      tag = blocks(1)%adv_batches(m)%name
+      call fiona_output('h1', trim(tag)//'_mfy' , blocks(1)%adv_batches(m)%mfy (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', trim(tag)//'_cfly', blocks(1)%adv_batches(m)%cfly(is:ie,js:je,ks:ke), start=start, count=count)
+    end do
 
     is = mesh%full_ids; ie = mesh%full_ide
     js = mesh%full_jds; je = mesh%full_jde
@@ -879,6 +902,10 @@ contains
     call fiona_output('h1', 'ph_lev', dstate%ph_lev(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'n2_lev', reshape(pstate%n2_lev, count), start=start, count=count)
     call fiona_output('h1', 'ri_lev', reshape(pstate%ri_lev, count), start=start, count=count)
+    do m = 1, size(blocks(1)%adv_batches)
+      tag = blocks(1)%adv_batches(m)%name
+      call fiona_output('h1', trim(tag)//'_cflz', blocks(1)%adv_batches(m)%cflz(is:ie,js:je,ks:ke), start=start, count=count)
+    end do
 
     if (physics_suite /= 'N/A') then
       is = mesh%full_ids; ie = mesh%full_ide

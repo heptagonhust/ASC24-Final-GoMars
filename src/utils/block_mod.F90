@@ -10,7 +10,6 @@ module block_mod
   use physics_types_mod
   use adv_batch_mod
   use filter_types_mod
-  use allocator_mod
   use accum_mod
 
   implicit none

@@ -8,7 +8,7 @@ module hybrid_coord_mod
   use hybrid_coord_ecmwf_mod
   use mars_vert_coord_mod
   use latlon_mesh_mod
-  use process_mod
+  use latlon_parallel_types_mod
 
   implicit none
 

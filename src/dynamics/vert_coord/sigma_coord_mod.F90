@@ -4,7 +4,7 @@ module sigma_coord_mod
   use namelist_mod
   use const_mod
   use latlon_mesh_mod
-  use process_mod
+  use latlon_parallel_types_mod
   use mars_vert_coord_mod
 
   implicit none

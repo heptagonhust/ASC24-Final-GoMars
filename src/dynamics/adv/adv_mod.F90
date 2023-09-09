@@ -351,21 +351,16 @@ contains
 
     do iblk = 1, size(blocks)
       associate (block   => blocks(iblk)                      , &
-                 u_lon   => blocks(iblk)%dstate(itime)%u_lon  , &
-                 v_lat   => blocks(iblk)%dstate(itime)%v_lat  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon          , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat          , &
+                 dmg_lev => blocks(iblk)%dstate(itime)%dmg_lev, &
                  mfx_lon => blocks(iblk)%aux%mfx_lon          , &
-                 mfy_lat => blocks(iblk)%aux%mfy_lat          , &
-                 we_lev  => blocks(iblk)%dstate(itime)%we_lev , &
-                 dmg_lev => blocks(iblk)%dstate(itime)%dmg_lev)
+                 mfy_lat => blocks(iblk)%aux%mfy_lat          )
       if (allocated(block%adv_batches)) then
         do l = 1, size(block%adv_batches)
           select case (block%adv_batches(l)%loc)
           case ('cell')
-            call block%adv_batches(l)%accum_uv_cell(u_lon, v_lat)
-            call block%adv_batches(l)%accum_mf_cell(mfx_lon, mfy_lat)
-            if (global_mesh%full_nlev > 1) then
-              call block%adv_batches(l)%accum_we_lev(we_lev, dmg_lev)
-            end if
+            call block%adv_batches(l)%accum_wind(dmg_lon, dmg_lat, dmg_lev, mfx_lon, mfy_lat)
           end select
         end do
       end if

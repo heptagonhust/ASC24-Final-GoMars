@@ -312,7 +312,6 @@ contains
     associate (mesh       => block%mesh          , &
                dmf        => block%aux%dmf       , & ! in
                dmgs       => dtend%dmgs          , & ! in
-               dmg_lev    => dstate%dmg_lev      , & ! in
                we_lev     => dstate%we_lev       , & ! out
                we_lev_lon => block%aux%we_lev_lon, & ! out
                we_lev_lat => block%aux%we_lev_lat)   ! out
@@ -325,8 +324,6 @@ contains
     end do
     call fill_halo(block%halo, we_lev, full_lon=.true., full_lat=.true., full_lev=.false., &
                    west_halo=.false., south_halo=.false.)
-
-    call block%adv_batch_pt%accum_we_lev(we_lev, dmg_lev, dt)
 
     call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
     call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
@@ -676,7 +673,6 @@ contains
                mfy_lat => block%aux%mfy_lat, & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
-    call block%adv_batch_pt%accum_uv_cell(u_lon, v_lat, dt)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_ids - 1, mesh%half_ide
@@ -691,7 +687,6 @@ contains
         end do
       end do
     end do
-    call block%adv_batch_pt%accum_mf_cell(mfx_lon, mfy_lat)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
@@ -1114,11 +1109,18 @@ contains
     real(r8) pole(dstate%mesh%full_nlev)
 
     associate (mesh     => block%filter_mesh, &
+               u_lon    => dstate%u_lon     , & ! in
+               v_lat    => dstate%v_lat     , & ! in
+               we_lev   => dstate%we_lev    , & ! in
+               mfx_lon  => block%aux%mfx_lon, & ! in
+               mfy_lat  => block%aux%mfy_lat, & ! in
+               dmg_lev  => dstate%dmg_lev   , & ! in
                pt       => dstate%pt        , & ! in
                ptf_lon  => block%aux%ptf_lon, & ! out
                ptf_lat  => block%aux%ptf_lat, & ! out
                ptf_lev  => block%aux%ptf_lev, & ! out
                dpt      => dtend%dpt        )   ! out
+    call block%adv_batch_pt%set_wind(u_lon, v_lat, we_lev, mfx_lon, mfy_lat, dmg_lev)
     call adv_calc_tracer_hflx(block, block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(block%halo, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
