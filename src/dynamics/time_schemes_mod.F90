@@ -178,7 +178,6 @@ contains
         else
           call fill_halo(block%halo, new_state%mgs, full_lon=.true., full_lat=.true.)
         end if
-        new_state%mgs = new_state%mgs
         call calc_mg (block, new_state)
         call calc_dmg(block, new_state)
         call calc_ph (block, new_state)

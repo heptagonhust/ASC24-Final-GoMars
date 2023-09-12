@@ -78,14 +78,14 @@ contains
 
     integer, intent(in) :: itime
 
-    integer iblk, is, ie, js, je, ks, ke, ierr
+    integer iblk, is, ie, js, je, ks, ke, ierr, l, m, n
     integer start(3), count(3)
     character(4) lon_dims_3d(4), lat_dims_3d(4), lev_dims_3d(4), cell_dims_3d(4)
     character(4) lon_dims_2d(3), lat_dims_2d(3),                 cell_dims_2d(3)
     character(30) tag
     real(8) time1, time2
     real(r8), allocatable :: tmp(:,:,:)
-    real(r8), pointer :: qv(:,:,:)
+    real(r8), pointer :: q(:,:,:)
 
     if (proc%is_root()) then
       call log_notice('Write restart.')
@@ -118,7 +118,6 @@ contains
       call fiona_add_var('r0', 'v'        , long_name='V wind component'            , units='m s-1'     , dim_names=lat_dims_3d , dtype='r8')
       call fiona_add_var('r0', 'mgs'      , long_name='Surface dry-air weight'      , units='Pa'        , dim_names=cell_dims_2d, dtype='r8')
       call fiona_add_var('r0', 'pt'       , long_name='Potential temperature'       , units='K'         , dim_names=cell_dims_3d, dtype='r8')
-      call fiona_add_var('r0', 'pt_old_m' , long_name='Mass weight for pt advection', units='Pa'        , dim_names=cell_dims_3d, dtype='r8')
       if (nonhydrostatic) then
         call fiona_add_var('r0', 'gz_lev' , long_name='Geopotential height'         , units='m2 s-2'    , dim_names=lev_dims_3d , dtype='r8')
         call fiona_add_var('r0', 'w'      , long_name='Vertical velocity'           , units='m s-1'     , dim_names=lev_dims_3d , dtype='r8')
@@ -133,21 +132,23 @@ contains
     call fiona_add_var('r0', 'we_lev'     , long_name='Vertical coordinate velocity', units='s-1'       , dim_names= lev_dims_3d, dtype='r8')
     call fiona_add_var('r0', 'gzs'        , long_name='surface geopotential height' , units='m2 s-2'    , dim_names=cell_dims_2d, dtype='r8')
 
-    ! FIXME: Support other tracers.
-    if (idx_qv > 0) then
-      tag = blocks(1)%adv_batches(1)%name
-      call fiona_add_var('r0', 'qv'                   , long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_accum_u'  , long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_accum_mfx', long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_accum_v'  , long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_accum_mfy', long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_accum_we' , long_name='', units='', dim_names= lev_dims_3d, dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_accum_m'  , long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_uv_step'  , long_name='', units='', dim_names=    ['time'], dtype='i4')
-      call fiona_add_var('r0', trim(tag)//'_mf_step'  , long_name='', units='', dim_names=    ['time'], dtype='i4')
-      call fiona_add_var('r0', trim(tag)//'_we_step'  , long_name='', units='', dim_names=    ['time'], dtype='i4')
-      call fiona_add_var('r0', trim(tag)//'_last_time', long_name='', units='', dim_names=    ['time'], dtype='r8')
-      call fiona_add_var('r0', trim(tag)//'_old_m'    , long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
+    if (allocated(blocks(1)%adv_batches)) then
+      do m = 1, size(blocks(1)%adv_batches)
+        tag = blocks(1)%adv_batches(m)%name
+        do l = 1, blocks(1)%adv_batches(m)%ntracers
+          n = blocks(1)%adv_batches(m)%idx(l)
+          call fiona_add_var('r0', tracer_names(n), long_name=tracer_long_names(n), units=tracer_units(n), dim_names=cell_dims_3d, dtype='r8')
+          call fiona_add_var('r0', trim(tracer_names(n))//'_dqdt_damp', long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
+        end do
+        call fiona_add_var('r0', trim(tag)//'_accum_mfx', long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
+        call fiona_add_var('r0', trim(tag)//'_accum_mfy', long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
+        call fiona_add_var('r0', trim(tag)//'_accum_mx' , long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
+        call fiona_add_var('r0', trim(tag)//'_accum_my' , long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
+        call fiona_add_var('r0', trim(tag)//'_accum_mz' , long_name='', units='', dim_names= lev_dims_3d, dtype='r8')
+        call fiona_add_var('r0', trim(tag)//'_step'     , long_name='', units='', dim_names=    ['time'], dtype='i4')
+        call fiona_add_var('r0', trim(tag)//'_last_time', long_name='', units='', dim_names=    ['time'], dtype='r8')
+        call fiona_add_var('r0', trim(tag)//'_old_m'    , long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
+      end do
     end if
 
     if (physics_suite /= 'N/A') then
@@ -166,14 +167,14 @@ contains
                  dstate => blocks(iblk)%dstate(itime), &
                  static => blocks(iblk)%static)
       ! ------------------------------------------------------------------------
-      if (idx_qv > 0) then
-        associate (adv_batch => blocks(iblk)%adv_batches(1))
-        tag = adv_batch%name
-        call fiona_output('r0', trim(tag)//'_uv_step'  , adv_batch%uv_step)
-        call fiona_output('r0', trim(tag)//'_mf_step'  , adv_batch%mf_step)
-        call fiona_output('r0', trim(tag)//'_we_step'  , adv_batch%we_step)
-        call fiona_output('r0', trim(tag)//'_last_time', time_get_alert_last_time_timestamp(adv_batch%name))
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => blocks(iblk)%adv_batches(m))
+          tag = adv_batch%name
+          call fiona_output('r0', trim(tag)//'_step'     , adv_batch%step)
+          call fiona_output('r0', trim(tag)//'_last_time', time_get_alert_last_time_timestamp(adv_batch%name))
+          end associate
+        end do
       end if
       if (physics_suite /= 'N/A') then
         call fiona_output('r0', 'phys_last_time', time_get_alert_last_time_timestamp('phys'))
@@ -189,23 +190,28 @@ contains
       call fiona_output('r0', 'gzs', static%gzs(is:ie,js:je), start=start, count=count)
       if (baroclinic) then
         call fiona_output('r0', 'mgs', dstate%mgs(is:ie,js:je), start=start, count=count)
-        tmp = dstate%pt                      (is:ie,js:je,ks:ke); call fiona_output('r0', 'pt'      , tmp, start=start, count=count)
-        tmp = blocks(iblk)%adv_batch_pt%old_m(is:ie,js:je,ks:ke); call fiona_output('r0', 'pt_old_m', tmp, start=start, count=count)
+        tmp = dstate%pt(is:ie,js:je,ks:ke)
+        call fiona_output('r0', 'pt', tmp, start=start, count=count)
       else
-        tmp = dstate%gz                      (is:ie,js:je,ks:ke); call fiona_output('r0', 'gz'      , tmp, start=start, count=count)
+        tmp = dstate%gz(is:ie,js:je,ks:ke)
+        call fiona_output('r0', 'gz', tmp, start=start, count=count)
       end if
-      if (idx_qv > 0) then
-        associate (adv_batch => blocks(iblk)%adv_batches(1))
-        tag = adv_batch%name
-        call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-        tmp = qv               (is:ie,js:je,ks:ke); call fiona_output('r0', 'qv'                 , tmp, start=start, count=count)
-        if (adv_batch%we_step == -1) then
-          tmp = adv_batch%m0   (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_m', tmp, start=start, count=count)
-        else if (adv_batch%we_step >= 1) then
-          tmp = adv_batch%m    (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_m', tmp, start=start, count=count)
-        end if
-        tmp = adv_batch%old_m  (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_old_m'  , tmp, start=start, count=count)
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => blocks(iblk)%adv_batches(m))
+          tag = adv_batch%name
+          do l = 1, blocks(1)%adv_batches(m)%ntracers
+            n = blocks(1)%adv_batches(m)%idx(l)
+            call tracer_get_array(iblk, n, q, __FILE__, __LINE__)
+            tmp = q(is:ie,js:je,ks:ke)
+            call fiona_output('r0', tracer_names(n), tmp, start=start, count=count)
+            tmp = blocks(iblk)%aux%dqdt_damp(is:ie,js:je,ks:ke,n)
+            call fiona_output('r0', trim(tracer_names(n))//'_dqdt_damp', tmp, start=start, count=count)
+          end do
+          tmp = adv_batch%old_m(is:ie,js:je,ks:ke)
+          call fiona_output('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
+          end associate
+        end do
       end if
       deallocate(tmp)
       ! ------------------------------------------------------------------------
@@ -218,16 +224,23 @@ contains
       allocate(tmp(is:ie,js:je,ks:ke))
       tmp = dstate%u_lon(is:ie,js:je,ks:ke); call fiona_output('r0', 'u'      , tmp, start=start, count=count)
       tmp = aux%mfx_lon (is:ie,js:je,ks:ke); call fiona_output('r0', 'mfx_lon', tmp, start=start, count=count)
-      if (idx_qv > 0) then
-        associate (adv_batch => blocks(iblk)%adv_batches(1))
-        tag = adv_batch%name
-        if (adv_batch%uv_step == -1) then
-          tmp = adv_batch%u0 (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_u'  , tmp, start=start, count=count)
-        else if (adv_batch%uv_step >= 1) then
-          tmp = adv_batch%u  (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_u'  , tmp, start=start, count=count)
-          tmp = adv_batch%mfx(is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
-        end if
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => blocks(iblk)%adv_batches(m))
+          tag = adv_batch%name
+          if (adv_batch%step == -1) then
+            tmp = adv_batch%mfx0(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
+            tmp = adv_batch%mx0(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
+          else if (adv_batch%step >= 1) then
+            tmp = adv_batch%mfx(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
+            tmp = adv_batch%u(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
+          end if
+          end associate
+        end do
       end if
       deallocate(tmp)
       ! ------------------------------------------------------------------------
@@ -238,18 +251,27 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = dstate%v_lat(is:ie,js:je,ks:ke); call fiona_output('r0', 'v'      , tmp, start=start, count=count)
-      tmp = aux%mfy_lat (is:ie,js:je,ks:ke); call fiona_output('r0', 'mfy_lat', tmp, start=start, count=count)
-      if (idx_qv > 0) then
-        associate (adv_batch => blocks(iblk)%adv_batches(1))
-        tag = adv_batch%name
-        if (adv_batch%uv_step == -1) then
-          tmp = adv_batch%v0 (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_v'  , tmp, start=start, count=count)
-        else if (adv_batch%uv_step >= 1) then
-          tmp = adv_batch%v  (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_v'  , tmp, start=start, count=count)
-          tmp = adv_batch%mfy(is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_mfy', tmp, start=start, count=count)
-        end if
-        end associate
+      tmp = dstate%v_lat(is:ie,js:je,ks:ke)
+      call fiona_output('r0', 'v', tmp, start=start, count=count)
+      tmp = aux%mfy_lat (is:ie,js:je,ks:ke)
+      call fiona_output('r0', 'mfy_lat', tmp, start=start, count=count)
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => blocks(iblk)%adv_batches(m))
+          tag = adv_batch%name
+          if (adv_batch%step == -1) then
+            tmp = adv_batch%mfy0(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mfy', tmp, start=start, count=count)
+            tmp = adv_batch%my0(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_my', tmp, start=start, count=count)
+          else if (adv_batch%step >= 1) then
+            tmp = adv_batch%mfy(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mfy', tmp, start=start, count=count)
+            tmp = adv_batch%v(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_my', tmp, start=start, count=count)
+          end if
+          end associate
+        end do
       end if
       deallocate(tmp)
       ! ------------------------------------------------------------------------
@@ -265,15 +287,19 @@ contains
         tmp = dstate%gz_lev(is:ie,js:je,ks:ke); call fiona_output('r0', 'gz_lev', tmp, start=start, count=count)
         tmp = dstate%w_lev (is:ie,js:je,ks:ke); call fiona_output('r0', 'w_lev' , tmp, start=start, count=count)
       end if
-      if (idx_qv > 0) then
-        associate (adv_batch => blocks(iblk)%adv_batches(1))
-        tag = adv_batch%name
-        if (adv_batch%we_step == -1) then
-          tmp = adv_batch%we0(is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_we' , tmp, start=start, count=count)
-        else if (adv_batch%we_step >= 1) then
-          tmp = adv_batch%we (is:ie,js:je,ks:ke); call fiona_output('r0', trim(tag)//'_accum_we' , tmp, start=start, count=count)
-        end if
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => blocks(iblk)%adv_batches(m))
+          tag = adv_batch%name
+          if (adv_batch%step == -1) then
+            tmp = adv_batch%mz0(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
+          else if (adv_batch%step >= 1) then
+            tmp = adv_batch%mz(is:ie,js:je,ks:ke)
+            call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
+          end if
+          end associate
+        end do
       end if
       deallocate(tmp)
       end associate
@@ -295,11 +321,11 @@ contains
     type(dstate_type), pointer :: dstate
     type(static_type), pointer :: static
     type(datetime_type) time
-    integer iblk, is, ie, js, je, ks, ke
+    integer iblk, is, ie, js, je, ks, ke, l, m, n
     integer start(3), count(3)
     real(r8) time_value, time1, time2
     real(r8), allocatable :: tmp(:,:,:)
-    real(r8), pointer :: qv(:,:,:)
+    real(r8), pointer :: q(:,:,:)
     character(50) time_units, tag
 
     if (restart_file == 'N/A') then
@@ -327,15 +353,15 @@ contains
                  dstate => blocks(iblk)%dstate(old_time_idx), &
                  static => blocks(iblk)%static)
       ! ------------------------------------------------------------------------
-      if (idx_qv > 0) then
-        associate (adv_batch => block%adv_batches(1))
-        tag = adv_batch%name
-        call fiona_input('r0', trim(tag)//'_uv_step', adv_batch%uv_step)
-        call fiona_input('r0', trim(tag)//'_mf_step', adv_batch%mf_step)
-        call fiona_input('r0', trim(tag)//'_we_step', adv_batch%we_step)
-        call fiona_input('r0', trim(tag)//'_last_time', time_value)
-        call time_set_alert_last_time(adv_batch%name, time_value)
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => block%adv_batches(m))
+          tag = adv_batch%name
+          call fiona_input('r0', trim(tag)//'_step', adv_batch%step)
+          call fiona_input('r0', trim(tag)//'_last_time', time_value)
+          call time_set_alert_last_time(adv_batch%name, time_value)
+          end associate
+        end do
       end if
       if (physics_suite /= 'N/A') then
         call fiona_input('r0', 'phys_last_time', time_value)
@@ -354,28 +380,29 @@ contains
       if (baroclinic) then
         call fiona_input('r0', 'mgs', dstate%mgs(is:ie,js:je), start=start, count=count)
         call fill_halo(block%halo, dstate%mgs, full_lon=.true., full_lat=.true.)
-        call fiona_input('r0', 'pt'       , tmp, start=start, count=count); dstate%pt(is:ie,js:je,ks:ke) = tmp
+        call fiona_input('r0', 'pt', tmp, start=start, count=count)
+        dstate%pt(is:ie,js:je,ks:ke) = tmp
         call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-        call fiona_input('r0', 'pt_old_m' , tmp, start=start, count=count); blocks(iblk)%adv_batch_pt%old_m(is:ie,js:je,ks:ke) = tmp
       else
         call fiona_input('r0', 'gz'       , tmp, start=start, count=count); dstate%gz(is:ie,js:je,ks:ke) = tmp
         call fill_halo(block%halo, dstate%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
       end if
-      if (idx_qv > 0) then
-        call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-        call fiona_input('r0', 'qv', tmp, start=start, count=count); qv(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-        associate (adv_batch => block%adv_batches(1))
-        tag = adv_batch%name
-        if (adv_batch%we_step == -1) then
-          call fiona_input('r0', trim(tag)//'_accum_m', tmp, start=start, count=count); adv_batch%m0(is:ie,js:je,ks:ke) = tmp
-          call fill_halo(block%halo, adv_batch%m0 , full_lon=.true., full_lat=.true., full_lev=.true.)
-        else if (adv_batch%we_step >= 1) then
-          call fiona_input('r0', trim(tag)//'_accum_m', tmp, start=start, count=count); adv_batch%m (is:ie,js:je,ks:ke) = tmp
-          call fill_halo(block%halo, adv_batch%m  , full_lon=.true., full_lat=.true., full_lev=.true.)
-        end if
-        call fiona_input('r0', trim(tag)//'_old_m', tmp, start=start, count=count); adv_batch%old_m(is:ie,js:je,ks:ke) = tmp
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => block%adv_batches(1))
+          do l = 1, blocks(1)%adv_batches(m)%ntracers
+            n = adv_batch%idx(l)
+            call tracer_get_array(iblk, n, q, __FILE__, __LINE__)
+            call fiona_input('r0', tracer_names(n), tmp, start=start, count=count)
+            q(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(block%filter_halo, q, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+            call fiona_input('r0', trim(tracer_names(n))//'_dqdt_damp', tmp, start=start, count=count)
+            block%aux%dqdt_damp(is:ie,js:je,ks:ke,n) = tmp
+          end do
+          call fiona_input('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
+          adv_batch%old_m(is:ie,js:je,ks:ke) = tmp
+          end associate
+        end do
       end if
       deallocate(tmp)
       ! ------------------------------------------------------------------------
@@ -390,19 +417,27 @@ contains
       call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fiona_input('r0', 'mfx_lon', tmp, start=start, count=count); aux%mfx_lon (is:ie,js:je,ks:ke) = tmp
       call fill_halo(block%halo, aux%mfx_lon , full_lon=.false., full_lat=.true., full_lev=.true.)
-      if (idx_qv > 0) then
-        associate (adv_batch => block%adv_batches(1))
-        tag = adv_batch%name
-        if (adv_batch%uv_step == -1) then
-          call fiona_input('r0', trim(tag)//'_accum_u'  , tmp, start=start, count=count); adv_batch%u0 (is:ie,js:je,ks:ke) = tmp
-          call fill_halo(block%halo, adv_batch%u0 , full_lon=.false., full_lat=.true., full_lev=.true.)
-        else if (adv_batch%uv_step >= 1) then
-          call fiona_input('r0', trim(tag)//'_accum_u'  , tmp, start=start, count=count); adv_batch%u  (is:ie,js:je,ks:ke) = tmp
-          call fill_halo(block%halo, adv_batch%u  , full_lon=.false., full_lat=.true., full_lev=.true.)
-          call fiona_input('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count); adv_batch%mfx(is:ie,js:je,ks:ke) = tmp
-          call fill_halo(block%halo, adv_batch%mfx, full_lon=.false., full_lat=.true., full_lev=.true.)
-        end if
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => block%adv_batches(m))
+          tag = adv_batch%name
+          if (adv_batch%step == -1) then
+            call fiona_input('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
+            adv_batch%mfx0(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(block%halo, adv_batch%mfx0, full_lon=.false., full_lat=.true., full_lev=.true.)
+            call fiona_input('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
+            adv_batch%mx0(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(block%halo, adv_batch%mx0, full_lon=.false., full_lat=.true., full_lev=.true.)
+          else if (adv_batch%step >= 1) then
+            call fiona_input('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
+            adv_batch%mfx(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(block%halo, adv_batch%mfx, full_lon=.false., full_lat=.true., full_lev=.true.)
+            call fiona_input('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
+            adv_batch%u(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(block%halo, adv_batch%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+          end if
+          end associate
+        end do
       end if
       deallocate(tmp)
       ! ------------------------------------------------------------------------
@@ -417,19 +452,23 @@ contains
       call fill_halo(block%halo, dstate%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       call fiona_input('r0', 'mfy_lat', tmp, start=start, count=count); aux%mfy_lat (is:ie,js:je,ks:ke) = tmp
       call fill_halo(block%halo, aux%mfy_lat , full_lon=.true., full_lat=.false., full_lev=.true.)
-      if (idx_qv > 0) then
-        associate (adv_batch => block%adv_batches(1))
-        tag = adv_batch%name
-        if (adv_batch%uv_step == -1) then
-          call fiona_input('r0', trim(tag)//'_accum_v'  , adv_batch%v0 (is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(block%halo, adv_batch%v0 , full_lon=.true., full_lat=.false., full_lev=.true.)
-        else if (adv_batch%uv_step >= 1) then
-          call fiona_input('r0', trim(tag)//'_accum_v'  , adv_batch%v  (is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(block%halo, adv_batch%v  , full_lon=.true., full_lat=.false., full_lev=.true.)
-          call fiona_input('r0', trim(tag)//'_accum_mfy', adv_batch%mfy(is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(block%halo, adv_batch%mfy, full_lon=.true., full_lat=.false., full_lev=.true.)
-        end if
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => block%adv_batches(1))
+          tag = adv_batch%name
+          if (adv_batch%step == -1) then
+            call fiona_input('r0', trim(tag)//'_accum_mfy', adv_batch%mfy0(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(block%halo, adv_batch%mfy0, full_lon=.true., full_lat=.false., full_lev=.true.)
+            call fiona_input('r0', trim(tag)//'_accum_my', adv_batch%my0(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(block%halo, adv_batch%my0, full_lon=.true., full_lat=.false., full_lev=.true.)
+          else if (adv_batch%step >= 1) then
+            call fiona_input('r0', trim(tag)//'_accum_mfy', adv_batch%mfy(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(block%halo, adv_batch%mfy, full_lon=.true., full_lat=.false., full_lev=.true.)
+            call fiona_input('r0', trim(tag)//'_accum_my', adv_batch%v(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(block%halo, adv_batch%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+          end if
+          end associate
+        end do
       end if
       deallocate(tmp)
       ! ------------------------------------------------------------------------
@@ -447,17 +486,19 @@ contains
         call fiona_input('r0', 'w_lev' , tmp, start=start, count=count); dstate%w_lev (is:ie,js:je,ks:ke) = tmp
         call fill_halo(block%halo, dstate%w_lev , full_lon=.true., full_lat=.true., full_lev=.false.)
       end if
-      if (idx_qv > 0) then
-        associate (adv_batch => block%adv_batches(1))
-        tag = adv_batch%name
-        if (adv_batch%we_step == -1) then
-          call fiona_input('r0', trim(tag)//'_accum_we', adv_batch%we0(is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(block%halo, adv_batch%we0, full_lon=.true., full_lat=.true., full_lev=.false.)
-        else if (adv_batch%we_step >= 1) then
-          call fiona_input('r0', trim(tag)//'_accum_we', adv_batch%we (is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(block%halo, adv_batch%we , full_lon=.true., full_lat=.true., full_lev=.false.)
-        end if
-        end associate
+      if (allocated(blocks(1)%adv_batches)) then
+        do m = 1, size(blocks(1)%adv_batches)
+          associate (adv_batch => block%adv_batches(m))
+          tag = adv_batch%name
+          if (adv_batch%step == -1) then
+            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz0(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(block%halo, adv_batch%mz0, full_lon=.true., full_lat=.true., full_lev=.false.)
+          else if (adv_batch%step >= 1) then
+            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(block%halo, adv_batch%mz, full_lon=.true., full_lat=.true., full_lev=.false.)
+          end if
+          end associate
+        end do
       end if
       deallocate(tmp)
       end associate
