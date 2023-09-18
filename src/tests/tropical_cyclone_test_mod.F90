@@ -287,11 +287,7 @@ contains
       end do
     end do
     call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-    if (pole_damp_mgs) then
-      call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
-    else
-      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
-    end if
+    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine tropical_cyclone_test_set_ic

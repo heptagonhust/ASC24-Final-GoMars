@@ -204,11 +204,6 @@ contains
       call blocks(1)%accum(old)
       call output(old)
       ! ------------------------------------------------------------------------
-      !                                Damping
-      do iblk = 1, size(blocks)
-        call damp_run(blocks(iblk), blocks(iblk)%dstate(old), dt_dyn)
-      end do
-      ! ------------------------------------------------------------------------
       !                                Physics
       call test_forcing_run(dt_dyn, old)
       if (baroclinic) then
@@ -225,6 +220,7 @@ contains
       !                              Dynamical Core
       do iblk = 1, size(blocks)
         call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
+        call damp_run(blocks(iblk), blocks(iblk)%dstate(new), dt_dyn)
         if (pdc_type == 1) call physics_update_dynamics(blocks(iblk), new, dt_dyn)
         call blocks(iblk)%dstate(new)%c2a()
       end do

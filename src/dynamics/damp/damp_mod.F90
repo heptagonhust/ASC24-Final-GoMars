@@ -9,7 +9,6 @@ module damp_mod
   use filter_mod
   use div_damp_mod
   use smag_damp_mod
-  use pole_damp_mod
   use laplace_damp_mod
 
   implicit none
@@ -44,18 +43,19 @@ contains
     type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: dt
 
+    integer cyc
+
     block%aux%dudt_damp  = 0
     block%aux%dvdt_damp  = 0
     block%aux%dptdt_damp = 0
 
     if (use_div_damp) then
-      call div_damp_run(block, dstate, dt)
+      do cyc = 1, div_damp_cycles
+        call div_damp_run(block, dstate, dt)
+      end do
     end if
     if (use_smag_damp) then
       call smag_damp_run(block, dstate, dt)
-    end if
-    if (use_pole_damp .or. nudge_pole_v) then
-      call pole_damp_run(block, dstate)
     end if
 
   end subroutine damp_run

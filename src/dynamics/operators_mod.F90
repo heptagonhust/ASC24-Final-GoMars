@@ -516,10 +516,7 @@ contains
       end do
     end if
     if (div_damp_order == 2) then
-      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%small_filter, div)
-      call fill_halo(block%filter_halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
+      call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true., &
                      west_halo=.false., south_halo=.false.)
     else if (div_damp_order == 4) then
       call fill_halo(block%halo, div, full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -535,10 +532,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%small_filter, div2)
-      call fill_halo(block%filter_halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., &
+      call fill_halo(block%halo, div2, full_lon=.true., full_lat=.true., full_lev=.true., &
                      west_halo=.false., south_halo=.false.)
     end if
     end associate

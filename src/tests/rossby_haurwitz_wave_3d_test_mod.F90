@@ -84,11 +84,7 @@ contains
         mgs(i,j) = pref * (1 + gamma / g / t0 * phi_p)**(g / gamma / Rd)
       end do
     end do
-    if (pole_damp_mgs) then
-      call fill_halo(block%filter_halo, mgs, full_lon=.true., full_lat=.true.)
-    else
-      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
-    end if
+    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
 
     call calc_mg(block, block%dstate(1))
 
