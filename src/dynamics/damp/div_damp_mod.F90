@@ -18,8 +18,7 @@ module div_damp_mod
   public div_damp_final
   public div_damp_run
 
-  real(r8), allocatable :: c2_lon(:,:), c4_lon(:,:)
-  real(r8), allocatable :: c2_lat(:,:), c4_lat(:,:)
+  real(r8), allocatable :: c2(:,:), c4(:,:)
 
 contains
 
@@ -32,42 +31,24 @@ contains
 
     call div_damp_final()
 
-    allocate(c2_lon(global_mesh%full_nlat,global_mesh%full_nlev))
-    allocate(c2_lat(global_mesh%half_nlat,global_mesh%full_nlev))
-    allocate(c4_lon(global_mesh%full_nlat,global_mesh%full_nlev))
-    allocate(c4_lat(global_mesh%half_nlat,global_mesh%full_nlev))
+    allocate(c2(global_mesh%full_nlat,global_mesh%full_nlev))
+    allocate(c4(global_mesh%half_nlat,global_mesh%full_nlev))
 
     c0 = merge(0.0_r8, 1.0_r8, div_damp_order > 2)
     r = 1
     do k = global_mesh%full_kds, global_mesh%full_kde
       do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
-        c2_lon(j,k) = div_damp_coef2 * global_mesh%full_cos_lat(j)**(r - 1) * &
+        c2(j,k) = div_damp_coef2 * global_mesh%full_cos_lat(j)**(r - 1) * &
           exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
           exp_two_values(div_damp_pole, c0, 90.0_r8, 80.0_r8, abs(global_mesh%full_lat_deg(j))) * &
           global_mesh%le_lon(j) * global_mesh%de_lon(j)
       end do
     end do
-    r = 1
-    do k = global_mesh%full_kds, global_mesh%full_kde
-      do j = global_mesh%half_jds, global_mesh%half_jde
-        c2_lat(j,k) = div_damp_coef2 * global_mesh%half_cos_lat(j)**(r - 1) * &
-          exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
-          exp_two_values(div_damp_pole, c0, 90.0_r8, 80.0_r8, abs(global_mesh%half_lat_deg(j))) * &
-          global_mesh%le_lat(j) * global_mesh%de_lat(j)
-      end do
-    end do
     r = 2
     do k = global_mesh%full_kds, global_mesh%full_kde
       do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
-        c4_lon(j,k) = div_damp_coef4 * global_mesh%full_cos_lat(j)**(r - 2) * &
+        c4(j,k) = div_damp_coef4 * global_mesh%full_cos_lat(j)**(r - 2) * &
           global_mesh%le_lon(j)**2 * global_mesh%de_lon(j)**2
-      end do
-    end do
-    r = 2
-    do k = global_mesh%full_kds, global_mesh%full_kde
-      do j = global_mesh%half_jds, global_mesh%half_jde
-        c4_lat(j,k) = div_damp_coef4 * global_mesh%half_cos_lat(j)**(r - 2) * &
-          global_mesh%le_lat(j)**2 * global_mesh%de_lat(j)**2
       end do
     end do
 
@@ -75,10 +56,8 @@ contains
 
   subroutine div_damp_final()
 
-    if (allocated(c2_lon)) deallocate(c2_lon)
-    if (allocated(c2_lat)) deallocate(c2_lat)
-    if (allocated(c4_lon)) deallocate(c4_lon)
-    if (allocated(c4_lat)) deallocate(c4_lat)
+    if (allocated(c2)) deallocate(c2)
+    if (allocated(c4)) deallocate(c4)
 
   end subroutine div_damp_final
 
@@ -103,14 +82,14 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) + c2_lon(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j)
+            u(i,j,k) = u(i,j,k) + c2(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) + c2_lat(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j)
+            v(i,j,k) = v(i,j,k) + (c2(j+1,k) * div(i,j+1,k) - c2(j,k) * div(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do
@@ -119,22 +98,91 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) - c4_lon(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
+            u(i,j,k) = u(i,j,k) - c4(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) - c4_lat(j,k) * (div2(i,j+1,k) - div2(i,j,k)) / mesh%de_lat(j)
+            v(i,j,k) = v(i,j,k) - (c4(j+1,k) * div2(i,j+1,k) - c4(j,k) * div2(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do
     end if
+    call limit_pole_wind_vertical_stress(mesh, u, v)
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine div_damp_run
+
+  subroutine limit_pole_wind_vertical_stress(mesh, u, v)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(inout) :: u(mesh%half_ims:mesh%half_ime, &
+                                 mesh%full_jms:mesh%full_jme, &
+                                 mesh%full_kms:mesh%full_kme)
+    real(r8), intent(inout) :: v(mesh%full_ims:mesh%full_ime, &
+                                 mesh%half_jms:mesh%half_jme, &
+                                 mesh%full_kms:mesh%full_kme)
+
+    integer i, j, k
+    real(r8) c, tmp(global_mesh%full_nlev)
+
+    ! Set upper and lower boundary conditions.
+    do k = mesh%full_kds - 1, mesh%full_kms, -1
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%half_ids, mesh%half_ide
+          ! u(i,j,k) = 2 * u(i,j,k+1) - u(i,j,k+2)
+          u(i,j,k) = 3 * u(i,j,k+1) - 3 * u(i,j,k+2) + u(i,j,k+3)
+        end do
+      end do
+    end do
+    do k = mesh%full_kde + 1, mesh%full_kme
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%half_ids, mesh%half_ide
+          ! u(i,j,k) = 2 * u(i,j,k-1) - u(i,j,k-2)
+          u(i,j,k) = 3 * u(i,j,k-1) - 3 * u(i,j,k-2) + u(i,j,k-3)
+        end do
+      end do
+    end do
+    do k = mesh%full_kds - 1, mesh%full_kms, -1
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
+          ! v(i,j,k) = 2 * v(i,j,k+1) - v(i,j,k+2)
+          v(i,j,k) = 3 * v(i,j,k+1) - 3 * v(i,j,k+2) + v(i,j,k+3)
+        end do
+      end do
+    end do
+    do k = mesh%full_kde + 1, mesh%full_kme
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
+          ! v(i,j,k) = 2 * v(i,j,k-1) - v(i,j,k-2)
+          v(i,j,k) = 3 * v(i,j,k-1) - 3 * v(i,j,k-2) + v(i,j,k-3)
+        end do
+      end do
+    end do
+
+    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+      c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%full_lat_deg(j)), r8))
+      do i = mesh%half_ids, mesh%half_ide
+        tmp = u(i,j,1:mesh%full_nlev)
+        do k = mesh%full_kds, mesh%full_kde
+          u(i,j,k) = c * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c) * tmp(k)
+        end do
+      end do
+    end do
+    do j = mesh%half_jds, mesh%half_jde
+      c = exp_two_values(0.05_r8, 0.0_r8, 90.0_r8, 85.0_r8, real(abs(mesh%half_lat_deg(j)), r8))
+      do i = mesh%full_ids, mesh%full_ide
+        tmp = v(i,j,1:mesh%full_nlev)
+        do k = mesh%full_kds, mesh%full_kde
+          v(i,j,k) = c * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c) * tmp(k)
+        end do
+      end do
+    end do
+
+  end subroutine limit_pole_wind_vertical_stress
 
 end module div_damp_mod
