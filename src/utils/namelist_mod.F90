@@ -146,6 +146,7 @@ module namelist_mod
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
+  integer         :: smag_damp_cycles     = 1
   real(r8)        :: smag_damp_coef       = 0.015
 
   ! Input settings
@@ -271,6 +272,7 @@ module namelist_mod
     rayleigh_damp_w_coef      , &
     rayleigh_damp_top         , &
     use_smag_damp             , &
+    smag_damp_cycles          , &
     smag_damp_coef            , &
     input_ngroup              , &
     output_h0                 , &
@@ -323,6 +325,10 @@ contains
     else
       div_damp_coef2 = div_damp_coef2 / div_damp_cycles
       div_damp_coef4 = div_damp_coef4 / div_damp_cycles
+    end if
+
+    if (use_smag_damp) then
+      smag_damp_coef = smag_damp_coef / smag_damp_cycles
     end if
 
     select case (planet)
@@ -411,6 +417,7 @@ contains
     end if
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
+      write(*, *) 'smag_damp_cycles    = ', to_str(smag_damp_cycles)
       write(*, *) 'smag_damp_coef      = ', smag_damp_coef
     end if
       write(*, *) '========================================================='

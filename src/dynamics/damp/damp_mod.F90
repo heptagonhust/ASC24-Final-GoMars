@@ -51,7 +51,9 @@ contains
       end do
     end if
     if (use_smag_damp) then
-      call smag_damp_run(block, dstate, dt)
+      do cyc = 1, smag_damp_cycles
+        call smag_damp_run(block, dstate, dt)
+      end do
     end if
 
   end subroutine damp_run
