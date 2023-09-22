@@ -137,7 +137,7 @@ module namelist_mod
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_cycles      = 1
-  integer         :: div_damp_order       = 4
+  integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 1.0_r8
   real(r8)        :: div_damp_pole        = 1.0_r8
