@@ -148,6 +148,9 @@ module namelist_mod
   logical         :: use_smag_damp        = .false.
   integer         :: smag_damp_cycles     = 1
   real(r8)        :: smag_damp_coef       = 0.015
+  logical         :: use_pole_damp        = .true.
+  integer         :: pole_damp_j0         = 5
+  real(r8)        :: pole_damp_coef       = 0.05_r8
 
   ! Input settings
   integer         :: input_ngroup         = 0
@@ -274,6 +277,9 @@ module namelist_mod
     use_smag_damp             , &
     smag_damp_cycles          , &
     smag_damp_coef            , &
+    use_pole_damp             , &
+    pole_damp_j0              , &
+    pole_damp_coef            , &
     input_ngroup              , &
     output_h0                 , &
     output_h0_dtype           , &
@@ -419,6 +425,11 @@ contains
     if (use_smag_damp) then
       write(*, *) 'smag_damp_cycles    = ', to_str(smag_damp_cycles)
       write(*, *) 'smag_damp_coef      = ', smag_damp_coef
+    end if
+      write(*, *) 'use_pole_damp       = ', to_str(use_pole_damp)
+    if (use_pole_damp) then
+      write(*, *) 'pole_damp_j0        = ', to_str(pole_damp_j0)
+      write(*, *) 'pole_damp_coef      = ', pole_damp_coef
     end if
       write(*, *) '========================================================='
 
