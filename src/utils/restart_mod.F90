@@ -138,7 +138,6 @@ contains
         do l = 1, blocks(1)%adv_batches(m)%ntracers
           n = blocks(1)%adv_batches(m)%idx(l)
           call fiona_add_var('r0', tracer_names(n), long_name=tracer_long_names(n), units=tracer_units(n), dim_names=cell_dims_3d, dtype='r8')
-          call fiona_add_var('r0', trim(tracer_names(n))//'_dqdt_damp', long_name='', units='', dim_names=cell_dims_3d, dtype='r8')
         end do
         call fiona_add_var('r0', trim(tag)//'_accum_mfx', long_name='', units='', dim_names= lon_dims_3d, dtype='r8')
         call fiona_add_var('r0', trim(tag)//'_accum_mfy', long_name='', units='', dim_names= lat_dims_3d, dtype='r8')
@@ -205,8 +204,6 @@ contains
             call tracer_get_array(iblk, n, q, __FILE__, __LINE__)
             tmp = q(is:ie,js:je,ks:ke)
             call fiona_output('r0', tracer_names(n), tmp, start=start, count=count)
-            tmp = blocks(iblk)%aux%dqdt_damp(is:ie,js:je,ks:ke,n)
-            call fiona_output('r0', trim(tracer_names(n))//'_dqdt_damp', tmp, start=start, count=count)
           end do
           tmp = adv_batch%old_m(is:ie,js:je,ks:ke)
           call fiona_output('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
@@ -396,8 +393,6 @@ contains
             call fiona_input('r0', tracer_names(n), tmp, start=start, count=count)
             q(is:ie,js:je,ks:ke) = tmp
             call fill_halo(block%filter_halo, q, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-            call fiona_input('r0', trim(tracer_names(n))//'_dqdt_damp', tmp, start=start, count=count)
-            block%aux%dqdt_damp(is:ie,js:je,ks:ke,n) = tmp
           end do
           call fiona_input('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
           adv_batch%old_m(is:ie,js:je,ks:ke) = tmp

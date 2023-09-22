@@ -45,10 +45,6 @@ contains
 
     integer cyc
 
-    block%aux%dudt_damp  = 0
-    block%aux%dvdt_damp  = 0
-    block%aux%dptdt_damp = 0
-
     if (use_div_damp) then
       do cyc = 1, div_damp_cycles
         call div_damp_run(block, dstate, dt)

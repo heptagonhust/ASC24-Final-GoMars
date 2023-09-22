@@ -175,11 +175,6 @@ module dynamics_types_mod
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: dmf
     real(r8), allocatable, dimension(:,:,:) :: omg               ! Vertical pressure velocity (Pa s-1)
-    ! Tendencies from Smagorinsky diffusion
-    real(r8), allocatable, dimension(:,:,:  ) :: dudt_damp
-    real(r8), allocatable, dimension(:,:,:  ) :: dvdt_damp
-    real(r8), allocatable, dimension(:,:,:  ) :: dptdt_damp
-    real(r8), allocatable, dimension(:,:,:,:) :: dqdt_damp
     ! Tendencies from physics
     real(r8), allocatable, dimension(:,:,:  ) :: dudt_phys
     real(r8), allocatable, dimension(:,:,:  ) :: dvdt_phys
@@ -834,10 +829,6 @@ contains
     call allocate_array(mesh, this%dmf            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%omg            , full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    call allocate_array(this%mesh, this% dudt_damp, half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this% dvdt_damp, full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%dptdt_damp, full_lon=.true., full_lat=.true., full_lev=.true.)
-
     if (pgf_scheme == 'ptb') then
       call allocate_array(mesh, this%p_ptb        , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%gz_ptb       , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -850,8 +841,6 @@ contains
   subroutine aux_array_init_phys(this)
 
     class(aux_array_type), intent(inout) :: this
-
-    call allocate_array(this%mesh, this% dqdt_damp, full_lon=.true., full_lat=.true., full_lev=.true., extra_dim=ntracers)
 
     if (trim(physics_suite) /= '') then
       if (filter_ptend) then
@@ -902,10 +891,6 @@ contains
     if (allocated(this%div2             )) deallocate(this%div2             )
     if (allocated(this%dmf              )) deallocate(this%dmf              )
     if (allocated(this%omg              )) deallocate(this%omg              )
-    if (allocated(this%dudt_damp        )) deallocate(this%dudt_damp        )
-    if (allocated(this%dvdt_damp        )) deallocate(this%dvdt_damp        )
-    if (allocated(this%dptdt_damp       )) deallocate(this%dptdt_damp       )
-    if (allocated(this%dqdt_damp        )) deallocate(this%dqdt_damp        )
     if (allocated(this%dudt_phys        )) deallocate(this%dudt_phys        )
     if (allocated(this%dvdt_phys        )) deallocate(this%dvdt_phys        )
     if (allocated(this%dptdt_phys       )) deallocate(this%dptdt_phys       )

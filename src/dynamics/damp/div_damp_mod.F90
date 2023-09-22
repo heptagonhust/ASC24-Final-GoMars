@@ -71,13 +71,11 @@ contains
 
     call calc_div(block, dstate)
 
-    associate (mesh => block%mesh         , &
-               div  => block%aux%div      , &
-               div2 => block%aux%div2     , &
-               dudt => block%aux%dudt_damp, &
-               dvdt => block%aux%dvdt_damp, &
-               u    => dstate%u_lon       , &
-               v    => dstate%v_lat       )
+    associate (mesh => block%mesh    , &
+               div  => block%aux%div , &
+               div2 => block%aux%div2, &
+               u    => dstate%u_lon  , &
+               v    => dstate%v_lat  )
     if (div_damp_order >= 2) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole

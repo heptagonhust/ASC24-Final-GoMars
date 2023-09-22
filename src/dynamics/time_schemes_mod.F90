@@ -156,21 +156,22 @@ contains
 
     integer i, j, k
 
-    associate (mesh       => block%mesh          , &
-               dudt       => dtend%du            , &
-               dvdt       => dtend%dv            , &
-               dptdt_damp => block%aux%dptdt_damp, &
-               dudt_damp  => block%aux%dudt_damp , &
-               dvdt_damp  => block%aux%dvdt_damp )
+    associate (mesh       => block%mesh, &
+               dmgsdt     => dtend%dmgs, &
+               dgzdt      => dtend%dgz , &
+               dptdt      => dtend%dpt , &
+               dudt       => dtend%du  , &
+               dvdt       => dtend%dv  )
     if (baroclinic) then
       if (dtend%update_mgs) then
         ! ----------------------------------------------------------------------
-        call fill_halo(block%filter_halo, dtend%dmgs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, dtend%dmgs)
+        call fill_halo(block%filter_halo, dmgsdt, full_lon=.true., full_lat=.true., &
+                       south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dmgsdt)
         ! ----------------------------------------------------------------------
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            new_state%mgs(i,j) = old_state%mgs(i,j) + dt * dtend%dmgs(i,j)
+            new_state%mgs(i,j) = old_state%mgs(i,j) + dt * dmgsdt(i,j)
           end do
         end do
         call fill_halo(block%halo, new_state%mgs, full_lon=.true., full_lat=.true.)
@@ -188,21 +189,15 @@ contains
 
       if (dtend%update_pt) then
         if (.not. dtend%update_mgs .and. .not. dtend%copy_mgs .and. proc%is_root()) call log_error('Mass is not updated or copied!')
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds, mesh%full_jde
-            do i = mesh%full_ids, mesh%full_ide
-              dtend%dpt(i,j,k) = dtend%dpt(i,j,k) + dptdt_damp(i,j,k)
-            end do
-          end do
-        end do
         ! ----------------------------------------------------------------------
-        call fill_halo(block%filter_halo, dtend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, dtend%dpt)
+        call fill_halo(block%filter_halo, dptdt, full_lon=.true., full_lat=.true., full_lev=.true., &
+                       south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dptdt)
         ! ----------------------------------------------------------------------
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%dmg(i,j,k) + dt * dtend%dpt(i,j,k)) / new_state%dmg(i,j,k)
+              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%dmg(i,j,k) + dt * dptdt(i,j,k)) / new_state%dmg(i,j,k)
             end do
           end do
         end do
@@ -213,13 +208,14 @@ contains
     else
       if (dtend%update_gz) then
         ! ----------------------------------------------------------------------
-        call fill_halo(block%filter_halo, dtend%dgz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, dtend%dgz)
+        call fill_halo(block%filter_halo, dgzdt, full_lon=.true., full_lat=.true., &
+                       south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, dgzdt)
         ! ----------------------------------------------------------------------
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * dtend%dgz(i,j,k)
+              new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * dgzdt(i,j,k)
             end do
           end do
         end do
@@ -231,13 +227,6 @@ contains
     end if
 
     if (dtend%update_u .and. dtend%update_v) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            dudt(i,j,k) = dudt(i,j,k) + dudt_damp(i,j,k)
-          end do
-        end do
-      end do
       ! ------------------------------------------------------------------------
       call fill_halo(block%filter_halo, dudt, full_lon=.false., full_lat=.true., full_lev=.true., &
                      south_halo=.false., north_halo=.false.)
@@ -256,7 +245,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * (dvdt(i,j,k) + dvdt_damp(i,j,k))
+            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * dvdt(i,j,k)
           end do
         end do
       end do
