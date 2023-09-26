@@ -30,9 +30,10 @@ contains
 
     do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
       c_lon(j) = exp_two_values(pole_damp_coef, 0.0_r8       , &
-        real(abs(global_mesh%full_lat_deg(1)), r8)           , &
+        real(abs(global_mesh%full_lat_deg(2)), r8)           , &
         real(abs(global_mesh%full_lat_deg(pole_damp_j0)), r8), &
         real(abs(global_mesh%full_lat_deg(j)), r8))
+      c_lon(j) = merge(0.0_r8, c_lon(j), c_lon(j) < 1.0e-15)
     end do
 
     do j = global_mesh%half_jds, global_mesh%half_jde
@@ -40,6 +41,7 @@ contains
         real(abs(global_mesh%half_lat_deg(1)), r8)           , &
         real(abs(global_mesh%half_lat_deg(pole_damp_j0)), r8), &
         real(abs(global_mesh%half_lat_deg(j)), r8))
+      c_lat(j) = merge(0.0_r8, c_lat(j), c_lat(j) < 1.0e-15)
     end do
 
   end subroutine pole_damp_init
@@ -58,7 +60,7 @@ contains
     real(8), intent(in) :: dt
 
     integer i, j, k
-    real(r8) tmp(global_mesh%full_nlev)
+    real(r8) tmp(global_mesh%full_kms:global_mesh%full_kme)
 
     associate (mesh => block%mesh  , &
                u    => dstate%u_lon, &
@@ -99,16 +101,16 @@ contains
 
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       do i = mesh%half_ids, mesh%half_ide
-        tmp = u(i,j,1:mesh%full_nlev)
+        tmp = u(i,j,:)
         do k = mesh%full_kds, mesh%full_kde
-          u(i,j,k) = c_lon(j) * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c_lat(j)) * tmp(k)
+          u(i,j,k) = c_lon(j) * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c_lon(j)) * tmp(k)
         end do
       end do
     end do
     call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
     do j = mesh%half_jds, mesh%half_jde
       do i = mesh%full_ids, mesh%full_ide
-        tmp = v(i,j,1:mesh%full_nlev)
+        tmp = v(i,j,:)
         do k = mesh%full_kds, mesh%full_kde
           v(i,j,k) = c_lat(j) * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c_lat(j)) * tmp(k)
         end do
