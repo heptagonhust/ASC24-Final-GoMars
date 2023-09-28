@@ -92,10 +92,10 @@ contains
     call history_init_stage1()
 
     associate (mesh => blocks(1)%mesh)
-    min_lon = mesh%full_lon_deg(mesh%full_ids-1)
-    max_lon = mesh%full_lon_deg(mesh%full_ide+1)
-    min_lat = mesh%full_lat_deg(max(1, mesh%full_jds-1))
-    max_lat = mesh%full_lat_deg(min(global_mesh%full_nlat, mesh%full_jde+1))
+    min_lon = mesh%full_lon_deg(mesh%full_ims)
+    max_lon = mesh%full_lon_deg(mesh%full_ime)
+    min_lat = mesh%full_lat_deg(max(mesh%full_jms, 1))
+    max_lat = mesh%full_lat_deg(min(mesh%full_jme, global_mesh%full_nlat))
     end associate
 
   end subroutine gmcore_init_stage1
