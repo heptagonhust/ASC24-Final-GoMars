@@ -65,44 +65,10 @@ contains
     associate (mesh => block%mesh  , &
                u    => dstate%u_lon, &
                v    => dstate%v_lat)
-    ! Set upper and lower boundary conditions.
-    do k = mesh%full_kds - 1, mesh%full_kms, -1
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          ! u(i,j,k) = 2 * u(i,j,k+1) - u(i,j,k+2)
-          u(i,j,k) = 3 * u(i,j,k+1) - 3 * u(i,j,k+2) + u(i,j,k+3)
-        end do
-      end do
-    end do
-    do k = mesh%full_kde + 1, mesh%full_kme
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          ! u(i,j,k) = 2 * u(i,j,k-1) - u(i,j,k-2)
-          u(i,j,k) = 3 * u(i,j,k-1) - 3 * u(i,j,k-2) + u(i,j,k-3)
-        end do
-      end do
-    end do
-    do k = mesh%full_kds - 1, mesh%full_kms, -1
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          ! v(i,j,k) = 2 * v(i,j,k+1) - v(i,j,k+2)
-          v(i,j,k) = 3 * v(i,j,k+1) - 3 * v(i,j,k+2) + v(i,j,k+3)
-        end do
-      end do
-    end do
-    do k = mesh%full_kde + 1, mesh%full_kme
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          ! v(i,j,k) = 2 * v(i,j,k-1) - v(i,j,k-2)
-          v(i,j,k) = 3 * v(i,j,k-1) - 3 * v(i,j,k-2) + v(i,j,k-3)
-        end do
-      end do
-    end do
-
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       do i = mesh%half_ids, mesh%half_ide
         tmp = u(i,j,:)
-        do k = mesh%full_kds, mesh%full_kde
+        do k = mesh%full_kds + 1, mesh%full_kde - 1
           u(i,j,k) = c_lon(j) * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c_lon(j)) * tmp(k)
         end do
       end do
@@ -111,7 +77,7 @@ contains
     do j = mesh%half_jds, mesh%half_jde
       do i = mesh%full_ids, mesh%full_ide
         tmp = v(i,j,:)
-        do k = mesh%full_kds, mesh%full_kde
+        do k = mesh%full_kds + 1, mesh%full_kde - 1
           v(i,j,k) = c_lat(j) * (tmp(k-1) + tmp(k+1)) + (1 - 2 * c_lat(j)) * tmp(k)
         end do
       end do
