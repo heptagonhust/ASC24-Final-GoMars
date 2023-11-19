@@ -244,7 +244,7 @@ contains
 
     real(4) w
 
-    w = exp((x - x0)**2 * log(1.0e-3) / (x1 - x0)**2)
+    w = exp((x - x0)**2 * log(eps) / (x1 - x0)**2)
     res = w * val1 + (1 - w) * val2
 
   end function exp_two_values_r4
@@ -259,7 +259,7 @@ contains
 
     real(8) w
 
-    w = exp((x - x0)**2 * log(1.0d-3) / (x1 - x0)**2)
+    w = exp((x - x0)**2 * log(eps) / (x1 - x0)**2)
     res = w * val1 + (1 - w) * val2
 
   end function exp_two_values_r8

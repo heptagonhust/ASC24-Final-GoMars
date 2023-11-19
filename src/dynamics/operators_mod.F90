@@ -85,6 +85,7 @@ contains
       call calc_dmg                       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%dstate(itime))
+      call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt, total_substeps)
