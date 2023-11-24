@@ -1,8 +1,18 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module smag_damp_mod
 
   use flogger
   use string
   use const_mod
+  use math_mod
   use namelist_mod
   use latlon_parallel_mod
   use block_mod
@@ -30,7 +40,7 @@ contains
 
     k0 = 8
     do k = global_mesh%full_kds, global_mesh%full_kde
-      decay_from_top(k) = exp((k - 1)**2 * log(0.01d0) / k0**2) + 1
+      decay_from_top(k) = exp_two_values(5.0_r8, 1.0_r8, 1.0_r8, real(k0, r8), real(k, r8))
     end do
     ! FIXME: Disable the decay for the time being.
     decay_from_top = 1
@@ -147,7 +157,7 @@ contains
             ((u(i,j+1,k) - u(i,j  ,k)) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) - &
              (u(i,j  ,k) - u(i,j-1,k)) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)   &
             ) / mesh%le_lon(j) / mesh%full_cos_lat(j)                                &
-          )
+          ) * dt
         end do
       end do
     end do
@@ -159,7 +169,7 @@ contains
           do i = mesh%full_ids, mesh%full_ide
             v(i,j,k) = v(i,j,k) + kmh_lat(i,j,k) * (                       &
               (v(i-1,j,k) - 2 * v(i,j,k) + v(i+1,j,k)) / mesh%le_lat(j)**2 &
-            )
+            ) * dt
           end do
         else
           do i = mesh%full_ids, mesh%full_ide
@@ -168,7 +178,7 @@ contains
               ((v(i,j+1,k) - v(i,j  ,k)) / mesh%le_lon(j+1) * mesh%full_cos_lat(j+1) - &
                (v(i,j  ,k) - v(i,j-1,k)) / mesh%le_lon(j  ) * mesh%full_cos_lat(j  )   &
               ) / mesh%de_lat(j) / mesh%half_cos_lat(j)                                &
-            )
+            ) * dt
           end do
         end if
       end do
@@ -187,32 +197,32 @@ contains
              (dmg(i,j,k) * pt(i,j,k) - dmg(i,j-1,k) * pt(i,j-1,k) &
              ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)        &
             ) / mesh%le_lon(j) / mesh%full_cos_lat(j)             &
-          ) / dmg(i,j,k)
+          ) / dmg(i,j,k) * dt
         end do
       end do
     end do
     call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
 
-    call tracer_get_array(block%id, q)
-    do m = 1, ntracers
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%full_ids, mesh%full_ide
-            q(i,j,k,m) = q(i,j,k,m) + kmh(i,j,k) * (                  &
-              (dmg(i-1,j,k) * q(i-1,j,k,m) - 2 *                      &
-               dmg(i  ,j,k) * q(i  ,j,k,m) +                          &
-               dmg(i+1,j,k) * q(i+1,j,k,m)) / mesh%de_lon(j)**2 +     &
-              ((dmg(i,j+1,k) * q(i,j+1,k,m) - dmg(i,j,k) * q(i,j,k,m) &
-               ) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) -        &
-               (dmg(i,j,k) * q(i,j,k,m) - dmg(i,j-1,k) * q(i,j-1,k,m) &
-               ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)          &
-              ) / mesh%le_lon(j) / mesh%full_cos_lat(j)               &
-            ) / dmg(i,j,k)
-          end do
-        end do
-      end do
-      call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-    end do
+    ! call tracer_get_array(block%id, q)
+    ! do m = 1, ntracers
+    !   do k = mesh%full_kds, mesh%full_kde
+    !     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+    !       do i = mesh%full_ids, mesh%full_ide
+    !         q(i,j,k,m) = q(i,j,k,m) + kmh(i,j,k) * (                  &
+    !           (dmg(i-1,j,k) * q(i-1,j,k,m) - 2 *                      &
+    !            dmg(i  ,j,k) * q(i  ,j,k,m) +                          &
+    !            dmg(i+1,j,k) * q(i+1,j,k,m)) / mesh%de_lon(j)**2 +     &
+    !           ((dmg(i,j+1,k) * q(i,j+1,k,m) - dmg(i,j,k) * q(i,j,k,m) &
+    !            ) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) -        &
+    !            (dmg(i,j,k) * q(i,j,k,m) - dmg(i,j-1,k) * q(i,j-1,k,m) &
+    !            ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)          &
+    !           ) / mesh%le_lon(j) / mesh%full_cos_lat(j)               &
+    !         ) / dmg(i,j,k) * dt
+    !       end do
+    !     end do
+    !   end do
+    !   call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+    ! end do
     end associate
 
   end subroutine smag_damp_run

@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module div_damp_mod
 
   use const_mod
@@ -15,46 +24,67 @@ module div_damp_mod
   public div_damp_final
   public div_damp_run
 
-  real(r8), allocatable :: c2(:,:), c4(:,:)
+  real(r8), allocatable :: cx(:,:), cy(:,:)
 
 contains
 
   subroutine div_damp_init()
 
-    real(r8) r, c0
+    real(r8) r, lat0
     integer j, k
 
     if (.not. use_div_damp) return
 
     call div_damp_final()
 
-    allocate(c2(global_mesh%full_nlat,global_mesh%full_nlev))
-    allocate(c4(global_mesh%half_nlat,global_mesh%full_nlev))
+    allocate(cx(global_mesh%full_nlat,global_mesh%full_nlev))
+    allocate(cy(global_mesh%half_nlat,global_mesh%full_nlev))
 
-    c0 = merge(0.0_r8, 1.0_r8, div_damp_order > 2)
-    r = 1
-    do k = global_mesh%full_kds, global_mesh%full_kde
-      do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
-        c2(j,k) = div_damp_coef2 * global_mesh%full_cos_lat(j)**(r - 1) * &
-          exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
-          exp_two_values(div_damp_pole, c0, 90.0_r8, 80.0_r8, abs(global_mesh%full_lat_deg(j))) * &
-          global_mesh%le_lon(j) * global_mesh%de_lon(j)
+    select case (div_damp_order)
+    case (2)
+      r = 1
+      lat0 = abs(global_mesh%full_lat_deg(2))
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
+          cx(j,k) = div_damp_coef2 * global_mesh%full_cos_lat(j)**(r - 1) * &
+            exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
+            exp_two_values(div_damp_pole, 1.0_r8, lat0, div_damp_lat0, abs(global_mesh%full_lat_deg(j))) * &
+            global_mesh%le_lon(j) * global_mesh%de_lon(j)
+        end do
       end do
-    end do
-    r = 2
-    do k = global_mesh%full_kds, global_mesh%full_kde
-      do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
-        c4(j,k) = div_damp_coef4 * global_mesh%full_cos_lat(j)**(r - 2) * &
-          global_mesh%le_lon(j)**2 * global_mesh%de_lon(j)**2
+      lat0 = abs(global_mesh%half_lat_deg(1))
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%half_jds, global_mesh%half_jde
+          cy(j,k) = div_damp_coef2 * global_mesh%half_cos_lat(j)**(r - 1) * &
+            exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
+            exp_two_values(div_damp_pole, 1.0_r8, lat0, div_damp_lat0, abs(global_mesh%half_lat_deg(j))) * &
+            global_mesh%le_lat(j) * global_mesh%de_lat(j)
+        end do
       end do
-    end do
+    case (4)
+      r = 2
+      lat0 = abs(global_mesh%full_lat_deg(2))
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
+          cx(j,k) = div_damp_coef4 * global_mesh%full_cos_lat(j)**(r - 2) * &
+            global_mesh%le_lon(j)**2 * global_mesh%de_lon(j)**2
+        end do
+      end do
+      lat0 = abs(global_mesh%half_lat_deg(1))
+      do k = global_mesh%full_kds, global_mesh%full_kde
+        do j = global_mesh%half_jds, global_mesh%half_jde
+          cy(j,k) = div_damp_coef4 * global_mesh%half_cos_lat(j)**(r - 2) * &
+            global_mesh%le_lat(j)**2 * global_mesh%de_lat(j)**2
+        end do
+      end do
+    end select
 
   end subroutine div_damp_init
 
   subroutine div_damp_final()
 
-    if (allocated(c2)) deallocate(c2)
-    if (allocated(c4)) deallocate(c4)
+    if (allocated(cx)) deallocate(cx)
+    if (allocated(cy)) deallocate(cy)
 
   end subroutine div_damp_final
 
@@ -77,14 +107,14 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) + c2(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j)
+            u(i,j,k) = u(i,j,k) + cx(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) + (c2(j+1,k) * div(i,j+1,k) - c2(j,k) * div(i,j,k)) / mesh%de_lat(j)
+            v(i,j,k) = v(i,j,k) + cy(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do
@@ -93,14 +123,14 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) - c4(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
+            u(i,j,k) = u(i,j,k) - cx(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) - (c4(j+1,k) * div2(i,j+1,k) - c4(j,k) * div2(i,j,k)) / mesh%de_lat(j)
+            v(i,j,k) = v(i,j,k) - cy(j,k) * (div2(i,j+1,k) - div2(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do

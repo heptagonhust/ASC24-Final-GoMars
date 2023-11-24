@@ -136,20 +136,27 @@ module namelist_mod
   real(r8)        :: topo_max_slope       = 0.12_r8
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
-  integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 1.0_r8
   real(r8)        :: div_damp_pole        = 1.0_r8
+  real(r8)        :: div_damp_lat0        = 70.0_r8
   real(r8)        :: div_damp_coef2       = 0.002_r8
   real(r8)        :: div_damp_coef4       = 0.00003_r8
+  logical         :: use_vor_damp         = .false.
+  integer         :: vor_damp_order       = 2
+  real(r8)        :: vor_damp_coef2       = 0.001_r8
+  real(r8)        :: vor_damp_top         = 1.0_r8
+  integer         :: vor_damp_k0          = 6
+  real(r8)        :: vor_damp_pole        = 1.0_r8
+  real(r8)        :: vor_damp_lat0        = 60.0_r8
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
   integer         :: smag_damp_cycles     = 1
   real(r8)        :: smag_damp_coef       = 0.015
-  logical         :: use_pole_damp        = .true.
-  integer         :: pole_damp_j0         = 5
+  logical         :: use_pole_damp        = .false.
+  real(r8)        :: pole_damp_lat0       = 80
   real(r8)        :: pole_damp_coef       = 0.02_r8
 
   ! Input settings
@@ -265,20 +272,27 @@ module namelist_mod
     topo_max_slope            , &
     topo_smooth_cycles        , &
     use_div_damp              , &
-    div_damp_cycles           , &
     div_damp_order            , &
     div_damp_coef2            , &
     div_damp_coef4            , &
     div_damp_k0               , &
     div_damp_top              , &
     div_damp_pole             , &
+    div_damp_lat0             , &
+    use_vor_damp              , &
+    vor_damp_order            , &
+    vor_damp_k0               , &
+    vor_damp_coef2            , &
+    vor_damp_top              , &
+    vor_damp_pole             , &
+    vor_damp_lat0             , &
     rayleigh_damp_w_coef      , &
     rayleigh_damp_top         , &
     use_smag_damp             , &
     smag_damp_cycles          , &
     smag_damp_coef            , &
     use_pole_damp             , &
-    pole_damp_j0              , &
+    pole_damp_lat0            , &
     pole_damp_coef            , &
     input_ngroup              , &
     output_h0                 , &
@@ -328,9 +342,10 @@ contains
 
     if (.not. use_div_damp) then
       div_damp_order = 0
-    else
-      div_damp_coef2 = div_damp_coef2 / div_damp_cycles
-      div_damp_coef4 = div_damp_coef4 / div_damp_cycles
+    end if
+
+    if (.not. use_vor_damp) then
+      vor_damp_order = 0
     end if
 
     if (use_smag_damp) then
@@ -409,12 +424,20 @@ contains
     end if
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
     if (use_div_damp) then
-      write(*, *) 'div_damp_cycles     = ', to_str(div_damp_cycles)
       write(*, *) 'div_damp_order      = ', to_str(div_damp_order)
-      write(*, *) 'div_damp_coef2      = ', div_damp_coef2 * div_damp_cycles
-      write(*, *) 'div_damp_coef4      = ', div_damp_coef4 * div_damp_cycles
+      write(*, *) 'div_damp_coef2      = ', div_damp_coef2
+      write(*, *) 'div_damp_coef4      = ', div_damp_coef4
       write(*, *) 'div_damp_top        = ', to_str(div_damp_top, 3)
       write(*, *) 'div_damp_pole       = ', to_str(div_damp_pole, 3)
+      write(*, *) 'div_damp_lat0       = ', to_str(div_damp_lat0, 3)
+    end if
+    if (use_vor_damp) then
+      write(*, *) 'vor_damp_order      = ', to_str(vor_damp_order)
+      write(*, *) 'vor_damp_coef2      = ', vor_damp_coef2
+      write(*, *) 'vor_damp_k0         = ', to_str(vor_damp_k0)
+      write(*, *) 'vor_damp_top        = ', to_str(vor_damp_top, 3)
+      write(*, *) 'vor_damp_pole       = ', to_str(vor_damp_pole, 3)
+      write(*, *) 'vor_damp_lat0       = ', to_str(vor_damp_lat0, 3)
     end if
     if (nonhydrostatic) then
       write(*, *) 'implicit_w_wgt      = ', to_str(implicit_w_wgt, 3)
@@ -424,11 +447,11 @@ contains
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
       write(*, *) 'smag_damp_cycles    = ', to_str(smag_damp_cycles)
-      write(*, *) 'smag_damp_coef      = ', smag_damp_coef
+      write(*, *) 'smag_damp_coef      = ', smag_damp_coef * smag_damp_cycles
     end if
       write(*, *) 'use_pole_damp       = ', to_str(use_pole_damp)
     if (use_pole_damp) then
-      write(*, *) 'pole_damp_j0        = ', to_str(pole_damp_j0)
+      write(*, *) 'pole_damp_lat0      = ', to_str(pole_damp_lat0, 2)
       write(*, *) 'pole_damp_coef      = ', pole_damp_coef
     end if
       write(*, *) '========================================================='

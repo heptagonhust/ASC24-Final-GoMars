@@ -210,6 +210,7 @@ set(gmcore_files
   src/dynamics/adv/weno_mod.F90
   src/dynamics/damp/damp_mod.F90
   src/dynamics/damp/div_damp_mod.F90
+  src/dynamics/damp/vor_damp_mod.F90
   src/dynamics/damp/laplace_damp_mod.F90
   src/dynamics/damp/smag_damp_mod.F90
   src/dynamics/damp/pole_damp_mod.F90

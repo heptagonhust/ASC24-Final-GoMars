@@ -58,7 +58,7 @@ contains
     time_units = split_string(restart_interval, ' ', 2)
     read(time_value, *) seconds
     select case (time_units)
-    case ('days')
+    case ('days', 'sol')
       seconds = seconds * 86400
     case ('hours')
       seconds = seconds * 3600

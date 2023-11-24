@@ -10,6 +10,7 @@ module filter_mod
 
   public filter_type
   public filter_on_cell
+  public filter_on_vtx
   public filter_on_lon_edge
   public filter_on_lat_edge
   public filter_on_lev_edge
@@ -88,6 +89,42 @@ contains
     end associate
 
   end subroutine filter_on_cell_3d
+
+  subroutine filter_on_vtx(filter, x, y)
+
+    type(filter_type), intent(in) :: filter
+    real(r8), intent(inout) :: x(filter%mesh%half_ims:filter%mesh%half_ime, &
+                                 filter%mesh%half_jms:filter%mesh%half_jme, &
+                                 filter%mesh%full_kms:filter%mesh%full_kme)
+    real(r8), intent(out), optional :: y(filter%mesh%half_ims:filter%mesh%half_ime, &
+                                         filter%mesh%half_jms:filter%mesh%half_jme, &
+                                         filter%mesh%full_kms:filter%mesh%full_kme)
+
+    real(r8) tmp(filter%mesh%half_ims:filter%mesh%half_ime)
+    integer i, j, k, n, hn
+
+    associate (mesh => filter%mesh)
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%half_jds, mesh%half_jde
+        if (filter%ngrid_lat(j) > 1) then
+          n  = filter%ngrid_lat(j)
+          hn = (n - 1) / 2
+          do i = mesh%half_ids, mesh%half_ide
+            tmp(i) = sum(filter%wgt_lat(:n,j) * x(i-hn:i+hn,j,k))
+          end do
+          if (present(y)) then
+            y(:,j,k) = tmp
+          else
+            x(:,j,k) = tmp
+          end if
+        else if (present(y)) then
+          y(:,j,k) = x(:,j,k)
+        end if
+      end do
+    end do
+    end associate
+
+  end subroutine filter_on_vtx
 
   subroutine filter_on_lon_edge(filter, x, y)
 
