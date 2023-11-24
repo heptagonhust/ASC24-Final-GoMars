@@ -60,9 +60,7 @@ contains
     this%mesh => mesh
     this%filter_mesh => filter_mesh
     call allocate_array(filter_mesh, this%q, extra_dim=ntracers, full_lon=.true., full_lat=.true., full_lev=.true.)
-    if (idx_qv > 0) then
-      call allocate_array(mesh, this%qm, full_lon=.true., full_lat=.true., full_lev=.true.)
-    end if
+    call allocate_array(mesh, this%qm, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     this%is_initialized = .true.
 
