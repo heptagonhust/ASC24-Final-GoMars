@@ -52,6 +52,7 @@ module gmcore_mod
   public gmcore_init
   public gmcore_init_stage1
   public gmcore_init_stage2
+  public gmcore_init_stage3
   public gmcore_run
   public gmcore_final
 
@@ -127,7 +128,7 @@ contains
     call pgf_init()
     call interp_init()
     call operators_init()
-    call physics_init(namelist_path)
+    call physics_init_stage1(namelist_path)
     if (baroclinic .and. physics_suite /= 'cam') call tracer_add_moist()
     call tracer_allocate()
     call adv_init()
@@ -164,6 +165,12 @@ contains
     end do
 
   end subroutine gmcore_init_stage2
+
+  subroutine gmcore_init_stage3()
+
+    call physics_init_stage2()
+
+  end subroutine gmcore_init_stage3
 
   subroutine gmcore_run()
 

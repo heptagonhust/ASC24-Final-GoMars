@@ -20,7 +20,8 @@ module physics_mod
 
   private
 
-  public physics_init
+  public physics_init_stage1
+  public physics_init_stage2
   public physics_run
   public physics_update
   public physics_update_dynamics
@@ -29,7 +30,7 @@ module physics_mod
 
 contains
 
-  subroutine physics_init(namelist_path)
+  subroutine physics_init_stage1(namelist_path)
 
     character(*), intent(in) :: namelist_path
 
@@ -50,7 +51,12 @@ contains
 #endif
     end select
 
-  end subroutine physics_init
+  end subroutine physics_init_stage1
+
+  subroutine physics_init_stage2()
+
+
+  end subroutine physics_init_stage2
 
   subroutine physics_run(block, itime, dt)
 
