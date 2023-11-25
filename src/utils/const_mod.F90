@@ -98,7 +98,7 @@ contains
       g          = 3.72d0
       lv         = 2.84d6
       lapse_rate = 5.06d-3
-      p0         = 7.01d2
+      p0         = 6.1d2 ! FIXME: Should we use 6 hPa?
     case default
       call log_error('Invalid planet!')
     end select

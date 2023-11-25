@@ -269,8 +269,8 @@ contains
         allocate(u1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
         allocate(p1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
         do k = 1, era5_nlev
-          call latlon_interp_bilinear_lon_edge(era5_lon, era5_lat, era5_u (:,:,k), mesh, u1(:,:,k), zero_pole=.true.)
-          call latlon_interp_bilinear_lon_edge(era5_lon, era5_lat, era5_pd(:,:,k), mesh, p1(:,:,k))
+          call latlon_interp_bilinear_lon_edge(era5_lon, era5_lat, era5_u (:,:,k), mesh, u1(:,:,k), extrap=.true., zero_pole=.true.)
+          call latlon_interp_bilinear_lon_edge(era5_lon, era5_lat, era5_pd(:,:,k), mesh, p1(:,:,k), extrap=.true.)
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
@@ -305,8 +305,8 @@ contains
         allocate(u1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,waccm_nlev))
         allocate(p1(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,waccm_nlev))
         do k = 1, waccm_nlev
-          call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_u(:,:,k), mesh, u1(:,:,k), zero_pole=.true.)
-          call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_p(:,:,k), mesh, p1(:,:,k))
+          call latlon_interp_bilinear_lon_edge(waccm_lon, waccm_lat, waccm_u(:,:,k), mesh, u1(:,:,k), zero_pole=.true.)
+          call latlon_interp_bilinear_lon_edge(waccm_lon, waccm_lat, waccm_p(:,:,k), mesh, p1(:,:,k))
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
@@ -350,8 +350,8 @@ contains
         allocate(v1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,era5_nlev))
         allocate(p1(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,era5_nlev))
         do k = 1, era5_nlev
-          call latlon_interp_bilinear_lat_edge(era5_lon, era5_lat, era5_v (:,:,k), mesh, v1(:,:,k))
-          call latlon_interp_bilinear_lat_edge(era5_lon, era5_lat, era5_pd(:,:,k), mesh, p1(:,:,k))
+          call latlon_interp_bilinear_lat_edge(era5_lon, era5_lat, era5_v (:,:,k), mesh, v1(:,:,k), extrap=.true.)
+          call latlon_interp_bilinear_lat_edge(era5_lon, era5_lat, era5_pd(:,:,k), mesh, p1(:,:,k), extrap=.true.)
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide

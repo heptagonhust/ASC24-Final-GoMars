@@ -32,20 +32,24 @@ module era5_reader_mod
 
 contains
 
-  subroutine era5_reader_run(bkg_file, min_lon, max_lon, min_lat, max_lat)
+  subroutine era5_reader_run(bkg_file, min_lon, max_lon, min_lat_in, max_lat_in)
 
     character(*), intent(in) :: bkg_file
     real(r8), intent(in) :: min_lon
     real(r8), intent(in) :: max_lon
-    real(r8), intent(in) :: min_lat
-    real(r8), intent(in) :: max_lat
+    real(r8), intent(in) :: min_lat_in
+    real(r8), intent(in) :: max_lat_in
 
     integer i, j, k, k0
+    real(r8) min_lat, max_lat
     real(r8) qm1, qm2, qm, tv1, tv2, sum_q_lev, dz, rho
 
     call era5_reader_final()
 
     if (proc%is_root()) call log_notice('Use ERA5 ' // trim(bkg_file) // ' as background.')
+
+    min_lat = max(min_lat_in, -89.75)
+    max_lat = min(max_lat_in,  89.75)
 
     call fiona_open_dataset('era5', file_path=bkg_file, mpi_comm=proc%comm, ngroup=input_ngroup)
     call fiona_set_dim('era5', 'longitude', span=[0, 360], cyclic=.true.)
@@ -72,6 +76,13 @@ contains
   if (fiona_has_var('era5', 'cswc')) &
     call fiona_input_range('era5', 'cswc'     , era5_qs , coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
     call fiona_end_input('era5')
+
+    do j = 1, era5_nlat
+      if (abs(abs(era5_lat(j)) - 90) < 1.0e-10) then
+        era5_u(:,j,:) = 0
+        era5_v(:,j,:) = 0
+      end if
+    end do
 
     ! Change units.
     era5_lev = era5_lev * 100.0_r8

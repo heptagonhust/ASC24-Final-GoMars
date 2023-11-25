@@ -14,6 +14,7 @@ parser.add_argument('-q', '--queue', help='Job queue')
 parser.add_argument('-n', '--np', help='Processes to use for running tests', type=int, default=2)
 parser.add_argument('-p', '--ntasks-per-node', type=int, default=20)
 parser.add_argument('-m', '--node-list')
+parser.add_argument('-x', '--exclude-nodes', nargs='+', default=[])
 parser.add_argument('-w', '--work-root', help='Where to run tests', required=True)
 parser.add_argument('-c', '--cases', help='Which cases to run', nargs='+', default=[])
 args = parser.parse_args()
@@ -45,7 +46,8 @@ def mpiexec(exe, namelist, args):
 		if not args.queue:
 			print('[Error]: No job queue is provided!')
 			exit(1)
-		run(f'srun -p {args.queue} -n {args.np} --ntasks-per-node {args.ntasks_per_node} --mpi=pmi2 --exclusive -J {job_name} {gmcore_root}/build/{exe} {namelist}')
+		exclude_nodes = f'--exclude {",".join(args.exclude_nodes)}' if len(args.exclude_nodes) > 0 else ''
+		run(f'srun {exclude_nodes} -p {args.queue} -n {args.np} --ntasks-per-node {args.ntasks_per_node} --mpi=pmi2 --exclusive -J {job_name} {gmcore_root}/build/{exe} {namelist}')
 	elif args.node_list:
 		run(f'mpiexec -rr -f {args.node_list} -np {args.np} {gmcore_root}/build/{exe} {namelist}')
 	else:
