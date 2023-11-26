@@ -62,7 +62,7 @@ contains
     end if
     if (use_smag_damp) then
       do cyc = 1, smag_damp_cycles
-        call smag_damp_run(block, dstate, dt)
+        call smag_damp_run(block, dstate, dt / smag_damp_cycles)
       end do
     end if
 

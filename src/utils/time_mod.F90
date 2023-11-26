@@ -192,7 +192,7 @@ contains
     tmp1 = split_string(time_units, ' ', 1)
     tmp2 = split_string(time_units, ' ', 3)
 
-    call curr_time%init(tmp2)
+    call curr_time%init(tmp2, planet=planet)
     select case (tmp1)
     case ('days')
       call curr_time%add_days(time_value)

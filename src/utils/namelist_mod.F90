@@ -139,7 +139,7 @@ module namelist_mod
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 1.0_r8
-  real(r8)        :: div_damp_pole        = 1.0_r8
+  real(r8)        :: div_damp_pole        = 10.0_r8
   real(r8)        :: div_damp_lat0        = 70.0_r8
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
@@ -157,7 +157,7 @@ module namelist_mod
   real(r8)        :: smag_damp_coef       = 0.015
   logical         :: use_pole_damp        = .false.
   real(r8)        :: pole_damp_lat0       = 80
-  real(r8)        :: pole_damp_coef       = 0.02_r8
+  real(r8)        :: pole_damp_coef       = 0.2_r8
 
   ! Input settings
   integer         :: input_ngroup         = 0
@@ -348,10 +348,6 @@ contains
       vor_damp_order = 0
     end if
 
-    if (use_smag_damp) then
-      smag_damp_coef = smag_damp_coef / smag_damp_cycles
-    end if
-
     select case (planet)
     case ('earth')
       time_scale = 1
@@ -447,7 +443,7 @@ contains
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
       write(*, *) 'smag_damp_cycles    = ', to_str(smag_damp_cycles)
-      write(*, *) 'smag_damp_coef      = ', smag_damp_coef * smag_damp_cycles
+      write(*, *) 'smag_damp_coef      = ', smag_damp_coef
     end if
       write(*, *) 'use_pole_damp       = ', to_str(use_pole_damp)
     if (use_pole_damp) then
