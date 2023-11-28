@@ -55,10 +55,14 @@ contains
       call pole_damp_run(block, dstate, dt)
     end if
     if (use_vor_damp) then
-      call vor_damp_run(block, dstate, dt)
+      do cyc = 1, vor_damp_cycles
+        call vor_damp_run(block, dstate, dt / vor_damp_cycles)
+      end do
     end if
     if (use_div_damp) then
-      call div_damp_run(block, dstate, dt)
+      do cyc = 1, div_damp_cycles
+        call div_damp_run(block, dstate, dt / div_damp_cycles)
+      end do
     end if
     if (use_smag_damp) then
       do cyc = 1, smag_damp_cycles

@@ -43,7 +43,7 @@ contains
     call MPI_COMM_RANK(proc%comm, proc%id, ierr)
     call MPI_GET_PROCESSOR_NAME(proc%hostname, n, ierr)
 
-    call latlon_decomp_run(proc_layout, nproc_lon, nproc_lat, ierr)
+    call latlon_decomp_run(proc_layout, nproc_x, nproc_y, ierr)
 
   end subroutine process_init
 

@@ -47,8 +47,8 @@ contains
         do j = global_mesh%full_jds_no_pole, global_mesh%full_jde_no_pole
           cx(j,k) = vor_damp_coef2 * global_mesh%full_cos_lat(j)**(r - 1) * &
             exp_two_values(vor_damp_top, 1.0_r8, 1.0_r8, real(vor_damp_k0, r8), real(k, r8)) * &
-            exp_two_values(vor_damp_pole, 1.0_r8, lat0, vor_damp_lat0, abs(global_mesh%full_lat_deg(j))) * &
-            global_mesh%le_lon(j) * global_mesh%de_lon(j)
+            exp_two_values(vor_damp_pole_x, 1.0_r8, lat0, vor_damp_lat0, abs(global_mesh%full_lat_deg(j))) * &
+            global_mesh%le_lon(j) * global_mesh%de_lon(j) / dt_dyn
         end do
       end do
       lat0 = abs(global_mesh%half_lat_deg(1))
@@ -56,8 +56,8 @@ contains
         do j = global_mesh%half_jds, global_mesh%half_jde
           cy(j,k) = vor_damp_coef2 * global_mesh%half_cos_lat(j)**(r - 1) * &
             exp_two_values(vor_damp_top, 1.0_r8, 1.0_r8, real(vor_damp_k0, r8), real(k, r8)) * &
-            exp_two_values(vor_damp_pole, 1.0_r8, lat0, vor_damp_lat0, abs(global_mesh%half_lat_deg(j))) * &
-            global_mesh%le_lat(j) * global_mesh%de_lat(j)
+            exp_two_values(vor_damp_pole_y, 1.0_r8, lat0, vor_damp_lat0, abs(global_mesh%half_lat_deg(j))) * &
+            global_mesh%le_lat(j) * global_mesh%de_lat(j) / dt_dyn
         end do
       end do
     end select
@@ -81,28 +81,36 @@ contains
 
     call calc_vor(block, dstate)
 
-    associate (mesh => block%mesh   , &
-               vor  => block%aux%vor, &
-               u    => dstate%u_lon , &
-               v    => dstate%v_lat )
+    associate (mesh => block%mesh       , &
+               vor  => block%aux%vor    , &
+               dv   => block%dtend(1)%dv, &
+               u    => dstate%u_lon     , &
+               v    => dstate%v_lat     )
     select case (vor_damp_order)
     case (2)
-      call fill_halo(block%filter_halo, vor, full_lon=.false., full_lat=.false., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_vtx(block%big_filter, vor)
-      call fill_halo(block%filter_halo, vor, full_lon=.false., full_lat=.false., full_lev=.true., &
+      call fill_halo(block%halo, vor, full_lon=.false., full_lat=.false., full_lev=.true., &
                      east_halo=.false., north_halo=.false.)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) - cx(j,k) * (vor(i,j,k) - vor(i,j-1,k)) / mesh%le_lon(j)
+            u(i,j,k) = u(i,j,k) - dt * cx(j,k) * (vor(i,j,k) - vor(i,j-1,k)) / mesh%le_lon(j)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) + cy(j,k) * (vor(i,j,k) - vor(i-1,j,k)) / mesh%le_lat(j)
+            dv(i,j,k) = dt * cy(j,k) * (vor(i,j,k) - vor(i-1,j,k)) / mesh%le_lat(j)
+          end do
+        end do
+      end do
+      call fill_halo(block%filter_halo, dv, full_lon=.false., full_lat=.false., full_lev=.true., &
+                     south_halo=.false., north_halo=.false.)
+      call filter_on_lat_edge(block%big_filter, dv)
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
+            v(i,j,k) = v(i,j,k) + dv(i,j,k)
           end do
         end do
       end do

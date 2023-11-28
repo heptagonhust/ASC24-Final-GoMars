@@ -88,7 +88,7 @@ contains
           cfl = max_wave_speed * dt / dx
           w = filter_coef_a * cfl / max_cfl * (filter_coef_b * (tanh(90 - abs(mesh%full_lat_deg(j))) - 1) + 1)
           w = max(filter_min_width, w)
-          n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
+          n = ceiling(w); if (mod(n, 2) == 0) n = n + 1
           this%width_lon(j) = w
           this%ngrid_lon(j) = n
         end if
@@ -99,7 +99,7 @@ contains
           cfl = max_wave_speed * dt / dx
           w = filter_coef_a * cfl / max_cfl * (filter_coef_b * (tanh(90 - abs(mesh%half_lat_deg(j))) - 1) + 1)
           w = max(filter_min_width, w)
-          n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
+          n = ceiling(w); if (mod(n, 2) == 0) n = n + 1
           this%width_lat(j) = w
           this%ngrid_lat(j) = n
         end if

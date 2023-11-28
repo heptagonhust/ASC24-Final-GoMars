@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module namelist_mod
 
   use string
@@ -59,8 +68,8 @@ module namelist_mod
 
   character(256)  :: gmcore_data_dir      = 'N/A'
 
-  integer         :: nproc_lon(20)        = 0
-  integer         :: nproc_lat(20)        = 0
+  integer         :: nproc_x(20)          = 0
+  integer         :: nproc_y(20)          = 0
   integer         :: lon_hw               = 3
   integer         :: lat_hw               = 3
   character(30)   :: proc_layout          = 'lon>lat' ! or 'lat>lon'
@@ -136,20 +145,26 @@ module namelist_mod
   real(r8)        :: topo_max_slope       = 0.12_r8
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
+  integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
-  real(r8)        :: div_damp_top         = 1.0_r8
-  real(r8)        :: div_damp_pole        = 10.0_r8
-  real(r8)        :: div_damp_lat0        = 70.0_r8
+  real(r8)        :: div_damp_top         = 1
+  real(r8)        :: div_damp_pole        = 100
+  real(r8)        :: div_damp_pole_x      = 0
+  real(r8)        :: div_damp_pole_y      = 0
+  real(r8)        :: div_damp_lat0        = 70
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
   logical         :: use_vor_damp         = .false.
+  integer         :: vor_damp_cycles      = 1
   integer         :: vor_damp_order       = 2
   real(r8)        :: vor_damp_coef2       = 0.001_r8
-  real(r8)        :: vor_damp_top         = 1.0_r8
+  real(r8)        :: vor_damp_top         = 1
   integer         :: vor_damp_k0          = 6
-  real(r8)        :: vor_damp_pole        = 10.0_r8
-  real(r8)        :: vor_damp_lat0        = 70.0_r8
+  real(r8)        :: vor_damp_pole        = 100
+  real(r8)        :: vor_damp_pole_x      = 0
+  real(r8)        :: vor_damp_pole_y      = 0
+  real(r8)        :: vor_damp_lat0        = 70
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
@@ -186,8 +201,8 @@ module namelist_mod
     nlev                      , &
     nonhydrostatic            , &
     advection                 , &
-    nproc_lon                 , &
-    nproc_lat                 , &
+    nproc_x                   , &
+    nproc_y                   , &
     lon_hw                    , &
     lat_hw                    , &
     proc_layout               , &
@@ -272,19 +287,25 @@ module namelist_mod
     topo_max_slope            , &
     topo_smooth_cycles        , &
     use_div_damp              , &
+    div_damp_cycles           , &
     div_damp_order            , &
     div_damp_coef2            , &
     div_damp_coef4            , &
     div_damp_k0               , &
     div_damp_top              , &
     div_damp_pole             , &
+    div_damp_pole_x           , &
+    div_damp_pole_y           , &
     div_damp_lat0             , &
     use_vor_damp              , &
+    vor_damp_cycles           , &
     vor_damp_order            , &
     vor_damp_k0               , &
     vor_damp_coef2            , &
     vor_damp_top              , &
     vor_damp_pole             , &
+    vor_damp_pole_x           , &
+    vor_damp_pole_y           , &
     vor_damp_lat0             , &
     rayleigh_damp_w_coef      , &
     rayleigh_damp_top         , &
@@ -342,10 +363,16 @@ contains
 
     if (.not. use_div_damp) then
       div_damp_order = 0
+    else if (div_damp_pole_x == 0 .or. div_damp_pole_y == 0) then
+      div_damp_pole_x = div_damp_pole
+      div_damp_pole_y = div_damp_pole
     end if
 
     if (.not. use_vor_damp) then
       vor_damp_order = 0
+    else if (vor_damp_pole_x == 0 .or. vor_damp_pole_y == 0) then
+      vor_damp_pole_x = vor_damp_pole
+      vor_damp_pole_y = vor_damp_pole
     end if
 
     select case (planet)
@@ -420,19 +447,23 @@ contains
     end if
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
     if (use_div_damp) then
+      write(*, *) 'div_damp_cycles     = ', to_str(div_damp_cycles)
       write(*, *) 'div_damp_order      = ', to_str(div_damp_order)
       write(*, *) 'div_damp_coef2      = ', div_damp_coef2
       write(*, *) 'div_damp_coef4      = ', div_damp_coef4
       write(*, *) 'div_damp_top        = ', to_str(div_damp_top, 3)
-      write(*, *) 'div_damp_pole       = ', to_str(div_damp_pole, 3)
+      write(*, *) 'div_damp_pole_x     = ', to_str(div_damp_pole_x, 3)
+      write(*, *) 'div_damp_pole_y     = ', to_str(div_damp_pole_y, 3)
       write(*, *) 'div_damp_lat0       = ', to_str(div_damp_lat0, 3)
     end if
     if (use_vor_damp) then
+      write(*, *) 'vor_damp_cycles     = ', to_str(vor_damp_cycles)
       write(*, *) 'vor_damp_order      = ', to_str(vor_damp_order)
       write(*, *) 'vor_damp_coef2      = ', vor_damp_coef2
       write(*, *) 'vor_damp_k0         = ', to_str(vor_damp_k0)
       write(*, *) 'vor_damp_top        = ', to_str(vor_damp_top, 3)
-      write(*, *) 'vor_damp_pole       = ', to_str(vor_damp_pole, 3)
+      write(*, *) 'vor_damp_pole_x     = ', to_str(vor_damp_pole_x, 3)
+      write(*, *) 'vor_damp_pole_y     = ', to_str(vor_damp_pole_y, 3)
       write(*, *) 'vor_damp_lat0       = ', to_str(vor_damp_lat0, 3)
     end if
     if (nonhydrostatic) then

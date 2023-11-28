@@ -822,13 +822,12 @@ contains
     call allocate_array(mesh, this%mfy_lat        , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfx_lat        , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfy_lon        , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%vor            , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv             , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%div            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%div2           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dmf            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%omg            , full_lon=.true., full_lat=.true., full_lev=.true.)
-
-    call allocate_array(filter_mesh, this%vor     , half_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(filter_mesh, this%div     , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (pgf_scheme == 'ptb') then
       call allocate_array(mesh, this%p_ptb        , full_lon=.true., full_lat=.true., full_lev=.true.)
