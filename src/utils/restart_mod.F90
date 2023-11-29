@@ -27,7 +27,7 @@ module restart_mod
   use datetime
   use const_mod
   use namelist_mod
-  use time_mod
+  use time_mod, old => old_time_idx
   use block_mod
   use tracer_mod
   use latlon_parallel_mod
@@ -85,7 +85,6 @@ contains
     character(30) tag
     real(8) time1, time2
     real(r8), allocatable :: tmp(:,:,:)
-    real(r8), pointer :: q(:,:,:)
 
     if (proc%is_root()) then
       call log_notice('Write restart.')
@@ -161,10 +160,19 @@ contains
     call fiona_output('r0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%half_nlat))
     call fiona_output('r0', 'time_step', time_step)
     do iblk = 1, size(blocks)
-      associate (mesh   => blocks(iblk)%mesh         , &
-                 aux    => blocks(iblk)%aux          , &
-                 dstate => blocks(iblk)%dstate(itime), &
-                 static => blocks(iblk)%static)
+      associate (mesh   => blocks(iblk)%mesh                , &
+                 gzs    => blocks(iblk)%static%gzs          , &
+                 mgs    => blocks(iblk)%dstate(itime)%mgs   , &
+                 u_lon  => blocks(iblk)%dstate(itime)%u_lon , &
+                 v_lat  => blocks(iblk)%dstate(itime)%v_lat , &
+                 w_lev  => blocks(iblk)%dstate(itime)%w_lev , &
+                 we_lev => blocks(iblk)%dstate(itime)%we_lev, &
+                 pt     => blocks(iblk)%dstate(itime)%pt    , &
+                 gz     => blocks(iblk)%dstate(itime)%gz    , &
+                 gz_lev => blocks(iblk)%dstate(itime)%gz_lev, &
+                 mfx_lon=> blocks(iblk)%aux%mfx_lon         , &
+                 mfy_lat=> blocks(iblk)%aux%mfy_lat         , &
+                 q      => tracers(iblk)%q                  )
       ! ------------------------------------------------------------------------
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
@@ -186,13 +194,13 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_output('r0', 'gzs', static%gzs(is:ie,js:je), start=start, count=count)
+      call fiona_output('r0', 'gzs', gzs(is:ie,js:je), start=start, count=count)
       if (baroclinic) then
-        call fiona_output('r0', 'mgs', dstate%mgs(is:ie,js:je), start=start, count=count)
-        tmp = dstate%pt(is:ie,js:je,ks:ke)
+        call fiona_output('r0', 'mgs', mgs(is:ie,js:je), start=start, count=count)
+        tmp = pt(is:ie,js:je,ks:ke)
         call fiona_output('r0', 'pt', tmp, start=start, count=count)
       else
-        tmp = dstate%gz(is:ie,js:je,ks:ke)
+        tmp = gz(is:ie,js:je,ks:ke)
         call fiona_output('r0', 'gz', tmp, start=start, count=count)
       end if
       if (allocated(blocks(1)%adv_batches)) then
@@ -201,8 +209,7 @@ contains
           tag = adv_batch%name
           do l = 1, blocks(1)%adv_batches(m)%ntracers
             n = blocks(1)%adv_batches(m)%idx(l)
-            call tracer_get_array(iblk, n, q, __FILE__, __LINE__)
-            tmp = q(is:ie,js:je,ks:ke)
+            tmp = q(is:ie,js:je,ks:ke,n)
             call fiona_output('r0', tracer_names(n), tmp, start=start, count=count)
           end do
           tmp = adv_batch%old_m(is:ie,js:je,ks:ke)
@@ -219,8 +226,8 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = dstate%u_lon(is:ie,js:je,ks:ke); call fiona_output('r0', 'u'      , tmp, start=start, count=count)
-      tmp = aux%mfx_lon (is:ie,js:je,ks:ke); call fiona_output('r0', 'mfx_lon', tmp, start=start, count=count)
+      tmp = u_lon  (is:ie,js:je,ks:ke); call fiona_output('r0', 'u'      , tmp, start=start, count=count)
+      tmp = mfx_lon(is:ie,js:je,ks:ke); call fiona_output('r0', 'mfx_lon', tmp, start=start, count=count)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => blocks(iblk)%adv_batches(m))
@@ -248,10 +255,8 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = dstate%v_lat(is:ie,js:je,ks:ke)
-      call fiona_output('r0', 'v', tmp, start=start, count=count)
-      tmp = aux%mfy_lat (is:ie,js:je,ks:ke)
-      call fiona_output('r0', 'mfy_lat', tmp, start=start, count=count)
+      tmp = v_lat  (is:ie,js:je,ks:ke); call fiona_output('r0', 'v'      , tmp, start=start, count=count)
+      tmp = mfy_lat(is:ie,js:je,ks:ke); call fiona_output('r0', 'mfy_lat', tmp, start=start, count=count)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => blocks(iblk)%adv_batches(m))
@@ -279,10 +284,10 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = dstate%we_lev  (is:ie,js:je,ks:ke); call fiona_output('r0', 'we_lev', tmp, start=start, count=count)
+      tmp = we_lev  (is:ie,js:je,ks:ke); call fiona_output('r0', 'we_lev', tmp, start=start, count=count)
       if (nonhydrostatic) then
-        tmp = dstate%gz_lev(is:ie,js:je,ks:ke); call fiona_output('r0', 'gz_lev', tmp, start=start, count=count)
-        tmp = dstate%w_lev (is:ie,js:je,ks:ke); call fiona_output('r0', 'w_lev' , tmp, start=start, count=count)
+        tmp = gz_lev(is:ie,js:je,ks:ke); call fiona_output('r0', 'gz_lev', tmp, start=start, count=count)
+        tmp = w_lev (is:ie,js:je,ks:ke); call fiona_output('r0', 'w_lev' , tmp, start=start, count=count)
       end if
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
@@ -322,7 +327,6 @@ contains
     integer start(3), count(3)
     real(r8) time_value, time1, time2
     real(r8), allocatable :: tmp(:,:,:)
-    real(r8), pointer :: q(:,:,:)
     character(50) time_units, tag
 
     if (restart_file == 'N/A') then
@@ -344,11 +348,20 @@ contains
     call time_fast_forward(time_value, time_units)
 
     do iblk = 1, size(blocks)
-      associate (block  => blocks(iblk)                     , &
-                 mesh   => blocks(iblk)%mesh                , &
-                 aux    => blocks(iblk)%aux                 , &
-                 dstate => blocks(iblk)%dstate(old_time_idx), &
-                 static => blocks(iblk)%static)
+      associate (block   => blocks(iblk)                   , &
+                 mesh    => blocks(iblk)%mesh              , &
+                 gzs     => blocks(iblk)%static%gzs        , &
+                 mgs     => blocks(iblk)%dstate(old)%mgs   , &
+                 u_lon   => blocks(iblk)%dstate(old)%u_lon , &
+                 v_lat   => blocks(iblk)%dstate(old)%v_lat , &
+                 w_lev   => blocks(iblk)%dstate(old)%w_lev , &
+                 we_lev  => blocks(iblk)%dstate(old)%we_lev, &
+                 gz      => blocks(iblk)%dstate(old)%gz    , &
+                 gz_lev  => blocks(iblk)%dstate(old)%gz_lev, &
+                 pt      => blocks(iblk)%dstate(old)%pt    , &
+                 mfx_lon => blocks(iblk)%aux%mfx_lon       , &
+                 mfy_lat => blocks(iblk)%aux%mfy_lat       , &
+                 q       => tracers(iblk)%q                )
       ! ------------------------------------------------------------------------
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
@@ -372,27 +385,25 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'gzs', static%gzs(is:ie,js:je), start=start, count=count)
-      call fill_halo(block%filter_halo, static%gzs, full_lon=.true., full_lat=.true.)
+      call fiona_input('r0', 'gzs', gzs(is:ie,js:je), start=start, count=count)
+      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
       if (baroclinic) then
-        call fiona_input('r0', 'mgs', dstate%mgs(is:ie,js:je), start=start, count=count)
-        call fill_halo(block%halo, dstate%mgs, full_lon=.true., full_lat=.true.)
-        call fiona_input('r0', 'pt', tmp, start=start, count=count)
-        dstate%pt(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+        call fiona_input('r0', 'mgs', mgs(is:ie,js:je), start=start, count=count)
+        call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+        call fiona_input('r0', 'pt', tmp, start=start, count=count); pt(is:ie,js:je,ks:ke) = tmp
+        call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       else
-        call fiona_input('r0', 'gz'       , tmp, start=start, count=count); dstate%gz(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%halo, dstate%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call fiona_input('r0', 'gz', tmp, start=start, count=count); gz(is:ie,js:je,ks:ke) = tmp
+        call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
       end if
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => block%adv_batches(1))
           do l = 1, blocks(1)%adv_batches(m)%ntracers
             n = adv_batch%idx(l)
-            call tracer_get_array(iblk, n, q, __FILE__, __LINE__)
             call fiona_input('r0', tracer_names(n), tmp, start=start, count=count)
-            q(is:ie,js:je,ks:ke) = tmp
-            call fill_halo(block%filter_halo, q, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+            q(is:ie,js:je,ks:ke,n) = tmp
+            call fill_halo(block%filter_halo, q(:,:,:,n), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end do
           call fiona_input('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
           adv_batch%old_m(is:ie,js:je,ks:ke) = tmp
@@ -408,10 +419,10 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'u'      , tmp, start=start, count=count); dstate%u_lon(is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call fiona_input('r0', 'mfx_lon', tmp, start=start, count=count); aux%mfx_lon (is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, aux%mfx_lon , full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fiona_input('r0', 'u'      , tmp, start=start, count=count); u_lon(is:ie,js:je,ks:ke) = tmp
+      call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fiona_input('r0', 'mfx_lon', tmp, start=start, count=count); mfx_lon (is:ie,js:je,ks:ke) = tmp
+      call fill_halo(block%halo, mfx_lon , full_lon=.false., full_lat=.true., full_lev=.true.)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => block%adv_batches(m))
@@ -443,10 +454,10 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'v'      , tmp, start=start, count=count); dstate%v_lat(is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, dstate%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-      call fiona_input('r0', 'mfy_lat', tmp, start=start, count=count); aux%mfy_lat (is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, aux%mfy_lat , full_lon=.true., full_lat=.false., full_lev=.true.)
+      call fiona_input('r0', 'v'      , tmp, start=start, count=count); v_lat(is:ie,js:je,ks:ke) = tmp
+      call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      call fiona_input('r0', 'mfy_lat', tmp, start=start, count=count); mfy_lat (is:ie,js:je,ks:ke) = tmp
+      call fill_halo(block%halo, mfy_lat , full_lon=.true., full_lat=.false., full_lev=.true.)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => block%adv_batches(1))
@@ -474,12 +485,12 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'we_lev', tmp, start=start, count=count); dstate%we_lev(is:ie,js:je,ks:ke) = tmp
+      call fiona_input('r0', 'we_lev', tmp, start=start, count=count); we_lev(is:ie,js:je,ks:ke) = tmp
       if (nonhydrostatic) then
-        call fiona_input('r0', 'gz_lev', tmp, start=start, count=count); dstate%gz_lev(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%halo, dstate%gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-        call fiona_input('r0', 'w_lev' , tmp, start=start, count=count); dstate%w_lev (is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%halo, dstate%w_lev , full_lon=.true., full_lat=.true., full_lev=.false.)
+        call fiona_input('r0', 'gz_lev', tmp, start=start, count=count); gz_lev(is:ie,js:je,ks:ke) = tmp
+        call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+        call fiona_input('r0', 'w_lev' , tmp, start=start, count=count); w_lev (is:ie,js:je,ks:ke) = tmp
+        call fill_halo(block%halo, w_lev , full_lon=.true., full_lat=.true., full_lev=.false.)
       end if
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)

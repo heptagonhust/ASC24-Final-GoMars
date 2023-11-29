@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module physics_mod
 
   use const_mod
@@ -125,22 +134,25 @@ contains
     integer, intent(in) :: itime
     real(r8), intent(in) :: dt
 
-    real(r8), pointer :: q(:,:,:,:)
     integer i, j, k, m
 
     associate (mesh  => block%mesh               , &
                ptend => block%ptend              , &
-               aux   => block%aux                , &
+               dudt  => block%aux%dudt_phys      , & ! in
+               dvdt  => block%aux%dvdt_phys      , & ! in
+               dptdt => block%aux%dptdt_phys     , & ! in
+               dqdt  => block%aux%dqdt_phys      , & ! in
                dmg   => block%dstate(itime)%dmg  , & ! in
                u_lon => block%dstate(itime)%u_lon, & ! inout
                v_lat => block%dstate(itime)%v_lat, & ! inout
-               pt    => block%dstate(itime)%pt   )   ! inout
+               pt    => block%dstate(itime)%pt   , & ! inout
+               q     => tracers(block%id)%q      )   ! inout
     ! Update dynamics.
     if (ptend%updated_u) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u_lon(i,j,k) = u_lon(i,j,k) + dt * 0.5_r8 * (aux%dudt_phys(i,j,k) + aux%dudt_phys(i+1,j,k))
+            u_lon(i,j,k) = u_lon(i,j,k) + dt * 0.5_r8 * (dudt(i,j,k) + dudt(i+1,j,k))
           end do
         end do
       end do
@@ -150,7 +162,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v_lat(i,j,k) = v_lat(i,j,k) + dt * 0.5_r8 * (aux%dvdt_phys(i,j,k) + aux%dvdt_phys(i,j+1,k))
+            v_lat(i,j,k) = v_lat(i,j,k) + dt * 0.5_r8 * (dvdt(i,j,k) + dvdt(i,j+1,k))
           end do
         end do
       end do
@@ -160,20 +172,19 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            pt(i,j,k) = pt(i,j,k) + dt * aux%dptdt_phys(i,j,k) / dmg(i,j,k)
+            pt(i,j,k) = pt(i,j,k) + dt * dptdt(i,j,k) / dmg(i,j,k)
           end do
         end do
       end do
       call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
     end if
     ! Update tracers.
-    call tracer_get_array(block%id, q)
     do m = 1, ntracers
       if (ptend%updated_q(m)) then
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              q(i,j,k,m) = q(i,j,k,m) + dt * aux%dqdt_phys(i,j,k,m) / dmg(i,j,k)
+              q(i,j,k,m) = q(i,j,k,m) + dt * dqdt(i,j,k,m) / dmg(i,j,k)
             end do
           end do
         end do
@@ -196,7 +207,9 @@ contains
 
     associate (mesh  => block%mesh               , &
                ptend => block%ptend              , &
-               aux   => block%aux                , &
+               dudt  => block%aux%dudt_phys      , & ! in
+               dvdt  => block%aux%dvdt_phys      , & ! in
+               dptdt => block%aux%dptdt_phys     , & ! in
                dmg   => block%dstate(itime)%dmg  , & ! in
                u_lon => block%dstate(itime)%u_lon, & ! inout
                v_lat => block%dstate(itime)%v_lat, & ! inout
@@ -206,7 +219,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u_lon(i,j,k) = u_lon(i,j,k) + dt * 0.5_r8 * (aux%dudt_phys(i,j,k) + aux%dudt_phys(i+1,j,k))
+            u_lon(i,j,k) = u_lon(i,j,k) + dt * 0.5_r8 * (dudt(i,j,k) + dudt(i+1,j,k))
           end do
         end do
       end do
@@ -216,7 +229,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v_lat(i,j,k) = v_lat(i,j,k) + dt * 0.5_r8 * (aux%dvdt_phys(i,j,k) + aux%dvdt_phys(i,j+1,k))
+            v_lat(i,j,k) = v_lat(i,j,k) + dt * 0.5_r8 * (dvdt(i,j,k) + dvdt(i,j+1,k))
           end do
         end do
       end do
@@ -226,7 +239,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            pt(i,j,k) = pt(i,j,k) + dt * aux%dptdt_phys(i,j,k) / dmg(i,j,k)
+            pt(i,j,k) = pt(i,j,k) + dt * dptdt(i,j,k) / dmg(i,j,k)
           end do
         end do
       end do
@@ -243,25 +256,24 @@ contains
     real(r8), intent(in) :: dt
     integer, intent(in) :: idx
 
-    real(r8), pointer :: q(:,:,:)
-    integer i, j, k, m
+    integer i, j, k
 
     associate (mesh  => block%mesh             , &
                ptend => block%ptend            , &
-               aux   => block%aux              , &
-               dmg   => block%dstate(itime)%dmg)
+               dqdt  => block%aux%dqdt_phys    , &
+               dmg   => block%dstate(itime)%dmg, &
+               q     => tracers(block%id)%q    )
     ! Update tracers.
-    call tracer_get_array(block%id, idx, q, __FILE__, __LINE__)
     if (ptend%updated_q(idx)) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            q(i,j,k) = q(i,j,k) + dt * aux%dqdt_phys(i,j,k,idx) / dmg(i,j,k)
+            q(i,j,k,idx) = q(i,j,k,idx) + dt * dqdt(i,j,k,idx) / dmg(i,j,k)
           end do
         end do
       end do
-      call tracer_fill_negative_values(block, itime, q)
-      call fill_halo(block%filter_halo, q, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call tracer_fill_negative_values(block, itime, q(:,:,:,idx))
+      call fill_halo(block%filter_halo, q(:,:,:,idx), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
     end if
     end associate
 

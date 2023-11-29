@@ -1,3 +1,12 @@
+# ==============================================================================
+# This file is part of GMCORE since 2019.
+#
+# GMCORE is a dynamical core for atmospheric model.
+#
+# GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY. You may contact authors for helping or cooperation.
+# ==============================================================================
+
 cmake_minimum_required(VERSION 3.0)
 
 project(gmcore LANGUAGES Fortran C)
@@ -213,13 +222,11 @@ set(gmcore_files
   src/dynamics/damp/vor_damp_mod.F90
   src/dynamics/damp/laplace_damp_mod.F90
   src/dynamics/damp/smag_damp_mod.F90
-  src/dynamics/damp/pole_damp_mod.F90
   src/dynamics/dynamics_types_mod.F90
   src/dynamics/filter_mod.F90
   src/dynamics/filter_types_mod.F90
   src/dynamics/gmcore_mod.F90
   src/dynamics/interp_mod.F90
-  src/dynamics/nh_mod.F90
   src/dynamics/operators_mod.F90
   src/dynamics/pgf/pgf_lin97_mod.F90
   src/dynamics/pgf/pgf_ptb_mod.F90
@@ -305,7 +312,6 @@ set(gmcore_files
   src/utils/block_mod.F90
   src/utils/const_mod.F90
   src/utils/debug_mod.F90
-  src/utils/diag_state_mod.F90
   src/utils/formula_mod.F90
   src/utils/gas_mod.F90
   src/utils/history_mod.F90

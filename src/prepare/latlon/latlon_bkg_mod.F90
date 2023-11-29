@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module latlon_bkg_mod
 
   use flogger
@@ -155,7 +164,6 @@ contains
 
   subroutine latlon_bkg_regrid_pt()
 
-    real(r8), pointer, dimension(:,:,:) :: qv, qm
     real(r8), allocatable, dimension(:,:,:) :: t1, pt1, p1
     integer iblk, i, j, k
 
@@ -166,11 +174,11 @@ contains
                  mesh  => blocks(iblk)%mesh        , &
                  mg    => blocks(iblk)%dstate(1)%mg, & ! in
                  ph    => blocks(iblk)%dstate(1)%ph, & ! in
+                 q     => tracers(iblk)%q          , & ! in
+                 qm    => tracers(iblk)%qm         , & ! in
                  t     => blocks(iblk)%dstate(1)%t , & ! out
                  tv    => blocks(iblk)%dstate(1)%tv, & ! out
                  pt    => blocks(iblk)%dstate(1)%pt)   ! out
-        call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-        call tracer_get_array_qm(iblk, qm)
         select case (bkg_type)
         case ('era5')
           allocate(t1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -182,8 +190,8 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:), qm(i,j,:))
-              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
+              tv(i,j,:) = virtual_temperature(t(i,j,:), q(i,j,:,idx_qv), qm(i,j,:))
+              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,idx_qv))
             end do
           end do
           deallocate(t1, p1)
@@ -197,8 +205,8 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              tv(i,j,:) = virtual_temperature(t(i,j,:), qv(i,j,:), qm(i,j,:))
-              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), qv(i,j,:))
+              tv(i,j,:) = virtual_temperature(t(i,j,:), q(i,j,:,idx_qv), qm(i,j,:))
+              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,idx_qv))
             end do
           end do
           deallocate(t1, p1)
@@ -416,7 +424,6 @@ contains
 
   subroutine latlon_bkg_regrid_qv()
 
-    real(r8), pointer :: qv(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: q1, p1
     integer iblk, i, j, k
 
@@ -427,8 +434,8 @@ contains
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
                  mesh  => blocks(iblk)%filter_mesh , &
-                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
-      call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
+                 mg    => blocks(iblk)%dstate(1)%mg, & ! in
+                 q     => tracers(iblk)%q          )   ! out
       select case (bkg_type)
       case ('era5')
         allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -439,7 +446,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qv(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -452,7 +459,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qv(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -465,12 +472,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qv(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(block%filter_halo, q(:,:,:,idx_qv), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -478,7 +485,6 @@ contains
 
   subroutine latlon_bkg_regrid_qc()
 
-    real(r8), pointer :: qc(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: q1, p1
     integer iblk, i, j, k
 
@@ -489,8 +495,8 @@ contains
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
                  mesh  => blocks(iblk)%filter_mesh , &
-                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
-      call tracer_get_array(iblk, idx_qc, qc, __FILE__, __LINE__)
+                 mg    => blocks(iblk)%dstate(1)%mg, & ! in
+                 q     => tracers(iblk)%q          )   ! out
       select case (bkg_type)
       case ('era5')
         allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -501,7 +507,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qc(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qc), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -514,12 +520,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qc(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qc), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, qc, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(block%filter_halo, q(:,:,:,idx_qc), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -527,7 +533,6 @@ contains
 
   subroutine latlon_bkg_regrid_qi()
 
-    real(r8), pointer :: qi(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: q1, p1
     integer iblk, i, j, k
 
@@ -538,8 +543,8 @@ contains
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
                  mesh  => blocks(iblk)%filter_mesh , &
-                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
-      call tracer_get_array(iblk, idx_qi, qi, __FILE__, __LINE__)
+                 mg    => blocks(iblk)%dstate(1)%mg, & ! in
+                 q     => tracers(iblk)%q          )   ! out
       select case (bkg_type)
       case ('era5')
         allocate(q1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,era5_nlev))
@@ -550,7 +555,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qi(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qi), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -563,12 +568,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), qi(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qi), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, qi, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(block%filter_halo, q(:,:,:,idx_qi), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -576,7 +581,6 @@ contains
 
   subroutine latlon_bkg_regrid_nc()
 
-    real(r8), pointer :: ni(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: n1, p1
     integer iblk, i, j, k
 
@@ -587,8 +591,8 @@ contains
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
                  mesh  => blocks(iblk)%filter_mesh , &
-                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
-      call tracer_get_array(iblk, idx_nc, ni, __FILE__, __LINE__)
+                 mg    => blocks(iblk)%dstate(1)%mg, & ! in
+                 q     => tracers(iblk)%q          )   ! out
       select case (bkg_type)
       case ('cam')
         allocate(n1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
@@ -599,12 +603,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), ni(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_nc), allow_extrap=.true.)
           end do
         end do
         deallocate(n1, p1)
       end select
-      call fill_halo(block%filter_halo, ni, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(block%filter_halo, q(:,:,:,idx_nc), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 
@@ -612,7 +616,6 @@ contains
 
   subroutine latlon_bkg_regrid_ni()
 
-    real(r8), pointer :: ni(:,:,:)
     real(r8), allocatable, dimension(:,:,:) :: n1, p1
     integer iblk, i, j, k
 
@@ -623,8 +626,8 @@ contains
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
                  mesh  => blocks(iblk)%filter_mesh , &
-                 mg    => blocks(iblk)%dstate(1)%mg)   ! in
-      call tracer_get_array(iblk, idx_ni, ni, __FILE__, __LINE__)
+                 mg    => blocks(iblk)%dstate(1)%mg, & ! in
+                 q     => tracers(iblk)%q          )   ! out
       select case (bkg_type)
       case ('cam')
         allocate(n1(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,cam_nlev))
@@ -635,12 +638,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), ni(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_ni), allow_extrap=.true.)
           end do
         end do
         deallocate(n1, p1)
       end select
-      call fill_halo(block%filter_halo, ni, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(block%filter_halo, q(:,:,:,idx_ni), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
       end associate
     end do
 

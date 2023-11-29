@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module adv_mod
 
   use flogger
@@ -176,7 +185,7 @@ contains
     if (.not. restart) then
       do iblk = 1, size(blocks)
         associate (block  => blocks(iblk)              , &
-                  dstate => blocks(iblk)%dstate(itime))
+                   dstate => blocks(iblk)%dstate(itime))
         if (allocated(block%adv_batches)) then
           do m = 1, size(block%adv_batches)
             call block%adv_batches(m)%copy_old_m(dstate%dmg)
@@ -184,6 +193,7 @@ contains
         end if
         end associate
       end do
+      call adv_accum_wind(itime)
     end if
 
   end subroutine adv_prepare

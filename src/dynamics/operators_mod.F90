@@ -11,7 +11,6 @@ module operators_mod
   use log_mod
   use pgf_mod
   use adv_mod
-  use nh_mod
   use interp_mod
   use filter_mod
 
@@ -37,8 +36,6 @@ module operators_mod
   public calc_grad_ptf
   public calc_dmgsdt
   public calc_wedudlev_wedvdlev
-  public nh_prepare
-  public nh_solve
 
   interface operators_prepare
     module procedure operators_prepare_1
@@ -247,21 +244,20 @@ contains
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    real(r8), pointer :: qv(:,:,:)
     integer i, j, k
 
-    associate (mesh => block%mesh, &
-               pt   => dstate%pt , & ! in
-               ph   => dstate%ph , & ! in
-               t    => dstate%t  , & ! out
-               tv   => dstate%tv )   ! out
+    associate (mesh => block%mesh         , &
+               pt   => dstate%pt          , & ! in
+               ph   => dstate%ph          , & ! in
+               q    => tracers(block%id)%q, & ! in
+               t    => dstate%t           , & ! out
+               tv   => dstate%tv          )   ! out
     if (idx_qv > 0) then
-      call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k), qv(i,j,k))
-            tv(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt(i,j,k), ph(i,j,k)**rd_o_cpd, qv(i,j,k))
+            t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k), q(i,j,k,idx_qv))
+            tv(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt(i,j,k), ph(i,j,k)**rd_o_cpd, q(i,j,k,idx_qv))
           end do
         end do
       end do
@@ -735,7 +731,6 @@ contains
         pole = pole / global_mesh%full_nlon / mesh%area_cell(j)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
-            ! vor(i,j,k) = vor(i,j+1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
             vor(i,j,k) = pole(k)
           end do
         end do
@@ -751,7 +746,6 @@ contains
         pole = pole / global_mesh%full_nlon / mesh%area_cell(j+1)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
-            ! vor(i,j,k) = vor(i,j-1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
             vor(i,j,k) = pole(k)
           end do
         end do

@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module hybrid_coord_ncep_mod
 
   use flogger
@@ -58,7 +67,7 @@ contains
   !> @file
   !! Lower and upper triangular decomposition.
   !! @author Mark Iredell @date 2008-08-01
-  
+
   !> This subprogram decomposes a matrix into a product of
   !! lower and upper triangular matrices.
   !!
@@ -154,7 +163,7 @@ contains
   !! @param[in] np integer dimension of matrix
   !! @param[in] indx integer(n) pivot indices (from ludcmp)
   !! @param[inout] b  - input real(n) rhs vector of linear problem (will be overwritten)
-  !!                  - output real(n) solution of linear problem 
+  !!                  - output real(n) solution of linear problem
   !!                    (original A times output B equals original B)
   !! @author Mark Iredell @date 2008-08-01
 
@@ -167,7 +176,7 @@ contains
 
     integer i, j, ii, ll
     real(r8) sum
-  
+
     ii = 0
     do i = 1, n
       ll = indx(i)
@@ -195,7 +204,7 @@ contains
   !> @file
   !! @brief Generates hybrid coordinate interface profiles.
   !! @author Mark Iredell @date 2008-08-01
-  
+
   !> This subprogram generates hybrid coordinate interface profiles
   !! from a few given parameters. The hybrid coordinate is intended to start
   !! out at the bottom in pure sigma and end up at the top in pure pressure,
@@ -212,23 +221,23 @@ contains
   !!
   !! The procedure for the calculation is described in the remarks section below.
   !!
-  !! @param[in] levs     integer number of levels 
+  !! @param[in] levs     integer number of levels
   !! @param[in] lupp     integer number of levels below pupp
-  !! @param[in] pbot     real nominal surface pressure (Pa) 
+  !! @param[in] pbot     real nominal surface pressure (Pa)
   !! @param[in] psig     real nominal pressure where coordinate changes
-  !!              from pure sigma (Pa) 
+  !!              from pure sigma (Pa)
   !! @param[in] ppre     real nominal pressure where coordinate changes
-  !!              to pure pressure (Pa) 
+  !!              to pure pressure (Pa)
   !! @param[in] pupp     real nominal pressure where coordinate changes
   !!              to upper atmospheric profile (Pa)
   !! @param[in] ptop     real pressure at top (Pa)
-  !! @param[in] dpbot    real coordinate thickness at bottom (Pa) 
+  !! @param[in] dpbot    real coordinate thickness at bottom (Pa)
   !! @param[in] dpsig    real thickness of zone within which coordinate changes
-  !!              to pure sigma (Pa) 
+  !!              to pure sigma (Pa)
   !! @param[in] dppre    real thickness of zone within which coordinate changes
-  !!              to pure pressure (Pa) 
-  !! @param[in] dpupp    real coordinate thickness at pupp (Pa) 
-  !! @param[in] dptop    real coordinate thickness at top (Pa) 
+  !!              to pure pressure (Pa)
+  !! @param[in] dpupp    real coordinate thickness at pupp (Pa)
+  !! @param[in] dptop    real coordinate thickness at top (Pa)
   !! @param[out] pmin     real minimum surface pressure (Pa)
   !! @param[out] ak       real(0:levs) a coordinate values, bottom to top (Pa)
   !! @param[out] bk       real(0:levs) b coordinate values, bottom to top ()
@@ -397,7 +406,7 @@ contains
     integer indx3(3) ! permutations in linear solver
     real(r8) p1          ! pressure variable for pbot surface pressure
     real(r8) p2          ! pressure variable for pmin surface pressure
-    real(r8) d           ! determinant permutation 
+    real(r8) d           ! determinant permutation
     integer io,ii,k
 
     !  STEP 1.
@@ -445,7 +454,7 @@ contains
     end do
 
     !  STEP 2.
-    !  Compute minimum surface pressure 
+    !  Compute minimum surface pressure
     ppred=ppre+dppre
     spre=(ppre-pupp)/pdif
     spred=(ppred-pupp)/pdif

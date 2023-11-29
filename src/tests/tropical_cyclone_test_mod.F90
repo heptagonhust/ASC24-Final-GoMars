@@ -52,7 +52,6 @@ module tropical_cyclone_test_mod
 
   private
 
-  public tropical_cyclone_test_set_diag
   public tropical_cyclone_test_set_ic
 
   integer , parameter :: ngauss = 20
@@ -116,21 +115,6 @@ module tropical_cyclone_test_mod
   real(r8) ptrop             ! Tropopause pressure
 
 contains
-
-  subroutine tropical_cyclone_test_set_diag(blocks)
-
-    use diag_state_mod
-    use block_mod, only: block_type
-
-    type(block_type), intent(in) :: blocks(:)
-
-    integer iblk
-
-    ! do iblk = 1, size(blocks)
-    !   call diag_state(iblk)%init_height_levels(blocks(iblk), [100.0_r8], instance)
-    ! end do
-
-  end subroutine tropical_cyclone_test_set_diag
 
   real(r8) function get_dry_air_pressure(lon, lat, ptop, ztop, z) result(res)
 
@@ -216,7 +200,6 @@ contains
     type(block_type), intent(inout), target :: block
 
     integer i, j, k, jgw
-    real(r8), pointer :: qv(:,:,:)
     real(r8) ztop, ps, rho, ptv
 
     real(r8) tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8
@@ -227,6 +210,7 @@ contains
     associate (mesh   => block%mesh,             &
                lon    => block%mesh%full_lon   , &
                lat    => block%mesh%full_lat   , &
+               gzs    => block%static%gzs      , &
                mgs    => block%dstate(1)%mgs   , &
                mg_lev => block%dstate(1)%mg_lev, &
                ph     => block%dstate(1)%ph    , &
@@ -239,8 +223,7 @@ contains
                v_lat  => block%dstate(1)%v_lat , &
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
-               gzs    => block%static%gzs      )
-    call tracer_get_array(block%id, idx_qv, qv, __FILE__, __LINE__)
+               q      => tracers(block%id)%q   )
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         ! 1. Get model top height.
@@ -260,16 +243,16 @@ contains
         ! 4. Get variables on model full levels.
         do k = mesh%full_kds, mesh%full_kde
           call tropical_cyclone_test(lon(i), lat(j), ph(i,j,k), z(i,j,k), 1, &
-            u(i,j,k), v(i,j,k), t(i,j,k), ptv, gzs(i,j), ps, rho, qv(i,j,k))
+            u(i,j,k), v(i,j,k), t(i,j,k), ptv, gzs(i,j), ps, rho, q(i,j,k,idx_qv))
           ! Convert to dry mixing ratio.
-          qv(i,j,k) = qv(i,j,k) / (1 - qv(i,j,k))
-          pt(i,j,k) = modified_potential_temperature(t(i,j,k), ph(i,j,k), qv(i,j,k))
+          q(i,j,k,idx_qv) = q(i,j,k,idx_qv) / (1 - q(i,j,k,idx_qv))
+          pt(i,j,k) = modified_potential_temperature(t(i,j,k), ph(i,j,k), q(i,j,k,idx_qv))
         end do
       end do
     end do
-    call fill_halo(block%halo,         u, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%halo,         v, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+    call fill_halo(block%halo, u, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%halo, v, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block%filter_halo, q(:,:,:,idx_qv), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
     call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde

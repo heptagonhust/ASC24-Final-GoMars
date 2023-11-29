@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module tracer_mod
 
   use flogger
@@ -19,8 +28,6 @@ module tracer_mod
   public tracer_add_moist
   public tracer_allocate
   public tracer_get_idx
-  public tracer_get_array
-  public tracer_get_array_qm
   public tracer_calc_qm
   public tracer_fill_negative_values
   public ntracers
@@ -43,12 +50,6 @@ module tracer_mod
   public tracer_units
   public tracer_types
   public tracers
-
-  interface tracer_get_array
-    module procedure tracer_get_array_idx
-    module procedure tracer_get_array_name
-    module procedure tracer_get_array_all
-  end interface tracer_get_array
 
 contains
 
@@ -209,58 +210,6 @@ contains
 
   end function tracer_get_idx
 
-  subroutine tracer_get_array_idx(iblk, idx, q, file, line)
-
-    integer, intent(in) :: iblk
-    integer, intent(in) :: idx
-    real(r8), intent(out), pointer :: q(:,:,:)
-    character(*), intent(in) :: file
-    integer, intent(in) :: line
-
-    if (idx < 1) then
-      call log_error('Failed to get tracer array!', file, line, pid=proc%id)
-    end if
-    associate (mesh => tracers(iblk)%filter_mesh)
-    ! NOTE: q is on filter_mesh.
-    q(mesh%full_ims:mesh%full_ime, &
-      mesh%full_jms:mesh%full_jme, &
-      mesh%full_kms:mesh%full_kme) => tracers(iblk)%q(:,:,:,idx)
-    end associate
-
-  end subroutine tracer_get_array_idx
-
-  subroutine tracer_get_array_name(iblk, name, q, file, line)
-
-    integer, intent(in) :: iblk
-    character(*), intent(in) :: name
-    real(r8), intent(out), pointer :: q(:,:,:)
-    character(*), intent(in) :: file
-    integer, intent(in) :: line
-
-    integer idx
-
-    idx = tracer_get_idx(name)
-    call tracer_get_array(iblk, idx, q, file, line)
-
-  end subroutine tracer_get_array_name
-
-  subroutine tracer_get_array_all(iblk, q)
-
-    integer, intent(in) :: iblk
-    real(r8), intent(out), pointer :: q(:,:,:,:)
-
-    if (.not. allocated(tracers)) return
-
-    associate (mesh => tracers(iblk)%filter_mesh)
-    ! NOTE: q is on filter_mesh.
-    q(mesh%full_ims:mesh%full_ime, &
-      mesh%full_jms:mesh%full_jme, &
-      mesh%full_kms:mesh%full_kme, &
-      1:ntracers) => tracers(iblk)%q(:,:,:,:)
-    end associate
-
-  end subroutine tracer_get_array_all
-
   subroutine tracer_calc_qm(block)
 
     type(block_type), intent(in) :: block
@@ -340,23 +289,6 @@ contains
     end associate
 
   end subroutine tracer_calc_qm
-
-  subroutine tracer_get_array_qm(iblk, qm)
-
-    integer, intent(in) :: iblk
-    real(r8), intent(out), pointer :: qm(:,:,:)
-
-    if (.not. allocated(tracers)) return
-    if (.not. allocated(tracers(iblk)%qm)) return
-
-    associate (mesh => tracers(iblk)%mesh)
-    ! NOTE: qm is on mesh. This is different from q which is on filter_mesh.
-    qm(mesh%full_ims:mesh%full_ime, &
-       mesh%full_jms:mesh%full_jme, &
-       mesh%full_kms:mesh%full_kme) => tracers(iblk)%qm
-    end associate
-
-  end subroutine tracer_get_array_qm
 
   subroutine tracer_fill_negative_values(block, itime, q)
 

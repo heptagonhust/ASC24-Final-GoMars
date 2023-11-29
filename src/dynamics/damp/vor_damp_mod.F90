@@ -104,9 +104,9 @@ contains
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, dv, full_lon=.false., full_lat=.false., full_lev=.true., &
+      call fill_halo(block%filter_halo, dv, full_lon=.true., full_lat=.false., full_lev=.true., &
                      south_halo=.false., north_halo=.false.)
-      call filter_on_lat_edge(block%big_filter, dv)
+      call filter_on_lat_edge(block%small_filter, dv)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide

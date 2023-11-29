@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module prepare_mod
 
   use const_mod
@@ -34,22 +43,22 @@ contains
     end if
 
     do iblk = 1, size(blocks)
-      associate (mesh    => blocks(iblk)%mesh          , &
-                 gzs     => blocks(iblk)%static%gzs    , & ! in
-                 dzsdlon => blocks(iblk)%static%dzsdlon, & ! out
-                 dzsdlat => blocks(iblk)%static%dzsdlat)   ! out
+      associate (mesh  => blocks(iblk)%mesh        , &
+                 gzs   => blocks(iblk)%static%gzs  , & ! in
+                 dzsdx => blocks(iblk)%static%dzsdx, & ! out
+                 dzsdy => blocks(iblk)%static%dzsdy)   ! out
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
+          dzsdx(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
         end do
       end do
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
+          dzsdy(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
         end do
       end do
-      call fill_halo(blocks(iblk)%halo, dzsdlon, full_lon=.false., full_lat=.true.)
-      call fill_halo(blocks(iblk)%halo, dzsdlat, full_lon=.true., full_lat=.false.)
+      call fill_halo(blocks(iblk)%halo, dzsdx, full_lon=.false., full_lat=.true.)
+      call fill_halo(blocks(iblk)%halo, dzsdy, full_lon=.true., full_lat=.false.)
       end associate
     end do
 

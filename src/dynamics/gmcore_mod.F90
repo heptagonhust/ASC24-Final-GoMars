@@ -39,7 +39,6 @@ module gmcore_mod
   use adv_mod
   use pgf_mod
   use damp_mod
-  use diag_state_mod
   use physics_mod
   use filter_mod
   use test_forcing_mod
@@ -122,7 +121,6 @@ contains
     end if
 
     call vert_coord_init(namelist_path)
-    call diag_state_init()
     call restart_init()
     call tracer_init()
     call pgf_init()
@@ -181,7 +179,6 @@ contains
                  mesh  => blocks(iblk)%mesh, &
                  dstate => blocks(iblk)%dstate(old))
       if (baroclinic) then
-        call prepare_static(block)
         ! Ensure bottom gz_lev is the same as gzs.
         do itime = lbound(block%dstate, 1), ubound(block%dstate, 1)
           do j = mesh%full_jms, mesh%full_jme
@@ -200,7 +197,6 @@ contains
     call pgf_init_after_ic()
     call operators_prepare(blocks, old, dt_dyn)
     call adv_prepare(old)
-    if (nonhydrostatic) call nh_prepare(blocks)
     call diagnose(blocks, old)
     if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
@@ -210,19 +206,6 @@ contains
       if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call blocks(1)%accum(old)
       call output(old)
-      ! ------------------------------------------------------------------------
-      !                                Physics
-      call test_forcing_run(dt_dyn, old)
-      if (baroclinic) then
-        do iblk = 1, size(blocks)
-          call physics_run(blocks(iblk), old, dt_phys)
-          if (pdc_type == 3) call physics_update(blocks(iblk), old, dt_phys)
-        end do
-      end if
-      ! ------------------------------------------------------------------------
-      !                            Tracer Advection
-      call adv_accum_wind(old)
-      call adv_run(old)
       ! ------------------------------------------------------------------------
       !                              Dynamical Core
       do iblk = 1, size(blocks)
@@ -235,6 +218,19 @@ contains
       ! Advance to n+1 time level.
       ! NOTE: Time indices are swapped, e.g. new <=> old.
       call time_advance(dt_dyn)
+      ! ------------------------------------------------------------------------
+      !                            Tracer Advection
+      call adv_accum_wind(new)
+      call adv_run(new)
+      ! ------------------------------------------------------------------------
+      !                                Physics
+      call test_forcing_run(dt_dyn, new)
+      if (baroclinic) then
+        do iblk = 1, size(blocks)
+          call physics_run(blocks(iblk), new, dt_phys)
+          if (pdc_type == 3) call physics_update(blocks(iblk), new, dt_phys)
+        end do
+      end if
     end do model_main_loop
     ! Last output.
     call diagnose(blocks, old)
@@ -255,38 +251,11 @@ contains
     call pgf_final()
     call adv_final()
     call damp_final()
-    call diag_state_final()
     call history_final()
     call process_final()
     call perf_final()
 
   end subroutine gmcore_final
-
-  subroutine prepare_static(block)
-
-    class(block_type), intent(inout) :: block
-
-    integer i, j
-
-    associate (mesh    => block%mesh          , &
-               gzs     => block%static%gzs    , & ! in
-               dzsdlon => block%static%dzsdlon, & ! out
-               dzsdlat => block%static%dzsdlat)   ! out
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
-        end do
-      end do
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
-        end do
-      end do
-      call fill_halo(block%halo, dzsdlon, full_lon=.false., full_lat=.true.)
-      call fill_halo(block%halo, dzsdlat, full_lon=.true., full_lat=.false.)
-    end associate
-
-  end subroutine prepare_static
 
   subroutine output(itime)
 
@@ -416,7 +385,6 @@ contains
       blocks(iblk)%dstate(itime)%te_ke = te_ke
       blocks(iblk)%dstate(itime)%te_ie = te_ie
       blocks(iblk)%dstate(itime)%te_pe = te_pe
-      if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(blocks(iblk)%dstate(itime))
       ! call calc_omg(blocks(iblk), blocks(iblk)%dstate(itime))
     end do
 
@@ -424,15 +392,6 @@ contains
     if (baroclinic) call log_add_diag('tpt', tpt)
     call log_add_diag('te' , te )
     call log_add_diag('tpe', tpe)
-
-    if (nonhydrostatic) then
-      max_w = 0
-      do iblk = 1, size(blocks)
-        max_w = max(max_w, maxval(abs(blocks(iblk)%dstate(itime)%w)))
-      end do
-      call global_max(proc%comm, max_w)
-      call log_add_diag('w', max_w)
-    end if
 
   end subroutine diagnose
 
@@ -470,25 +429,6 @@ contains
         tend1%update_v   = .true.
         tend1%update_mgs = .true.
         tend1%update_pt  = .true.
-      else if (nonhydrostatic) then
-        call calc_grad_mf          (block, star_state, tend1, dt)
-        call calc_dmgsdt           (block, star_state, tend1, dt)
-        call calc_we_lev           (block, star_state, tend1, dt)
-        call calc_grad_ptf         (block, star_state, tend1, dt)
-
-        tend1%update_mgs = .true.
-        tend1%update_pt  = .true.
-        call update_state(block, tend1, old_state, new_state, dt)
-
-        call nh_solve(block, tend1, old_state, star_state, new_state, dt)
-
-        call calc_coriolis         (block, star_state, tend1, dt)
-        call calc_grad_ke          (block, star_state, tend1, dt)
-        call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
-        call pgf_run               (block,  new_state, tend1)
-
-        tend1%update_u   = .true.
-        tend1%update_v   = .true.
       else
         call calc_grad_mf        (block, star_state, tend1, dt)
         call calc_coriolis       (block, star_state, tend1, dt)
@@ -520,8 +460,6 @@ contains
 
         tend1%update_mgs = .true.
         tend1%update_pt  = .true.
-      else if (nonhydrostatic) then
-
       else
         call calc_grad_mf         (block, star_state, tend1, dt)
         call calc_coriolis        (block, star_state, tend1, dt)
@@ -568,8 +506,6 @@ contains
 
         tend1%update_u   = .true.
         tend1%update_v   = .true.
-      else if (nonhydrostatic) then
-
       else
         call pgf_run(block, new_state, tend1)
 

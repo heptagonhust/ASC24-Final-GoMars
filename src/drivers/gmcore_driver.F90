@@ -1,10 +1,18 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 program gmcore_driver
 
   use flogger
   use namelist_mod
   use const_mod
   use block_mod
-  use diag_state_mod
   use latlon_parallel_mod
   use initial_mod
   use restart_mod
@@ -47,14 +55,10 @@ program gmcore_driver
     select case (test_case)
     case ('steady_state_pgf')
       call steady_state_pgf_test_set_params()
-    case ('mountain_wave')
-      init_diag_state => mountain_wave_test_set_diag
     case ('ksp15_01', 'ksp15_02')
       call ksp15_test_set_params()
     case ('dcmip31')
       call dcmip31_test_set_params()
-    case ('tropical_cyclone')
-      init_diag_state => tropical_cyclone_test_set_diag
     case ('N/A')
       call prepare_topo()
     end select

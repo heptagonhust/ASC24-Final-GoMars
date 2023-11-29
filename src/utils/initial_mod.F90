@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module initial_mod
 
   use fiona
@@ -37,7 +46,6 @@ contains
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
     real(8) time1, time2
-    real(r8), pointer, dimension(:,:,:) :: qv, qm, qc, qi, nc, ni
 
     cell_dims   (1) =  'lon';  cell_dims   (2) =  'lat';  cell_dims   (3) =  'lev';     cell_dims(4) = 'time'
      lon_dims   (1) = 'ilon';   lon_dims   (2) =  'lat';   lon_dims   (3) =  'lev';      lon_dims(4) = 'time'
@@ -89,8 +97,8 @@ contains
     case ('gmcore')
       call fiona_add_var('i0', 'zs'           , long_name='Surface height'                            , units='m'       , dtype=output_i0_dtype, dim_names=cell_dims_2d)
       call fiona_add_var('i0', 'zs_std'       , long_name='Surface height subgrid standard deviation' , units='m2'      , dtype=output_i0_dtype, dim_names=cell_dims_2d)
-      call fiona_add_var('i0', 'dzsdlon'      , long_name='Zonal zs gradient'                         , units=''        , dtype=output_i0_dtype, dim_names=lon_dims(1:2))
-      call fiona_add_var('i0', 'dzsdlat'      , long_name='Meridional zs gradient'                    , units=''        , dtype=output_i0_dtype, dim_names=lat_dims(1:2))
+      call fiona_add_var('i0', 'dzsdx'        , long_name='Zonal zs gradient'                         , units=''        , dtype=output_i0_dtype, dim_names=lon_dims(1:2))
+      call fiona_add_var('i0', 'dzsdy'        , long_name='Meridional zs gradient'                    , units=''        , dtype=output_i0_dtype, dim_names=lat_dims(1:2))
       call fiona_add_var('i0', 'landmask'     , long_name='Land mask'                                 , units='1'       , dtype=output_i0_dtype, dim_names=cell_dims_2d)
     case ('cam')
       call fiona_add_var('i0', 'PHIS'         , long_name='Surface geopotential'                      , units='m2/s2'   , dtype=output_i0_dtype, dim_names=cell_dims_2d)
@@ -107,9 +115,20 @@ contains
     end if
 
     do iblk = 1, size(blocks)
-      associate (mesh   => blocks(iblk)%mesh     , &
-                 dstate => blocks(iblk)%dstate(1), &
-                 static => blocks(iblk)%static)
+      associate (mesh     => blocks(iblk)%mesh            , &
+                 gzs      => blocks(iblk)%static%gzs      , &
+                 zs_std   => blocks(iblk)%static%zs_std   , &
+                 landmask => blocks(iblk)%static%landmask , &
+                 dzsdx    => blocks(iblk)%static%dzsdx    , &
+                 dzsdy    => blocks(iblk)%static%dzsdy    , &
+                 mgs      => blocks(iblk)%dstate(1)%mgs   , &
+                 u_lon    => blocks(iblk)%dstate(1)%u_lon , &
+                 v_lat    => blocks(iblk)%dstate(1)%v_lat , &
+                 pt       => blocks(iblk)%dstate(1)%pt    , &
+                 t        => blocks(iblk)%dstate(1)%t     , &
+                 gz_lev   => blocks(iblk)%dstate(1)%gz_lev, &
+                 q        => tracers(iblk)%q              , &
+                 qm       => tracers(iblk)%qm             )
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -119,74 +138,64 @@ contains
       if (baroclinic) then
         select case (name_style)
         case ('gmcore')
-          call fiona_output('i0', 'pt', dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('i0', 'pt', pt(is:ie,js:je,ks:ke), start=start, count=count)
         case ('cam')
-          call fiona_output('i0', 'T' , dstate%t  (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('i0', 'T' , t (is:ie,js:je,ks:ke), start=start, count=count)
         end select
         if (idx_qv > 0) then
-          call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-          call tracer_get_array_qm(iblk, qm)
           select case (name_style)
           case ('gmcore')
-            call fiona_output('i0', 'qv', qv(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_output('i0', 'qv', q(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
           case ('cam')
-            call fiona_output('i0', 'Q' , wet_mixing_ratio(qv(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke)), start=start, count=count)
+            call fiona_output('i0', 'Q' , wet_mixing_ratio(q(is:ie,js:je,ks:ke,idx_qv), qm(is:ie,js:je,ks:ke)), start=start, count=count)
           end select
         end if
         if (idx_qc > 0 .and. fiona_has_var('i0', 'qc')) then
-          call tracer_get_array(iblk, idx_qc, qc, __FILE__, __LINE__)
-          call tracer_get_array_qm(iblk, qm)
           select case (name_style)
           case ('gmcore')
-            call fiona_output('i0', 'qc', qc(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_output('i0', 'qc'    , q(is:ie,js:je,ks:ke,idx_qc), start=start, count=count)
           case ('cam')
-            call fiona_output('i0', 'CLDLIQ', wet_mixing_ratio(qc(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke)), start=start, count=count)
+            call fiona_output('i0', 'CLDLIQ', wet_mixing_ratio(q(is:ie,js:je,ks:ke,idx_qc), qm(is:ie,js:je,ks:ke)), start=start, count=count)
           end select
         end if
         if (idx_qi > 0) then
-          call tracer_get_array(iblk, idx_qi, qi, __FILE__, __LINE__)
-          call tracer_get_array_qm(iblk, qm)
           select case (name_style)
           case ('gmcore')
-            call fiona_output('i0', 'qi', qi(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_output('i0', 'qi'    , q(is:ie,js:je,ks:ke,idx_qi), start=start, count=count)
           case ('cam')
-            call fiona_output('i0', 'CLDICE', wet_mixing_ratio(qi(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke)), start=start, count=count)
+            call fiona_output('i0', 'CLDICE', wet_mixing_ratio(q(is:ie,js:je,ks:ke,idx_qi), qm(is:ie,js:je,ks:ke)), start=start, count=count)
           end select
         end if
         if (idx_nc > 0) then
-          call tracer_get_array(iblk, idx_nc, nc, __FILE__, __LINE__)
           select case (name_style)
           case ('gmcore')
-            call fiona_output('i0', 'nc', nc(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_output('i0', 'nc'    , q(is:ie,js:je,ks:ke,idx_nc), start=start, count=count)
           case ('cam')
-            call fiona_output('i0', 'NUMLIQ', nc(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_output('i0', 'NUMLIQ', q(is:ie,js:je,ks:ke,idx_nc), start=start, count=count)
           end select
         end if
         if (idx_ni > 0) then
-          call tracer_get_array(iblk, idx_ni, ni, __FILE__, __LINE__)
           select case (name_style)
           case ('gmcore')
-            call fiona_output('i0', 'ni', ni(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_output('i0', 'ni'    , q(is:ie,js:je,ks:ke,idx_ni), start=start, count=count)
           case ('cam')
-            call fiona_output('i0', 'NUMICE', ni(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_output('i0', 'NUMICE', q(is:ie,js:je,ks:ke,idx_ni), start=start, count=count)
           end select
         end if
         select case (name_style)
         case ('gmcore')
-          call fiona_output('i0', 'mgs', dstate%mgs(is:ie,js:je), start=start, count=count)
-          call fiona_output('i0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je), start=start, count=count)
-          call fiona_output('i0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je), start=start, count=count)
+          call fiona_output('i0', 'mgs', mgs(is:ie,js:je), start=start, count=count)
         case ('cam')
-          call fiona_output('i0', 'PS', dstate%ps(is:ie,js:je), start=start, count=count)
+          call fiona_output('i0', 'PS' , mgs(is:ie,js:je), start=start, count=count)
         end select
       end if
       select case (name_style)
       case ('gmcore')
-        call fiona_output('i0', 'zs'      , static%gzs     (is:ie,js:je) / g, start=start, count=count)
-        call fiona_output('i0', 'zs_std'  , static%zs_std  (is:ie,js:je)    , start=start, count=count)
-        call fiona_output('i0', 'landmask', static%landmask(is:ie,js:je)    , start=start, count=count)
+        call fiona_output('i0', 'zs'      , gzs     (is:ie,js:je) / g, start=start, count=count)
+        call fiona_output('i0', 'zs_std'  , zs_std  (is:ie,js:je)    , start=start, count=count)
+        call fiona_output('i0', 'landmask', landmask(is:ie,js:je)    , start=start, count=count)
       case ('cam')
-        call fiona_output('i0', 'PHIS'    , static%gzs(is:ie,js:je), start=start, count=count)
+        call fiona_output('i0', 'PHIS'    , gzs     (is:ie,js:je)    , start=start, count=count)
       end select
 
       is = mesh%half_ids; ie = mesh%half_ide
@@ -197,10 +206,10 @@ contains
 
       select case (name_style)
       case ('gmcore')
-        call fiona_output('i0', 'dzsdlon', static%dzsdlon(is:ie,js:je), start=start, count=count)
-        call fiona_output('i0', 'u', dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('i0', 'dzsdx', dzsdx(is:ie,js:je)      , start=start, count=count)
+        call fiona_output('i0', 'u_lon', u_lon(is:ie,js:je,ks:ke), start=start, count=count)
       case ('cam')
-        call fiona_output('i0', 'US', dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('i0', 'US'   , u_lon(is:ie,js:je,ks:ke), start=start, count=count)
       end select
 
       is = mesh%full_ids; ie = mesh%full_ide
@@ -211,10 +220,10 @@ contains
 
       select case (name_style)
       case ('gmcore')
-        call fiona_output('i0', 'dzsdlat', static%dzsdlat(is:ie,js:je), start=start, count=count)
-        call fiona_output('i0', 'v', dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('i0', 'dzsdy', dzsdy(is:ie,js:je)      , start=start, count=count)
+        call fiona_output('i0', 'v_lat', v_lat(is:ie,js:je,ks:ke), start=start, count=count)
       case ('cam')
-        call fiona_output('i0', 'VS', dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('i0', 'VS'   , v_lat(is:ie,js:je,ks:ke), start=start, count=count)
       end select
 
       is = mesh%full_ids; ie = mesh%full_ide
@@ -225,7 +234,7 @@ contains
 
       select case (name_style)
       case ('gmcore')
-        call fiona_output('i0', 'z', dstate%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
+        call fiona_output('i0', 'z', gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
       end select
       end associate
     end do
@@ -245,12 +254,6 @@ contains
     integer iblk, is, ie, js, je, ks, ke, i, j, k
     integer start(3), count(3)
     real(8) time1, time2
-    real(r8), pointer, dimension(:,:,:) :: qv => null()
-    real(r8), pointer, dimension(:,:,:) :: qc => null()
-    real(r8), pointer, dimension(:,:,:) :: qi => null()
-    real(r8), pointer, dimension(:,:,:) :: nc => null()
-    real(r8), pointer, dimension(:,:,:) :: ni => null()
-    real(r8), pointer, dimension(:,:,:) :: qm => null()
 
     if (proc%is_root()) call cpu_time(time1)
 
@@ -264,10 +267,23 @@ contains
     call fiona_start_input('i0')
 
     do iblk = 1, size(blocks)
-      associate (block  => blocks(iblk)                     , &
-                 mesh   => blocks(iblk)%mesh                , &
-                 dstate => blocks(iblk)%dstate(old_time_idx), &
-                 static => blocks(iblk)%static)
+      associate (block    => blocks(iblk)                 , &
+                 mesh     => blocks(iblk)%mesh            , &
+                 gzs      => blocks(iblk)%static%gzs      , &
+                 zs_std   => blocks(iblk)%static%zs_std   , &
+                 landmask => blocks(iblk)%static%landmask , &
+                 dzsdx    => blocks(iblk)%static%dzsdx    , &
+                 dzsdy    => blocks(iblk)%static%dzsdy    , &
+                 mgs      => blocks(iblk)%dstate(1)%mgs   , &
+                 ph       => blocks(iblk)%dstate(1)%ph    , &
+                 u_lon    => blocks(iblk)%dstate(1)%u_lon , &
+                 v_lat    => blocks(iblk)%dstate(1)%v_lat , &
+                 pt       => blocks(iblk)%dstate(1)%pt    , &
+                 t        => blocks(iblk)%dstate(1)%t     , &
+                 gz       => blocks(iblk)%dstate(1)%gz    , &
+                 gz_lev   => blocks(iblk)%dstate(1)%gz_lev, &
+                 q        => tracers(iblk)%q              , &
+                 qm       => tracers(iblk)%qm             )
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -276,85 +292,76 @@ contains
 
       select case (name_style)
       case ('gmcore')
-        call fiona_input('i0', 'zs', static%gzs(is:ie,js:je), start=start, count=count)
-        static%gzs = static%gzs * g
-        call fill_halo(block%filter_halo, static%gzs, full_lon=.true., full_lat=.true.)
-        call fiona_input('i0', 'zs_std', static%zs_std(is:ie,js:je), start=start, count=count)
-        call fill_halo(block%halo, static%zs_std, full_lon=.true., full_lat=.true.)
-        call fiona_input('i0', 'landmask', static%landmask(is:ie,js:je), start=start, count=count)
-        call fill_halo(block%halo, static%landmask, full_lon=.true., full_lat=.true.)
+        call fiona_input('i0', 'zs', gzs(is:ie,js:je), start=start, count=count); gzs = gzs * g
+        call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
+        call fiona_input('i0', 'zs_std', zs_std(is:ie,js:je), start=start, count=count)
+        call fill_halo(block%halo, zs_std, full_lon=.true., full_lat=.true.)
+        call fiona_input('i0', 'landmask', landmask(is:ie,js:je), start=start, count=count)
+        call fill_halo(block%halo, landmask, full_lon=.true., full_lat=.true.)
       case ('cam')
-        call fiona_input('i0', 'PHIS', static%gzs(is:ie,js:je), start=start, count=count)
-        call fill_halo(block%filter_halo, static%gzs, full_lon=.true., full_lat=.true.)
+        call fiona_input('i0', 'PHIS', gzs(is:ie,js:je), start=start, count=count)
+        call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
       end select
       if (baroclinic) then
         select case (name_style)
         case ('gmcore')
-          call fiona_input('i0', 'mgs', dstate%mgs(is:ie,js:je      ), start=start, count=count)
-          call fill_halo(block%halo, dstate%mgs, full_lon=.true., full_lat=.true.)
-          call fiona_input('i0', 'pt' , dstate%pt (is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fiona_input('i0', 'mgs', mgs(is:ie,js:je      ), start=start, count=count)
+          call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+          call fiona_input('i0', 'pt' , pt (is:ie,js:je,ks:ke), start=start, count=count)
+          call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           if (idx_qv > 0) then
-            call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-            call fiona_input('i0', 'qv' , qv(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+            call fiona_input('i0', 'qv' , q(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
+            call fill_halo(block%filter_halo, q(:,:,:,idx_qv), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end if
         case ('cam')
-          call fiona_input('i0', 'PS', dstate%mgs(is:ie,js:je      ), start=start, count=count)
-          call fill_halo(block%halo, dstate%mgs, full_lon=.true., full_lat=.true.)
-          call fiona_input('i0', 'T' , dstate%t  (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_input('i0', 'PS', mgs(is:ie,js:je      ), start=start, count=count)
+          call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+          call fiona_input('i0', 'T' , t  (is:ie,js:je,ks:ke), start=start, count=count)
           if (idx_qv > 0) then
-            call tracer_get_array(iblk, idx_qv, qv, __FILE__, __LINE__)
-            call fiona_input('i0', 'Q' , qv(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_input('i0', 'Q' , q(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
           end if
           if (idx_qc > 0 .and. fiona_has_var('i0', 'CLDLIQ')) then
-            call tracer_get_array(iblk, idx_qc, qc, __FILE__, __LINE__)
-            call fiona_input('i0', 'CLDLIQ', qc(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_input('i0', 'CLDLIQ', q(is:ie,js:je,ks:ke,idx_qc), start=start, count=count)
           end if
           if (idx_qi > 0 .and. fiona_has_var('i0', 'CLDICE')) then
-            call tracer_get_array(iblk, idx_qi, qi, __FILE__, __LINE__)
-            call fiona_input('i0', 'CLDICE', qi(is:ie,js:je,ks:ke), start=start, count=count)
+            call fiona_input('i0', 'CLDICE', q(is:ie,js:je,ks:ke,idx_qi), start=start, count=count)
           end if
           if (idx_nc > 0 .and. fiona_has_var('i0', 'NUMLIQ')) then
-            call tracer_get_array(iblk, idx_nc, nc, __FILE__, __LINE__)
-            call fiona_input('i0', 'NUMLIQ', nc(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%filter_halo, nc, full_lon=.true., full_lat=.true., full_lev=.true.)
+            call fiona_input('i0', 'NUMLIQ', q(is:ie,js:je,ks:ke,idx_nc), start=start, count=count)
+            call fill_halo(block%filter_halo, q(:,:,:,idx_nc), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end if
           if (idx_ni > 0 .and. fiona_has_var('i0', 'NUMICE')) then
-            call tracer_get_array(iblk, idx_ni, ni, __FILE__, __LINE__)
-            call fiona_input('i0', 'NUMICE', ni(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%filter_halo, ni, full_lon=.true., full_lat=.true., full_lev=.true.)
+            call fiona_input('i0', 'NUMICE', q(is:ie,js:je,ks:ke,idx_ni), start=start, count=count)
+            call fill_halo(block%filter_halo, q(:,:,:,idx_ni), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end if
           call tracer_calc_qm(block)
-          call tracer_get_array_qm(iblk, qm)
-          if (associated(qv)) then
-            qv(is:ie,js:je,ks:ke) = dry_mixing_ratio(qv(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke))
-            call fill_halo(block%filter_halo, qv, full_lon=.true., full_lat=.true., full_lev=.true.)
+          if (idx_qv > 0) then
+            q(is:ie,js:je,ks:ke,idx_qv) = dry_mixing_ratio(q(is:ie,js:je,ks:ke,idx_qv), qm(is:ie,js:je,ks:ke))
+            call fill_halo(block%filter_halo, q(:,:,:,idx_qv), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end if
-          if (associated(qc)) then
-            qc(is:ie,js:je,ks:ke) = dry_mixing_ratio(qc(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke))
-            call fill_halo(block%filter_halo, qc, full_lon=.true., full_lat=.true., full_lev=.true.)
+          if (idx_qc > 0) then
+            q(is:ie,js:je,ks:ke,idx_qc) = dry_mixing_ratio(q(is:ie,js:je,ks:ke,idx_qc), qm(is:ie,js:je,ks:ke))
+            call fill_halo(block%filter_halo, q(:,:,:,idx_qc), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end if
-          if (associated(qi)) then
-            qi(is:ie,js:je,ks:ke) = dry_mixing_ratio(qi(is:ie,js:je,ks:ke), qm(is:ie,js:je,ks:ke))
-            call fill_halo(block%filter_halo, qi, full_lon=.true., full_lat=.true., full_lev=.true.)
+          if (idx_qi > 0) then
+            q(is:ie,js:je,ks:ke,idx_qi) = dry_mixing_ratio(q(is:ie,js:je,ks:ke,idx_qi), qm(is:ie,js:je,ks:ke))
+            call fill_halo(block%filter_halo, q(:,:,:,idx_qi), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
           end if
-          call calc_mg(block, dstate)
-          call calc_dmg(block, dstate)
-          call calc_ph(block, dstate)
+          call calc_mg (block, block%dstate(1))
+          call calc_dmg(block, block%dstate(1))
+          call calc_ph (block, block%dstate(1))
           do k = mesh%full_kds, mesh%full_kde
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
-                dstate%pt(i,j,k) = modified_potential_temperature(dstate%t(i,j,k), dstate%ph(i,j,k), qv(i,j,k))
+                pt(i,j,k) = modified_potential_temperature(t(i,j,k), ph(i,j,k), q(i,j,k,idx_qv))
               end do
             end do
           end do
-          call fill_halo(block%filter_halo, dstate%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
         end select
       else
-        call fiona_input('i0', 'z' , dstate%gz (is:ie,js:je,ks:ke), start=start, count=count)
-        dstate%gz = dstate%gz * g
-        call fill_halo(block%halo, dstate%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call fiona_input('i0', 'z' , gz(is:ie,js:je,ks:ke), start=start, count=count); gz = gz * g
+        call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
       end if
 
       is = mesh%half_ids; ie = mesh%half_ide
@@ -365,11 +372,11 @@ contains
 
       select case (name_style)
       case ('gmcore')
-        call fiona_input('i0', 'u'  , dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
-        call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fiona_input('i0', 'u_lon', u_lon(is:ie,js:je,ks:ke), start=start, count=count)
+        call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       case ('cam')
-        call fiona_input('i0', 'US' , dstate%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
-        call fill_halo(block%halo, dstate%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fiona_input('i0', 'US'   , u_lon(is:ie,js:je,ks:ke), start=start, count=count)
+        call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       end select
 
       is = mesh%full_ids; ie = mesh%full_ide
@@ -380,11 +387,11 @@ contains
 
       select case (name_style)
       case ('gmcore')
-        call fiona_input('i0', 'v'  , dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
-        call fill_halo(block%halo, dstate%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+        call fiona_input('i0', 'v_lat', v_lat(is:ie,js:je,ks:ke), start=start, count=count)
+        call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       case ('cam')
-        call fiona_input('i0', 'VS' , dstate%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
-        call fill_halo(block%halo, dstate%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+        call fiona_input('i0', 'VS'   , v_lat(is:ie,js:je,ks:ke), start=start, count=count)
+        call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       end select
 
       is = mesh%full_ids; ie = mesh%full_ide
@@ -394,9 +401,8 @@ contains
       count = [mesh%half_nlon,mesh%full_nlat,mesh%half_nlev]
 
       if (nonhydrostatic) then
-        call fiona_input('i0', 'z', dstate%gz_lev(is:ie,js:je,ks:ke), start=start, count=count)
-        dstate%gz_lev = dstate%gz_lev * g
-        call fill_halo(block%halo, dstate%gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+        call fiona_input('i0', 'z', gz_lev(is:ie,js:je,ks:ke), start=start, count=count); gz_lev = gz_lev * g
+        call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
       end if
       end associate
     end do

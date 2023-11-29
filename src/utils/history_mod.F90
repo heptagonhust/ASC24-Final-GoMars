@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module history_mod
 
   use mpi
@@ -12,7 +21,6 @@ module history_mod
   use process_mod, only: proc
   use allocator_mod
   use block_mod
-  use diag_state_mod
   use tracer_mod
   use operators_mod, only: calc_div
 
@@ -217,8 +225,6 @@ contains
     ! call fiona_add_var('h0', 'te_ie'  , long_name='total internal energy'       , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'te_pe'  , long_name='total potential energy'      , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'zs'     , long_name='surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
-    call fiona_add_var('h0', 'dzsdlon', long_name='zonal zs gradient'           , units=''      , dim_names=['lon', 'lat'])
-    call fiona_add_var('h0', 'dzsdlat', long_name='meridional zs gradient'      , units=''      , dim_names=['lon', 'lat'])
     call fiona_add_var('h0', 'phs'    , long_name='surface hydrostatic pressure', units='Pa'    , dim_names=cell_dims_2d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'u'      , long_name='u wind component'            , units='m s-1' , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'v'      , long_name='v wind component'            , units='m s-1' , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
@@ -231,7 +237,7 @@ contains
     if (use_div_damp .and. div_damp_order == 4) then
       call fiona_add_var('h0', 'div2' , long_name='Laplacian of divergence', units='s-1 m-2', dim_names=cell_dims_3d)
     end if
-    ! call fiona_add_var('h0', 'landmask', long_name='land mask'                  , units=''      , dim_names=['lon', 'lat'])
+    call fiona_add_var('h0', 'landmask', long_name='land mask'                  , units=''      , dim_names=['lon', 'lat'])
 
     if (vert_coord_scheme == 'smooth') then
       call fiona_add_var('h0', 'ref_ps', long_name='reference surface pressure', units='Pa', dim_names=['lon', 'lat'], dtype=output_h0_dtype)
@@ -254,30 +260,6 @@ contains
     if (idx_ni > 0) then
       call fiona_add_var('h0', 'ni', long_name='Cloud ice number concentration', units='m-3', dim_names=cell_dims_3d, dtype=output_h0_dtype)
     end if
-
-    select case (diag_state(1)%level_type)
-    case (height_levels)
-      do k = 1, size(diag_state(1)%levels)
-        call fiona_add_var('h0', 'u' // to_str(int(diag_state(1)%levels(k))) // 'm', &
-          long_name='zonal wind speed on ' // to_str(int(diag_state(1)%levels(k))) // 'm', &
-          units='m s-1', dim_names=cell_dims_2d)
-        call fiona_add_var('h0', 'v' // to_str(int(diag_state(1)%levels(k))) // 'm', &
-          long_name='meridional wind speed on ' // to_str(int(diag_state(1)%levels(k))) // 'm', &
-          units='m s-1', dim_names=cell_dims_2d)
-      end do
-    case (pressure_levels)
-      do k = 1, size(diag_state(1)%levels)
-        call fiona_add_var('h0', 'u' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
-          long_name='zonal wind speed on ' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
-          units='m s-1', dim_names=cell_dims_2d)
-        call fiona_add_var('h0', 'v' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
-          long_name='meridional wind speed on ' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
-          units='m s-1', dim_names=cell_dims_2d)
-        call fiona_add_var('h0', 't' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
-          long_name='temperature on ' // to_str(int(diag_state(1)%levels(k))/100) // 'hPa', &
-          units='K', dim_names=cell_dims_2d)
-      end do
-    end select
 
     do k = 1, blocks(1)%accum_list%size
       select type (accum => blocks(1)%accum_list%value_at(k))
@@ -310,8 +292,6 @@ contains
     call fiona_add_var('h0', 'te'     , long_name='total energy'                , units='m4 s-4', dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'tpe'    , long_name='total potential enstrophy'   , units='m2 s-5', dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'zs'     , long_name='surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype='r8')
-    call fiona_add_var('h0', 'dzsdlon', long_name='zonal zs gradient'           , units=''      , dim_names=['lon', 'lat'])
-    call fiona_add_var('h0', 'dzsdlat', long_name='meridional zs gradient'      , units=''      , dim_names=['lon', 'lat'])
     call fiona_add_var('h0', 'phs'    , long_name='surface hydrostatic pressure', units='Pa'    , dim_names=cell_dims_2d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'u'      , long_name='u wind component'            , units='m s-1' , dim_names=cell_dims_3d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'v'      , long_name='v wind component'            , units='m s-1' , dim_names=cell_dims_3d, dtype=output_h0_dtype)
@@ -529,93 +509,69 @@ contains
     call fiona_output('h0', 'ilev', global_mesh%half_lev(1:global_mesh%half_nlev))
 
     do iblk = 1, size(blocks)
-      associate (mesh        => blocks(iblk)%mesh         , &
-                 dstate      => blocks(iblk)%dstate(itime), &
-                 static      => blocks(iblk)%static       , &
-                 adv_batches => blocks(iblk)%adv_batches  , &
-                 aux         => blocks(iblk)%aux          , &
-                 pstate      => blocks(iblk)%pstate       , &
-                 accum_list  => blocks(iblk)%accum_list   )
+      associate (mesh        => blocks(iblk)%mesh             , &
+                 gzs         => blocks(iblk)%static%gzs       , &
+                 landmask    => blocks(iblk)%static%landmask  , &
+                 tm          => blocks(iblk)%dstate(itime)%tm , &
+                 te          => blocks(iblk)%dstate(itime)%te , &
+                 u           => blocks(iblk)%dstate(itime)%u  , &
+                 v           => blocks(iblk)%dstate(itime)%v  , &
+                 gz          => blocks(iblk)%dstate(itime)%gz , &
+                 phs         => blocks(iblk)%dstate(itime)%phs, &
+                 ph          => blocks(iblk)%dstate(itime)%ph , &
+                 pt          => blocks(iblk)%dstate(itime)%pt , &
+                 t           => blocks(iblk)%dstate(itime)%t  , &
+                 div         => blocks(iblk)%aux%div          , &
+                 div2        => blocks(iblk)%aux%div2         , &
+                 vor         => blocks(iblk)%aux%vor          , &
+                 q           => tracers(iblk)%q               , &
+                 qm          => tracers(iblk)%qm              , &
+                 precl       => blocks(iblk)%pstate%precl     , &
+                 accum_list  => blocks(iblk)%accum_list       )
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-      if (vert_coord_scheme == 'smooth') then
-        call fiona_output('h0', 'ref_ps', static%ref_ps(is:ie,js:je), start=start, count=count)
-        call fiona_output('h0', 'ref_ps_smth', static%ref_ps_smth(is:ie,js:je), start=start, count=count)
-        call fiona_output('h0', 'ref_ps_perb', static%ref_ps_perb(is:ie,js:je), start=start, count=count)
-      end if
-      call fiona_output('h0', 'zs'      , static%gzs    (is:ie,js:je) / g       , start=start, count=count)
-      call fiona_output('h0', 'dzsdlon' , static%dzsdlon(is:ie,js:je)           , start=start, count=count)
-      call fiona_output('h0', 'dzsdlat' , static%dzsdlat(is:ie,js:je)           , start=start, count=count)
-      ! call fiona_output('h0', 'landmask', static%landmask(is:ie,js:je)          , start=start, count=count)
-      call fiona_output('h0', 'u'       , dstate%u      (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call fiona_output('h0', 'v'       , dstate%v      (is:ie,js:je,ks:ke)     , start=start, count=count)
-      dstate%gz = dstate%gz / g
-      call fiona_output('h0', 'z'       , dstate%gz     (is:ie,js:je,ks:ke)     , start=start, count=count)
-      dstate%gz = dstate%gz * g
-      call fiona_output('h0', 'phs'     , dstate%phs    (is:ie,js:je)           , start=start, count=count)
-      call fiona_output('h0', 'ph'      , dstate%ph     (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call fiona_output('h0', 'pt'      , dstate%pt     (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call fiona_output('h0', 't'       , dstate%t      (is:ie,js:je,ks:ke)     , start=start, count=count)
-      call fiona_output('h0', 'div'     , aux%div       (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'zs'      , gzs     (is:ie,js:je) / g  , start=start, count=count)
+      call fiona_output('h0', 'landmask', landmask(is:ie,js:je)      , start=start, count=count)
+      call fiona_output('h0', 'u'       , u       (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h0', 'v'       , v       (is:ie,js:je,ks:ke), start=start, count=count)
+      gz = gz / g
+      call fiona_output('h0', 'z'       , gz      (is:ie,js:je,ks:ke), start=start, count=count)
+      gz = gz * g
+      call fiona_output('h0', 'phs'     , phs     (is:ie,js:je)      , start=start, count=count)
+      call fiona_output('h0', 'ph'      , ph      (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h0', 'pt'      , pt      (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h0', 't'       , t       (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h0', 'div'     , div     (is:ie,js:je,ks:ke), start=start, count=count)
       if (use_div_damp .and. div_damp_order == 4) then
-        call fiona_output('h0', 'div2'  , aux%div2      (is:ie,js:je,ks:ke)     , start=start, count=count)
+        call fiona_output('h0', 'div2'  , div2   (is:ie,js:je,ks:ke) , start=start, count=count)
       end if
       if (idx_qv > 0) then
-        call tracer_get_array(iblk, idx_qv, q, __FILE__, __LINE__)
-        call fiona_output('h0', 'qv', q(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'qv'    , q(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
       end if
       if (idx_qc > 0) then
-        call tracer_get_array(iblk, idx_qc, q, __FILE__, __LINE__)
-        call fiona_output('h0', 'qc', q(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'qc'    , q(is:ie,js:je,ks:ke,idx_qc), start=start, count=count)
       end if
       if (idx_nc > 0) then
-        call tracer_get_array(iblk, idx_nc, q, __FILE__, __LINE__)
-        call fiona_output('h0', 'nc', q(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'nc'    , q(is:ie,js:je,ks:ke,idx_nc), start=start, count=count)
       end if
       if (idx_qi > 0) then
-        call tracer_get_array(iblk, idx_qi, q, __FILE__, __LINE__)
-        call fiona_output('h0', 'qi', q(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'qi'    , q(is:ie,js:je,ks:ke,idx_qi), start=start, count=count)
       end if
       if (idx_ni > 0) then
-        call tracer_get_array(iblk, idx_ni, q, __FILE__, __LINE__)
-        call fiona_output('h0', 'ni', q(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'ni'    , q(is:ie,js:je,ks:ke,idx_ni), start=start, count=count)
       end if
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%half_jds; je = mesh%half_jde
       ks = mesh%full_kds; ke = mesh%full_kde
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%half_nlat,mesh%full_nlev]
-      call fiona_output('h0', 'vor'     , aux%vor       (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'vor'     , vor(is:ie,js:je,ks:ke)    , start=start, count=count)
 
-      ! call fiona_output('h0', 'tm'   , dstate%tm)
-      ! call fiona_output('h0', 'te'   , dstate%te)
-
-      is = mesh%full_ids; ie = mesh%full_ide
-      js = mesh%full_jds; je = mesh%full_jde
-      ks = mesh%full_kds; ke = mesh%full_kde
-      start = [is,js,ks]
-      count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-      select case (diag_state(1)%level_type)
-      case (height_levels)
-        do k = 1, size(diag_state(iblk)%levels)
-          call fiona_output('h0', 'u' // to_str(int(diag_state(iblk)%levels(k))) // 'm', &
-            diag_state(iblk)%u(is:ie,js:je,k), start=start, count=count)
-          call fiona_output('h0', 'v' // to_str(int(diag_state(iblk)%levels(k))) // 'm', &
-            diag_state(iblk)%v(is:ie,js:je,k), start=start, count=count)
-        end do
-      case (pressure_levels)
-        do k = 1, size(diag_state(iblk)%levels)
-          call fiona_output('h0', 'u' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
-            diag_state(iblk)%u(is:ie,js:je,k), start=start, count=count)
-          call fiona_output('h0', 'v' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
-            diag_state(iblk)%v(is:ie,js:je,k), start=start, count=count)
-          call fiona_output('h0', 't' // to_str(int(diag_state(iblk)%levels(k))/100) // 'hPa', &
-            diag_state(iblk)%t(is:ie,js:je,k), start=start, count=count)
-        end do
-      end select
+      call fiona_output('h0', 'tm'   , tm)
+      call fiona_output('h0', 'te'   , te)
 
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
@@ -636,7 +592,7 @@ contains
         ks = mesh%full_kds; ke = mesh%full_kde
         start = [is,js,ks]
         count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-        call fiona_output('h0', 'precl', reshape(pstate%precl, count(1:2)), start=start(1:2), count=count(1:2))
+        call fiona_output('h0', 'precl', reshape(precl, count(1:2)), start=start(1:2), count=count(1:2))
       end if
       end associate
     end do
@@ -668,8 +624,6 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
       call fiona_output('h0', 'zs'      , static%gzs    (is:ie,js:je) / g       , start=start, count=count)
-      call fiona_output('h0', 'dzsdlon' , static%dzsdlon(is:ie,js:je)           , start=start, count=count)
-      call fiona_output('h0', 'dzsdlat' , static%dzsdlat(is:ie,js:je)           , start=start, count=count)
       call fiona_output('h0', 'u'       , dstate%u      (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'v'       , dstate%v      (is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'z'       , dstate%gz     (is:ie,js:je,ks:ke) / g , start=start, count=count)

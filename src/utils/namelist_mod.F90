@@ -137,21 +137,21 @@ module namelist_mod
   real(r8)        :: max_cfl              = 0.5
   real(r8)        :: filter_coef_a        = 1.5
   real(r8)        :: filter_coef_b        = 0.2
-  real(r8)        :: filter_coef_c        = 0.1
+  real(r8)        :: filter_coef_c        = 0.2
   real(r8)        :: filter_min_width     = 0.0
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.
   real(r8)        :: topo_max_slope       = 0.12_r8
-  integer         :: topo_smooth_cycles   = 1
+  integer         :: topo_smooth_cycles   = 3
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 1
   real(r8)        :: div_damp_pole        = 100
-  real(r8)        :: div_damp_pole_x      = 0
-  real(r8)        :: div_damp_pole_y      = 0
+  real(r8)        :: div_damp_pole_x      = 10
+  real(r8)        :: div_damp_pole_y      = 10
   real(r8)        :: div_damp_lat0        = 70
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
@@ -162,17 +162,14 @@ module namelist_mod
   real(r8)        :: vor_damp_top         = 1
   integer         :: vor_damp_k0          = 6
   real(r8)        :: vor_damp_pole        = 100
-  real(r8)        :: vor_damp_pole_x      = 0
-  real(r8)        :: vor_damp_pole_y      = 0
-  real(r8)        :: vor_damp_lat0        = 70
+  real(r8)        :: vor_damp_pole_x      = 200
+  real(r8)        :: vor_damp_pole_y      = 200
+  real(r8)        :: vor_damp_lat0        = 60
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
   integer         :: smag_damp_cycles     = 1
   real(r8)        :: smag_damp_coef       = 0.015
-  logical         :: use_pole_damp        = .false.
-  real(r8)        :: pole_damp_lat0       = 80
-  real(r8)        :: pole_damp_coef       = 0.2_r8
 
   ! Input settings
   integer         :: input_ngroup         = 0
@@ -312,9 +309,6 @@ module namelist_mod
     use_smag_damp             , &
     smag_damp_cycles          , &
     smag_damp_coef            , &
-    use_pole_damp             , &
-    pole_damp_lat0            , &
-    pole_damp_coef            , &
     input_ngroup              , &
     output_h0                 , &
     output_h0_dtype           , &
@@ -475,11 +469,6 @@ contains
     if (use_smag_damp) then
       write(*, *) 'smag_damp_cycles    = ', to_str(smag_damp_cycles)
       write(*, *) 'smag_damp_coef      = ', smag_damp_coef
-    end if
-      write(*, *) 'use_pole_damp       = ', to_str(use_pole_damp)
-    if (use_pole_damp) then
-      write(*, *) 'pole_damp_lat0      = ', to_str(pole_damp_lat0, 2)
-      write(*, *) 'pole_damp_coef      = ', pole_damp_coef
     end if
       write(*, *) '========================================================='
 

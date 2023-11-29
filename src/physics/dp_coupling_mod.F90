@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module dp_coupling_mod
 
   use const_mod
@@ -26,7 +35,6 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    real(r8), pointer :: q(:,:,:,:), qm(:,:,:)
     real(r8) tmp
     integer i, j, k, icol
 
@@ -38,8 +46,6 @@ contains
       call cam_physics_d2p(block, itime)
 #endif
     case default
-      call tracer_get_array(block%id, q)
-      call tracer_get_array_qm(block%id, qm)
       associate (mesh   => block%mesh                , &
                  pstate => block%pstate              , & ! out
                  u      => block%dstate(itime)%u     , & ! in
@@ -47,6 +53,8 @@ contains
                  pt     => block%dstate(itime)%pt    , & ! in (modified potential temperature)
                  t      => block%dstate(itime)%t     , & ! in
                  tv     => block%dstate(itime)%tv    , & ! in (virtual temperature)
+                 q      => tracers(block%id)%q       , & ! in (tracer dry mixing ratio)
+                 qm     => tracers(block%id)%qm      , & ! in (total moist dry mixing ratio)
                  ph     => block%dstate(itime)%ph    , & ! in (hydrostatic full pressure)
                  ph_lev => block%dstate(itime)%ph_lev, & ! in
                  phs    => block%dstate(itime)%phs   , & ! in (surface hydrostatic pressure)
@@ -133,7 +141,6 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    real(r8), pointer :: q(:,:,:)
     integer i, j, k, icol, m
 
     select case (physics_suite)
@@ -143,10 +150,11 @@ contains
 #endif
     case default
       associate (mesh  => block%mesh             , &
+                 ptend => block%ptend            , & ! in
                  dmg   => block%dstate(itime)%dmg, & ! in
                  ph    => block%dstate(itime)%ph , & ! in
                  t     => block%dstate(itime)%t  , & ! in
-                 ptend => block%ptend            , & ! in
+                 q     => tracers(block%id)%q    , & ! in (tracer dry mixing ratio)
                  dudt  => block%aux%dudt_phys    , & ! out
                  dvdt  => block%aux%dvdt_phys    , & ! out
                  dptdt => block%aux%dptdt_phys   , & ! out
@@ -165,21 +173,19 @@ contains
       end if
       do m = 1, ntracers
         if (ptend%updated_q(m)) then
-          call tracer_get_array(block%id, m, q, __FILE__, __LINE__)
           do k = mesh%full_kds, mesh%full_kde
             icol = 0
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
                 icol = icol + 1
                 ! Convert to dry mixing ratio tendency.
-                dqdt(i,j,k,m) = ptend%dqdt(icol,k,m) / (1 - q(i,j,k))**2
+                dqdt(i,j,k,m) = ptend%dqdt(icol,k,m) / (1 - q(i,j,k,m))**2
               end do
             end do
           end do
         end if
       end do
       if (ptend%updated_t) then
-        call tracer_get_array(block%id, idx_qv, q, __FILE__, __LINE__)
         do k = mesh%full_kds, mesh%full_kde
           icol = 0
           do j = mesh%full_jds, mesh%full_jde
@@ -187,7 +193,7 @@ contains
               icol = icol + 1
               ! Convert to modified potential temperature tendency and multiply dmg.
               dptdt(i,j,k) = dmg(i,j,k) * (p0 / ph(i,j,k))**rd_o_cpd * ( &
-                (1 + rv_o_rd * q(i,j,k)) * ptend%dtdt(icol,k) + &
+                (1 + rv_o_rd * q(i,j,k,idx_qv)) * ptend%dtdt(icol,k) + &
                 rv_o_rd * t(i,j,k) * dqdt(i,j,k,idx_qv))
             end do
           end do

@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module dynamics_types_mod
 
   use const_mod
@@ -16,8 +25,7 @@ module dynamics_types_mod
   public aux_array_type
 
   ! NOTE:
-  !   Variables with '_lon', '_lat' and '_lev' are on the half grids on the corresponding direction,
-  !   and '_p' indicates that the variable is perturbed.
+  !   Variables with '_lon', '_lat' and '_lev' are on the half grids on the corresponding direction.
   type dstate_type
     type(latlon_mesh_type), pointer :: mesh => null()
     ! For nesting
@@ -123,8 +131,8 @@ module dynamics_types_mod
     ! Topography
     real(r8), allocatable, dimension(:,:) :: gzs
     real(r8), allocatable, dimension(:,:) :: zs_std
-    real(r8), allocatable, dimension(:,:) :: dzsdlon
-    real(r8), allocatable, dimension(:,:) :: dzsdlat
+    real(r8), allocatable, dimension(:,:) :: dzsdx
+    real(r8), allocatable, dimension(:,:) :: dzsdy
     ! Reference surface pressure
     real(r8), allocatable, dimension(:,:) :: ref_ps
     real(r8), allocatable, dimension(:,:) :: ref_ps_smth
@@ -689,8 +697,8 @@ contains
 
     call allocate_array(mesh, this%landmask   , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%zs_std     , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dzsdlon    , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dzsdlat    , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%dzsdx      , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dzsdy      , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%ref_ps     , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%ref_ps_smth, full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%ref_ps_perb, full_lon=.true., full_lat=.true.)
@@ -768,8 +776,8 @@ contains
     if (allocated(this%landmask        )) deallocate(this%landmask        )
     if (allocated(this%gzs             )) deallocate(this%gzs             )
     if (allocated(this%zs_std          )) deallocate(this%zs_std          )
-    if (allocated(this%dzsdlon         )) deallocate(this%dzsdlon         )
-    if (allocated(this%dzsdlat         )) deallocate(this%dzsdlat         )
+    if (allocated(this%dzsdx           )) deallocate(this%dzsdx           )
+    if (allocated(this%dzsdy           )) deallocate(this%dzsdy           )
     if (allocated(this%ref_ps          )) deallocate(this%ref_ps          )
     if (allocated(this%ref_ps_smth     )) deallocate(this%ref_ps_smth     )
     if (allocated(this%ref_ps_perb     )) deallocate(this%ref_ps_perb     )

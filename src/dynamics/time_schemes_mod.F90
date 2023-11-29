@@ -249,10 +249,8 @@ contains
           end do
         end do
       end do
-      ! ------------------------------------------------------------------------
       call fill_halo(block%halo, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block%halo, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-      ! ------------------------------------------------------------------------
     end if
     end associate
 

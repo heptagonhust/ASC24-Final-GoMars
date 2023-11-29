@@ -7,7 +7,6 @@ module dcmip31_test_mod
   use block_mod
   use formula_mod
   use operators_mod
-  use diag_state_mod
 
   implicit none
 

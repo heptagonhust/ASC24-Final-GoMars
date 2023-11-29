@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 program gmcore_adv_driver
 
   use mpi
@@ -109,13 +118,15 @@ contains
     real(r8) qm
 
     do iblk = 1, size(blocks)
-      associate (mesh => blocks(iblk)%mesh, dstate => blocks(iblk)%dstate(itime))
+      associate (mesh => blocks(iblk)%mesh             , &
+                 dmg  => blocks(iblk)%dstate(itime)%dmg, &
+                 q    => tracers(iblk)%q               )
       do l = 1, ntracers
         qm = 0
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              qm = qm + dstate%dmg(i,j,k) * tracers(iblk)%q(i,j,k,l) * mesh%area_cell(j)
+              qm = qm + dmg(i,j,k) * q(i,j,k,l) * mesh%area_cell(j)
             end do
           end do
         end do

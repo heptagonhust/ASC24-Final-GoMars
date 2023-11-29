@@ -7,13 +7,11 @@ module mountain_wave_test_mod
   use block_mod
   use formula_mod
   use operators_mod
-  use diag_state_mod
 
   implicit none
 
   private
 
-  public mountain_wave_test_set_diag
   public mountain_wave_test_set_ic
 
   real(r8), parameter :: T0   = 288.d0      ! K
@@ -27,18 +25,6 @@ module mountain_wave_test_mod
   real(r8), parameter :: N    = 0.0182      ! s-1
 
 contains
-
-  subroutine mountain_wave_test_set_diag(blocks)
-
-    type(block_type), intent(in) :: blocks(:)
-
-    integer iblk
-
-    do iblk = 1, size(blocks)
-      call diag_state(iblk)%init_pressure_levels(blocks(iblk), [700.0e2_r8], instance)
-    end do
-
-  end subroutine mountain_wave_test_set_diag
 
   subroutine mountain_wave_test_set_ic(block)
 

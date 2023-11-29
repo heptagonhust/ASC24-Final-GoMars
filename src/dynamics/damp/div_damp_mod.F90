@@ -116,7 +116,7 @@ contains
       end do
       call fill_halo(block%filter_halo, du, full_lon=.false., full_lat=.true., full_lev=.true., &
                      south_halo=.false., north_halo=.false.)
-      call filter_on_lon_edge(block%big_filter, du)
+      call filter_on_lon_edge(block%small_filter, du)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
