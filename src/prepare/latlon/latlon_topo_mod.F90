@@ -95,7 +95,7 @@ contains
                lnd  => block%static%landmask, &
                gzs  => block%static%gzs     , &
                std  => block%static%zs_std)
-    lnd = 0; gzs = 0; std = 0
+    lnd%d = 0; gzs%d = 0; std%d = 0
     do j = mesh%full_jds, mesh%full_jde
       lat1 = mesh%half_lat_deg(j-1); lat1 = merge(lat1, -90.0_r8, lat1 /= inf)
       lat2 = mesh%half_lat_deg(j  ); lat2 = merge(lat2,  90.0_r8, lat2 /= inf)
@@ -103,26 +103,26 @@ contains
       do i = mesh%full_ids, mesh%full_ide
         lon1 = mesh%half_lon_deg(i-1)
         lon2 = mesh%half_lon_deg(i  )
-        call fill_grid(lon1, lon2, lat1, lat2, gzs(i,j), std(i,j), lnd(i,j), n(i))
+        call fill_grid(lon1, lon2, lat1, lat2, gzs%d(i,j), std%d(i,j), lnd%d(i,j), n(i))
         if (.not. mesh%is_pole(j)) then
-          gzs(i,j) = gzs(i,j) / n(i)
-          std(i,j) = (std(i,j) - 2 * gzs(i,j)**2 * n(i) + gzs(i,j)**2) / n(i) / g
-          lnd(i,j) = lnd(i,j) / n(i)
+          gzs%d(i,j) = gzs%d(i,j) / n(i)
+          std%d(i,j) = (std%d(i,j) - 2 * gzs%d(i,j)**2 * n(i) + gzs%d(i,j)**2) / n(i) / g
+          lnd%d(i,j) = lnd%d(i,j) / n(i)
         end if
       end do
       if (mesh%is_pole(j)) then
-        call zonal_sum(proc%zonal_circle, gzs(mesh%full_ids:mesh%full_ide,j), pole_gzs)
-        call zonal_sum(proc%zonal_circle, std(mesh%full_ids:mesh%full_ide,j), pole_std)
-        call zonal_sum(proc%zonal_circle, lnd(mesh%full_ids:mesh%full_ide,j), pole_lnd)
+        call zonal_sum(proc%zonal_circle, gzs%d(mesh%full_ids:mesh%full_ide,j), pole_gzs)
+        call zonal_sum(proc%zonal_circle, std%d(mesh%full_ids:mesh%full_ide,j), pole_std)
+        call zonal_sum(proc%zonal_circle, lnd%d(mesh%full_ids:mesh%full_ide,j), pole_lnd)
         call zonal_sum(proc%zonal_circle, n, pole_n)
-        gzs(mesh%full_ids:mesh%full_ide,j) = pole_gzs / pole_n
-        std(mesh%full_ids:mesh%full_ide,j) = (pole_std - 2 * pole_gzs**2 * pole_n + pole_gzs**2) / pole_n / g
-        lnd(mesh%full_ids:mesh%full_ide,j) = pole_lnd / pole_n
+        gzs%d(mesh%full_ids:mesh%full_ide,j) = pole_gzs / pole_n
+        std%d(mesh%full_ids:mesh%full_ide,j) = (pole_std - 2 * pole_gzs**2 * pole_n + pole_gzs**2) / pole_n / g
+        lnd%d(mesh%full_ids:mesh%full_ide,j) = pole_lnd / pole_n
       end if
     end do
-    call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
-    call fill_halo(block%halo, std, full_lon=.true., full_lat=.true.)
-    call fill_halo(block%halo, lnd, full_lon=.true., full_lat=.true.)
+    call fill_halo(gzs)
+    call fill_halo(std)
+    call fill_halo(lnd)
     end associate
 
   end subroutine latlon_topo_regrid
@@ -140,16 +140,16 @@ contains
                gzs   => block%static%gzs   , &
                gzs_f => block%dtend(1)%dmgs)   ! Borrow the array.
     do cyc = 1, topo_smooth_cycles
-      call filter_on_cell(block%big_filter, gzs, gzs_f)
+      call filter_on_cell(block%big_filter, gzs%d, gzs_f%d)
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (abs(mesh%full_lat_deg(j)) > 60) then
           wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (30 * rad)))
-          gzs(:,j) = wgt * gzs_f(:,j) + (1 - wgt) * gzs(:,j)
+          gzs%d(:,j) = wgt * gzs_f%d(:,j) + (1 - wgt) * gzs%d(:,j)
         end if
       end do
-      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(gzs)
     end do
-    wgt = maxval(gzs / g)
+    wgt = maxval(gzs%d / g)
     call global_max(proc%comm, wgt)
     if (proc%is_root()) call log_notice('Maximum zs is ' // to_str(wgt, 10) // '.')
     end associate

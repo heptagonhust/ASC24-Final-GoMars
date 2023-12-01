@@ -33,35 +33,35 @@ contains
                v      => block%dstate(1)%v_lat, &
                gz     => block%dstate(1)%gz   , &
                gzs    => block%static%gzs)
-    gzs(:,:) = 0.0
+    gzs%d = 0
 
     do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
       do i = mesh%half_ids, mesh%half_ide
         cos_lon = mesh%half_cos_lon(i)
-        u(i,j,1) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
+        u%d(i,j,1) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
       end do
     end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(u)
 
     do j = mesh%half_jds, mesh%half_jde
       do i = mesh%full_ids, mesh%full_ide
         sin_lon = mesh%full_cos_lon(i)
-        v(i,j,1) = - u0 * sin_lon * sin_alpha
+        v%d(i,j,1) = - u0 * sin_lon * sin_alpha
       end do
     end do
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
+    call fill_halo(v)
 
     do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
       do i = mesh%full_ids, mesh%full_ide
         cos_lon = mesh%full_cos_lon(i)
-        gz(i,j,1) = gz0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2
+        gz%d(i,j,1) = gz0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2
       end do
     end do
-    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(gz)
     end associate
 
   end subroutine steady_geostrophic_flow_test_set_ic

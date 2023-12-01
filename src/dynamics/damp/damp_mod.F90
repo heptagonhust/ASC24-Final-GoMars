@@ -57,9 +57,9 @@ contains
     ! NOTE: DO NOT REMOVE IT!
     do j = block%mesh%half_jms, block%mesh%half_jme
       if (block%mesh%is_south_pole(j)) then
-        dstate%v_lat(:,j,:) = 0.8_r8 * dstate%v_lat(:,j,:) + 0.2_r8 * dstate%v_lat(:,j+1,:)
+        dstate%v_lat%d(:,j,:) = 0.8_r8 * dstate%v_lat%d(:,j,:) + 0.2_r8 * dstate%v_lat%d(:,j+1,:)
       else if (block%mesh%is_north_pole(j+1)) then
-        dstate%v_lat(:,j,:) = 0.8_r8 * dstate%v_lat(:,j,:) + 0.2_r8 * dstate%v_lat(:,j-1,:)
+        dstate%v_lat%d(:,j,:) = 0.8_r8 * dstate%v_lat%d(:,j,:) + 0.2_r8 * dstate%v_lat%d(:,j-1,:)
       end if
     end do
 

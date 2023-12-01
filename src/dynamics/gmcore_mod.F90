@@ -138,7 +138,7 @@ contains
     time_units = split_string(print_interval, ' ', 2)
     read(time_value, *) seconds
     select case (time_units)
-    case ('days')
+    case ('days', 'sol')
       seconds = seconds * 86400
     case ('hours')
       seconds = seconds * 3600
@@ -159,7 +159,7 @@ contains
       blocks(iblk)%mesh%half_lev  = global_mesh%half_lev
       blocks(iblk)%mesh%full_dlev = global_mesh%full_dlev
       blocks(iblk)%mesh%half_dlev = global_mesh%half_dlev
-      call blocks(iblk)%static%init_stage2()
+      call blocks(iblk)%static%init_stage2(blocks(iblk)%mesh)
     end do
 
   end subroutine gmcore_init_stage2
@@ -183,7 +183,7 @@ contains
         do itime = lbound(block%dstate, 1), ubound(block%dstate, 1)
           do j = mesh%full_jms, mesh%full_jme
             do i = mesh%full_ims, mesh%full_ime
-              block%dstate(itime)%gz_lev(i,j,global_mesh%half_kde) = block%static%gzs(i,j)
+              block%dstate(itime)%gz_lev%d(i,j,global_mesh%half_kde) = block%static%gzs%d(i,j)
             end do
           end do
         end do
@@ -263,7 +263,6 @@ contains
 
     logical, save :: first_call = .true.
     real(8), save :: time1, time2
-    integer i, j, k, iblk
 
     if (first_call .or. time_is_alerted('history_write')) then
       if (first_call) time1 = MPI_WTIME()
@@ -300,15 +299,23 @@ contains
     te_ie = 0
     te_pe = 0
     do iblk = 1, size(blocks)
-      associate (block  => blocks(iblk)              , &
-                 mesh   => blocks(iblk)%mesh         , &
-                 aux    => blocks(iblk)%aux          , &
-                 dstate => blocks(iblk)%dstate(itime), &
-                 static => blocks(iblk)%static)
+      associate (block   => blocks(iblk)                    , &
+                 mesh    => blocks(iblk)%mesh               , &
+                 gzs     => blocks(iblk)%static%gzs         , &
+                 mgs     => blocks(iblk)%dstate(itime)%mgs  , &
+                 dmg     => blocks(iblk)%dstate(itime)%dmg  , &
+                 dmg_lon => blocks(iblk)%aux%dmg_lon        , &
+                 dmg_lat => blocks(iblk)%aux%dmg_lat        , &
+                 u_lon  => blocks(iblk)%dstate(itime)%u_lon , &
+                 v_lat  => blocks(iblk)%dstate(itime)%v_lat , &
+                 tv     => blocks(iblk)%dstate(itime)%tv    , &
+                 pt     => blocks(iblk)%dstate(itime)%pt    , &
+                 pv_lon => blocks(iblk)%aux%pv_lon          , &
+                 pv_lat => blocks(iblk)%aux%pv_lat          )
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            tm = tm + dstate%dmg(i,j,k) * mesh%area_cell(j)
+            tm = tm + dmg%d(i,j,k) * mesh%area_cell(j)
           end do
         end do
       end do
@@ -316,12 +323,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            te_ke = te_ke + aux%dmg_lon(i,j,k) * 0.5_r8 * dstate%u_lon(i,j,k)**2 * mesh%area_lon(j) * 2
+            te_ke = te_ke + dmg_lon%d(i,j,k) * 0.5_r8 * u_lon%d(i,j,k)**2 * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            te_ke = te_ke + aux%dmg_lat(i,j,k) * 0.5_r8 * dstate%v_lat(i,j,k)**2 * mesh%area_lat(j) * 2
+            te_ke = te_ke + dmg_lat%d(i,j,k) * 0.5_r8 * v_lat%d(i,j,k)**2 * mesh%area_lat(j) * 2
           end do
         end do
       end do
@@ -329,19 +336,19 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              te_ie = te_ie + dstate%dmg(i,j,k) * cpd * dstate%tv(i,j,k) * mesh%area_cell(j)
+              te_ie = te_ie + dmg%d(i,j,k) * cpd * tv%d(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            te_pe = te_pe + static%gzs(i,j) * dstate%mgs(i,j) * mesh%area_cell(j)
+            te_pe = te_pe + gzs%d(i,j) * mgs%d(i,j) * mesh%area_cell(j)
           end do
         end do
       else
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            te_pe = te_pe + (dstate%dmg(i,j,1)**2 * g * 0.5_r8 + dstate%dmg(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
+            te_pe = te_pe + (dmg%d(i,j,1)**2 * g * 0.5_r8 + dmg%d(i,j,1) * gzs%d(i,j)) * mesh%area_cell(j)
           end do
         end do
       end if
@@ -349,12 +356,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            tpe = tpe + aux%dmg_lon(i,j,k) * aux%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j) * 2
+            tpe = tpe + dmg_lon%d(i,j,k) * pv_lon%d(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            tpe = tpe + aux%dmg_lat(i,j,k) * aux%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j) * 2
+            tpe = tpe + dmg_lat%d(i,j,k) * pv_lat%d(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j) * 2
           end do
         end do
       end do
@@ -363,7 +370,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tpt = tpt + dstate%dmg(i,j,k) * dstate%pt(i,j,k) * mesh%area_cell(j)
+              tpt = tpt + dmg%d(i,j,k) * pt%d(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
@@ -438,7 +445,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz(i,j,k) = -block%aux%dmf(i,j,k) * g
+              tend1%dgz%d(i,j,k) = -block%aux%dmf%d(i,j,k) * g
             end do
           end do
         end do
@@ -468,7 +475,7 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz(i,j,k) = -block%aux%dmf(i,j,k) * g
+              tend1%dgz%d(i,j,k) = -block%aux%dmf%d(i,j,k) * g
             end do
           end do
         end do
@@ -483,22 +490,22 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
             do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) = tend1%du(i,j,k) + tend2%du(i,j,k)
+              tend1%du%d(i,j,k) = tend1%du%d(i,j,k) + tend2%du%d(i,j,k)
 #ifdef OUTPUT_H1_DTEND
-              tend1%dudt_coriolis(i,j,k) = tend2%dudt_coriolis(i,j,k)
-              tend1%dudt_wedudeta(i,j,k) = tend2%dudt_wedudeta(i,j,k)
-              tend1%dudt_dkedx   (i,j,k) = tend2%dudt_dkedx   (i,j,k)
+              tend1%dudt_coriolis%d(i,j,k) = tend2%dudt_coriolis%d(i,j,k)
+              tend1%dudt_wedudeta%d(i,j,k) = tend2%dudt_wedudeta%d(i,j,k)
+              tend1%dudt_dkedx   %d(i,j,k) = tend2%dudt_dkedx   %d(i,j,k)
 #endif
             end do
           end do
 
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = tend1%dv(i,j,k) + tend2%dv(i,j,k)
+              tend1%dv%d(i,j,k) = tend1%dv%d(i,j,k) + tend2%dv%d(i,j,k)
 #ifdef OUTPUT_H1_DTEND
-              tend1%dvdt_coriolis(i,j,k) = tend2%dvdt_coriolis(i,j,k)
-              tend1%dvdt_wedvdeta(i,j,k) = tend2%dvdt_wedvdeta(i,j,k)
-              tend1%dvdt_dkedy   (i,j,k) = tend2%dvdt_dkedy   (i,j,k)
+              tend1%dvdt_coriolis%d(i,j,k) = tend2%dvdt_coriolis%d(i,j,k)
+              tend1%dvdt_wedvdeta%d(i,j,k) = tend2%dvdt_wedvdeta%d(i,j,k)
+              tend1%dvdt_dkedy   %d(i,j,k) = tend2%dvdt_dkedy   %d(i,j,k)
 #endif
             end do
           end do
@@ -512,13 +519,13 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
             do i = mesh%half_ids, mesh%half_ide
-              tend1%du(i,j,k) = tend1%du(i,j,k) + tend2%du(i,j,k)
+              tend1%du%d(i,j,k) = tend1%du%d(i,j,k) + tend2%du%d(i,j,k)
             end do
           end do
 
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dv(i,j,k) = tend1%dv(i,j,k) + tend2%dv(i,j,k)
+              tend1%dv%d(i,j,k) = tend1%dv%d(i,j,k) + tend2%dv%d(i,j,k)
             end do
           end do
         end do

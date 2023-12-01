@@ -37,17 +37,17 @@ contains
                v      => block%dstate(1)%v_lat, &
                gz     => block%dstate(1)%gz   , &
                gzs    => block%static%gzs)
-    u = 0
-    v = 0
-    gzs = 0
+    u%d = 0
+    v%d = 0
+    gzs%d = 0
 
     do j = mesh%full_jds, mesh%full_jde
       d = radius * (pi05 - mesh%full_lat(j))
       do i = mesh%full_ids, mesh%full_ide
-        gz(i,j,1) = merge(real(gh0 + gh1 * cos(pi05 * d / R), r8), gh0, d < R)
+        gz%d(i,j,1) = merge(real(gh0 + gh1 * cos(pi05 * d / R), r8), gh0, d < R)
       end do
     end do
-    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(gz)
     end associate
 
   end subroutine splash_test_set_ic

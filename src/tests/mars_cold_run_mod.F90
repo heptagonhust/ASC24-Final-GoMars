@@ -48,27 +48,27 @@ contains
       call latlon_topo_smooth(block)
     end if
 
-    u = 0
-    v = 0
-    t = t0
+    u%d = 0
+    v%d = 0
+    t%d = t0
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
-        mgs(i,j) = ps0 * exp(-gzs(i,j) / (Rd * t0)) - ptop
-        phs(i,j) = mgs(i,j)
+        mgs%d(i,j) = ps0 * exp(-gzs%d(i,j) / (Rd * t0)) - ptop
+        phs%d(i,j) = mgs%d(i,j)
       end do
     end do
-    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    call fill_halo(mgs)
 
     call calc_mg(block, block%dstate(1))
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          pt(i,j,k) = modified_potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
+          pt%d(i,j,k) = modified_potential_temperature(t%d(i,j,k), mg%d(i,j,k), 0.0_r8)
         end do
       end do
     end do
-    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(pt, cross_pole=.true.)
     end associate
 
   end subroutine mars_cold_run_set_ic

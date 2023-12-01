@@ -106,10 +106,10 @@ contains
         t0_p = era5_lev(era5_nlev)
         do_hydrostatic_correct = .true.
       case ('cam')
-        call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_ps, mesh, mgs)
+        call latlon_interp_bilinear_cell(cam_lon, cam_lat, cam_ps, mesh, mgs%d)
         do_hydrostatic_correct = .false.
       case ('mpas')
-        call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_ps, mesh, mgs)
+        call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_ps, mesh, mgs%d)
         do_hydrostatic_correct = .false.
       case ('waccm')
         call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_ps, mesh, p0)
@@ -118,7 +118,7 @@ contains
         call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_t(:,:,waccm_nlev), mesh, t0  )
         do_hydrostatic_correct = .true.
       case ('openmars')
-        call latlon_interp_bilinear_cell(openmars_lon, openmars_lat, openmars_ps, mesh, mgs)
+        call latlon_interp_bilinear_cell(openmars_lon, openmars_lat, openmars_ps, mesh, mgs%d)
         do_hydrostatic_correct = .false.
       end select
       ! According to pressure-height formula based on hydrostatic assumption.
@@ -126,11 +126,11 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             t0(i,j) = t0(i,j) * (p0(i,j) / t0_p(i,j))**lapse_kappa
-            mgs(i,j) = p0(i,j) * (1.0_r8 - lapse_rate * (gzs(i,j) / g - z0(i,j)) / t0(i,j))**(1.0_r8 / lapse_kappa)
+            mgs%d(i,j) = p0(i,j) * (1.0_r8 - lapse_rate * (gzs%d(i,j) / g - z0(i,j)) / t0(i,j))**(1.0_r8 / lapse_kappa)
           end do
         end do
       end if
-      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+      call fill_halo(mgs)
       deallocate(p0, t0, z0, t0_p)
       end associate
     end do
@@ -189,9 +189,9 @@ contains
           end do
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              tv(i,j,:) = virtual_temperature(t(i,j,:), q(i,j,:,idx_qv), qm(i,j,:))
-              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,idx_qv))
+              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg%d(i,j,1:mesh%full_nlev), t%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              tv%d(i,j,:) = virtual_temperature(t%d(i,j,:), q%d(i,j,:,idx_qv), qm%d(i,j,:))
+              pt%d(i,j,:) = modified_potential_temperature(t%d(i,j,:), ph%d(i,j,:), q%d(i,j,:,idx_qv))
             end do
           end do
           deallocate(t1, p1)
@@ -204,9 +204,9 @@ contains
           end do
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              tv(i,j,:) = virtual_temperature(t(i,j,:), q(i,j,:,idx_qv), qm(i,j,:))
-              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), q(i,j,:,idx_qv))
+              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg%d(i,j,1:mesh%full_nlev), t%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              tv%d(i,j,:) = virtual_temperature(t%d(i,j,:), q%d(i,j,:,idx_qv), qm%d(i,j,:))
+              pt%d(i,j,:) = modified_potential_temperature(t%d(i,j,:), ph%d(i,j,:), q%d(i,j,:,idx_qv))
             end do
           end do
           deallocate(t1, p1)
@@ -219,7 +219,7 @@ contains
           end do
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              call vert_interp_log_linear(p1(i,j,:), pt1(i,j,:), mg(i,j,1:mesh%full_nlev), pt(i,j,1:mesh%full_nlev), allow_extrap=.false.)
+              call vert_interp_log_linear(p1(i,j,:), pt1(i,j,:), mg%d(i,j,1:mesh%full_nlev), pt%d(i,j,1:mesh%full_nlev), allow_extrap=.false.)
             end do
           end do
           deallocate(pt1, p1)
@@ -232,9 +232,9 @@ contains
           end do
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              tv(i,j,:) = virtual_temperature(t(i,j,:), 0.0_r8, 0.0_r8)
-              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
+              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg%d(i,j,1:mesh%full_nlev), t%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              tv%d(i,j,:) = virtual_temperature(t%d(i,j,:), 0.0_r8, 0.0_r8)
+              pt%d(i,j,:) = modified_potential_temperature(t%d(i,j,:), ph%d(i,j,:), 0.0_r8)
             end do
           end do
           deallocate(t1, p1)
@@ -247,14 +247,14 @@ contains
           end do
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg(i,j,1:mesh%full_nlev), t(i,j,1:mesh%full_nlev), allow_extrap=.true.)
-              tv(i,j,:) = virtual_temperature(t(i,j,:), 0.0_r8, 0.0_r8)
-              pt(i,j,:) = modified_potential_temperature(t(i,j,:), ph(i,j,:), 0.0_r8)
+              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), mg%d(i,j,1:mesh%full_nlev), t%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              tv%d(i,j,:) = virtual_temperature(t%d(i,j,:), 0.0_r8, 0.0_r8)
+              pt%d(i,j,:) = modified_potential_temperature(t%d(i,j,:), ph%d(i,j,:), 0.0_r8)
             end do
           end do
           deallocate(t1, p1)
         end select
-        call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+        call fill_halo(pt, cross_pole=.true.)
       end associate
     end do
 
@@ -282,7 +282,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg%d(i,j,1:mesh%full_nlev), u%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       case ('cam')
@@ -294,7 +294,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg%d(i,j,1:mesh%full_nlev), u%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       case ('mpas')
@@ -306,7 +306,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.false.)
+            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg%d(i,j,1:mesh%full_nlev), u%d(i,j,1:mesh%full_nlev), allow_extrap=.false.)
           end do
         end do
       case ('waccm')
@@ -318,7 +318,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-              call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+              call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg%d(i,j,1:mesh%full_nlev), u%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       case ('openmars')
@@ -330,12 +330,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg(i,j,1:mesh%full_nlev), u(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), u1(i,j,:), mg%d(i,j,1:mesh%full_nlev), u%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       end select
       deallocate(u1, p1)
-      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(u)
       end associate
     end do
 
@@ -363,7 +363,7 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg%d(i,j,1:mesh%full_nlev), v%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       case ('cam')
@@ -375,7 +375,7 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg%d(i,j,1:mesh%full_nlev), v%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       case ('mpas')
@@ -387,7 +387,7 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.false.)
+            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg%d(i,j,1:mesh%full_nlev), v%d(i,j,1:mesh%full_nlev), allow_extrap=.false.)
           end do
         end do
       case ('waccm')
@@ -399,7 +399,7 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg%d(i,j,1:mesh%full_nlev), v%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       case ('openmars')
@@ -411,12 +411,12 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg(i,j,1:mesh%full_nlev), v(i,j,1:mesh%full_nlev), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), v1(i,j,:), mg%d(i,j,1:mesh%full_nlev), v%d(i,j,1:mesh%full_nlev), allow_extrap=.true.)
           end do
         end do
       end select
       deallocate(v1, p1)
-      call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      call fill_halo(v)
       end associate
     end do
 
@@ -446,7 +446,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -459,7 +459,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -472,12 +472,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_qv), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, q(:,:,:,idx_qv), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(q, idx_qv, cross_pole=.true.)
       end associate
     end do
 
@@ -507,7 +507,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qc), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_qc), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -520,12 +520,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qc), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_qc), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, q(:,:,:,idx_qc), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(q, idx_qc, cross_pole=.true.)
       end associate
     end do
 
@@ -555,7 +555,7 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qi), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_qi), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
@@ -568,12 +568,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_qi), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), q1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_qi), allow_extrap=.true.)
           end do
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(block%filter_halo, q(:,:,:,idx_qi), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(q, idx_qi, cross_pole=.true.)
       end associate
     end do
 
@@ -603,12 +603,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_nc), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_nc), allow_extrap=.true.)
           end do
         end do
         deallocate(n1, p1)
       end select
-      call fill_halo(block%filter_halo, q(:,:,:,idx_nc), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(q, idx_nc, cross_pole=.true.)
       end associate
     end do
 
@@ -638,12 +638,12 @@ contains
         end do
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg(i,j,1:mesh%full_nlev), q(i,j,1:mesh%full_nlev,idx_ni), allow_extrap=.true.)
+            call vert_interp_linear(p1(i,j,:), n1(i,j,:), mg%d(i,j,1:mesh%full_nlev), q%d(i,j,1:mesh%full_nlev,idx_ni), allow_extrap=.true.)
           end do
         end do
         deallocate(n1, p1)
       end select
-      call fill_halo(block%filter_halo, q(:,:,:,idx_ni), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(q, idx_ni, cross_pole=.true.)
       end associate
     end do
 

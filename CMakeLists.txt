@@ -249,6 +249,7 @@ set(gmcore_files
   src/meshes/cubed_sphere/cubed_sphere_array_mod.F90
   src/meshes/latlon/latlon_mesh_mod.F90
   src/meshes/latlon/latlon_halo_mod.F90
+  src/meshes/latlon/latlon_field_types_mod.F90
   src/meshes/latlon/latlon_parallel_types_mod.F90
   src/meshes/latlon/latlon_parallel_zonal_mod.F90
   src/meshes/latlon/latlon_parallel_mod.F90

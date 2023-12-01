@@ -106,19 +106,18 @@ contains
     call getFields(real(mesh%full_lat(mesh%full_jms:mesh%full_jme), r8), &
                    real(mesh%full_lon(mesh%full_ims:mesh%full_ime), r8), &
                    real(mesh%half_lat(mesh%half_jms:mesh%half_jme), r8), &
-                   real(mesh%half_lon(mesh%half_ims:mesh%half_ime), r8), [0.0_dp], u, v, gz, 0)
+                   real(mesh%half_lon(mesh%half_ims:mesh%half_ime), r8), [0.0_dp], u%d, v%d, gz%d, 0)
     call getPhaseSpeed(C, 0)
     if (proc%is_root()) call log_notice('Phase speed is ' // trim(to_str(C, 20)))
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
-        gz(i,j,1) = g * gz(i,j,1) + 5.0d4
+        gz%d(i,j,1) = g * gz%d(i,j,1) + 5.0d4
       end do
     end do
-    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
-
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
+    call fill_halo(gz)
+    call fill_halo(u)
+    call fill_halo(v)
     end associate
 
   end subroutine shallow_water_waves_test_set_ic

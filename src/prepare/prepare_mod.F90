@@ -49,16 +49,16 @@ contains
                  dzsdy => blocks(iblk)%static%dzsdy)   ! out
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          dzsdx(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
+          dzsdx%d(i,j) = (gzs%d(i+1,j) - gzs%d(i,j)) / g / mesh%de_lon(j)
         end do
       end do
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          dzsdy(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
+          dzsdy%d(i,j) = (gzs%d(i,j+1) - gzs%d(i,j)) / g / mesh%de_lat(j)
         end do
       end do
-      call fill_halo(blocks(iblk)%halo, dzsdx, full_lon=.false., full_lat=.true.)
-      call fill_halo(blocks(iblk)%halo, dzsdy, full_lon=.true., full_lat=.false.)
+      call fill_halo(dzsdx)
+      call fill_halo(dzsdy)
       end associate
     end do
 

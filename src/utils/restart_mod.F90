@@ -194,14 +194,12 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_output('r0', 'gzs', gzs(is:ie,js:je), start=start, count=count)
+      call fiona_output('r0', 'gzs', gzs%d(is:ie,js:je), start=start, count=count)
       if (baroclinic) then
-        call fiona_output('r0', 'mgs', mgs(is:ie,js:je), start=start, count=count)
-        tmp = pt(is:ie,js:je,ks:ke)
-        call fiona_output('r0', 'pt', tmp, start=start, count=count)
+        call fiona_output('r0', 'mgs', mgs%d(is:ie,js:je), start=start, count=count)
+        call fiona_output('r0', 'pt', pt%d(is:ie,js:je,ks:ke), start=start, count=count)
       else
-        tmp = gz(is:ie,js:je,ks:ke)
-        call fiona_output('r0', 'gz', tmp, start=start, count=count)
+        call fiona_output('r0', 'gz', gz%d(is:ie,js:je,ks:ke), start=start, count=count)
       end if
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
@@ -209,10 +207,10 @@ contains
           tag = adv_batch%name
           do l = 1, blocks(1)%adv_batches(m)%ntracers
             n = blocks(1)%adv_batches(m)%idx(l)
-            tmp = q(is:ie,js:je,ks:ke,n)
+            tmp = q%d(is:ie,js:je,ks:ke,n)
             call fiona_output('r0', tracer_names(n), tmp, start=start, count=count)
           end do
-          tmp = adv_batch%old_m(is:ie,js:je,ks:ke)
+          tmp = adv_batch%old_m%d(is:ie,js:je,ks:ke)
           call fiona_output('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
           end associate
         end do
@@ -226,21 +224,21 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = u_lon  (is:ie,js:je,ks:ke); call fiona_output('r0', 'u'      , tmp, start=start, count=count)
-      tmp = mfx_lon(is:ie,js:je,ks:ke); call fiona_output('r0', 'mfx_lon', tmp, start=start, count=count)
+      tmp = u_lon  %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'u'      , tmp, start=start, count=count)
+      tmp = mfx_lon%d(is:ie,js:je,ks:ke); call fiona_output('r0', 'mfx_lon', tmp, start=start, count=count)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => blocks(iblk)%adv_batches(m))
           tag = adv_batch%name
           if (adv_batch%step == -1) then
-            tmp = adv_batch%mfx0(is:ie,js:je,ks:ke)
+            tmp = adv_batch%mfx0%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
-            tmp = adv_batch%mx0(is:ie,js:je,ks:ke)
+            tmp = adv_batch%mx0%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
           else if (adv_batch%step >= 1) then
-            tmp = adv_batch%mfx(is:ie,js:je,ks:ke)
+            tmp = adv_batch%mfx%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
-            tmp = adv_batch%u(is:ie,js:je,ks:ke)
+            tmp = adv_batch%u%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
           end if
           end associate
@@ -255,21 +253,21 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = v_lat  (is:ie,js:je,ks:ke); call fiona_output('r0', 'v'      , tmp, start=start, count=count)
-      tmp = mfy_lat(is:ie,js:je,ks:ke); call fiona_output('r0', 'mfy_lat', tmp, start=start, count=count)
+      tmp = v_lat  %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'v'      , tmp, start=start, count=count)
+      tmp = mfy_lat%d(is:ie,js:je,ks:ke); call fiona_output('r0', 'mfy_lat', tmp, start=start, count=count)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => blocks(iblk)%adv_batches(m))
           tag = adv_batch%name
           if (adv_batch%step == -1) then
-            tmp = adv_batch%mfy0(is:ie,js:je,ks:ke)
+            tmp = adv_batch%mfy0%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mfy', tmp, start=start, count=count)
-            tmp = adv_batch%my0(is:ie,js:je,ks:ke)
+            tmp = adv_batch%my0%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_my', tmp, start=start, count=count)
           else if (adv_batch%step >= 1) then
-            tmp = adv_batch%mfy(is:ie,js:je,ks:ke)
+            tmp = adv_batch%mfy%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mfy', tmp, start=start, count=count)
-            tmp = adv_batch%v(is:ie,js:je,ks:ke)
+            tmp = adv_batch%v%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_my', tmp, start=start, count=count)
           end if
           end associate
@@ -284,20 +282,20 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = we_lev  (is:ie,js:je,ks:ke); call fiona_output('r0', 'we_lev', tmp, start=start, count=count)
+      tmp = we_lev  %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'we_lev', tmp, start=start, count=count)
       if (nonhydrostatic) then
-        tmp = gz_lev(is:ie,js:je,ks:ke); call fiona_output('r0', 'gz_lev', tmp, start=start, count=count)
-        tmp = w_lev (is:ie,js:je,ks:ke); call fiona_output('r0', 'w_lev' , tmp, start=start, count=count)
+        tmp = gz_lev%d(is:ie,js:je,ks:ke); call fiona_output('r0', 'gz_lev', tmp, start=start, count=count)
+        tmp = w_lev %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'w_lev' , tmp, start=start, count=count)
       end if
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => blocks(iblk)%adv_batches(m))
           tag = adv_batch%name
           if (adv_batch%step == -1) then
-            tmp = adv_batch%mz0(is:ie,js:je,ks:ke)
+            tmp = adv_batch%mz0%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
           else if (adv_batch%step >= 1) then
-            tmp = adv_batch%mz(is:ie,js:je,ks:ke)
+            tmp = adv_batch%mz%d(is:ie,js:je,ks:ke)
             call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
           end if
           end associate
@@ -385,16 +383,16 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'gzs', gzs(is:ie,js:je), start=start, count=count)
-      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
+      call fiona_input('r0', 'gzs', gzs%d(is:ie,js:je), start=start, count=count)
+      call fill_halo(gzs)
       if (baroclinic) then
-        call fiona_input('r0', 'mgs', mgs(is:ie,js:je), start=start, count=count)
-        call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
-        call fiona_input('r0', 'pt', tmp, start=start, count=count); pt(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+        call fiona_input('r0', 'mgs', mgs%d(is:ie,js:je), start=start, count=count)
+        call fill_halo(mgs)
+        call fiona_input('r0', 'pt', tmp, start=start, count=count); pt%d(is:ie,js:je,ks:ke) = tmp
+        call fill_halo(pt, cross_pole=.true.)
       else
-        call fiona_input('r0', 'gz', tmp, start=start, count=count); gz(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call fiona_input('r0', 'gz', tmp, start=start, count=count); gz%d(is:ie,js:je,ks:ke) = tmp
+        call fill_halo(gz)
       end if
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
@@ -402,11 +400,11 @@ contains
           do l = 1, blocks(1)%adv_batches(m)%ntracers
             n = adv_batch%idx(l)
             call fiona_input('r0', tracer_names(n), tmp, start=start, count=count)
-            q(is:ie,js:je,ks:ke,n) = tmp
-            call fill_halo(block%filter_halo, q(:,:,:,n), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+            q%d(is:ie,js:je,ks:ke,n) = tmp
+            call fill_halo(q, n, cross_pole=.true.)
           end do
           call fiona_input('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
-          adv_batch%old_m(is:ie,js:je,ks:ke) = tmp
+          adv_batch%old_m%d(is:ie,js:je,ks:ke) = tmp
           end associate
         end do
       end if
@@ -419,28 +417,28 @@ contains
       start = [is,js,ks]
       count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'u'      , tmp, start=start, count=count); u_lon(is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call fiona_input('r0', 'mfx_lon', tmp, start=start, count=count); mfx_lon (is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, mfx_lon , full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fiona_input('r0', 'u'      , tmp, start=start, count=count); u_lon%d(is:ie,js:je,ks:ke) = tmp
+      call fill_halo(u_lon)
+      call fiona_input('r0', 'mfx_lon', tmp, start=start, count=count); mfx_lon%d(is:ie,js:je,ks:ke) = tmp
+      call fill_halo(mfx_lon)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => block%adv_batches(m))
           tag = adv_batch%name
           if (adv_batch%step == -1) then
             call fiona_input('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
-            adv_batch%mfx0(is:ie,js:je,ks:ke) = tmp
-            call fill_halo(block%halo, adv_batch%mfx0, full_lon=.false., full_lat=.true., full_lev=.true.)
+            adv_batch%mfx0%d(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(adv_batch%mfx0)
             call fiona_input('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
-            adv_batch%mx0(is:ie,js:je,ks:ke) = tmp
-            call fill_halo(block%halo, adv_batch%mx0, full_lon=.false., full_lat=.true., full_lev=.true.)
+            adv_batch%mx0%d(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(adv_batch%mx0)
           else if (adv_batch%step >= 1) then
             call fiona_input('r0', trim(tag)//'_accum_mfx', tmp, start=start, count=count)
-            adv_batch%mfx(is:ie,js:je,ks:ke) = tmp
-            call fill_halo(block%halo, adv_batch%mfx, full_lon=.false., full_lat=.true., full_lev=.true.)
+            adv_batch%mfx%d(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(adv_batch%mfx)
             call fiona_input('r0', trim(tag)//'_accum_mx', tmp, start=start, count=count)
-            adv_batch%u(is:ie,js:je,ks:ke) = tmp
-            call fill_halo(block%halo, adv_batch%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+            adv_batch%u%d(is:ie,js:je,ks:ke) = tmp
+            call fill_halo(adv_batch%u)
           end if
           end associate
         end do
@@ -454,24 +452,24 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'v'      , tmp, start=start, count=count); v_lat(is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-      call fiona_input('r0', 'mfy_lat', tmp, start=start, count=count); mfy_lat (is:ie,js:je,ks:ke) = tmp
-      call fill_halo(block%halo, mfy_lat , full_lon=.true., full_lat=.false., full_lev=.true.)
+      call fiona_input('r0', 'v'      , tmp, start=start, count=count); v_lat%d(is:ie,js:je,ks:ke) = tmp
+      call fill_halo(v_lat)
+      call fiona_input('r0', 'mfy_lat', tmp, start=start, count=count); mfy_lat%d(is:ie,js:je,ks:ke) = tmp
+      call fill_halo(mfy_lat)
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => block%adv_batches(1))
           tag = adv_batch%name
           if (adv_batch%step == -1) then
-            call fiona_input('r0', trim(tag)//'_accum_mfy', adv_batch%mfy0(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%halo, adv_batch%mfy0, full_lon=.true., full_lat=.false., full_lev=.true.)
-            call fiona_input('r0', trim(tag)//'_accum_my', adv_batch%my0(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%halo, adv_batch%my0, full_lon=.true., full_lat=.false., full_lev=.true.)
+            call fiona_input('r0', trim(tag)//'_accum_mfy', adv_batch%mfy0%d(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(adv_batch%mfy0)
+            call fiona_input('r0', trim(tag)//'_accum_my', adv_batch%my0%d(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(adv_batch%my0)
           else if (adv_batch%step >= 1) then
-            call fiona_input('r0', trim(tag)//'_accum_mfy', adv_batch%mfy(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%halo, adv_batch%mfy, full_lon=.true., full_lat=.false., full_lev=.true.)
-            call fiona_input('r0', trim(tag)//'_accum_my', adv_batch%v(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%halo, adv_batch%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+            call fiona_input('r0', trim(tag)//'_accum_mfy', adv_batch%mfy%d(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(adv_batch%mfy)
+            call fiona_input('r0', trim(tag)//'_accum_my', adv_batch%v%d(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(adv_batch%v)
           end if
           end associate
         end do
@@ -485,23 +483,23 @@ contains
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
       allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'we_lev', tmp, start=start, count=count); we_lev(is:ie,js:je,ks:ke) = tmp
+      call fiona_input('r0', 'we_lev', tmp, start=start, count=count); we_lev%d(is:ie,js:je,ks:ke) = tmp
       if (nonhydrostatic) then
-        call fiona_input('r0', 'gz_lev', tmp, start=start, count=count); gz_lev(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-        call fiona_input('r0', 'w_lev' , tmp, start=start, count=count); w_lev (is:ie,js:je,ks:ke) = tmp
-        call fill_halo(block%halo, w_lev , full_lon=.true., full_lat=.true., full_lev=.false.)
+        call fiona_input('r0', 'gz_lev', tmp, start=start, count=count); gz_lev%d(is:ie,js:je,ks:ke) = tmp
+        call fill_halo(gz_lev)
+        call fiona_input('r0', 'w_lev' , tmp, start=start, count=count); w_lev %d(is:ie,js:je,ks:ke) = tmp
+        call fill_halo(w_lev)
       end if
       if (allocated(blocks(1)%adv_batches)) then
         do m = 1, size(blocks(1)%adv_batches)
           associate (adv_batch => block%adv_batches(m))
           tag = adv_batch%name
           if (adv_batch%step == -1) then
-            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz0(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%halo, adv_batch%mz0, full_lon=.true., full_lat=.true., full_lev=.false.)
+            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz0%d(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(adv_batch%mz0)
           else if (adv_batch%step >= 1) then
-            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(block%halo, adv_batch%mz, full_lon=.true., full_lat=.true., full_lev=.false.)
+            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz%d(is:ie,js:je,ks:ke), start=start, count=count)
+            call fill_halo(adv_batch%mz)
           end if
           end associate
         end do

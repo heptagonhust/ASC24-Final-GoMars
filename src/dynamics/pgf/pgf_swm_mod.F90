@@ -38,14 +38,14 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          du(i,j,k) = du(i,j,k) - (gz(i+1,j,k) - gz(i,j,k)) / mesh%de_lon(j)
+          du%d(i,j,k) = du%d(i,j,k) - (gz%d(i+1,j,k) - gz%d(i,j,k)) / mesh%de_lon(j)
         end do
       end do
     end do
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          dv(i,j,k) = dv(i,j,k) - (gz(i,j+1,k) - gz(i,j,k)) / mesh%de_lat(j)
+          dv%d(i,j,k) = dv%d(i,j,k) - (gz%d(i,j+1,k) - gz%d(i,j,k)) / mesh%de_lat(j)
         end do
       end do
     end do

@@ -50,7 +50,7 @@ module latlon_halo_mod
     procedure :: init => latlon_halo_init
     procedure :: init_nest => latlon_halo_init_nest
     procedure :: clear => latlon_halo_clear
-    final :: latlon_halo_final
+    final latlon_halo_final
   end type latlon_halo_type
 
 contains

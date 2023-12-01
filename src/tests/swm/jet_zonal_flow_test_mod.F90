@@ -39,38 +39,38 @@ contains
     gh0 = g * 1.0d4
     ghd = g * 120.0d0
 
-    gzs = 0
+    gzs%d = 0
 
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%half_ids, mesh%half_ide
-        u(i,j,1) = u_function(mesh%full_lat(j))
+        u%d(i,j,1) = u_function(mesh%full_lat(j))
       end do
     end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(u)
 
-    v = 0
+    v%d = 0
 
     do j = mesh%full_jds, mesh%full_jde
       i = mesh%half_ids
       if (j == 1) then
-        gz(i,j,1) = gh0
+        gz%d(i,j,1) = gh0
       else
         call qags(gh_integrand, -0.5d0*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz_, abserr, neval, ierr)
         if (ierr /= 0) then
           call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!', __FILE__, __LINE__)
         end if
-        gz(i,j,1) = gh0 - gz_
+        gz%d(i,j,1) = gh0 - gz_
       end if
       do i = mesh%half_ids, mesh%half_ide
-        gz(i,j,1) = gz(mesh%half_ids,j,1)
+        gz%d(i,j,1) = gz%d(mesh%half_ids,j,1)
         ! Add perturbation.
-        gz(i,j,1) = gz(i,j,1) + ghd * &
+        gz%d(i,j,1) = gz%d(i,j,1) + ghd * &
           cos(mesh%full_lat(j)) * &
           exp(-(merge(mesh%full_lon(i) - 2*pi, mesh%full_lon(i), mesh%full_lon(i) > pi)  / alpha)**2) * &
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)
       end do
     end do
-    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(gz)
     end associate
 
   end subroutine jet_zonal_flow_test_set_ic

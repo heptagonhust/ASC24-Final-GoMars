@@ -10,8 +10,7 @@
 module tracer_types_mod
 
   use const_mod
-  use allocator_mod
-  use latlon_mesh_mod
+  use latlon_field_types_mod
 
   implicit none
 
@@ -42,12 +41,10 @@ module tracer_types_mod
   integer, allocatable :: tracer_types(:)
 
   type tracers_type
-    logical :: is_initialized = .false.
-    type(latlon_mesh_type), pointer :: mesh => null()
-    type(latlon_mesh_type), pointer :: filter_mesh => null()
-    real(r8), allocatable :: q(:,:,:,:)
+    logical :: initialized = .false.
+    type(latlon_field4d_type) q
     ! Some diagnostics:
-    real(r8), allocatable :: qm(:,:,:) ! Total moisture or water substances
+    type(latlon_field3d_type) qm ! Total moisture or water substances
   contains
     procedure :: init => tracers_init
     procedure :: clear => tracers_clear
@@ -58,20 +55,33 @@ module tracer_types_mod
 
 contains
 
-  subroutine tracers_init(this, mesh, filter_mesh)
+  subroutine tracers_init(this, filter_mesh, filter_halo, mesh, halo)
 
     class(tracers_type), intent(inout) :: this
-    type(latlon_mesh_type), intent(in), target :: mesh
-    type(latlon_mesh_type), intent(in), target :: filter_mesh
+    type(latlon_mesh_type), intent(in) :: filter_mesh
+    type(latlon_halo_type), intent(in) :: filter_halo(:)
+    type(latlon_mesh_type), intent(in) :: mesh
+    type(latlon_halo_type), intent(in) :: halo(:)
+
+    character(field_name_len     ) name
+    character(field_long_name_len) long_name
+    character(field_units_len    ) units
 
     call this%clear()
 
-    this%mesh => mesh
-    this%filter_mesh => filter_mesh
-    call allocate_array(filter_mesh, this%q, extra_dim=ntracers, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%qm, full_lon=.true., full_lat=.true., full_lev=.true.)
+    name      = 'q'
+    long_name = 'Tracer dry mixing ratio'
+    units     = 'kg kg-1'
+    if (ntracers > 0) then
+      call this%q%init(name, long_name, units, 'cell', filter_mesh, filter_halo, size4=ntracers)
+    end if
 
-    this%is_initialized = .true.
+    name      = 'qm'
+    long_name = 'Total moist tracer dry mixing ratioo'
+    units     = 'kg kg-1'
+    call this%qm%init(name, long_name, units, 'cell', mesh, halo)
+
+    this%initialized = .true.
 
   end subroutine tracers_init
 
@@ -79,10 +89,10 @@ contains
 
     class(tracers_type), intent(inout) :: this
 
-    if (allocated(this%q )) deallocate(this%q )
-    if (allocated(this%qm)) deallocate(this%qm)
+    call this%q %clear()
+    call this%qm%clear()
 
-    this%is_initialized = .false.
+    this%initialized = .false.
 
   end subroutine tracers_clear
 

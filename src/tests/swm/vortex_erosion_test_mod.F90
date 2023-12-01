@@ -33,29 +33,29 @@ contains
     gh0 = g * 6.0d3
 
     do j = mesh%full_jds, mesh%full_jde
-      u(:,j,1) = u_function(mesh%full_lat(j))
+      u%d(:,j,1) = u_function(mesh%full_lat(j))
     end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(u)
 
-    v = 0
+    v%d = 0
 
     do j = mesh%full_jds, mesh%full_jde
       i = mesh%half_ids
       if (j == 1) then
-        gz(i,j,1) = gh0
+        gz%d(i,j,1) = gh0
       else
         call qags(gh_integrand, -0.5d0*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz_, abserr, neval, ierr)
         if (ierr /= 0) then
           call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!', __FILE__, __LINE__)
         end if
-        gz(i,j,1) = gh0 - gz_
+        gz%d(i,j,1) = gh0 - gz_
       end if
       do i = mesh%full_ids, mesh%full_ide
-        gz(i,j,1) = gz(mesh%half_ids,j,1)
+        gz%d(i,j,1) = gz%d(mesh%half_ids,j,1)
       end do
     end do
 
-    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(gz)
     end associate
 
   end subroutine vortex_erosion_test_set_ic
@@ -82,17 +82,17 @@ contains
     end if
 
     b_lat = 0
-    gzs = 0
+    gzs%d = 0
     do j = mesh%full_jds, mesh%full_jde
       if (mesh%full_lat(j) > 0) then
         y = (tan(pi * 0.25d0) / tan(mesh%full_lat(j)))**2
         b_lat = y * exp(1 - y)
         do i = mesh%full_ids, mesh%full_ide
-          gzs(i,j) = hs * at * b_lat * mesh%full_sin_lon(i) * g
+          gzs%d(i,j) = hs * at * b_lat * mesh%full_sin_lon(i) * g
         end do
       end if
     end do
-    call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(gzs)
     end associate
 
   end subroutine vortex_erosion_test_apply_forcing

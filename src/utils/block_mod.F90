@@ -158,16 +158,16 @@ contains
       end select
       if (allocated(this%dstate)) then
         do i = 1, size(this%dstate)
-          call this%dstate(i)%init(this%filter_mesh, this%mesh)
+          call this%dstate(i)%init(this%filter_mesh, this%filter_halo, this%mesh, this%halo)
         end do
       end if
       if (allocated(this%dtend)) then
         do i = 1, size(this%dtend)
-          call this%dtend(i)%init(this%filter_mesh, this%mesh)
+          call this%dtend(i)%init(this%filter_mesh, this%filter_halo, this%mesh, this%halo)
         end do
       end if
-      call this%static%init_stage1(this%filter_mesh, this%mesh)
-      call this%aux%init(this%filter_mesh, this%mesh)
+      call this%static%init_stage1(this%filter_mesh, this%filter_halo, this%mesh, this%halo)
+      call this%aux%init(this%filter_mesh, this%filter_halo, this%mesh, this%halo)
     end if
 
   end subroutine block_init_stage_2
@@ -178,41 +178,45 @@ contains
 
     integer i
 
-    call this%filter_mesh%clear()
-    call this%mesh%clear()
-    call this%big_filter%clear()
+    call this%filter_mesh %clear()
+    call this%mesh        %clear()
+    call this%big_filter  %clear()
     call this%small_filter%clear()
-    if (allocated(this%dstate)) then
-      do i = 1, size(this%dstate)
-        call this%dstate(i)%clear()
-      end do
-    end if
-    if (allocated(this%dtend)) then
-      do i = 1, size(this%dtend)
-        call this%dtend(i)%clear()
-      end do
-    end if
-    call this%pstate%clear()
-    call this%ptend%clear()
-    call this%aux%clear()
+    call this%pstate      %clear()
+    call this%ptend       %clear()
+    call this%aux         %clear()
     call this%adv_batch_pt%clear()
+    call this%accum_list  %clear()
+    if (allocated(this%dstate     )) then
+      do i = 1, size(this%dstate)
+        call this%dstate(i)     %clear()
+      end do
+      deallocate(this%dstate)
+    end if
+    if (allocated(this%dtend      )) then
+      do i = 1, size(this%dtend)
+        call this%dtend(i)      %clear()
+      end do
+      deallocate(this%dtend)
+    end if
     if (allocated(this%adv_batches)) then
       do i = 1, size(this%adv_batches)
         call this%adv_batches(i)%clear()
       end do
+      deallocate(this%adv_batches)
     end if
-    if (allocated(this%halo)) then
-      do i = 1, size(this%halo)
-        call this%halo(i)%clear()
+    if (allocated(this%filter_halo)) then
+      do i = 1, size(this%filter_halo)
+        call this%filter_halo(i)%clear()
       end do
+      deallocate(this%filter_halo)
     end if
-
-    if (allocated(this%dstate)) deallocate(this%dstate)
-    if (allocated(this%dtend)) deallocate(this%dtend)
-    if (allocated(this%adv_batches)) deallocate(this%adv_batches)
-    if (allocated(this%halo)) deallocate(this%halo)
-
-    call this%accum_list%clear()
+    if (allocated(this%halo       )) then
+      do i = 1, size(this%halo)
+        call this%halo(i)       %clear()
+      end do
+      deallocate(this%halo)
+    end if
 
   end subroutine block_clear
 
@@ -237,11 +241,11 @@ contains
         case ('dstate')
           select case (accum%var_name)
           case ('t')
-            call accum%accum_run_3d(this%dstate(itime)%t(is:ie,js:je,ks:ke))
+            call accum%accum_run_3d(this%dstate(itime)%t%d(is:ie,js:je,ks:ke))
           case ('u')
-            call accum%accum_run_3d(this%dstate(itime)%u(is:ie,js:je,ks:ke))
+            call accum%accum_run_3d(this%dstate(itime)%u%d(is:ie,js:je,ks:ke))
           case ('v')
-            call accum%accum_run_3d(this%dstate(itime)%v(is:ie,js:je,ks:ke))
+            call accum%accum_run_3d(this%dstate(itime)%v%d(is:ie,js:je,ks:ke))
           end select
         end select
       end select

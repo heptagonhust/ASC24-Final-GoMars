@@ -79,7 +79,7 @@ contains
       do k = mesh%half_kds, mesh%half_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            p = vert_coord_calc_mg_lev(k, mgs(i,j)) / 100
+            p = vert_coord_calc_mg_lev(k, mgs%d(i,j)) / 100
             pro%gz_lev(i,j,k) = -rd * (a * (p - ps0) + b / (1 + c) * (p**(1 + c) - ps0**(1 + c)))
           end do
         end do
@@ -87,14 +87,14 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
-            p = vert_coord_calc_mg(k, mgs(i,j)) / 100
+            p = vert_coord_calc_mg(k, mgs%d(i,j)) / 100
             t = p * (a + b * p**c)
             pro%mg (i,j,k) = p * 100
             pro%gz (i,j,k) = -rd * (a * (p - ps0) + b / (1 + c) * (p**(1 + c) - ps0**(1 + c)))
             pro%ad (i,j,k) = rd * t / (p * 100)
             pro%mpt(i,j,k) = dry_potential_temperature(t, pro%mg(i,j,k)) * ( &
-              vert_coord_calc_mg_lev(k+1, mgs(i,j)) - &
-              vert_coord_calc_mg_lev(k  , mgs(i,j))   &
+              vert_coord_calc_mg_lev(k+1, mgs%d(i,j)) - &
+              vert_coord_calc_mg_lev(k  , mgs%d(i,j))   &
             )
           end do
         end do
@@ -143,10 +143,10 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
-          p_ptb (i,j,k) = p (i,j,k) - pro%mg(i,j,k)
-          gz_ptb(i,j,k) = gz(i,j,k) - pro%gz(i,j,k)
-          dp_ptb(i,j,k) = (p_lev(i,j,k+1) - p_lev(i,j,k)) - dmg(i,j,k)
-          ad_ptb(i,j,k) = 1.0_r8 / rhod(i,j,k) - pro%ad(i,j,k)
+          p_ptb %d(i,j,k) = p %d(i,j,k) - pro%mg(i,j,k)
+          gz_ptb%d(i,j,k) = gz%d(i,j,k) - pro%gz(i,j,k)
+          dp_ptb%d(i,j,k) = (p_lev%d(i,j,k+1) - p_lev%d(i,j,k)) - dmg%d(i,j,k)
+          ad_ptb%d(i,j,k) = 1.0_r8 / rhod%d(i,j,k) - pro%ad(i,j,k)
         end do
       end do
     end do
@@ -179,33 +179,33 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i+1,j,k))
-          tmp1 = 0.5_r8 * (ad_ptb(i,j,k) + ad_ptb(i+1,j,k)) * dmgdx(i,j,k)
-          tmp2 = 0.5_r8 * (1.0_r8 / rhod(i,j,k) + 1.0_r8 / rhod(i+1,j,k)) * &
-                 (p_ptb(i+1,j,k) - p_ptb(i,j,k)) / mesh%de_lon(j)
-          tmp3 = (gz_ptb(i+1,j,k) - gz_ptb(i,j,k)) / mesh%de_lon(j)
-          tmp4 = 0.5_r8 * (dp_ptb(i,j,k) / dmg(i,j,k) + dp_ptb(i+1,j,k) / dmg(i+1,j,k)) * &
-                 (gz(i+1,j,k) - gz(i,j,k)) / mesh%de_lon(j)
+          L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i+1,j,k))
+          tmp1 = 0.5_r8 * (ad_ptb%d(i,j,k) + ad_ptb%d(i+1,j,k)) * dmgdx(i,j,k)
+          tmp2 = 0.5_r8 * (1.0_r8 / rhod%d(i,j,k) + 1.0_r8 / rhod%d(i+1,j,k)) * &
+                 (p_ptb%d(i+1,j,k) - p_ptb%d(i,j,k)) / mesh%de_lon(j)
+          tmp3 = (gz_ptb%d(i+1,j,k) - gz_ptb%d(i,j,k)) / mesh%de_lon(j)
+          tmp4 = 0.5_r8 * (dp_ptb%d(i,j,k) / dmg%d(i,j,k) + dp_ptb%d(i+1,j,k) / dmg%d(i+1,j,k)) * &
+                 (gz%d(i+1,j,k) - gz%d(i,j,k)) / mesh%de_lon(j)
           tmp = -(tmp1 + tmp2 + tmp3 + tmp4) / L
-          du(i,j,k) = du(i,j,k) + tmp
+          du%d(i,j,k) = du%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
-          dtend%dudt_pgf(i,j,k) = tmp
+          dtend%dudt_pgf%d(i,j,k) = tmp
 #endif
         end do
       end do
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i,j+1,k))
-          tmp1 = 0.5_r8 * (ad_ptb(i,j,k) + ad_ptb(i,j+1,k)) * dmgdy(i,j,k)
-          tmp2 = 0.5_r8 * (1.0_r8 / rhod(i,j,k) + 1.0_r8 / rhod(i,j+1,k)) * &
-                 (p_ptb(i,j+1,k) - p_ptb(i,j,k)) / mesh%de_lat(j)
-          tmp3 = (gz_ptb(i,j+1,k) - gz_ptb(i,j,k)) / mesh%de_lat(j)
-          tmp4 = 0.5_r8 * (dp_ptb(i,j,k) / dmg(i,j,k) + dp_ptb(i,j+1,k) / dmg(i,j+1,k)) * &
-                 (gz(i,j+1,k) - gz(i,j,k)) / mesh%de_lat(j)
+          L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i,j+1,k))
+          tmp1 = 0.5_r8 * (ad_ptb%d(i,j,k) + ad_ptb%d(i,j+1,k)) * dmgdy(i,j,k)
+          tmp2 = 0.5_r8 * (1.0_r8 / rhod%d(i,j,k) + 1.0_r8 / rhod%d(i,j+1,k)) * &
+                 (p_ptb%d(i,j+1,k) - p_ptb%d(i,j,k)) / mesh%de_lat(j)
+          tmp3 = (gz_ptb%d(i,j+1,k) - gz_ptb%d(i,j,k)) / mesh%de_lat(j)
+          tmp4 = 0.5_r8 * (dp_ptb%d(i,j,k) / dmg%d(i,j,k) + dp_ptb%d(i,j+1,k) / dmg%d(i,j+1,k)) * &
+                 (gz%d(i,j+1,k) - gz%d(i,j,k)) / mesh%de_lat(j)
           tmp = -(tmp1 + tmp2 + tmp3 + tmp4) / L
-          dv(i,j,k) = dv(i,j,k) + tmp
+          dv%d(i,j,k) = dv%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
-          dtend%dvdt_pgf(i,j,k) = tmp
+          dtend%dvdt_pgf%d(i,j,k) = tmp
 #endif
         end do
       end do

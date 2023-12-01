@@ -181,7 +181,7 @@ contains
     ! Allocate tracer arrays for each block.
     allocate(tracers(size(blocks)))
     do iblk = 1, size(blocks)
-      call tracers(iblk)%init(blocks(iblk)%mesh, blocks(iblk)%filter_mesh)
+      call tracers(iblk)%init(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
     end do
 
     do iblk = 1, size(blocks)
@@ -189,7 +189,7 @@ contains
       call blocks(iblk)%pstate%init(blocks(iblk)%mesh)
       call blocks(iblk)%ptend%init(blocks(iblk)%mesh)
       ! Allocate physics tendency arrays for dynamics.
-      call blocks(iblk)%aux%init_phys()
+      call blocks(iblk)%aux%init_phys(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
     end do
 
   end subroutine tracer_allocate
@@ -217,7 +217,7 @@ contains
     integer i, j, k
 
     if (.not. allocated(tracers)) return
-    if (.not. allocated(tracers(block%id)%qm)) return
+    if (.not. tracers(block%id)%qm%initialized) return
 
     associate (mesh => block%mesh          , &
                q    => tracers(block%id)%q , & ! in
@@ -226,7 +226,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = q(i,j,k,idx_qv)
+            qm%d(i,j,k) = q%d(i,j,k,idx_qv)
           end do
         end do
       end do
@@ -235,7 +235,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qc)
+            qm%d(i,j,k) = qm%d(i,j,k) + q%d(i,j,k,idx_qc)
           end do
         end do
       end do
@@ -244,7 +244,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qi)
+            qm%d(i,j,k) = qm%d(i,j,k) + q%d(i,j,k,idx_qi)
           end do
         end do
       end do
@@ -253,7 +253,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qr)
+            qm%d(i,j,k) = qm%d(i,j,k) + q%d(i,j,k,idx_qr)
           end do
         end do
       end do
@@ -262,7 +262,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qs)
+            qm%d(i,j,k) = qm%d(i,j,k) + q%d(i,j,k,idx_qs)
           end do
         end do
       end do
@@ -271,7 +271,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qg)
+            qm%d(i,j,k) = qm%d(i,j,k) + q%d(i,j,k,idx_qg)
           end do
         end do
       end do
@@ -280,12 +280,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            qm(i,j,k) = qm(i,j,k) + q(i,j,k,idx_qh)
+            qm%d(i,j,k) = qm%d(i,j,k) + q%d(i,j,k,idx_qh)
           end do
         end do
       end do
     end if
-    call fill_halo(block%halo, qm, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+    call fill_halo(qm, west_halo=.false., south_halo=.false.)
     end associate
 
   end subroutine tracer_calc_qm
@@ -311,9 +311,9 @@ contains
         pos_qm = 0
         do k = mesh%full_kds, mesh%full_kde
           if (q(i,j,k) < 0) then
-            neg_qm = neg_qm + dmg(i,j,k) * q(i,j,k)
+            neg_qm = neg_qm + dmg%d(i,j,k) * q(i,j,k)
           else
-            pos_qm = pos_qm + dmg(i,j,k) * q(i,j,k)
+            pos_qm = pos_qm + dmg%d(i,j,k) * q(i,j,k)
           end if
         end do
         if (neg_qm < 0) then

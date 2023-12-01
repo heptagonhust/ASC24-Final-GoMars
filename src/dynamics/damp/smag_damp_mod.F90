@@ -80,17 +80,16 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
-          smag_t(i,j,k) = (                       &
-            u(i,j,k) - u(i-1,j,k)                 &
-          ) / mesh%de_lon(j) - (                  &
-            v(i,j  ,k) * mesh%half_cos_lat(j  ) - &
-            v(i,j-1,k) * mesh%half_cos_lat(j-1)   &
+          smag_t%d(i,j,k) = (                       &
+            u%d(i,j,k) - u%d(i-1,j,k)               &
+          ) / mesh%de_lon(j) - (                    &
+            v%d(i,j  ,k) * mesh%half_cos_lat(j  ) - &
+            v%d(i,j-1,k) * mesh%half_cos_lat(j-1)   &
           ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
         end do
       end do
     end do
-    call fill_halo(block%halo, smag_t, full_lon=.true., full_lat=.true., full_lev=.true., &
-                   west_halo=.false., south_halo=.false.)
+    call fill_halo(smag_t, west_halo=.false., south_halo=.false.)
 
     ! Horizontal shearing strain on vertices
     ! ∂u   ∂v
@@ -99,25 +98,24 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%half_ids, mesh%half_ide
-          smag_s(i,j,k) = (                       &
-            v(i+1,j,k) - v(i,j,k)                 &
-          ) / mesh%le_lat(j) + (                  &
-            u(i,j+1,k) * mesh%full_cos_lat(j+1) - &
-            u(i,j  ,k) * mesh%full_cos_lat(j  )   &
+          smag_s%d(i,j,k) = (                       &
+            v%d(i+1,j,k) - v%d(i,j,k)               &
+          ) / mesh%le_lat(j) + (                    &
+            u%d(i,j+1,k) * mesh%full_cos_lat(j+1) - &
+            u%d(i,j  ,k) * mesh%full_cos_lat(j  )   &
           ) / mesh%de_lat(j) / mesh%half_cos_lat(j)
         end do
       end do
     end do
-    call fill_halo(block%halo, smag_s, full_lon=.false., full_lat=.false., full_lev=.true., &
-                   east_halo=.false., north_halo=.false.)
+    call fill_halo(smag_s, east_halo=.false., north_halo=.false.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         ls2 = smag_damp_coef / (1 / mesh%de_lon(j)**2 + 1 / mesh%le_lon(j)**2) * decay_from_top(k)
         do i = mesh%half_ids, mesh%half_ide
-          kmh_lon(i,j,k) = ls2 * sqrt(                           &
-            0.5_r8 * (smag_t(i,j,k)**2 + smag_t(i+1,j  ,k)**2) + &
-            0.5_r8 * (smag_s(i,j,k)**2 + smag_s(i  ,j-1,k)**2)   &
+          kmh_lon%d(i,j,k) = ls2 * sqrt(                             &
+            0.5_r8 * (smag_t%d(i,j,k)**2 + smag_t%d(i+1,j  ,k)**2) + &
+            0.5_r8 * (smag_s%d(i,j,k)**2 + smag_s%d(i  ,j-1,k)**2)   &
           )
         end do
       end do
@@ -127,9 +125,9 @@ contains
       do j = mesh%half_jds, mesh%half_jde
         ls2 = smag_damp_coef / (1 / mesh%le_lat(j)**2 + 1 / mesh%de_lat(j)**2) * decay_from_top(k)
         do i = mesh%full_ids, mesh%full_ide
-          kmh_lat(i,j,k) = ls2 * sqrt(                           &
-            0.5_r8 * (smag_t(i,j,k)**2 + smag_t(i  ,j+1,k)**2) + &
-            0.5_r8 * (smag_s(i,j,k)**2 + smag_s(i-1,j  ,k)**2)   &
+          kmh_lat%d(i,j,k) = ls2 * sqrt(                             &
+            0.5_r8 * (smag_t%d(i,j,k)**2 + smag_t%d(i  ,j+1,k)**2) + &
+            0.5_r8 * (smag_s%d(i,j,k)**2 + smag_s%d(i-1,j  ,k)**2)   &
           )
         end do
       end do
@@ -139,11 +137,11 @@ contains
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         ls2 = smag_damp_coef / (1 / mesh%de_lon(j)**2 + 1 / mesh%le_lon(j)**2) * decay_from_top(k)
         do i = mesh%full_ids, mesh%full_ide
-          kmh(i,j,k) = ls2 * sqrt(                        &
-            smag_t(i,j,k)**2 + 0.25_r8 * (                &
-              smag_s(i-1,j-1,k)**2 + smag_s(i-1,j,k)**2 + &
-              smag_s(i  ,j-1,k)**2 + smag_s(i  ,j,k)**2   &
-            )                                             &
+          kmh%d(i,j,k) = ls2 * sqrt(                          &
+            smag_t%d(i,j,k)**2 + 0.25_r8 * (                  &
+              smag_s%d(i-1,j-1,k)**2 + smag_s%d(i-1,j,k)**2 + &
+              smag_s%d(i  ,j-1,k)**2 + smag_s%d(i  ,j,k)**2   &
+            )                                                 &
           )
         end do
       end do
@@ -152,77 +150,56 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          u(i,j,k) = u(i,j,k) + kmh_lon(i,j,k) * (                                   &
-            (u(i-1,j,k) - 2 * u(i,j,k) + u(i+1,j,k)) / mesh%de_lon(j)**2 +           &
-            ((u(i,j+1,k) - u(i,j  ,k)) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) - &
-             (u(i,j  ,k) - u(i,j-1,k)) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)   &
-            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)                                &
+          u%d(i,j,k) = u%d(i,j,k) + kmh_lon%d(i,j,k) * (                                 &
+            (u%d(i-1,j,k) - 2 * u%d(i,j,k) + u%d(i+1,j,k)) / mesh%de_lon(j)**2 +         &
+            ((u%d(i,j+1,k) - u%d(i,j  ,k)) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) - &
+             (u%d(i,j  ,k) - u%d(i,j-1,k)) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)   &
+            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)                                    &
           ) * dt
         end do
       end do
     end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(u)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         if (j == global_mesh%half_jds .or. j == global_mesh%half_jde) then
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) + kmh_lat(i,j,k) * (                       &
-              (v(i-1,j,k) - 2 * v(i,j,k) + v(i+1,j,k)) / mesh%le_lat(j)**2 &
+            v%d(i,j,k) = v%d(i,j,k) + kmh_lat%d(i,j,k) * (                       &
+              (v%d(i-1,j,k) - 2 * v%d(i,j,k) + v%d(i+1,j,k)) / mesh%le_lat(j)**2 &
             ) * dt
           end do
         else
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) + kmh_lat(i,j,k) * (                                   &
-              (v(i-1,j,k) - 2 * v(i,j,k) + v(i+1,j,k)) / mesh%le_lat(j)**2 +           &
-              ((v(i,j+1,k) - v(i,j  ,k)) / mesh%le_lon(j+1) * mesh%full_cos_lat(j+1) - &
-               (v(i,j  ,k) - v(i,j-1,k)) / mesh%le_lon(j  ) * mesh%full_cos_lat(j  )   &
-              ) / mesh%de_lat(j) / mesh%half_cos_lat(j)                                &
+            v%d(i,j,k) = v%d(i,j,k) + kmh_lat%d(i,j,k) * (                                 &
+              (v%d(i-1,j,k) - 2 * v%d(i,j,k) + v%d(i+1,j,k)) / mesh%le_lat(j)**2 +         &
+              ((v%d(i,j+1,k) - v%d(i,j  ,k)) / mesh%le_lon(j+1) * mesh%full_cos_lat(j+1) - &
+               (v%d(i,j  ,k) - v%d(i,j-1,k)) / mesh%le_lon(j  ) * mesh%full_cos_lat(j  )   &
+              ) / mesh%de_lat(j) / mesh%half_cos_lat(j)                                    &
             ) * dt
           end do
         end if
       end do
     end do
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(v)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
-          pt(i,j,k) = pt(i,j,k) + kmh(i,j,k) * (                  &
-            (dmg(i-1,j,k) * pt(i-1,j,k) - 2 *                     &
-             dmg(i  ,j,k) * pt(i  ,j,k) +                         &
-             dmg(i+1,j,k) * pt(i+1,j,k)) / mesh%de_lon(j)**2 +    &
-            ((dmg(i,j+1,k) * pt(i,j+1,k) - dmg(i,j,k) * pt(i,j,k) &
-             ) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) -      &
-             (dmg(i,j,k) * pt(i,j,k) - dmg(i,j-1,k) * pt(i,j-1,k) &
-             ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)        &
-            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)             &
-          ) / dmg(i,j,k) * dt
+          pt%d(i,j,k) = pt%d(i,j,k) + kmh%d(i,j,k) * (                    &
+            (dmg%d(i-1,j,k) * pt%d(i-1,j,k) - 2 *                         &
+             dmg%d(i  ,j,k) * pt%d(i  ,j,k) +                             &
+             dmg%d(i+1,j,k) * pt%d(i+1,j,k)) / mesh%de_lon(j)**2 +        &
+            ((dmg%d(i,j+1,k) * pt%d(i,j+1,k) - dmg%d(i,j,k) * pt%d(i,j,k) &
+             ) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) -              &
+             (dmg%d(i,j,k) * pt%d(i,j,k) - dmg%d(i,j-1,k) * pt%d(i,j-1,k) &
+             ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)                &
+            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)                     &
+          ) / dmg%d(i,j,k) * dt
         end do
       end do
     end do
-    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-
-    ! call tracer_get_array(block%id, q)
-    ! do m = 1, ntracers
-    !   do k = mesh%full_kds, mesh%full_kde
-    !     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-    !       do i = mesh%full_ids, mesh%full_ide
-    !         q(i,j,k,m) = q(i,j,k,m) + kmh(i,j,k) * (                  &
-    !           (dmg(i-1,j,k) * q(i-1,j,k,m) - 2 *                      &
-    !            dmg(i  ,j,k) * q(i  ,j,k,m) +                          &
-    !            dmg(i+1,j,k) * q(i+1,j,k,m)) / mesh%de_lon(j)**2 +     &
-    !           ((dmg(i,j+1,k) * q(i,j+1,k,m) - dmg(i,j,k) * q(i,j,k,m) &
-    !            ) / mesh%de_lat(j  ) * mesh%half_cos_lat(j  ) -        &
-    !            (dmg(i,j,k) * q(i,j,k,m) - dmg(i,j-1,k) * q(i,j-1,k,m) &
-    !            ) / mesh%de_lat(j-1) * mesh%half_cos_lat(j-1)          &
-    !           ) / mesh%le_lon(j) / mesh%full_cos_lat(j)               &
-    !         ) / dmg(i,j,k) * dt
-    !       end do
-    !     end do
-    !   end do
-    !   call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-    ! end do
+    call fill_halo(pt, cross_pole=.true.)
     end associate
 
   end subroutine smag_damp_run

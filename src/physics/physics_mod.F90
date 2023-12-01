@@ -152,31 +152,31 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u_lon(i,j,k) = u_lon(i,j,k) + dt * 0.5_r8 * (dudt(i,j,k) + dudt(i+1,j,k))
+            u_lon%d(i,j,k) = u_lon%d(i,j,k) + dt * 0.5_r8 * (dudt%d(i,j,k) + dudt%d(i+1,j,k))
           end do
         end do
       end do
-      call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
+      call fill_halo(u_lon)
     end if
     if (ptend%updated_v) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v_lat(i,j,k) = v_lat(i,j,k) + dt * 0.5_r8 * (dvdt(i,j,k) + dvdt(i,j+1,k))
+            v_lat%d(i,j,k) = v_lat%d(i,j,k) + dt * 0.5_r8 * (dvdt%d(i,j,k) + dvdt%d(i,j+1,k))
           end do
         end do
       end do
-      call fill_halo(block%halo, v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
+      call fill_halo(v_lat)
     end if
     if (ptend%updated_t) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            pt(i,j,k) = pt(i,j,k) + dt * dptdt(i,j,k) / dmg(i,j,k)
+            pt%d(i,j,k) = pt%d(i,j,k) + dt * dptdt%d(i,j,k) / dmg%d(i,j,k)
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(pt, cross_pole=.true.)
     end if
     ! Update tracers.
     do m = 1, ntracers
@@ -184,12 +184,12 @@ contains
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              q(i,j,k,m) = q(i,j,k,m) + dt * dqdt(i,j,k,m) / dmg(i,j,k)
+              q%d(i,j,k,m) = q%d(i,j,k,m) + dt * dqdt%d(i,j,k,m) / dmg%d(i,j,k)
             end do
           end do
         end do
-        call tracer_fill_negative_values(block, itime, q(:,:,:,m))
-        call fill_halo(block%filter_halo, q(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+        call tracer_fill_negative_values(block, itime, q%d(:,:,:,m))
+        call fill_halo(q, m, cross_pole=.true.)
       end if
     end do
     call tracer_calc_qm(block)
@@ -219,31 +219,31 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u_lon(i,j,k) = u_lon(i,j,k) + dt * 0.5_r8 * (dudt(i,j,k) + dudt(i+1,j,k))
+            u_lon%d(i,j,k) = u_lon%d(i,j,k) + dt * 0.5_r8 * (dudt%d(i,j,k) + dudt%d(i+1,j,k))
           end do
         end do
       end do
-      call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true. , full_lev=.true.)
+      call fill_halo(u_lon)
     end if
     if (ptend%updated_v) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v_lat(i,j,k) = v_lat(i,j,k) + dt * 0.5_r8 * (dvdt(i,j,k) + dvdt(i,j+1,k))
+            v_lat%d(i,j,k) = v_lat%d(i,j,k) + dt * 0.5_r8 * (dvdt%d(i,j,k) + dvdt%d(i,j+1,k))
           end do
         end do
       end do
-      call fill_halo(block%halo, v_lat, full_lon=.true. , full_lat=.false., full_lev=.true.)
+      call fill_halo(v_lat)
     end if
     if (ptend%updated_t) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            pt(i,j,k) = pt(i,j,k) + dt * dptdt(i,j,k) / dmg(i,j,k)
+            pt%d(i,j,k) = pt%d(i,j,k) + dt * dptdt%d(i,j,k) / dmg%d(i,j,k)
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(pt, cross_pole=.true.)
     end if
     end associate
 
@@ -268,12 +268,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            q(i,j,k,idx) = q(i,j,k,idx) + dt * dqdt(i,j,k,idx) / dmg(i,j,k)
+            q%d(i,j,k,idx) = q%d(i,j,k,idx) + dt * dqdt%d(i,j,k,idx) / dmg%d(i,j,k)
           end do
         end do
       end do
-      call tracer_fill_negative_values(block, itime, q(:,:,:,idx))
-      call fill_halo(block%filter_halo, q(:,:,:,idx), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call tracer_fill_negative_values(block, itime, q%d(:,:,:,idx))
+      call fill_halo(q, idx, cross_pole=.true.)
     end if
     end associate
 

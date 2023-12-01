@@ -69,26 +69,26 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
-            pstate%u        (icol,k)   = u (i,j,k)
-            pstate%v        (icol,k)   = v (i,j,k)
-            pstate%pt       (icol,k)   = pt(i,j,k) ! FIXME: What does physics need? Dry air potential temperature or just modified one?
-            pstate%t        (icol,k)   = t (i,j,k)
-            pstate%tv       (icol,k)   = tv(i,j,k)
-            pstate%ptv      (icol,k)   = virtual_potential_temperature(tv(i,j,k), ph(i,j,k))
-            pstate%q        (icol,k,:) = wet_mixing_ratio(q(i,j,k,:), qm(i,j,k))
-            pstate%p        (icol,k)   = ph    (i,j,k)
-            pstate%p_lev    (icol,k)   = ph_lev(i,j,k)
-            pstate%pk       (icol,k)   = ph    (i,j,k)**rd_o_cpd / pk0
-            pstate%pk_lev   (icol,k)   = ph_lev(i,j,k)**rd_o_cpd / pk0
-            pstate%dp       (icol,k)   = ph_lev(i,j,k+1) - ph_lev(i,j,k)
+            pstate%u        (icol,k)   = u %d(i,j,k)
+            pstate%v        (icol,k)   = v %d(i,j,k)
+            pstate%pt       (icol,k)   = pt%d(i,j,k) ! FIXME: What does physics need? Dry air potential temperature or just modified one?
+            pstate%t        (icol,k)   = t %d(i,j,k)
+            pstate%tv       (icol,k)   = tv%d(i,j,k)
+            pstate%ptv      (icol,k)   = virtual_potential_temperature(tv%d(i,j,k), ph%d(i,j,k))
+            pstate%q        (icol,k,:) = wet_mixing_ratio(q%d(i,j,k,:), qm%d(i,j,k))
+            pstate%p        (icol,k)   = ph    %d(i,j,k)
+            pstate%p_lev    (icol,k)   = ph_lev%d(i,j,k)
+            pstate%pk       (icol,k)   = ph    %d(i,j,k)**rd_o_cpd / pk0
+            pstate%pk_lev   (icol,k)   = ph_lev%d(i,j,k)**rd_o_cpd / pk0
+            pstate%dp       (icol,k)   = ph_lev%d(i,j,k+1) - ph_lev%d(i,j,k)
             pstate%rdp      (icol,k)   = 1.0_r8 / pstate%dp(icol,k)
-            pstate%omg      (icol,k)   = omg(i,j,k)
-            pstate%z        (icol,k)   = gz(i,j,k) / g
-            pstate%dz       (icol,k)   = (gz_lev(i,j,k+1) - gz_lev(i,j,k)) / g
-            pstate%rho      (icol,k)   = moist_air_density(t(i,j,k), ph(i,j,k), pstate%qv(icol,k), qm(i,j,k))
+            pstate%omg      (icol,k)   = omg%d(i,j,k)
+            pstate%z        (icol,k)   = gz%d(i,j,k) / g
+            pstate%dz       (icol,k)   = (gz_lev%d(i,j,k+1) - gz_lev%d(i,j,k)) / g
+            pstate%rho      (icol,k)   = moist_air_density(t%d(i,j,k), ph%d(i,j,k), pstate%qv(icol,k), qm%d(i,j,k))
             pstate%cp       (icol,k)   = (1 - pstate%qv(icol,k)) * cpd + pstate%qv(icol,k) * cpv ! FIXME: Add specific heat capacities of other water species.
             pstate%cv       (icol,k)   = (1 - pstate%qv(icol,k)) * cvd + pstate%qv(icol,k) * cvv ! FIXME: Add specific heat capacities of other water species.
-            tmp = gz(i,j,k) + 0.5_r8 * (u(i,j,k)**2 + v(i,j,k)**2)
+            tmp = gz%d(i,j,k) + 0.5_r8 * (u%d(i,j,k)**2 + v%d(i,j,k)**2)
             pstate%tep      (icol,k)   = pstate%cp(icol,k) * pstate%t(icol,k) + tmp
             pstate%tev      (icol,k)   = pstate%cv(icol,k) * pstate%t(icol,k) + tmp
           end do
@@ -100,9 +100,9 @@ contains
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             icol = icol + 1
-            pstate%p_lev   (icol,k) = ph_lev(i,j,k)
-            pstate%lnp_lev (icol,k) = log(ph_lev(i,j,k))
-            pstate%z_lev   (icol,k) = gz_lev(i,j,k) / g
+            pstate%p_lev   (icol,k) = ph_lev%d(i,j,k)
+            pstate%lnp_lev (icol,k) = log(ph_lev%d(i,j,k))
+            pstate%z_lev   (icol,k) = gz_lev%d(i,j,k) / g
             if (mesh%half_kds < k .and. k < mesh%half_kde) then
               pstate%n2_lev(icol,k) = buoyancy_frequency( &
                 pstate%ptv   (icol,k-1), &
@@ -113,10 +113,10 @@ contains
                 pstate%N2_lev(icol,k  ), &
                 pstate%z     (icol,k-1), &
                 pstate%z     (icol,k  ), &
-                u            (i,j ,k-1), &
-                u            (i,j ,k  ), &
-                v            (i,j ,k-1), &
-                v            (i,j ,k  ))
+                u          %d(i,j ,k-1), &
+                u          %d(i,j ,k  ), &
+                v          %d(i,j ,k-1), &
+                v          %d(i,j ,k  ))
             end if
           end do
         end do
@@ -126,9 +126,9 @@ contains
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           icol = icol + 1
-          pstate%ps  (icol) = phs(i,j)
-          pstate%wsb (icol) = sqrt(u(i,j,mesh%full_kde)**2 + v(i,j,mesh%full_kde)**2)
-          pstate%land(icol) = land(i,j)
+          pstate%ps  (icol) = phs%d(i,j)
+          pstate%wsb (icol) = sqrt(u%d(i,j,mesh%full_kde)**2 + v%d(i,j,mesh%full_kde)**2)
+          pstate%land(icol) = land%d(i,j)
         end do
       end do
       end associate
@@ -165,8 +165,8 @@ contains
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
               icol = icol + 1
-              dudt(i,j,k) = ptend%dudt(icol,k)
-              dvdt(i,j,k) = ptend%dvdt(icol,k)
+              dudt%d(i,j,k) = ptend%dudt(icol,k)
+              dvdt%d(i,j,k) = ptend%dvdt(icol,k)
             end do
           end do
         end do
@@ -179,7 +179,7 @@ contains
               do i = mesh%full_ids, mesh%full_ide
                 icol = icol + 1
                 ! Convert to dry mixing ratio tendency.
-                dqdt(i,j,k,m) = ptend%dqdt(icol,k,m) / (1 - q(i,j,k,m))**2
+                dqdt%d(i,j,k,m) = ptend%dqdt(icol,k,m) / (1 - q%d(i,j,k,m))**2
               end do
             end do
           end do
@@ -192,9 +192,9 @@ contains
             do i = mesh%full_ids, mesh%full_ide
               icol = icol + 1
               ! Convert to modified potential temperature tendency and multiply dmg.
-              dptdt(i,j,k) = dmg(i,j,k) * (p0 / ph(i,j,k))**rd_o_cpd * ( &
-                (1 + rv_o_rd * q(i,j,k,idx_qv)) * ptend%dtdt(icol,k) + &
-                rv_o_rd * t(i,j,k) * dqdt(i,j,k,idx_qv))
+              dptdt%d(i,j,k) = dmg%d(i,j,k) * (p0 / ph%d(i,j,k))**rd_o_cpd * ( &
+                (1 + rv_o_rd * q%d(i,j,k,idx_qv)) * ptend%dtdt(icol,k) + &
+                rv_o_rd * t%d(i,j,k) * dqdt%d(i,j,k,idx_qv))
             end do
           end do
         end do
@@ -205,7 +205,7 @@ contains
             do j = mesh%full_jds, mesh%full_jde
               do i = mesh%full_ids, mesh%full_ide
                 ! Multiply dmg.
-                dqdt(i,j,k,m) = dmg(i,j,k) * dqdt(i,j,k,m)
+                dqdt%d(i,j,k,m) = dmg%d(i,j,k) * dqdt%d(i,j,k,m)
               end do
             end do
           end do
@@ -215,29 +215,21 @@ contains
     end select
 
     if (filter_ptend) then
-      call fill_halo(block%filter_halo, block%aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%big_filter, block%aux%dudt_phys)
-      call fill_halo(block%filter_halo, block%aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%big_filter, block%aux%dvdt_phys)
-      call fill_halo(block%filter_halo, block%aux%dptdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%big_filter, block%aux%dptdt_phys)
+      call fill_halo(block%aux%dudt_phys, south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, block%aux%dudt_phys%d)
+      call fill_halo(block%aux%dvdt_phys, south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, block%aux%dvdt_phys%d)
+      call fill_halo(block%aux%dptdt_phys, south_halo=.false., north_halo=.false.)
+      call filter_on_cell(block%big_filter, block%aux%dptdt_phys%d)
       do m = 1, ntracers
-        call fill_halo(block%filter_halo, block%aux%dqdt_phys(:,:,:,m), full_lon=.true., full_lat=.true., full_lev=.true., &
-                       south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, block%aux%dqdt_phys(:,:,:,m))
+        call fill_halo(block%aux%dqdt_phys, m, south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block%big_filter, block%aux%dqdt_phys%d(:,:,:,m))
       end do
-      call fill_halo(block%filter_halo, block%aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     west_halo=.false., south_halo=.false., north_halo=.false.)
-      call fill_halo(block%filter_halo, block%aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     west_halo=.false.,  east_halo=.false., south_halo=.false.)
+      call fill_halo(block%aux%dudt_phys, west_halo=.false., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%aux%dvdt_phys, west_halo=.false.,  east_halo=.false., south_halo=.false.)
     else
-      call fill_halo(block%halo, block%aux%dudt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     west_halo=.false., south_halo=.false., north_halo=.false.)
-      call fill_halo(block%halo, block%aux%dvdt_phys, full_lon=.true., full_lat=.true., full_lev=.true., &
-                     west_halo=.false.,  east_halo=.false., south_halo=.false.)
+      call fill_halo(block%aux%dudt_phys, west_halo=.false., south_halo=.false., north_halo=.false.)
+      call fill_halo(block%aux%dvdt_phys, west_halo=.false.,  east_halo=.false., south_halo=.false.)
     end if
 
   end subroutine dp_coupling_p2d

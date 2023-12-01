@@ -110,24 +110,23 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            du(i,j,k) = dt * cx(j,k) * (div(i+1,j,k) - div(i,j,k)) / mesh%de_lon(j)
+            du%d(i,j,k) = dt * cx(j,k) * (div%d(i+1,j,k) - div%d(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, du, full_lon=.false., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_lon_edge(block%small_filter, du)
+      call fill_halo(du, south_halo=.false., north_halo=.false.)
+      call filter_on_lon_edge(block%small_filter, du%d)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) + du(i,j,k)
+            u%d(i,j,k) = u%d(i,j,k) + du%d(i,j,k)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) + dt * cy(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j)
+            v%d(i,j,k) = v%d(i,j,k) + dt * cy(j,k) * (div%d(i,j+1,k) - div%d(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do
@@ -135,30 +134,29 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            du(i,j,k) = -cx(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
+            du%d(i,j,k) = -cx(j,k) * (div2%d(i+1,j,k) - div2%d(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, du, full_lon=.false., full_lat=.true., full_lev=.true., &
-                     south_halo=.false., north_halo=.false.)
-      call filter_on_lon_edge(block%big_filter, du)
+      call fill_halo(du, south_halo=.false., north_halo=.false.)
+      call filter_on_lon_edge(block%big_filter, du%d)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = u(i,j,k) + du(i,j,k)
+            u%d(i,j,k) = u%d(i,j,k) + du%d(i,j,k)
           end do
         end do
       end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            v(i,j,k) = v(i,j,k) - cy(j,k) * (div2(i,j+1,k) - div2(i,j,k)) / mesh%de_lat(j)
+            v%d(i,j,k) = v%d(i,j,k) - cy(j,k) * (div2%d(i,j+1,k) - div2%d(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do
     end select
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(u)
+    call fill_halo(v)
     end associate
 
   end subroutine div_damp_run

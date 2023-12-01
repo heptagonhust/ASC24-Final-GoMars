@@ -231,46 +231,46 @@ contains
           tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8)
         ! 2. Get dry air surface pressure from temperature and moisture
         !    profiles by using Gaussian quadrature.
-        mgs(i,j) = get_dry_air_pressure(lon(i), lat(j), ptop, ztop, 0.0_r8)
+        mgs%d(i,j) = get_dry_air_pressure(lon(i), lat(j), ptop, ztop, 0.0_r8)
         ! 3. Get heights of model half levels and full levels.
         do k = mesh%half_kds, mesh%half_kde
-          mg_lev(i,j,k) = vert_coord_calc_mg_lev(k, mgs(i,j))
-          z_lev(i,j,k) = get_height(lon(i), lat(j), ptop, ztop, mg_lev(i,j,k))
+          mg_lev%d(i,j,k) = vert_coord_calc_mg_lev(k, mgs%d(i,j))
+          z_lev %d(i,j,k) = get_height(lon(i), lat(j), ptop, ztop, mg_lev%d(i,j,k))
         end do
         do k = mesh%full_kds, mesh%full_kde
-          z(i,j,k) = 0.5_r8 * (z_lev(i,j,k) + z_lev(i,j,k+1))
+          z%d(i,j,k) = 0.5_r8 * (z_lev%d(i,j,k) + z_lev%d(i,j,k+1))
         end do
         ! 4. Get variables on model full levels.
         do k = mesh%full_kds, mesh%full_kde
-          call tropical_cyclone_test(lon(i), lat(j), ph(i,j,k), z(i,j,k), 1, &
-            u(i,j,k), v(i,j,k), t(i,j,k), ptv, gzs(i,j), ps, rho, q(i,j,k,idx_qv))
+          call tropical_cyclone_test(lon(i), lat(j), ph%d(i,j,k), z%d(i,j,k), 1, &
+            u%d(i,j,k), v%d(i,j,k), t%d(i,j,k), ptv, gzs%d(i,j), ps, rho, q%d(i,j,k,idx_qv))
           ! Convert to dry mixing ratio.
-          q(i,j,k,idx_qv) = q(i,j,k,idx_qv) / (1 - q(i,j,k,idx_qv))
-          pt(i,j,k) = modified_potential_temperature(t(i,j,k), ph(i,j,k), q(i,j,k,idx_qv))
+          q%d(i,j,k,idx_qv) = q%d(i,j,k,idx_qv) / (1 - q%d(i,j,k,idx_qv))
+          pt%d(i,j,k) = modified_potential_temperature(t%d(i,j,k), ph%d(i,j,k), q%d(i,j,k,idx_qv))
         end do
       end do
     end do
-    call fill_halo(block%halo, u, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%filter_halo, q(:,:,:,idx_qv), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
-    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+    call fill_halo(u)
+    call fill_halo(v)
+    call fill_halo(q, idx_qv, cross_pole=.true.)
+    call fill_halo(pt, cross_pole=.true.)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%half_ids, mesh%half_ide
-          u_lon(i,j,k) = 0.5_r8 * (u(i,j,k) + u(i+1,j,k))
+          u_lon%d(i,j,k) = 0.5_r8 * (u%d(i,j,k) + u%d(i+1,j,k))
         end do
       end do
     end do
-    call fill_halo(block%halo, u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(u_lon)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          v_lat(i,j,k) = 0.5_r8 * (v(i,j,k) + v(i,j+1,k))
+          v_lat%d(i,j,k) = 0.5_r8 * (v%d(i,j,k) + v%d(i,j+1,k))
         end do
       end do
     end do
-    call fill_halo(block%halo, v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    call fill_halo(v_lat)
+    call fill_halo(mgs)
     end associate
 
   end subroutine tropical_cyclone_test_set_ic

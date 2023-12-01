@@ -78,15 +78,15 @@ contains
         !
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i+1,j,k))
-            dph1 = pkh_lev(i+1,j,k+1) - pkh_lev(i  ,j,k  ) ! 2 - 4
-            dph2 = pkh_lev(i  ,j,k+1) - pkh_lev(i+1,j,k  ) ! 1 - 3
-            dgz1 = gz_lev (i  ,j,k+1) - gz_lev (i+1,j,k  ) ! 1 - 3
-            dgz2 = gz_lev (i  ,j,k  ) - gz_lev (i+1,j,k+1) ! 4 - 2
+            L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i+1,j,k))
+            dph1 = pkh_lev%d(i+1,j,k+1) - pkh_lev%d(i  ,j,k  ) ! 2 - 4
+            dph2 = pkh_lev%d(i  ,j,k+1) - pkh_lev%d(i+1,j,k  ) ! 1 - 3
+            dgz1 = gz_lev %d(i  ,j,k+1) - gz_lev %d(i+1,j,k  ) ! 1 - 3
+            dgz2 = gz_lev %d(i  ,j,k  ) - gz_lev %d(i+1,j,k+1) ! 4 - 2
             tmp = (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lon(j) / (dph1 + dph2) / L
-            du(i,j,k) = du(i,j,k) + tmp
+            du%d(i,j,k) = du%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
-            dtend%dudt_pgf(i,j,k) = tmp
+            dtend%dudt_pgf%d(i,j,k) = tmp
 #endif
           end do
         end do
@@ -105,15 +105,15 @@ contains
         !
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            L = 1 + 0.5_r8 * (qm(i,j,k) + qm(i,j+1,k))
-            dph1 = pkh_lev(i,j+1,k+1) - pkh_lev(i,j  ,k  ) ! 2 - 4
-            dph2 = pkh_lev(i,j  ,k+1) - pkh_lev(i,j+1,k  ) ! 1 - 3
-            dgz1 = gz_lev (i,j  ,k+1) - gz_lev (i,j+1,k  ) ! 1 - 3
-            dgz2 = gz_lev (i,j  ,k  ) - gz_lev (i,j+1,k+1) ! 4 - 2
+            L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i,j+1,k))
+            dph1 = pkh_lev%d(i,j+1,k+1) - pkh_lev%d(i,j  ,k  ) ! 2 - 4
+            dph2 = pkh_lev%d(i,j  ,k+1) - pkh_lev%d(i,j+1,k  ) ! 1 - 3
+            dgz1 = gz_lev %d(i,j  ,k+1) - gz_lev %d(i,j+1,k  ) ! 1 - 3
+            dgz2 = gz_lev %d(i,j  ,k  ) - gz_lev %d(i,j+1,k+1) ! 4 - 2
             tmp = (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2) / L
-            dv(i,j,k) = dv(i,j,k) + tmp
+            dv%d(i,j,k) = dv%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
-            dtend%dvdt_pgf(i,j,k) = tmp
+            dtend%dvdt_pgf%d(i,j,k) = tmp
 #endif
           end do
         end do
@@ -122,17 +122,17 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            dpp1 = p_lev  (i+1,j,k+1) - p_lev  (i  ,j,k  ) - ( &
-                   ph_lev (i+1,j,k+1) - ph_lev (i  ,j,k  )) ! 2 - 4
-            dpp2 = p_lev  (i  ,j,k+1) - p_lev  (i+1,j,k  ) - ( &
-                   ph_lev (i  ,j,k+1) - ph_lev (i+1,j,k  )) ! 1 - 3
-            dph1 = pkh_lev(i+1,j,k+1) - pkh_lev(i  ,j,k  )  ! 2 - 4
-            dph2 = pkh_lev(i  ,j,k+1) - pkh_lev(i+1,j,k  )  ! 1 - 3
-            dp1  = ph_lev (i+1,j,k+1) - ph_lev (i  ,j,k  )  ! 2 - 4
-            dp2  = ph_lev (i  ,j,k+1) - ph_lev (i+1,j,k  )  ! 1 - 3
-            dgz1 = gz_lev (i  ,j,k+1) - gz_lev (i+1,j,k  )  ! 1 - 3
-            dgz2 = gz_lev (i  ,j,k  ) - gz_lev (i+1,j,k+1)  ! 4 - 2
-            du(i,j,k) = du(i,j,k) + (                       &
+            dpp1 = p_lev  %d(i+1,j,k+1) - p_lev  %d(i  ,j,k  ) - ( &
+                   ph_lev %d(i+1,j,k+1) - ph_lev %d(i  ,j,k  )) ! 2 - 4
+            dpp2 = p_lev  %d(i  ,j,k+1) - p_lev  %d(i+1,j,k  ) - ( &
+                   ph_lev %d(i  ,j,k+1) - ph_lev %d(i+1,j,k  )) ! 1 - 3
+            dph1 = pkh_lev%d(i+1,j,k+1) - pkh_lev%d(i  ,j,k  )  ! 2 - 4
+            dph2 = pkh_lev%d(i  ,j,k+1) - pkh_lev%d(i+1,j,k  )  ! 1 - 3
+            dp1  = ph_lev %d(i+1,j,k+1) - ph_lev %d(i  ,j,k  )  ! 2 - 4
+            dp2  = ph_lev %d(i  ,j,k+1) - ph_lev %d(i+1,j,k  )  ! 1 - 3
+            dgz1 = gz_lev %d(i  ,j,k+1) - gz_lev %d(i+1,j,k  )  ! 1 - 3
+            dgz2 = gz_lev %d(i  ,j,k  ) - gz_lev %d(i+1,j,k+1)  ! 4 - 2
+            du%d(i,j,k) = du%d(i,j,k) + (                   &
               (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
               (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part
             ) / mesh%de_lon(j)
@@ -140,17 +140,17 @@ contains
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            dpp1 = p_lev  (i,j+1,k+1) - p_lev  (i,j  ,k  ) - ( &
-                   ph_lev (i,j+1,k+1) - ph_lev (i,j  ,k  )) ! 2 - 4
-            dpp2 = p_lev  (i,j  ,k+1) - p_lev  (i,j+1,k  ) - ( &
-                   ph_lev (i,j  ,k+1) - ph_lev (i,j  ,k  )) ! 1 - 3
-            dph1 = pkh_lev(i,j+1,k+1) - pkh_lev(i,j  ,k  )  ! 2 - 4
-            dph2 = pkh_lev(i,j  ,k+1) - pkh_lev(i,j+1,k  )  ! 1 - 3
-            dp1  = ph_lev (i,j+1,k+1) - ph_lev (i,j  ,k  )  ! 2 - 4
-            dp2  = ph_lev (i,j  ,k+1) - ph_lev (i,j+1,k  )  ! 1 - 3
-            dgz1 = gz_lev (i,j  ,k+1) - gz_lev (i,j+1,k  )  ! 1 - 3
-            dgz2 = gz_lev (i,j  ,k  ) - gz_lev (i,j+1,k+1)  ! 4 - 2
-            dv(i,j,k) = dv(i,j,k) + (                       &
+            dpp1 = p_lev  %d(i,j+1,k+1) - p_lev  %d(i,j  ,k  ) - ( &
+                   ph_lev %d(i,j+1,k+1) - ph_lev %d(i,j  ,k  )) ! 2 - 4
+            dpp2 = p_lev  %d(i,j  ,k+1) - p_lev  %d(i,j+1,k  ) - ( &
+                   ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j  ,k  )) ! 1 - 3
+            dph1 = pkh_lev%d(i,j+1,k+1) - pkh_lev%d(i,j  ,k  )  ! 2 - 4
+            dph2 = pkh_lev%d(i,j  ,k+1) - pkh_lev%d(i,j+1,k  )  ! 1 - 3
+            dp1  = ph_lev %d(i,j+1,k+1) - ph_lev %d(i,j  ,k  )  ! 2 - 4
+            dp2  = ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j+1,k  )  ! 1 - 3
+            dgz1 = gz_lev %d(i,j  ,k+1) - gz_lev %d(i,j+1,k  )  ! 1 - 3
+            dgz2 = gz_lev %d(i,j  ,k  ) - gz_lev %d(i,j+1,k+1)  ! 4 - 2
+            dv%d(i,j,k) = dv%d(i,j,k) + (                   &
               (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
               (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part
             ) / mesh%de_lat(j)

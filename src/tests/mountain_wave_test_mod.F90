@@ -44,13 +44,13 @@ contains
       do j = mesh%full_jds, mesh%full_jde
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%half_ids, mesh%half_ide
-          u(i,j,k) = u0 * cos_lat
+          u%d(i,j,k) = u0 * cos_lat
         end do
       end do
     end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(u)
 
-    v = 0.0
+    v%d = 0.0
 
     do j = mesh%full_jds, mesh%full_jde
       sin_lat = mesh%full_sin_lat(j)
@@ -58,31 +58,31 @@ contains
       do i = mesh%full_ids, mesh%full_ide
         full_lon = mesh%full_lon(i)
         r = radius * acos(sin(latc) * sin_lat + cos(latc) * cos_lat * cos(full_lon - lonc))
-        gzs(i,j) = g * h0 * exp(-(r / d)**2)
+        gzs%d(i,j) = g * h0 * exp(-(r / d)**2)
       end do
     end do
-    call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(gzs)
 
     do j = mesh%full_jds, mesh%full_jde
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
       do i = mesh%full_ids, mesh%full_ide
-        mgs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kap * (u0 / radius + 2.0_r8 * omega) * &
-                   (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * gzs(i,j))
+        mgs%d(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kap * (u0 / radius + 2.0_r8 * omega) * &
+                     (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * gzs%d(i,j))
       end do
     end do
-    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    call fill_halo(mgs)
 
     call calc_mg(block, block%dstate(1))
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          pt(i,j,k) = modified_potential_temperature(288.0_r8, mg(i,j,k), 0.0_r8)
+          pt%d(i,j,k) = modified_potential_temperature(288.0_r8, mg%d(i,j,k), 0.0_r8)
         end do
       end do
     end do
-    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(pt, cross_pole=.true.)
 
     if (nonhydrostatic) then
       ! FIXME: Calculate tv.

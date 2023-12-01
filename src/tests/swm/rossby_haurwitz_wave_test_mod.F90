@@ -43,7 +43,7 @@ contains
                v      => block%dstate(1)%v_lat, &
                gz     => block%dstate(1)%gz   , &
                gzs    => block%static%gzs)
-    gzs(:,:) = 0.0
+    gzs%d = 0.0
 
     do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
@@ -53,10 +53,10 @@ contains
         a = cos_lat
         b = R * cos_lat**(R - 1) * sin_lat**2 * cos(R * lon)
         c = cos_lat**(R + 1) * cos(R * lon)
-        u(i,j,1) = radius * omg * (a + b - c)
+        u%d(i,j,1) = radius * omg * (a + b - c)
       end do
     end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(u)
 
     do j = mesh%half_jds, mesh%half_jde
       cos_lat = mesh%half_cos_lat(j)
@@ -64,10 +64,10 @@ contains
       do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
         a = R * cos_lat**(R - 1) * sin_lat * sin(R * lon)
-        v(i,j,1) = - radius * omg * a
+        v%d(i,j,1) = - radius * omg * a
       end do
     end do
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false.)
+    call fill_halo(v)
 
     do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
@@ -78,10 +78,10 @@ contains
       c = 0.25 * omg**2 * cos_lat**(2 * R) * ((R + 1) * cos_lat**2 - R - 2)
       do i = mesh%full_ids, mesh%full_ide
         lon = mesh%full_lon(i)
-        gz(i,j,1) = gz0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
+        gz%d(i,j,1) = gz0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
       end do
     end do
-    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(gz)
     end associate
 
   end subroutine rossby_haurwitz_wave_test_set_ic

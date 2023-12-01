@@ -54,23 +54,24 @@ contains
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &
                  mesh  => blocks(iblk)%mesh        , &
-                 gz    => blocks(iblk)%dstate(1)%gz)
+                 gz    => blocks(iblk)%dstate(1)%gz, &
+                 q     => tracers(iblk)%q          )
       ! Background
-      tracers(iblk)%q(:,:,:,1) = 1
+      q%d(:,:,:,1) = 1
       ! Test
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            z = gz(i,j,k) / g
+            z = gz%d(i,j,k) / g
             if (z1 < z .and. z < z2) then
-              tracers(iblk)%q(i,j,k,2) = 0.5_r8 * (1 + cos(pi2 * (z - z0) / (z2 - z1)))
+              q%d(i,j,k,2) = 0.5_r8 * (1 + cos(pi2 * (z - z0) / (z2 - z1)))
             else
-              tracers(iblk)%q(i,j,k,2) = 0
+              q%d(i,j,k,2) = 0
             end if
           end do
         end do
       end do
-      call fill_halo(block%filter_halo, tracers(iblk)%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+      call fill_halo(q, 2, cross_pole=.true.)
       end associate
     end do
 
@@ -106,48 +107,48 @@ contains
                  mfx_lon => blocks(iblk)%aux%mfx_lon          , &
                  mfy_lat => blocks(iblk)%aux%mfy_lat          , &
                  we      => blocks(iblk)%dstate(itime)%we_lev )
-      mgs = p0
+      mgs%d = p0
       call calc_mg(block, dstate)
-      ph_lev = mg_lev
-      ph = mg
-      tv = T0
+      ph_lev%d = mg_lev%d
+      ph%d = mg%d
+      tv%d = T0
       call calc_dmg(block, dstate)
       call calc_gz_lev(block, dstate)
-      call interp_lev_edge_to_cell(mesh, gz_lev, gz)
+      call interp_lev_edge_to_cell(mesh, gz_lev%d, gz%d)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           lat = mesh%full_lat(j)
           do i = mesh%half_ids, mesh%half_ide
             lon = mesh%half_lon(i)
-            u(i,j,k) = u0 * cos(lat)
+            u%d(i,j,k) = u0 * cos(lat)
           end do
         end do
       end do
-      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
-      mfx_lon = u * dmg_lon
+      call fill_halo(u)
+      mfx_lon%d = u%d * dmg_lon%d
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           lat = mesh%half_lat(j)
           do i = mesh%full_ids, mesh%full_ide
             lon = mesh%full_lon(i)
-            rho = mg(i,j,k) / (rd * T0)
-            v(i,j,k) = -radius * w0 * pi * rho0 / (K0 * ztop * rho) * &
-              cos(lat) * sin(K0 * lat) * cos(pi * gz(i,j,k) / (g * ztop)) * cos_t
+            rho = mg%d(i,j,k) / (rd * T0)
+            v%d(i,j,k) = -radius * w0 * pi * rho0 / (K0 * ztop * rho) * &
+              cos(lat) * sin(K0 * lat) * cos(pi * gz%d(i,j,k) / (g * ztop)) * cos_t
           end do
         end do
       end do
-      call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
-      mfy_lat = v * dmg_lat
+      call fill_halo(v)
+      mfy_lat%d = v%d * dmg_lat%d
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           lat = mesh%full_lat(j)
           do i = mesh%full_ids, mesh%full_ide
             lon = mesh%full_lon(i)
-            rho = mg_lev(i,j,k) / (rd * T0)
-            dmgdlev = dmg_lev(i,j,k) / mesh%half_dlev(k)
-            we(i,j,k) = -dmgdlev * g * w0 * rho0 / K0 * (                   &
+            rho = mg_lev%d(i,j,k) / (rd * T0)
+            dmgdlev = dmg_lev%d(i,j,k) / mesh%half_dlev(k)
+            we%d(i,j,k) = -dmgdlev * g * w0 * rho0 / K0 * (                   &
               -2 * sin(K0 * lat) * sin(lat) + K0 * cos(lat) * cos(K0 * lat) &
-            ) * sin(pi * gz_lev(i,j,k) / (g * ztop)) * cos_t / p0
+            ) * sin(pi * gz_lev%d(i,j,k) / (g * ztop)) * cos_t / p0
           end do
         end do
       end do

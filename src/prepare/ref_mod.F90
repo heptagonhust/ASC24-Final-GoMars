@@ -36,15 +36,15 @@ contains
         a  = 50.0_r8
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            ref_ps(i,j) = p0 * exp(-t0 / a + sqrt((t0 / a)**2 - 2 * gzs(i,j) / a / rd))
+            ref_ps%d(i,j) = p0 * exp(-t0 / a + sqrt((t0 / a)**2 - 2 * gzs%d(i,j) / a / rd))
           end do
         end do
-        call fill_halo(block%halo, ref_ps, full_lon=.true., full_lat=.true.)
-        ref_ps_smth = ref_ps
+        call fill_halo(ref_ps)
+        ref_ps_smth%d = ref_ps%d
         do i = 1, 50
-          call laplace_damp_on_cell(block%mesh, block%halo, 2, ref_ps_smth, coef=1.0e6_r8, lon_coef=decay_from_pole)
+          call laplace_damp_run(ref_ps_smth, 2, 1.0e6_r8)
         end do
-        ref_ps_perb = ref_ps - ref_ps_smth
+        ref_ps_perb%d = ref_ps%d - ref_ps_smth%d
         end associate
       end do
     end select

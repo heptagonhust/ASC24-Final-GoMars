@@ -129,13 +129,16 @@ contains
       call log_error('Too large zonal halo width ' // to_str(lon_hw) // '!', __FILE__, __LINE__)
     end if
 
-    call global_mesh%reinit(lon_hw)
-    call blocks(1)%init_stage_2()
-
     if (proc%is_root()) then
       call log_notice('Maximum zonal halo width is ' // to_str(lon_hw) // '.')
     end if
+    call global_mesh%reinit(lon_hw)
 
+    allocate(blocks(1)%filter_halo(size(proc%ngb)))
+    allocate(blocks(1)%       halo(size(proc%ngb)))
+    call blocks(1)%init_stage_2()
+
+    ! Setup halos (only normal halos for the time being).
     select case (r8)
     case (4)
       dtype = MPI_REAL
@@ -146,10 +149,6 @@ contains
     case default
       call log_error('Unsupported parameter r8!')
     end select
-
-    ! Setup halos (only normal halos for the time being).
-    allocate(blocks(1)%filter_halo(size(proc%ngb)))
-    allocate(blocks(1)%halo(size(proc%ngb)))
     do i = 1, size(proc%ngb)
       proc%ngb(i)%orient = i
       select case (proc%ngb(i)%orient)

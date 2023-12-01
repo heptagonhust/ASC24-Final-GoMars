@@ -57,51 +57,50 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = ueq * mesh%full_cos_lat(j)
+            u%d(i,j,k) = ueq * mesh%full_cos_lat(j)
           end do
         end do
       end do
-      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(u)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dlon = abs(mesh%full_lon(i) - lonc)
           dlon = min(pi2 - dlon, dlon)
           r0 = radius * dlon
-          gzs(i,j) = g * h0 * exp(-r0**2 / d0**2) * cos(pi * r0 / xi0)**2 * mesh%full_cos_lat(j)
+          gzs%d(i,j) = g * h0 * exp(-r0**2 / d0**2) * cos(pi * r0 / xi0)**2 * mesh%full_cos_lat(j)
         end do
       end do
-      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(gzs)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          mgs(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs(i,j) / Rd / teq)
-          phs(i,j) = mgs(i,j)
+          mgs%d(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs%d(i,j) / Rd / teq)
+          phs%d(i,j) = mgs%d(i,j)
         end do
       end do
-      call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+      call fill_halo(mgs)
 
       call calc_mg(block, block%dstate(1))
 
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            t(i,j,k) = teq
-            pt(i,j,k) = modified_potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
+            t %d(i,j,k) = teq
+            pt%d(i,j,k) = modified_potential_temperature(t%d(i,j,k), mg%d(i,j,k), 0.0_r8)
           end do
         end do
       end do
-      call fill_halo(block%halo, t, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(pt, cross_pole=.true.)
 
       do k = mesh%half_kds, mesh%half_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            gz_lev(i,j,k) = Rd * teq * log(peq / mg_lev(i,j,k)) - 0.5_r8 * ueq**2 * mesh%full_sin_lat(j)**2
+            gz_lev%d(i,j,k) = Rd * teq * log(peq / mg_lev%d(i,j,k)) - 0.5_r8 * ueq**2 * mesh%full_sin_lat(j)**2
           end do
         end do
       end do
-      call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(gz_lev)
     end associate
 
   end subroutine ksp15_01_test_set_ic
@@ -128,48 +127,47 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            u(i,j,k) = ueq * mesh%full_cos_lat(j)
+            u%d(i,j,k) = ueq * mesh%full_cos_lat(j)
           end do
         end do
       end do
-      call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(u)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           r = radius * acos(sin(latc) * mesh%full_sin_lat(j) + cos(latc) * mesh%full_cos_lat(j) * cos(mesh%full_lon(i) - lonc))
-          gzs(i,j) = g * h0 * exp(-r**2 / d0**2) * cos(pi * r / xi0)**2
+          gzs%d(i,j) = g * h0 * exp(-r**2 / d0**2) * cos(pi * r / xi0)**2
         end do
       end do
-      call fill_halo(block%filter_halo, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(gzs)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          phs(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs(i,j) / Rd / teq)
+          phs%d(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs%d(i,j) / Rd / teq)
         end do
       end do
-      call fill_halo(block%halo, phs, full_lon=.true., full_lat=.true.)
+      call fill_halo(phs)
 
       call calc_mg(block, block%dstate(1))
 
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            t(i,j,k) = teq
-            pt(i,j,k) = modified_potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
+            t %d(i,j,k) = teq
+            pt%d(i,j,k) = modified_potential_temperature(t%d(i,j,k), mg%d(i,j,k), 0.0_r8)
           end do
         end do
       end do
-      call fill_halo(block%halo, t , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call fill_halo(block%halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(pt, cross_pole=.true.)
 
       do k = mesh%half_kds, mesh%half_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            gz_lev(i,j,k) = Rd * teq * log(peq / mg_lev(i,j,k)) - 0.5_r8 * ueq**2 * mesh%full_sin_lat(j)**2
+            gz_lev%d(i,j,k) = Rd * teq * log(peq / mg_lev%d(i,j,k)) - 0.5_r8 * ueq**2 * mesh%full_sin_lat(j)**2
           end do
         end do
       end do
-      call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(gz_lev)
     end associate
 
   end subroutine ksp15_02_test_set_ic

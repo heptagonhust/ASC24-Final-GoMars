@@ -16,6 +16,7 @@ module adv_mod
   use math_mod
   use time_mod
   use block_mod
+  use latlon_field_types_mod
   use latlon_parallel_mod
   use process_mod, only: proc
   use tracer_mod
@@ -40,7 +41,6 @@ module adv_mod
   public adv_calc_mass_vflx
   public adv_calc_tracer_hflx
   public adv_calc_tracer_vflx
-  public adv_calc_tracer_vflx_lev
   public adv_batch_type
 
   public upwind1
@@ -51,68 +51,27 @@ module adv_mod
   public tvd
 
   interface
-    subroutine calc_hflx_interface(block, batch, m, mfx, mfy, dt)
-      import block_type, adv_batch_type, r8
-      type(block_type    ), intent(in   ) :: block
-      type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
-                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
-                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
-      real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
-      real(r8), intent(out) :: mfy(block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%half_jms:block%mesh%half_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
+    subroutine calc_hflx_interface(batch, m, mfx, mfy, dt)
+      import adv_batch_type, latlon_field3d_type, r8
+      type(adv_batch_type     ), intent(inout) :: batch
+      type(latlon_field3d_type), intent(in   ) :: m
+      type(latlon_field3d_type), intent(inout) :: mfx
+      type(latlon_field3d_type), intent(inout) :: mfy
       real(r8), intent(in), optional :: dt
     end subroutine calc_hflx_interface
-    subroutine calc_hflx_lev_interface(block, batch, m, mfx, mfy, dt)
-      import block_type, adv_batch_type, r8
-      type(block_type    ), intent(in   ) :: block
-      type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
-                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
-                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
-      real(r8), intent(out) :: mfx(block%mesh%half_ims:block%mesh%half_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%half_kms:block%mesh%half_kme)
-      real(r8), intent(out) :: mfy(block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%half_jms:block%mesh%half_jme, &
-                                   block%mesh%half_kms:block%mesh%half_kme)
-      real(r8), intent(in), optional :: dt
-    end subroutine calc_hflx_lev_interface
-    subroutine calc_vflx_interface(block, batch, m, mfz, dt)
-      import block_type, adv_batch_type, r8
-      type(block_type    ), intent(in   ) :: block
-      type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
-                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
-                                   block%filter_mesh%full_kms:block%filter_mesh%full_kme)
-      real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%half_kms:block%mesh%half_kme)
+    subroutine calc_vflx_interface(batch, m, mfz, dt)
+      import adv_batch_type, latlon_field3d_type, r8
+      type(adv_batch_type     ), intent(inout) :: batch
+      type(latlon_field3d_type), intent(in   ) :: m
+      type(latlon_field3d_type), intent(inout) :: mfz
       real(r8), intent(in), optional :: dt
     end subroutine calc_vflx_interface
-    subroutine calc_vflx_lev_interface(block, batch, m, mfz, dt)
-      import block_type, adv_batch_type, r8
-      type(block_type    ), intent(in   ) :: block
-      type(adv_batch_type), intent(inout) :: batch
-      real(r8), intent(in ) :: m  (block%filter_mesh%full_ims:block%filter_mesh%full_ime, &
-                                   block%filter_mesh%full_jms:block%filter_mesh%full_jme, &
-                                   block%filter_mesh%half_kms:block%filter_mesh%half_kme)
-      real(r8), intent(out) :: mfz(block%mesh%full_ims:block%mesh%full_ime, &
-                                   block%mesh%full_jms:block%mesh%full_jme, &
-                                   block%mesh%full_kms:block%mesh%full_kme)
-      real(r8), intent(in), optional :: dt
-    end subroutine calc_vflx_lev_interface
   end interface
 
-  procedure(calc_hflx_interface    ), pointer :: adv_calc_mass_hflx       => null()
-  procedure(calc_vflx_interface    ), pointer :: adv_calc_mass_vflx       => null()
-  procedure(calc_hflx_interface    ), pointer :: adv_calc_tracer_hflx     => null()
-  procedure(calc_hflx_lev_interface), pointer :: adv_calc_tracer_hflx_lev => null()
-  procedure(calc_vflx_interface    ), pointer :: adv_calc_tracer_vflx     => null()
-  procedure(calc_vflx_lev_interface), pointer :: adv_calc_tracer_vflx_lev => null()
+  procedure(calc_hflx_interface), pointer :: adv_calc_mass_hflx   => null()
+  procedure(calc_vflx_interface), pointer :: adv_calc_mass_vflx   => null()
+  procedure(calc_hflx_interface), pointer :: adv_calc_tracer_hflx => null()
+  procedure(calc_vflx_interface), pointer :: adv_calc_tracer_vflx => null()
 
 contains
 
@@ -125,12 +84,10 @@ contains
     select case (adv_scheme)
     case ('ffsl')
       call ffsl_init()
-      adv_calc_mass_hflx       => ffsl_calc_mass_hflx
-      adv_calc_mass_vflx       => ffsl_calc_mass_vflx
-      adv_calc_tracer_hflx     => ffsl_calc_tracer_hflx
-      adv_calc_tracer_hflx_lev => ffsl_calc_tracer_hflx_lev
-      adv_calc_tracer_vflx     => ffsl_calc_tracer_vflx
-      adv_calc_tracer_vflx_lev => ffsl_calc_tracer_vflx_lev
+      adv_calc_mass_hflx   => ffsl_calc_mass_hflx
+      adv_calc_mass_vflx   => ffsl_calc_mass_vflx
+      adv_calc_tracer_hflx => ffsl_calc_tracer_hflx
+      adv_calc_tracer_vflx => ffsl_calc_tracer_vflx
     case default
       call log_error('Invalid adv_scheme ' // trim(adv_scheme) // '!', pid=proc%id)
     end select
@@ -140,8 +97,9 @@ contains
     ! Initialize advection batches.
     do iblk = 1, size(blocks)
       if (.not. advection) then
-        call blocks(iblk)%adv_batch_pt%init(           &
-          blocks(iblk)%filter_mesh, blocks(iblk)%mesh, &
+        call blocks(iblk)%adv_batch_pt%init(                  &
+          blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
+          blocks(iblk)%mesh, blocks(iblk)%halo              , &
           'cell', 'pt', dt_dyn, dynamic=.true.)
       end if
     end do
@@ -161,8 +119,9 @@ contains
             idx(n) = itra
           end if
         end do
-        call blocks(iblk)%adv_batches(ibat)%init(    &
-          blocks(iblk)%filter_mesh, blocks(iblk)%mesh, &
+        call blocks(iblk)%adv_batches(ibat)%init(             &
+          blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
+          blocks(iblk)%mesh, blocks(iblk)%halo              , &
           'cell', batch_names(ibat), batch_dts(ibat), dynamic=.false., idx=idx(1:n))
       end do
     end do
@@ -184,11 +143,10 @@ contains
 
     if (.not. restart) then
       do iblk = 1, size(blocks)
-        associate (block  => blocks(iblk)              , &
-                   dstate => blocks(iblk)%dstate(itime))
-        if (allocated(block%adv_batches)) then
-          do m = 1, size(block%adv_batches)
-            call block%adv_batches(m)%copy_old_m(dstate%dmg)
+        associate (dmg => blocks(iblk)%dstate(itime)%dmg)
+        if (allocated(blocks(iblk)%adv_batches)) then
+          do m = 1, size(blocks(iblk)%adv_batches)
+            call blocks(iblk)%adv_batches(m)%copy_old_m(dmg)
           end do
         end if
         end associate
@@ -202,12 +160,9 @@ contains
 
     integer, intent(in) :: itime
 
-    integer iblk, i, j, k, l, m
-    real(r8), pointer :: q_new(:,:,:)
-    real(r8), allocatable :: q_old(:,:,:)
+    integer iblk, i, j, k, l, m, idx
+    type(latlon_field3d_type) q_old, q_new
     real(r8), allocatable :: work(:,:), pole(:)
-    real(r8) qm0, qm1, qm2, qm0_half
-    real(r8), dimension(nlev) :: a, b, c, r
 
     if (.not. allocated(blocks(1)%adv_batches)) return
 
@@ -216,45 +171,38 @@ contains
                  dstate    => blocks(iblk)%dstate(itime)    , &
                  mesh      => blocks(iblk)%filter_mesh      , &
                  m_new     => blocks(iblk)%dstate(itime)%dmg)
-      allocate(q_old(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
       allocate(work(mesh%full_ids:mesh%full_ide,mesh%full_nlev))
       allocate(pole(mesh%full_nlev))
       do m = 1, size(block%adv_batches)
         if (time_is_alerted(block%adv_batches(m)%name)) then
           if (m == 1 .and. pdc_type == 2) call physics_update_dynamics(block, itime, dt_adv)
-          associate (batch => block%adv_batches(m), &
-                     is    => mesh%full_ims       , &
-                     ie    => mesh%full_ime       , &
-                     js    => mesh%full_jms       , &
-                     je    => mesh%full_jme       , &
-                     ks    => mesh%full_kms       , &
-                     ke    => mesh%full_kme       )
+          associate (batch => block%adv_batches(m))
+          call q_old%link(batch%dmf) ! Borrow array.
           do l = 1, block%adv_batches(m)%ntracers
-            q_old(is:ie,js:je,ks:ke) =  tracers(block%id)%q(:,:,:,batch%idx(l))
-            q_new(is:ie,js:je,ks:ke) => tracers(block%id)%q(:,:,:,batch%idx(l))
+            idx = batch%idx(l)
+            call q_new%link(tracers(iblk)%q, idx)
+            q_old%d = q_new%d
             associate (m_old   => batch%old_m  , & ! inout
                        qmf_lon => batch%qmf_lon, & ! working array
                        qmf_lat => batch%qmf_lat, & ! working array
                        qmf_lev => batch%qmf_lev)   ! working array
             ! Calculate tracer mass flux.
-            call adv_calc_tracer_hflx(block, batch, q_old, qmf_lon, qmf_lat)
-            call fill_halo(block%halo, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
-                           south_halo=.false., north_halo=.false., east_halo=.false.)
-            call fill_halo(block%halo, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
-                           north_halo=.false.,  west_halo=.false., east_halo=.false.)
+            call adv_calc_tracer_hflx(batch, q_old, qmf_lon, qmf_lat)
+            call fill_halo(qmf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
+            call fill_halo(qmf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
             ! Update tracer mixing ratio.
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = (m_old(i,j,k) * q_old(i,j,k) - ( &
-                    (                                             &
-                      qmf_lon(i  ,j,k) -                          &
-                      qmf_lon(i-1,j,k)                            &
-                    ) * mesh%le_lon(j) + (                        &
-                      qmf_lat(i,j  ,k) * mesh%le_lat(j  ) -       &
-                      qmf_lat(i,j-1,k) * mesh%le_lat(j-1)         &
-                    )                                             &
-                  ) / mesh%area_cell(j) * dt_adv) / m_new(i,j,k)
+                  q_new%d(i,j,k) = (m_old%d(i,j,k) * q_old%d(i,j,k) - ( &
+                    (                                                   &
+                      qmf_lon%d(i  ,j,k) -                              &
+                      qmf_lon%d(i-1,j,k)                                &
+                    ) * mesh%le_lon(j) + (                              &
+                      qmf_lat%d(i,j  ,k) * mesh%le_lat(j  ) -           &
+                      qmf_lat%d(i,j-1,k) * mesh%le_lat(j-1)             &
+                    )                                                   &
+                  ) / mesh%area_cell(j) * dt_adv) / m_new%d(i,j,k)
                 end do
               end do
             end do
@@ -262,14 +210,14 @@ contains
               j = mesh%full_jds
               do k = mesh%full_kds, mesh%full_kde
                 do i = mesh%full_ids, mesh%full_ide
-                  work(i,k) = qmf_lat(i,j,k)
+                  work(i,k) = qmf_lat%d(i,j,k)
                 end do
               end do
               call zonal_sum(proc%zonal_circle, work, pole)
               pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
               do k = mesh%full_kds, mesh%full_kde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = (m_old(i,j,k) * q_old(i,j,k) - pole(k)) / m_new(i,j,k)
+                  q_new%d(i,j,k) = (m_old%d(i,j,k) * q_old%d(i,j,k) - pole(k)) / m_new%d(i,j,k)
                 end do
               end do
             end if
@@ -277,31 +225,31 @@ contains
               j = mesh%full_jde
               do k = mesh%full_kds, mesh%full_kde
                 do i = mesh%full_ids, mesh%full_ide
-                  work(i,k) = qmf_lat(i,j-1,k)
+                  work(i,k) = qmf_lat%d(i,j-1,k)
                 end do
               end do
               call zonal_sum(proc%zonal_circle, work, pole)
               pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
               do k = mesh%full_kds, mesh%full_kde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = (m_old(i,j,k) * q_old(i,j,k) + pole(k)) / m_new(i,j,k)
+                  q_new%d(i,j,k) = (m_old%d(i,j,k) * q_old%d(i,j,k) + pole(k)) / m_new%d(i,j,k)
                 end do
               end do
             end if
-            call adv_fill_vhalo(mesh, q_new)
-            call adv_calc_tracer_vflx(block, block%adv_batches(m), q_new, qmf_lev)
+            call adv_fill_vhalo(q_new)
+            call adv_calc_tracer_vflx(block%adv_batches(m), q_new, qmf_lev)
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new(i,j,k) = q_new(i,j,k) - (qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv / m_new(i,j,k)
+                  q_new%d(i,j,k) = q_new%d(i,j,k) - (qmf_lev%d(i,j,k+1) - qmf_lev%d(i,j,k)) * dt_adv / m_new%d(i,j,k)
                 end do
               end do
             end do
             if (pdc_type == 1 .or. pdc_type == 2) then
               call physics_update_tracers(block, itime, dt_adv, batch%idx(l))
             else
-              call tracer_fill_negative_values(block, itime, q_new)
-              call fill_halo(block%filter_halo, q_new, full_lon=.true., full_lat=.true., full_lev=.true., cross_pole=.true.)
+              call tracer_fill_negative_values(block, itime, q_new%d)
+              call fill_halo(q_new, cross_pole=.true.)
             end if
             end associate
           end do
@@ -309,40 +257,37 @@ contains
           call block%adv_batches(m)%copy_old_m(m_new)
         end if
       end do
-      deallocate(q_old, work, pole)
+      deallocate(work, pole)
       call tracer_calc_qm(block)
       end associate
     end do
 
   end subroutine adv_run
 
-  subroutine adv_fill_vhalo(mesh, f)
+  subroutine adv_fill_vhalo(f)
 
-    type(mesh_type), intent(in) :: mesh
-    real(r8), intent(inout) :: f(mesh%full_ims:mesh%full_ime, &
-                                 mesh%full_jms:mesh%full_jme, &
-                                 mesh%full_kms:mesh%full_kme)
+    type(latlon_field3d_type), intent(inout) :: f
 
     integer i, j, k
 
     ! Set upper and lower boundary conditions.
-    do k = mesh%full_kds - 1, mesh%full_kms, -1
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          ! f(i,j,k) = f(i,j,mesh%full_kds)
-          ! f(i,j,k) = 2 * f(i,j,k+1) - f(i,j,k+2)
-          f(i,j,k) = 3 * f(i,j,k+1) - 3 * f(i,j,k+2) + f(i,j,k+3)
-          ! f(i,j,k) = 4 * f(i,j,k+1) - 6 * f(i,j,k+2) + 4 * f(i,j,k+3) - f(i,j,k+4)
+    do k = f%mesh%full_kds - 1, f%mesh%full_kms, -1
+      do j = f%mesh%full_jds, f%mesh%full_jde
+        do i = f%mesh%full_ids, f%mesh%full_ide
+          ! f%d(i,j,k) = f%d(i,j,mesh%full_kds)
+          ! f%d(i,j,k) = 2 * f%d(i,j,k+1) - f%d(i,j,k+2)
+          f%d(i,j,k) = 3 * f%d(i,j,k+1) - 3 * f%d(i,j,k+2) + f%d(i,j,k+3)
+          ! f%d(i,j,k) = 4 * f%d(i,j,k+1) - 6 * f%d(i,j,k+2) + 4 * f%d(i,j,k+3) - f%d(i,j,k+4)
         end do
       end do
     end do
-    do k = mesh%full_kde + 1, mesh%full_kme
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          ! f(i,j,k) = f(i,j,mesh%full_kde)
-          ! f(i,j,k) = 2 * f(i,j,k-1) - f(i,j,k-2)
-          f(i,j,k) = 3 * f(i,j,k-1) - 3 * f(i,j,k-2) + f(i,j,k-3)
-          ! f(i,j,k) = 4 * f(i,j,k-1) - 6 * f(i,j,k-2) + 4 * f(i,j,k-3) - f(i,j,k-4)
+    do k = f%mesh%full_kde + 1, f%mesh%full_kme
+      do j = f%mesh%full_jds, f%mesh%full_jde
+        do i = f%mesh%full_ids, f%mesh%full_ide
+          ! f%d(i,j,k) = f%d(i,j,mesh%full_kde)
+          ! f%d(i,j,k) = 2 * f%d(i,j,k-1) - f%d(i,j,k-2)
+          f%d(i,j,k) = 3 * f%d(i,j,k-1) - 3 * f%d(i,j,k-2) + f%d(i,j,k-3)
+          ! f%d(i,j,k) = 4 * f%d(i,j,k-1) - 6 * f%d(i,j,k-2) + 4 * f%d(i,j,k-3) - f%d(i,j,k-4)
         end do
       end do
     end do

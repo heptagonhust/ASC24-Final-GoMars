@@ -35,7 +35,7 @@ contains
     gz0 = 8.0d3 * g
     M   = u0 / (n * radius)
 
-    block%static%gzs(:,:) = 0d0
+    block%static%gzs%d = 0d0
 
     a = radius
 
@@ -55,11 +55,11 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         do i = mesh%half_ids, mesh%half_ide
           lon = mesh%half_lon(i)
-          u(i,j,k) = a * M * cos_lat + a * M * cos_lat**(n - 1) * cos(n * lon) * (n * sin_lat**2 - cos_lat**2)
+          u%d(i,j,k) = a * M * cos_lat + a * M * cos_lat**(n - 1) * cos(n * lon) * (n * sin_lat**2 - cos_lat**2)
         end do
       end do
     end do
-    call fill_halo(block%halo, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(u)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
@@ -67,11 +67,11 @@ contains
         sin_lat = mesh%half_sin_lat(j)
         do i = mesh%full_ids, mesh%full_ide
           lon = mesh%full_lon(i)
-          v(i,j,k) = - a * M * n * cos_lat**(n-1) * sin_lat * sin(n * lon)
+          v%d(i,j,k) = - a * M * n * cos_lat**(n-1) * sin_lat * sin(n * lon)
         end do
       end do
     end do
-    call fill_halo(block%halo, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call fill_halo(v)
 
     do j = mesh%full_jds, mesh%full_jde
       cos_lat = mesh%full_cos_lat(j)
@@ -81,41 +81,40 @@ contains
         b_lat = 2 * (omega + M) * M / (n + 1) / (n + 2) * cos_lat**n * ((n**2 + 2 * n + 2) - (n + 1)**2 * cos_lat**2)
         c_lat = M**2 / 4d0 * cos_lat**(2 * n) * ((n + 1) * cos_lat**2 - (n + 2))
         phi_p = a**2 * (a_lat + b_lat * cos(n * lon) + c_lat * cos(2 * n * lon))
-        mgs(i,j) = pref * (1 + gamma / g / t0 * phi_p)**(g / gamma / Rd)
+        mgs%d(i,j) = pref * (1 + gamma / g / t0 * phi_p)**(g / gamma / Rd)
       end do
     end do
-    call fill_halo(block%halo, mgs, full_lon=.true., full_lat=.true.)
+    call fill_halo(mgs)
 
     call calc_mg(block, block%dstate(1))
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          t (i,j,k) = t0 * (mg(i,j,k) / pref)**(gamma * Rd / g)
-          pt(i,j,k) = modified_potential_temperature(t(i,j,k), mg(i,j,k), 0.0_r8)
+          t %d(i,j,k) = t0 * (mg%d(i,j,k) / pref)**(gamma * Rd / g)
+          pt%d(i,j,k) = modified_potential_temperature(t%d(i,j,k), mg%d(i,j,k), 0.0_r8)
         end do
       end do
     end do
-    call fill_halo(block%halo, t, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block%filter_halo, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(pt, cross_pole=.true.)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          gz(i,j,k) = g * t0 / gamma * (1 - (mg(i,j,k) / pref)**(gamma * Rd / g))
+          gz%d(i,j,k) = g * t0 / gamma * (1 - (mg%d(i,j,k) / pref)**(gamma * Rd / g))
         end do
       end do
     end do
-    call fill_halo(block%halo, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(gz)
 
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          gz_lev(i,j,k) = g * t0 / gamma * (1 - (mg_lev(i,j,k) / pref)**(gamma * Rd / g))
+          gz_lev%d(i,j,k) = g * t0 / gamma * (1 - (mg_lev%d(i,j,k) / pref)**(gamma * Rd / g))
         end do
       end do
     end do
-    call fill_halo(block%halo, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(gz_lev)
     end associate
 
   end subroutine rossby_haurwitz_wave_3d_test_set_ic
