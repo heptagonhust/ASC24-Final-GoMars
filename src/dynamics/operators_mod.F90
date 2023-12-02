@@ -321,8 +321,8 @@ contains
     end do
     call fill_halo(we_lev, west_halo=.false., south_halo=.false.)
 
-    call interp_lev_edge_to_lev_lon_edge(mesh, we_lev%d, we_lev_lon%d)
-    call interp_lev_edge_to_lev_lat_edge(mesh, we_lev%d, we_lev_lat%d)
+    call interp_run(we_lev, we_lev_lon)
+    call interp_run(we_lev, we_lev_lat)
     end associate
 
   end subroutine calc_we_lev
@@ -622,11 +622,11 @@ contains
     end if
 
     call fill_halo(dmg)
-    call average_cell_to_lon_edge(mesh, dmg%d, dmg_lon%d)
+    call average_run(dmg, dmg_lon)
     call fill_halo(dmg_lon)
-    call average_cell_to_lat_edge(mesh, dmg%d, dmg_lat%d)
+    call average_run(dmg, dmg_lat)
     call fill_halo(dmg_lat)
-    call interp_cell_to_vtx(mesh, dmg%d, dmg_vtx%d)
+    call interp_run(dmg, dmg_vtx)
     end associate
 
   end subroutine calc_dmg

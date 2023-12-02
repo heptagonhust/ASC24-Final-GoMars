@@ -7,7 +7,6 @@ module dcmip12_test_mod
   use block_mod
   use vert_coord_mod
   use operators_mod
-  use interp_mod
   use adv_mod
   use tracer_mod
 
@@ -114,7 +113,6 @@ contains
       tv%d = T0
       call calc_dmg(block, dstate)
       call calc_gz_lev(block, dstate)
-      call interp_lev_edge_to_cell(mesh, gz_lev%d, gz%d)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           lat = mesh%full_lat(j)
