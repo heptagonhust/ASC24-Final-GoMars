@@ -166,7 +166,7 @@ contains
       if (dtend%update_mgs) then
         ! ----------------------------------------------------------------------
         call fill_halo(dmgsdt, south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, dmgsdt%d)
+        call filter_run(block%big_filter, dmgsdt)
         ! ----------------------------------------------------------------------
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -190,7 +190,7 @@ contains
         if (.not. dtend%update_mgs .and. .not. dtend%copy_mgs .and. proc%is_root()) call log_error('Mass is not updated or copied!')
         ! ----------------------------------------------------------------------
         call fill_halo(dptdt, south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, dptdt%d)
+        call filter_run(block%big_filter, dptdt)
         ! ----------------------------------------------------------------------
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
@@ -199,7 +199,7 @@ contains
             end do
           end do
         end do
-        call fill_halo(new_state%pt, cross_pole=.true.)
+        call fill_halo(new_state%pt)
       else if (dtend%copy_pt) then
         new_state%pt%d = old_state%pt%d
       end if
@@ -207,7 +207,7 @@ contains
       if (dtend%update_gz) then
         ! ----------------------------------------------------------------------
         call fill_halo(dgzdt, south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, dgzdt%d)
+        call filter_run(block%big_filter, dgzdt)
         ! ----------------------------------------------------------------------
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
@@ -226,9 +226,9 @@ contains
     if (dtend%update_u .and. dtend%update_v) then
       ! ------------------------------------------------------------------------
       call fill_halo(dudt, south_halo=.false., north_halo=.false.)
-      call filter_on_lon_edge(block%big_filter, dudt%d)
+      call filter_run(block%big_filter, dudt)
       call fill_halo(dvdt, south_halo=.false., north_halo=.false.)
-      call filter_on_lat_edge(block%big_filter, dvdt%d)
+      call filter_run(block%big_filter, dvdt)
       ! ------------------------------------------------------------------------
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole

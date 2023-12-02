@@ -73,7 +73,7 @@ contains
     long_name = 'Tracer dry mixing ratio'
     units     = 'kg kg-1'
     if (ntracers > 0) then
-      call this%q%init(name, long_name, units, 'cell', filter_mesh, filter_halo, size4=ntracers)
+      call this%q%init(name, long_name, units, 'cell', filter_mesh, filter_halo, halo_cross_pole=.true., n4=ntracers)
     end if
 
     name      = 'qm'

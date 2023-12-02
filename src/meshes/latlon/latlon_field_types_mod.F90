@@ -45,13 +45,14 @@ module latlon_field_types_mod
     character(field_long_name_len) :: long_name = 'N/A'
     character(field_units_len    ) :: units     = 'N/A'
     character(field_loc_len      ) :: loc       = 'N/A'
-    logical :: full_lon    = .true.
-    logical :: full_lat    = .true.
-    logical :: full_lev    = .true.
-    logical :: initialized = .false.
-    logical :: linked      = .false.
-    logical :: restart     = .false.
-    logical :: initial     = .false.
+    logical :: full_lon         = .true.
+    logical :: full_lat         = .true.
+    logical :: full_lev         = .true.
+    logical :: initialized      = .false.
+    logical :: linked           = .false.
+    logical :: restart          = .false.
+    logical :: initial          = .false.
+    logical :: halo_cross_pole  = .false.
     type(latlon_mesh_type), pointer :: mesh     => null()
     type(latlon_halo_type), pointer :: halo(:)  => null()
   end type
@@ -89,7 +90,7 @@ module latlon_field_types_mod
 
 contains
 
-  subroutine latlon_field2d_init(this, name, long_name, units, loc, mesh, halo)
+  subroutine latlon_field2d_init(this, name, long_name, units, loc, mesh, halo, halo_cross_pole)
 
     class(latlon_field2d_type), intent(inout) :: this
     character(*), intent(in) :: name
@@ -98,6 +99,7 @@ contains
     character(*), intent(in) :: loc
     type(latlon_mesh_type), intent(in), target :: mesh
     type(latlon_halo_type), intent(in), target :: halo(:)
+    logical, intent(in), optional :: halo_cross_pole
 
     call this%clear()
 
@@ -107,6 +109,7 @@ contains
     this%loc       = loc
     this%mesh      => mesh
     this%halo      => halo
+    if (present(halo_cross_pole)) this%halo_cross_pole = halo_cross_pole
 
     select case (loc)
     case ('cell')
@@ -136,18 +139,19 @@ contains
       deallocate(this%d)
       this%d => null()
     end if
-    this%name        = 'N/A'
-    this%long_name   = 'N/A'
-    this%units       = 'N/A'
-    this%loc         = 'N/A'
-    this%mesh        => null()
-    this%halo        => null()
-    this%full_lon    = .true.
-    this%full_lat    = .true.
-    this%initialized = .false.
-    this%linked      = .false.
-    this%restart     = .false.
-    this%initial     = .false.
+    this%name            = 'N/A'
+    this%long_name       = 'N/A'
+    this%units           = 'N/A'
+    this%loc             = 'N/A'
+    this%mesh            => null()
+    this%halo            => null()
+    this%halo_cross_pole = .false.
+    this%full_lon        = .true.
+    this%full_lat        = .true.
+    this%initialized     = .false.
+    this%linked          = .false.
+    this%restart         = .false.
+    this%initial         = .false.
 
   end subroutine latlon_field2d_clear
 
@@ -159,14 +163,15 @@ contains
     if (this%initialized .and. this%loc /= other%loc) then
       call log_error('latlon_field2d_link: cannot link fields with different loc!', __FILE__, __LINE__)
     else
-      this%name      = other%name
-      this%long_name = other%long_name
-      this%units     = other%units
-      this%loc       = other%loc
-      this%mesh      => other%mesh
-      this%halo      => other%halo
-      this%full_lon  = other%full_lon
-      this%full_lat  = other%full_lat
+      this%name            = other%name
+      this%long_name       = other%long_name
+      this%units           = other%units
+      this%loc             = other%loc
+      this%mesh            => other%mesh
+      this%halo            => other%halo
+      this%halo_cross_pole = other%halo_cross_pole
+      this%full_lon        = other%full_lon
+      this%full_lat        = other%full_lat
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     this%d => other%d
@@ -187,14 +192,15 @@ contains
     if (this%initialized .and. this%loc /= other%loc) then
       call log_error('latlon_field2d_link: cannot link fields with different loc!', __FILE__, __LINE__)
     else
-      this%name      = other%name
-      this%long_name = other%long_name
-      this%units     = other%units
-      this%loc       = other%loc
-      this%mesh      => other%mesh
-      this%halo      => other%halo
-      this%full_lon  = other%full_lon
-      this%full_lat  = other%full_lat
+      this%name            = other%name
+      this%long_name       = other%long_name
+      this%units           = other%units
+      this%loc             = other%loc
+      this%mesh            => other%mesh
+      this%halo            => other%halo
+      this%halo_cross_pole = other%halo_cross_pole
+      this%full_lon        = other%full_lon
+      this%full_lat        = other%full_lat
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     select case (this%loc)
@@ -227,7 +233,7 @@ contains
 
   end subroutine latlon_field2d_final
 
-  subroutine latlon_field3d_init(this, name, long_name, units, loc, mesh, halo, ptr_to)
+  subroutine latlon_field3d_init(this, name, long_name, units, loc, mesh, halo, halo_cross_pole, ptr_to)
 
     class(latlon_field3d_type), intent(inout) :: this
     character(*), intent(in) :: name
@@ -236,6 +242,7 @@ contains
     character(*), intent(in) :: loc
     type(latlon_mesh_type), intent(in), target :: mesh
     type(latlon_halo_type), intent(in), target :: halo(:)
+    logical, intent(in), optional :: halo_cross_pole
     type(latlon_field3d_type), intent(in), optional, target :: ptr_to
 
     call this%clear()
@@ -246,6 +253,7 @@ contains
     this%loc       = loc
     this%mesh      => mesh
     this%halo      => halo
+    if (present(halo_cross_pole)) this%halo_cross_pole = halo_cross_pole
 
     if (present(ptr_to)) then
       this%d => ptr_to%d
@@ -289,19 +297,20 @@ contains
       deallocate(this%d)
       this%d => null()
     end if
-    this%name        = 'N/A'
-    this%long_name   = 'N/A'
-    this%units       = 'N/A'
-    this%loc         = 'N/A'
-    this%mesh        => null()
-    this%halo        => null()
-    this%full_lon    = .true.
-    this%full_lat    = .true.
-    this%full_lev    = .true.
-    this%initialized = .false.
-    this%linked      = .false.
-    this%restart     = .false.
-    this%initial     = .false.
+    this%name            = 'N/A'
+    this%long_name       = 'N/A'
+    this%units           = 'N/A'
+    this%loc             = 'N/A'
+    this%mesh            => null()
+    this%halo            => null()
+    this%halo_cross_pole = .false.
+    this%full_lon        = .true.
+    this%full_lat        = .true.
+    this%full_lev        = .true.
+    this%initialized     = .false.
+    this%linked          = .false.
+    this%restart         = .false.
+    this%initial         = .false.
 
   end subroutine latlon_field3d_clear
 
@@ -313,15 +322,16 @@ contains
     if (this%initialized .and. this%loc /= other%loc) then
       call log_error('latlon_field3d_link_3d: cannot link fields with different loc!', __FILE__, __LINE__)
     else
-      this%name      = other%name
-      this%long_name = other%long_name
-      this%units     = other%units
-      this%loc       = other%loc
-      this%mesh      => other%mesh
-      this%halo      => other%halo
-      this%full_lon  = other%full_lon
-      this%full_lat  = other%full_lat
-      this%full_lev  = other%full_lev
+      this%name            = other%name
+      this%long_name       = other%long_name
+      this%units           = other%units
+      this%loc             = other%loc
+      this%mesh            => other%mesh
+      this%halo            => other%halo
+      this%halo_cross_pole = other%halo_cross_pole
+      this%full_lon        = other%full_lon
+      this%full_lat        = other%full_lat
+      this%full_lev        = other%full_lev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     this%d => other%d
@@ -342,15 +352,16 @@ contains
     if (this%initialized .and. this%loc /= other%loc) then
       call log_error('latlon_field3d_link_4d: cannot link fields with different loc!', __FILE__, __LINE__)
     else
-      this%name      = other%name
-      this%long_name = other%long_name
-      this%units     = other%units
-      this%loc       = other%loc
-      this%mesh      => other%mesh
-      this%halo      => other%halo
-      this%full_lon  = other%full_lon
-      this%full_lat  = other%full_lat
-      this%full_lev  = other%full_lev
+      this%name            = other%name
+      this%long_name       = other%long_name
+      this%units           = other%units
+      this%loc             = other%loc
+      this%mesh            => other%mesh
+      this%halo            => other%halo
+      this%halo_cross_pole = other%halo_cross_pole
+      this%full_lon        = other%full_lon
+      this%full_lat        = other%full_lat
+      this%full_lev        = other%full_lev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     select case (this%loc)
@@ -391,7 +402,7 @@ contains
 
   end subroutine latlon_field3d_final
 
-  subroutine latlon_field4d_init(this, name, long_name, units, loc, mesh, halo, size4)
+  subroutine latlon_field4d_init(this, name, long_name, units, loc, mesh, halo, halo_cross_pole, n4)
 
     class(latlon_field4d_type), intent(inout) :: this
     character(*), intent(in) :: name
@@ -400,7 +411,8 @@ contains
     character(*), intent(in) :: loc
     type(latlon_mesh_type), intent(in), target :: mesh
     type(latlon_halo_type), intent(in), target :: halo(:)
-    integer, intent(in) :: size4
+    logical, intent(in), optional :: halo_cross_pole
+    integer, intent(in) :: n4
 
     call this%clear()
 
@@ -410,11 +422,12 @@ contains
     this%loc       = loc
     this%mesh      => mesh
     this%halo      => halo
+    if (present(halo_cross_pole)) this%halo_cross_pole = halo_cross_pole
 
     select case (loc)
     case ('cell')
       this%full_lon = .true. ; this%full_lat = .true. ; this%full_lev = .true.
-      allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme,size4))
+      allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme,n4))
     end select
 
     this%d = 0
@@ -431,16 +444,17 @@ contains
       deallocate(this%d)
       this%d => null()
     end if
-    this%name        = 'N/A'
-    this%long_name   = 'N/A'
-    this%units       = 'N/A'
-    this%loc         = 'N/A'
-    this%mesh        => null()
-    this%halo        => null()
-    this%initialized = .false.
-    this%linked      = .false.
-    this%restart     = .false.
-    this%initial     = .false.
+    this%name            = 'N/A'
+    this%long_name       = 'N/A'
+    this%units           = 'N/A'
+    this%loc             = 'N/A'
+    this%mesh            => null()
+    this%halo            => null()
+    this%halo_cross_pole = .false.
+    this%initialized     = .false.
+    this%linked          = .false.
+    this%restart         = .false.
+    this%initial         = .false.
 
   end subroutine latlon_field4d_clear
 
@@ -452,15 +466,16 @@ contains
     if (this%initialized .and. this%loc /= other%loc) then
       call log_error('latlon_field4d_link: cannot link fields with different loc!', __FILE__, __LINE__)
     else
-      this%name      = other%name
-      this%long_name = other%long_name
-      this%units     = other%units
-      this%loc       = other%loc
-      this%mesh      => other%mesh
-      this%halo      => other%halo
-      this%full_lon  = other%full_lon
-      this%full_lat  = other%full_lat
-      this%full_lev  = other%full_lev
+      this%name            = other%name
+      this%long_name       = other%long_name
+      this%units           = other%units
+      this%loc             = other%loc
+      this%mesh            => other%mesh
+      this%halo            => other%halo
+      this%halo_cross_pole = other%halo_cross_pole
+      this%full_lon        = other%full_lon
+      this%full_lat        = other%full_lat
+      this%full_lev        = other%full_lev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     this%d => other%d

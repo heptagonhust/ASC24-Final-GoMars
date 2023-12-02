@@ -88,7 +88,7 @@ contains
           end if
         end do
       end do
-      call fill_halo(q, 2, cross_pole=.true.)
+      call fill_halo(q, 2)
       ! Slotted cylinders
       qmax = 1.0_r8; qmin = 0.1_r8; r = radius * 0.5_r8
       do j = mesh%full_jds, mesh%full_jde
@@ -109,7 +109,7 @@ contains
           end if
         end do
       end do
-      call fill_halo(q, 3, cross_pole=.true.)
+      call fill_halo(q, 3)
       ! Gaussian hills
       qmax = 0.95_r8; c = 5.0_r8
       do j = mesh%full_jds, mesh%full_jde
@@ -121,7 +121,7 @@ contains
           q%d(i,j,1,4) = qmax * (exp(-c * dot_product(x - x1, x - x1)) + exp(-c * dot_product(x - x2, x - x2)))
         end do
       end do
-      call fill_halo(q, 4, cross_pole=.true.)
+      call fill_halo(q, 4)
       end associate
     end do
 

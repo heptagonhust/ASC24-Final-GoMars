@@ -389,7 +389,7 @@ contains
         call fiona_input('r0', 'mgs', mgs%d(is:ie,js:je), start=start, count=count)
         call fill_halo(mgs)
         call fiona_input('r0', 'pt', tmp, start=start, count=count); pt%d(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(pt, cross_pole=.true.)
+        call fill_halo(pt)
       else
         call fiona_input('r0', 'gz', tmp, start=start, count=count); gz%d(is:ie,js:je,ks:ke) = tmp
         call fill_halo(gz)
@@ -401,7 +401,7 @@ contains
             n = adv_batch%idx(l)
             call fiona_input('r0', tracer_names(n), tmp, start=start, count=count)
             q%d(is:ie,js:je,ks:ke,n) = tmp
-            call fill_halo(q, n, cross_pole=.true.)
+            call fill_halo(q, n)
           end do
           call fiona_input('r0', trim(tag)//'_old_m', tmp, start=start, count=count)
           adv_batch%old_m%d(is:ie,js:je,ks:ke) = tmp

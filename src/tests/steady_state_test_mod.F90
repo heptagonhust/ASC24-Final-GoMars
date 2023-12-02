@@ -76,7 +76,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
 
     do k = mesh%half_kds, mesh%half_kde
       eta = mesh%half_lev(k)

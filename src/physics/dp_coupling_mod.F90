@@ -216,14 +216,14 @@ contains
 
     if (filter_ptend) then
       call fill_halo(block%aux%dudt_phys, south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%big_filter, block%aux%dudt_phys%d)
+      call filter_run(block%big_filter, block%aux%dudt_phys)
       call fill_halo(block%aux%dvdt_phys, south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%big_filter, block%aux%dvdt_phys%d)
+      call filter_run(block%big_filter, block%aux%dvdt_phys)
       call fill_halo(block%aux%dptdt_phys, south_halo=.false., north_halo=.false.)
-      call filter_on_cell(block%big_filter, block%aux%dptdt_phys%d)
+      call filter_run(block%big_filter, block%aux%dptdt_phys)
       do m = 1, ntracers
         call fill_halo(block%aux%dqdt_phys, m, south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block%big_filter, block%aux%dqdt_phys%d(:,:,:,m))
+        call filter_run(block%big_filter, block%aux%dqdt_phys, m)
       end do
       call fill_halo(block%aux%dudt_phys, west_halo=.false., south_halo=.false., north_halo=.false.)
       call fill_halo(block%aux%dvdt_phys, west_halo=.false.,  east_halo=.false., south_halo=.false.)

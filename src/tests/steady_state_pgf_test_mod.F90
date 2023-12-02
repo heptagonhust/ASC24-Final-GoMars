@@ -80,7 +80,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
     end associate
 
   end subroutine steady_state_pgf_test_set_ic

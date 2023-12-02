@@ -235,7 +235,7 @@ contains
         name      = trim(this%name) // '_qx'
         long_name = 'Tracer mass after advection in x direction'
         units     = 'kg kg-1'
-        call this%qx%init(batch_name, long_name, units, 'cell', filter_mesh, filter_halo)
+        call this%qx%init(batch_name, long_name, units, 'cell', filter_mesh, filter_halo, halo_cross_pole=.true.)
 
         name      = trim(this%name) // '_qy'
         long_name = 'Tracer mass after advection in y direction'

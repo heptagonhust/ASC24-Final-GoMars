@@ -771,7 +771,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pv, cross_pole=.true.)
+    call fill_halo(pv)
     end associate
 
   end subroutine calc_pv

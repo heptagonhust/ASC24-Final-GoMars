@@ -58,7 +58,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
     end associate
 
   end subroutine held_suarez_test_set_ic
@@ -108,7 +108,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
     end associate
 
   end subroutine held_suarez_test_apply_forcing

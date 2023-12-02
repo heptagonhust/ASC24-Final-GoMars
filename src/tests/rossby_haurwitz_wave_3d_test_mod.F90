@@ -96,7 +96,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde

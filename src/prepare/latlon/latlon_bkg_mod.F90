@@ -254,7 +254,7 @@ contains
           end do
           deallocate(t1, p1)
         end select
-        call fill_halo(pt, cross_pole=.true.)
+        call fill_halo(pt)
       end associate
     end do
 
@@ -477,7 +477,7 @@ contains
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(q, idx_qv, cross_pole=.true.)
+      call fill_halo(q, idx_qv)
       end associate
     end do
 
@@ -525,7 +525,7 @@ contains
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(q, idx_qc, cross_pole=.true.)
+      call fill_halo(q, idx_qc)
       end associate
     end do
 
@@ -573,7 +573,7 @@ contains
         end do
         deallocate(q1, p1)
       end select
-      call fill_halo(q, idx_qi, cross_pole=.true.)
+      call fill_halo(q, idx_qi)
       end associate
     end do
 
@@ -608,7 +608,7 @@ contains
         end do
         deallocate(n1, p1)
       end select
-      call fill_halo(q, idx_nc, cross_pole=.true.)
+      call fill_halo(q, idx_nc)
       end associate
     end do
 
@@ -643,7 +643,7 @@ contains
         end do
         deallocate(n1, p1)
       end select
-      call fill_halo(q, idx_ni, cross_pole=.true.)
+      call fill_halo(q, idx_ni)
       end associate
     end do
 

@@ -160,7 +160,7 @@ contains
         end do
       end do
     end if
-    call fill_halo(mx, west_halo=.false., east_halo=.false., cross_pole=.true.)
+    call fill_halo(mx, west_halo=.false., east_halo=.false.)
     call fill_halo(my, south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
     call hflx(batch, u, v, my, mx, mfx, mfy)
@@ -322,7 +322,7 @@ contains
         end do
       end if
     end select
-    call fill_halo(qx, west_halo=.false., east_halo=.false., cross_pole=.true.)
+    call fill_halo(qx, west_halo=.false., east_halo=.false.)
     call fill_halo(qy, south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
     call hflx(batch, mfx, mfy, qy, qx, qmfx, qmfy)

@@ -199,7 +199,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
     end associate
 
   end subroutine smag_damp_run

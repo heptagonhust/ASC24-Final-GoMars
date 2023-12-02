@@ -70,7 +70,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(q, 2, cross_pole=.true.)
+      call fill_halo(q, 2)
       end associate
     end do
 

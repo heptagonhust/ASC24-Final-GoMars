@@ -49,16 +49,15 @@ module latlon_parallel_mod
 
 contains
 
-  subroutine fill_halo_2d(field, west_halo, east_halo, south_halo, north_halo, cross_pole)
+  subroutine fill_halo_2d(field, west_halo, east_halo, south_halo, north_halo)
 
     type(latlon_field2d_type), intent(in) :: field
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
-    logical, intent(in), optional :: cross_pole
 
-    logical west_halo_opt, east_halo_opt, south_halo_opt, north_halo_opt, cross_pole_opt
+    logical west_halo_opt, east_halo_opt, south_halo_opt, north_halo_opt
     integer t1, t2, i, j, js, je, nx, mx, hx, hy, ierr
     integer send_req, recv_req
     real(r8) tmp(size(field%d,1),field%halo(1)%lat_hw)
@@ -67,7 +66,6 @@ contains
     east_halo_opt  = .true. ; if (present(east_halo )) east_halo_opt  = east_halo
     south_halo_opt = .true. ; if (present(south_halo)) south_halo_opt = south_halo
     north_halo_opt = .true. ; if (present(north_halo)) north_halo_opt = north_halo
-    cross_pole_opt = .false.; if (present(cross_pole)) cross_pole_opt = cross_pole
 
     t1 = merge(1, 2, field%full_lon)
     t2 = merge(1, 2, field%full_lat)
@@ -128,7 +126,7 @@ contains
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (south_halo_opt .and. proc%at_south_pole .and. cross_pole_opt) then
+    if (south_halo_opt .and. proc%at_south_pole .and. field%halo_cross_pole) then
       call MPI_SENDRECV(field%d, 1, field%halo(south)%send_type_2d(t1,t2), field%halo(south)%proc_id, 25, &
                         field%d, 1, field%halo(south)%recv_type_2d(t1,t2), field%halo(south)%proc_id, 25, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
@@ -146,7 +144,7 @@ contains
       end if
     end if
 
-    if (north_halo_opt .and. proc%at_north_pole .and. cross_pole_opt) then
+    if (north_halo_opt .and. proc%at_north_pole .and. field%halo_cross_pole) then
       send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
       call MPI_SENDRECV(field%d, 1, field%halo(north)%send_type_2d(t1,t2), field%halo(north)%proc_id, 26, &
                         field%d, 1, field%halo(north)%recv_type_2d(t1,t2), field%halo(north)%proc_id, 26, &
@@ -167,16 +165,15 @@ contains
 
   end subroutine fill_halo_2d
 
-  subroutine fill_halo_3d(field, west_halo, east_halo, south_halo, north_halo, cross_pole)
+  subroutine fill_halo_3d(field, west_halo, east_halo, south_halo, north_halo)
 
     type(latlon_field3d_type), intent(in) :: field
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
-    logical, intent(in), optional :: cross_pole
 
-    logical west_halo_opt, east_halo_opt, south_halo_opt, north_halo_opt, cross_pole_opt
+    logical west_halo_opt, east_halo_opt, south_halo_opt, north_halo_opt
     integer t1, t2, t3, i, j, js, je, nx, mx, hx, hy, ierr
     integer send_req, recv_req
     real(r8) tmp(size(field%d,1),field%halo(1)%lat_hw,size(field%d,3))
@@ -185,7 +182,6 @@ contains
     east_halo_opt  = .true. ; if (present(east_halo )) east_halo_opt  = east_halo
     south_halo_opt = .true. ; if (present(south_halo)) south_halo_opt = south_halo
     north_halo_opt = .true. ; if (present(north_halo)) north_halo_opt = north_halo
-    cross_pole_opt = .false.; if (present(cross_pole)) cross_pole_opt = cross_pole
 
     t1 = merge(1, 2, field%full_lon)
     t2 = merge(1, 2, field%full_lat)
@@ -247,7 +243,7 @@ contains
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (south_halo_opt .and. proc%at_south_pole .and. cross_pole_opt) then
+    if (south_halo_opt .and. proc%at_south_pole .and. field%halo_cross_pole) then
       call MPI_SENDRECV(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 35, &
                         field%d, 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 35, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
@@ -265,7 +261,7 @@ contains
       end if
     end if
 
-    if (north_halo_opt .and. proc%at_north_pole .and. cross_pole_opt) then
+    if (north_halo_opt .and. proc%at_north_pole .and. field%halo_cross_pole) then
       send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
       call MPI_SENDRECV(field%d, 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 36, &
                         field%d, 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 36, &
@@ -286,7 +282,7 @@ contains
 
   end subroutine fill_halo_3d
 
-  subroutine fill_halo_4d(field, i4, west_halo, east_halo, south_halo, north_halo, cross_pole)
+  subroutine fill_halo_4d(field, i4, west_halo, east_halo, south_halo, north_halo)
 
     type(latlon_field4d_type), intent(in) :: field
     integer, intent(in) :: i4
@@ -294,9 +290,8 @@ contains
     logical, intent(in), optional :: east_halo
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
-    logical, intent(in), optional :: cross_pole
 
-    logical west_halo_opt, east_halo_opt, south_halo_opt, north_halo_opt, cross_pole_opt
+    logical west_halo_opt, east_halo_opt, south_halo_opt, north_halo_opt
     integer t1, t2, t3, i, j, js, je, nx, mx, hx, hy, ierr
     integer send_req, recv_req
     real(r8) tmp(size(field%d,1),field%halo(1)%lat_hw,size(field%d,3))
@@ -305,7 +300,6 @@ contains
     east_halo_opt  = .true. ; if (present(east_halo )) east_halo_opt  = east_halo
     south_halo_opt = .true. ; if (present(south_halo)) south_halo_opt = south_halo
     north_halo_opt = .true. ; if (present(north_halo)) north_halo_opt = north_halo
-    cross_pole_opt = .false.; if (present(cross_pole)) cross_pole_opt = cross_pole
 
     t1 = merge(1, 2, field%full_lon)
     t2 = merge(1, 2, field%full_lat)
@@ -367,7 +361,7 @@ contains
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (south_halo_opt .and. proc%at_south_pole .and. cross_pole_opt) then
+    if (south_halo_opt .and. proc%at_south_pole .and. field%halo_cross_pole) then
       call MPI_SENDRECV(field%d(:,:,:,i4), 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 45, &
                         field%d(:,:,:,i4), 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 45, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
@@ -385,7 +379,7 @@ contains
       end if
     end if
 
-    if (north_halo_opt .and. proc%at_north_pole .and. cross_pole_opt) then
+    if (north_halo_opt .and. proc%at_north_pole .and. field%halo_cross_pole) then
       send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
       call MPI_SENDRECV(field%d(:,:,:,i4), 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 46, &
                         field%d(:,:,:,i4), 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 46, &

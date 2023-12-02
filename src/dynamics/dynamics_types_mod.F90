@@ -184,200 +184,174 @@ contains
     character(field_name_len     ) name
     character(field_long_name_len) long_name
     character(field_units_len    ) units
-    character(field_loc_len      ) loc
 
     call this%clear()
 
     name      = 'u'
     long_name = 'U wind component'
     units     = 'm s-1'
-    loc       = 'cell'
-    call this%u%init(name, long_name, units, loc, mesh, halo)
+    call this%u%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'v'
     long_name = 'V wind component'
     units     = 'm s-1'
-    loc       = 'cell'
-    call this%v%init(name, long_name, units, loc, mesh, halo)
+    call this%v%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'u_lon'
     long_name = 'U wind component on lon edge'
     units     = 'm s-1'
-    loc       = 'lon'
-    call this%u_lon%init(name, long_name, units, loc, mesh, halo)
+    call this%u_lon%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'v_lat'
     long_name = 'V wind component on lat edge'
     units     = 'm s-1'
-    loc       = 'lat'
-    call this%v_lat%init(name, long_name, units, loc, mesh, halo)
+    call this%v_lat%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'we_lev'
     long_name = 'Vertical coordinate velocity multiplied by dmg/deta on half level'
     units     = 'Pa s-1'
-    loc       = 'lev'
     if (baroclinic .or. advection) then
-      call this%we_lev%init(name, long_name, units, loc, mesh, halo)
+      call this%we_lev%init(name, long_name, units, 'lev', mesh, halo)
     end if
 
     name      = 'gz'
     long_name = 'Geopotential'
     units     = 'm2 s-2'
-    loc       = 'cell'
-    call this%gz%init(name, long_name, units, loc, mesh, halo)
+    call this%gz%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'gz_lev'
     long_name = 'Geopotential on half level'
     units     = 'm2 s-2'
-    loc       = 'lev'
     if (nonhydrostatic) then
-      call this%gz_lev%init(name, long_name, units, loc, filter_mesh, filter_halo)
+      call this%gz_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo)
     else
-      call this%gz_lev%init(name, long_name, units, loc, mesh, halo)
+      call this%gz_lev%init(name, long_name, units, 'lev', mesh, halo)
     end if
 
     name      = 'dmg'
     long_name = 'Dry-air weight between two half levels'
     units     = 'Pa'
-    loc       = 'cell'
-    call this%dmg%init(name, long_name, units, loc, mesh, halo)
+    call this%dmg%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'dmg_lev'
     long_name = 'Dry-air weight between two full levels'
     units     = 'Pa'
-    loc       = 'lev'
     if (baroclinic .or. advection) then
-      call this%dmg_lev%init(name, long_name, units, loc, mesh, halo)
+      call this%dmg_lev%init(name, long_name, units, 'lev', mesh, halo)
     end if
 
     name      = 't'
     long_name = 'Temperature'
     units     = 'K'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%t%init(name, long_name, units, loc, mesh, halo)
+      call this%t%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'tv'
     long_name = 'Virtual temperature'
     units     = 'K'
-    loc       = 'cell'
     if (baroclinic .or. advection) then
-      call this%tv%init(name, long_name, units, loc, mesh, halo)
+      call this%tv%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'mg'
     long_name = 'Dry-air weight'
     units     = 'Pa'
-    loc       = 'cell'
-    call this%mg%init(name, long_name, units, loc, mesh, halo)
+    call this%mg%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'mg_lev'
     long_name = 'Dry-air weight on half level'
     units     = 'Pa'
-    loc       = 'lev'
     if (baroclinic .or. advection) then
-      call this%mg_lev%init(name, long_name, units, loc, mesh, halo)
+      call this%mg_lev%init(name, long_name, units, 'lev', mesh, halo)
     end if
 
     name      = 'mgs'
     long_name = 'Dry-air weight on surface'
     units     = 'Pa'
-    loc       = 'cell'
     if (baroclinic .or. advection) then
-      call this%mgs%init(name, long_name, units, loc, mesh, halo)
+      call this%mgs%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'ph'
     long_name = 'Hydrostatic pressure'
     units     = 'Pa'
-    loc       = 'cell'
     if (baroclinic .or. advection) then
-      call this%ph%init(name, long_name, units, loc, mesh, halo)
+      call this%ph%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'ph_lev'
     long_name = 'Hydrostatic pressure on half level'
     units     = 'Pa'
-    loc       = 'lev'
     if (baroclinic .or. advection) then
-      call this%ph_lev%init(name, long_name, units, loc, mesh, halo)
+      call this%ph_lev%init(name, long_name, units, 'lev', mesh, halo)
     end if
 
     name      = 'rhod'
     long_name = 'Dry-air density'
     units     = 'kg m-3'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%rhod%init(name, long_name, units, loc, mesh, halo)
+      call this%rhod%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'pt'
     long_name = 'Modified potential temperature'
     units     = 'K'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%pt%init(name, long_name, units, loc, filter_mesh, filter_halo)
+      call this%pt%init(name, long_name, units, 'cell', filter_mesh, filter_halo, halo_cross_pole=.true.)
     end if
 
     name      = 'phs'
     long_name = 'Hydrostatic pressure on surface'
     units     = 'Pa'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%phs%init(name, long_name, units, loc, mesh, halo)
+      call this%phs%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'we'
     long_name = 'Vertical coordinate velocity multiplied by dmg/deta on full level'
     units     = 'Pa s-1'
-    loc       = 'cell'
     if (nonhydrostatic) then
-      call this%we%init(name, long_name, units, loc, mesh, halo)
+      call this%we%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'w'
     long_name = 'Vertical wind speed'
     units     = 'm s-1'
-    loc       = 'cell'
     if (nonhydrostatic) then
-      call this%w%init(name, long_name, units, loc, mesh, halo)
+      call this%w%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     name      = 'w_lev'
     long_name = 'Vertical wind speed on half level'
     units     = 'm s-1'
-    loc       = 'lev'
     if (nonhydrostatic) then
-      call this%w_lev%init(name, long_name, units, loc, filter_mesh, filter_halo)
+      call this%w_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo)
     end if
 
     name      = 'p'
     long_name = 'Pressure'
     units     = 'Pa'
-    loc       = 'cell'
     if (nonhydrostatic) then
-      call this%p%init(name, long_name, units, loc, mesh, halo)
+      call this%p%init(name, long_name, units, 'cell', mesh, halo)
     else if (baroclinic) then
-      call this%p%init(name, long_name, units, loc, mesh, halo, ptr_to=this%ph)
+      call this%p%init(name, long_name, units, 'cell', mesh, halo, ptr_to=this%ph)
     end if
 
     name      = 'p_lev'
     long_name = 'Pressure on half level'
     units     = 'Pa'
-    loc       = 'lev'
     if (nonhydrostatic) then
-      call this%p_lev%init(name, long_name, units, loc, mesh, halo)
+      call this%p_lev%init(name, long_name, units, 'lev', mesh, halo)
     else if (baroclinic) then
-      call this%p_lev%init(name, long_name, units, loc, mesh, halo, ptr_to=this%ph_lev)
+      call this%p_lev%init(name, long_name, units, 'lev', mesh, halo, ptr_to=this%ph_lev)
     end if
 
     name      = 'ps'
     long_name = 'Surface pressure'
     units     = 'Pa'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%ps%init(name, long_name, units, loc, mesh, halo)
+      call this%ps%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
   end subroutine dstate_init
@@ -483,98 +457,84 @@ contains
     character(field_name_len     ) name
     character(field_long_name_len) long_name
     character(field_units_len    ) units
-    character(field_loc_len      ) loc
 
     call this%clear()
 
     name      = 'dudt'
     long_name = 'Dynamic tendency of U wind component'
     units     = 'm s-2'
-    loc       = 'lon'
-    call this%du%init(name, long_name, units, loc, filter_mesh, filter_halo)
+    call this%du%init(name, long_name, units, 'lon', filter_mesh, filter_halo)
 
     name      = 'dvdt'
     long_name = 'Dynamic tendency of V wind component'
     units     = 'm s-2'
-    loc       = 'lat'
-    call this%dv%init(name, long_name, units, loc, filter_mesh, filter_halo)
+    call this%dv%init(name, long_name, units, 'lat', filter_mesh, filter_halo)
 
     name      = 'dptdt'
     long_name = 'Dynamic tendency of modified potential temperature'
     units     = 'K s-1'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%dpt%init(name, long_name, units, loc, filter_mesh, filter_halo)
+      call this%dpt%init(name, long_name, units, 'cell', filter_mesh, filter_halo)
     end if
 
     name      = 'dmgsdt'
     long_name = 'Dynamic tendency of dry-air weight on surface'
     units     = 'Pa s-1'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%dmgs%init(name, long_name, units, loc, filter_mesh, filter_halo)
+      call this%dmgs%init(name, long_name, units, 'cell', filter_mesh, filter_halo)
     end if
 
     name      = 'dgzdt'
     long_name = 'Dynamic tendency of geopotential'
     units     = 'm2 s-2'
-    loc       = 'cell'
     if (nonhydrostatic .or. .not. baroclinic) then
-      call this%dgz%init(name, long_name, units, loc, filter_mesh, filter_halo)
+      call this%dgz%init(name, long_name, units, 'cell', filter_mesh, filter_halo)
     end if
 
 #ifdef OUTPUT_H1_DTEND
     name      = 'dudt_coriolis'
     long_name = 'Dynamic tendency of U wind component due to Coriolis force'
     units     = 'm s-2'
-    loc       = 'lon'
-    call this%dudt_coriolis%init(name, long_name, units, loc, mesh, halo)
+    call this%dudt_coriolis%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'dvdt_coriolis'
     long_name = 'Dynamic tendency of V wind component due to Coriolis force'
     units     = 'm s-2'
-    loc       = 'lat'
-    call this%dvdt_coriolis%init(name, long_name, units, loc, mesh, halo)
+    call this%dvdt_coriolis%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'dudt_wedudeta'
     long_name = 'Dynamic tendency of U wind component due to vertical advection'
     units     = 'm s-2'
-    loc       = 'lon'
     if (baroclinic) then
-      call this%dudt_wedudeta%init(name, long_name, units, loc, mesh, halo)
+      call this%dudt_wedudeta%init(name, long_name, units, 'lon', mesh, halo)
     end if
 
     name      = 'dvdt_wedvdeta'
     long_name = 'Dynamic tendency of V wind component due to vertical advection'
     units     = 'm s-2'
-    loc       = 'lat'
     if (baroclinic) then
-      call this%dvdt_wedvdeta%init(name, long_name, units, loc, mesh, halo)
+      call this%dvdt_wedvdeta%init(name, long_name, units, 'lat', mesh, halo)
     end if
 
     name      = 'dudt_dkedx'
     long_name = 'Dynamic tendency of U wind component due to kinetic gradient'
     units     = 'm s-2'
-    loc       = 'lon'
-    call this%dudt_dkedx%init(name, long_name, units, loc, mesh, halo)
+    call this%dudt_dkedx%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'dvdt_dkedy'
     long_name = 'Dynamic tendency of V wind component due to kinetic gradient'
     units     = 'm s-2'
-    loc       = 'lat'
-    call this%dvdt_dkedy%init(name, long_name, units, loc, mesh, halo)
+    call this%dvdt_dkedy%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'dudt_pgf'
     long_name = 'Dynamic tendency of U wind component due to pressure gradient force'
     units     = 'm s-2'
-    loc       = 'lon'
-    call this%dudt_pgf%init(name, long_name, units, loc, mesh, halo)
+    call this%dudt_pgf%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'dvdt_pgf'
     long_name = 'Dynamic tendency of V wind component due to pressure gradient force'
     units     = 'm s-2'
-    loc       = 'lat'
-    call this%dvdt_pgf%init(name, long_name, units, loc, mesh, halo)
+    call this%dvdt_pgf%init(name, long_name, units, 'lat', mesh, halo)
 #endif
 
   end subroutine dtend_init
@@ -639,57 +599,48 @@ contains
     character(field_name_len     ) name
     character(field_long_name_len) long_name
     character(field_units_len    ) units
-    character(field_loc_len      ) loc
 
     call this%clear()
 
     name      = 'gzs'
     long_name = 'Surface geopotential'
     units     = 'm2 s-2'
-    loc       = 'cell'
-    call this%gzs%init(name, long_name, units, loc, filter_mesh, filter_halo)
+    call this%gzs%init(name, long_name, units, 'cell', filter_mesh, filter_halo)
 
     name      = 'landmask'
     long_name = 'Land mask'
     units     = '1'
-    loc       = 'cell'
-    call this%landmask%init(name, long_name, units, loc, mesh, halo)
+    call this%landmask%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'zs_std'
     long_name = 'Subgrid variance of surface geopotential height'
     units     = 'm2 s-2'
-    loc       = 'cell'
-    call this%zs_std%init(name, long_name, units, loc, mesh, halo)
+    call this%zs_std%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'dzsdx'
     long_name = 'Zonal gradient of surface geopotential height'
     units     = '1'
-    loc       = 'lon'
-    call this%dzsdx%init(name, long_name, units, loc, mesh, halo)
+    call this%dzsdx%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'dzsdy'
     long_name = 'Meridional gradient of surface geopotential height'
     units     = '1'
-    loc       = 'lat'
-    call this%dzsdy%init(name, long_name, units, loc, mesh, halo)
+    call this%dzsdy%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'ref_ps'
     long_name = 'Reference surface pressure'
     units     = 'Pa'
-    loc       = 'cell'
-    call this%ref_ps%init(name, long_name, units, loc, mesh, halo)
+    call this%ref_ps%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'ref_ps_smth'
     long_name = 'Smoothed reference surface pressure'
     units     = 'Pa'
-    loc       = 'cell'
-    call this%ref_ps_smth%init(name, long_name, units, loc, mesh, halo)
+    call this%ref_ps_smth%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'ref_ps_perb'
     long_name = 'Perturbation of reference surface pressure'
     units     = 'Pa'
-    loc       = 'cell'
-    call this%ref_ps_perb%init(name, long_name, units, loc, mesh, halo)
+    call this%ref_ps_perb%init(name, long_name, units, 'cell', mesh, halo)
 
     allocate(this%f_lon       (mesh%full_jms:mesh%full_jme)); this%f_lon      = inf
     allocate(this%f_lat       (mesh%half_jms:mesh%half_jme)); this%f_lat      = inf
@@ -797,7 +748,6 @@ contains
     character(field_name_len     ) name
     character(field_long_name_len) long_name
     character(field_units_len    ) units
-    character(field_loc_len      ) loc
 
     call this%clear()
 
@@ -805,104 +755,88 @@ contains
       name      = 'smag_t'
       long_name = 'Tension of horizontal wind for Smagorinsky damping'
       units     = 's-2'
-      loc       = 'cell'
-      call this%smag_t%init(name, long_name, units, loc, mesh, halo)
+      call this%smag_t%init(name, long_name, units, 'cell', mesh, halo)
 
       name      = 'smag_s'
       long_name = 'Shear of horizontal wind for Smagorinsky damping'
       units     = 's-2'
-      loc       = 'vtx'
-      call this%smag_s%init(name, long_name, units, loc, mesh, halo)
+      call this%smag_s%init(name, long_name, units, 'vtx', mesh, halo)
 
       name      = 'kmh'
       long_name = 'Horizontal eddy viscosity for Smagorinsky damping'
       units     = 's-1'
-      loc       = 'cell'
-      call this%kmh%init(name, long_name, units, loc, mesh, halo)
+      call this%kmh%init(name, long_name, units, 'cell', mesh, halo)
 
       name      = 'kmh_lon'
       long_name = 'Horizontal eddy viscosity for Smagorinsky damping on lon edge'
       units     = 's-1'
-      loc       = 'lon'
-      call this%kmh_lon%init(name, long_name, units, loc, mesh, halo)
+      call this%kmh_lon%init(name, long_name, units, 'lon', mesh, halo)
 
       name      = 'kmh_lat'
       long_name = 'Horizontal eddy viscosity for Smagorinsky damping on lat edge'
       units     = 's-1'
-      loc       = 'lat'
-      call this%kmh_lat%init(name, long_name, units, loc, mesh, halo)
+      call this%kmh_lat%init(name, long_name, units, 'lat', mesh, halo)
     end if
 
     name      = 'v_lon'
     long_name = 'V wind component on lon edge'
     units     = 'm s-1'
-    loc       = 'lon'
-    call this%v_lon%init(name, long_name, units, loc, mesh, halo)
+    call this%v_lon%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'u_lat'
     long_name = 'U wind component on lat edge'
     units     = 'm s-1'
-    loc       = 'lat'
-    call this%u_lat%init(name, long_name, units, loc, mesh, halo)
+    call this%u_lat%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'ke'
     long_name = 'Kinetic energy'
     units     = 'm2 s-2'
-    loc       = 'cell'
-    call this%ke%init(name, long_name, units, loc, mesh, halo)
+    call this%ke%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'pv_lon'
     long_name = 'Potential vorticity on lon edge'
     units     = 'Pa-1 s-1'
-    loc       = 'lon'
-    call this%pv_lon%init(name, long_name, units, loc, mesh, halo)
+    call this%pv_lon%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'pv_lat'
     long_name = 'Potential vorticity on lat edge'
     units     = 'Pa-1 s-1'
-    loc       = 'lat'
-    call this%pv_lat%init(name, long_name, units, loc, mesh, halo)
+    call this%pv_lat%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'dmg_lon'
     long_name = 'Dry-air weight between two half levels on lon edge'
     units     = 'Pa'
-    loc       = 'lon'
-    call this%dmg_lon%init(name, long_name, units, loc, mesh, halo)
+    call this%dmg_lon%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'dmg_lat'
     long_name = 'Dry-air weight between two half levels on lat edge'
     units     = 'Pa'
-    loc       = 'lat'
-    call this%dmg_lat%init(name, long_name, units, loc, mesh, halo)
+    call this%dmg_lat%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'dmg_vtx'
     long_name = 'Dry-air weight between two half levels on vtx edge'
     units     = 'Pa'
-    loc       = 'vtx'
-    call this%dmg_vtx%init(name, long_name, units, loc, mesh, halo)
+    call this%dmg_vtx%init(name, long_name, units, 'vtx', mesh, halo)
 
     name      = 'pkh_lev'
     long_name = 'Hydrostatic pressure under Kappa exponent on half level'
     units     = 'Pa'
-    loc       = 'lev'
     if (baroclinic) then
-      call this%pkh_lev%init(name, long_name, units, loc, mesh, halo)
+      call this%pkh_lev%init(name, long_name, units, 'lev', mesh, halo)
     end if
 
     name      = 'we_lev_lon'
     long_name = 'Vertical coordinate velocity multiplied by dmg/deta on lon edge'
     units     = 'Pa s-1'
-    loc       = 'lev_lon'
     if (baroclinic) then
-      call this%we_lev_lon%init(name, long_name, units, loc, mesh, halo)
+      call this%we_lev_lon%init(name, long_name, units, 'lev_lon', mesh, halo)
     end if
 
     name      = 'we_lev_lat'
     long_name = 'Vertical coordinate velocity multiplied by dmg/deta on lat edge'
     units     = 'Pa s-1'
-    loc       = 'lev_lat'
     if (baroclinic) then
-      call this%we_lev_lat%init(name, long_name, units, loc, mesh, halo)
+      call this%we_lev_lat%init(name, long_name, units, 'lev_lat', mesh, halo)
     end if
 
     name      = 'ptf_lon'
@@ -929,89 +863,75 @@ contains
     name      = 'mfx_lon'
     long_name = 'Zonal mass flux on lon edge'
     units     = 'Pa m s-1'
-    loc       = 'lon'
-    call this%mfx_lon%init(name, long_name, units, loc, mesh, halo)
+    call this%mfx_lon%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'mfy_lat'
     long_name = 'Meridional mass flux on lat edge'
     units     = 'Pa m s-1'
-    loc       = 'lat'
-    call this%mfy_lat%init(name, long_name, units, loc, mesh, halo)
+    call this%mfy_lat%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'mfx_lat'
     long_name = 'Zonal mass flux on lat edge'
     units     = 'Pa m s-1'
-    loc       = 'lat'
-    call this%mfx_lat%init(name, long_name, units, loc, mesh, halo)
+    call this%mfx_lat%init(name, long_name, units, 'lat', mesh, halo)
 
     name      = 'mfy_lon'
     long_name = 'Meridional mass flux on lon edge'
     units     = 'Pa m s-1'
-    loc       = 'lon'
-    call this%mfy_lon%init(name, long_name, units, loc, mesh, halo)
+    call this%mfy_lon%init(name, long_name, units, 'lon', mesh, halo)
 
     name      = 'vor'
     long_name = 'Relative vorticity'
     units     = 's-1'
-    loc       = 'vtx'
-    call this%vor%init(name, long_name, units, loc, mesh, halo)
+    call this%vor%init(name, long_name, units, 'vtx', mesh, halo)
 
     name      = 'pv'
     long_name = 'Potential vorticity'
     units     = 'Pa-1 s-1'
-    loc       = 'vtx'
-    call this%pv%init(name, long_name, units, loc, mesh, halo)
+    call this%pv%init(name, long_name, units, 'vtx', mesh, halo, halo_cross_pole=.true.)
 
     name      = 'div'
     long_name = 'Divergence'
     units     = 's-1'
-    loc       = 'cell'
-    call this%div%init(name, long_name, units, loc, mesh, halo)
+    call this%div%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'div2'
     long_name = 'Gradient of divergence'
     units     = 'm-1 s-1'
-    loc       = 'cell'
-    call this%div2%init(name, long_name, units, loc, mesh, halo)
+    call this%div2%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'dmf'
     long_name = 'Mass flux divergence'
     units     = 'Pa s-1'
-    loc       = 'cell'
-    call this%dmf%init(name, long_name, units, loc, mesh, halo)
+    call this%dmf%init(name, long_name, units, 'cell', mesh, halo)
 
     name      = 'omg'
     long_name = 'Omega'
     units     = 'Pa s-1'
-    loc       = 'cell'
     if (baroclinic) then
-      call this%omg%init(name, long_name, units, loc, mesh, halo)
+      call this%omg%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
     if (pgf_scheme == 'ptb') then
       name      = 'p_ptb'
       long_name = 'Perturbation of pressure'
       units     = 'Pa'
-      loc       = 'cell'
-      call this%p_ptb%init(name, long_name, units, loc, mesh, halo)
+      call this%p_ptb%init(name, long_name, units, 'cell', mesh, halo)
 
       name      = 'gz_ptb'
       long_name = 'Perturbation of geopotential'
       units     = 'm2 s-2'
-      loc       = 'cell'
-      call this%gz_ptb%init(name, long_name, units, loc, mesh, halo)
+      call this%gz_ptb%init(name, long_name, units, 'cell', mesh, halo)
 
       name      = 'dp_ptb'
       long_name = 'Perturbation of dry-air weight'
       units     = 'Pa'
-      loc       = 'cell'
-      call this%dp_ptb%init(name, long_name, units, loc, mesh, halo)
+      call this%dp_ptb%init(name, long_name, units, 'cell', mesh, halo)
 
       name      = 'ad_ptb'
       long_name = 'Perturbation of specific density of dry-air'
       units     = 'kg-1 m3'
-      loc       = 'cell'
-      call this%ad_ptb%init(name, long_name, units, loc, mesh, halo)
+      call this%ad_ptb%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
   end subroutine aux_array_init
@@ -1027,47 +947,42 @@ contains
     character(field_name_len     ) name
     character(field_long_name_len) long_name
     character(field_units_len    ) units
-    character(field_loc_len      ) loc
 
     if (trim(physics_suite) /= '') then
       name      = 'dudt_phys'
       long_name = 'Physics tendency of U wind component'
       units     = 'm s-2'
-      loc       = 'lon'
       if (filter_ptend) then
-        call this%dudt_phys%init(name, long_name, units, loc, filter_mesh, filter_halo)
+        call this%dudt_phys%init(name, long_name, units, 'lon', filter_mesh, filter_halo)
       else
-        call this%dudt_phys%init(name, long_name, units, loc, mesh, halo)
+        call this%dudt_phys%init(name, long_name, units, 'lon', mesh, halo)
       end if
 
       name      = 'dvdt_phys'
       long_name = 'Physics tendency of V wind component'
       units     = 'm s-2'
-      loc       = 'lat'
       if (filter_ptend) then
-        call this%dvdt_phys%init(name, long_name, units, loc, filter_mesh, filter_halo)
+        call this%dvdt_phys%init(name, long_name, units, 'lat', filter_mesh, filter_halo)
       else
-        call this%dvdt_phys%init(name, long_name, units, loc, mesh, halo)
+        call this%dvdt_phys%init(name, long_name, units, 'lat', mesh, halo)
       end if
 
       name      = 'dptdt_phys'
       long_name = 'Physics tendency of modified potential temperature'
       units     = 'K s-1'
-      loc       = 'cell'
       if (filter_ptend) then
-        call this%dptdt_phys%init(name, long_name, units, loc, filter_mesh, filter_halo)
+        call this%dptdt_phys%init(name, long_name, units, 'cell', filter_mesh, filter_halo)
       else
-        call this%dptdt_phys%init(name, long_name, units, loc, mesh, halo)
+        call this%dptdt_phys%init(name, long_name, units, 'cell', mesh, halo)
       end if
 
       name      = 'dqdt_phys'
       long_name = 'Physics tendency of tracer dry mixing ratio'
       units     = 'kg kg-1 s-1'
-      loc       = 'cell'
       if (filter_ptend) then
-        call this%dqdt_phys%init(name, long_name, units, loc, filter_mesh, filter_halo, size4=ntracers)
+        call this%dqdt_phys%init(name, long_name, units, 'cell', filter_mesh, filter_halo, n4=ntracers)
       else
-        call this%dqdt_phys%init(name, long_name, units, loc, mesh, halo, size4=ntracers)
+        call this%dqdt_phys%init(name, long_name, units, 'cell', mesh, halo, n4=ntracers)
       end if
     end if
 

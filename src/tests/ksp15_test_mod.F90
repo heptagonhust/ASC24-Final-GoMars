@@ -91,7 +91,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(pt, cross_pole=.true.)
+      call fill_halo(pt)
 
       do k = mesh%half_kds, mesh%half_kde
         do j = mesh%full_jds, mesh%full_jde
@@ -158,7 +158,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(pt, cross_pole=.true.)
+      call fill_halo(pt)
 
       do k = mesh%half_kds, mesh%half_kde
         do j = mesh%full_jds, mesh%full_jde

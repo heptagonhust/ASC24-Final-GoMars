@@ -308,10 +308,10 @@ contains
           call fiona_input('i0', 'mgs', mgs%d(is:ie,js:je      ), start=start, count=count)
           call fill_halo(mgs)
           call fiona_input('i0', 'pt' , pt %d(is:ie,js:je,ks:ke), start=start, count=count)
-          call fill_halo(pt, cross_pole=.true.)
+          call fill_halo(pt)
           if (idx_qv > 0) then
             call fiona_input('i0', 'qv' , q%d(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
-            call fill_halo(q, idx_qv, cross_pole=.true.)
+            call fill_halo(q, idx_qv)
           end if
         case ('cam')
           call fiona_input('i0', 'PS', mgs%d(is:ie,js:je      ), start=start, count=count)
@@ -328,24 +328,24 @@ contains
           end if
           if (idx_nc > 0 .and. fiona_has_var('i0', 'NUMLIQ')) then
             call fiona_input('i0', 'NUMLIQ', q%d(is:ie,js:je,ks:ke,idx_nc), start=start, count=count)
-            call fill_halo(q, idx_nc, cross_pole=.true.)
+            call fill_halo(q, idx_nc)
           end if
           if (idx_ni > 0 .and. fiona_has_var('i0', 'NUMICE')) then
             call fiona_input('i0', 'NUMICE', q%d(is:ie,js:je,ks:ke,idx_ni), start=start, count=count)
-            call fill_halo(q, idx_ni, cross_pole=.true.)
+            call fill_halo(q, idx_ni)
           end if
           call tracer_calc_qm(block)
           if (idx_qv > 0) then
             q%d(is:ie,js:je,ks:ke,idx_qv) = dry_mixing_ratio(q%d(is:ie,js:je,ks:ke,idx_qv), qm%d(is:ie,js:je,ks:ke))
-            call fill_halo(q, idx_qv, cross_pole=.true.)
+            call fill_halo(q, idx_qv)
           end if
           if (idx_qc > 0) then
             q%d(is:ie,js:je,ks:ke,idx_qc) = dry_mixing_ratio(q%d(is:ie,js:je,ks:ke,idx_qc), qm%d(is:ie,js:je,ks:ke))
-            call fill_halo(q, idx_qc, cross_pole=.true.)
+            call fill_halo(q, idx_qc)
           end if
           if (idx_qi > 0) then
             q%d(is:ie,js:je,ks:ke,idx_qi) = dry_mixing_ratio(q%d(is:ie,js:je,ks:ke,idx_qi), qm%d(is:ie,js:je,ks:ke))
-            call fill_halo(q, idx_qi, cross_pole=.true.)
+            call fill_halo(q, idx_qi)
           end if
           call calc_mg (block, block%dstate(1))
           call calc_dmg(block, block%dstate(1))
@@ -357,7 +357,7 @@ contains
               end do
             end do
           end do
-          call fill_halo(pt, cross_pole=.true.)
+          call fill_halo(pt)
         end select
       else
         call fiona_input('i0', 'z' , gz%d(is:ie,js:je,ks:ke), start=start, count=count); gz%d = gz%d * g

@@ -176,7 +176,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(pt, cross_pole=.true.)
+      call fill_halo(pt)
     end if
     ! Update tracers.
     do m = 1, ntracers
@@ -189,7 +189,7 @@ contains
           end do
         end do
         call tracer_fill_negative_values(block, itime, q%d(:,:,:,m))
-        call fill_halo(q, m, cross_pole=.true.)
+        call fill_halo(q, m)
       end if
     end do
     call tracer_calc_qm(block)
@@ -243,7 +243,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(pt, cross_pole=.true.)
+      call fill_halo(pt)
     end if
     end associate
 
@@ -273,7 +273,7 @@ contains
         end do
       end do
       call tracer_fill_negative_values(block, itime, q%d(:,:,:,idx))
-      call fill_halo(q, idx, cross_pole=.true.)
+      call fill_halo(q, idx)
     end if
     end associate
 

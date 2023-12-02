@@ -70,7 +70,7 @@ contains
           q%d(i,j,1,2) = 1 - tanh(rho(latr) / gamma * sin(lonr))
         end do
       end do
-      call fill_halo(q, 2, cross_pole=.true.)
+      call fill_halo(q, 2)
       end associate
     end do
 

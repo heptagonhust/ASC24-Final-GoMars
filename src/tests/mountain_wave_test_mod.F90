@@ -82,7 +82,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
 
     if (nonhydrostatic) then
       ! FIXME: Calculate tv.

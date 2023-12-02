@@ -249,7 +249,7 @@ contains
               call physics_update_tracers(block, itime, dt_adv, batch%idx(l))
             else
               call tracer_fill_negative_values(block, itime, q_new%d)
-              call fill_halo(q_new, cross_pole=.true.)
+              call fill_halo(q_new)
             end if
             end associate
           end do

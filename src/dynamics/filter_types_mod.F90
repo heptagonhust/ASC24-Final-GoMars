@@ -124,18 +124,18 @@ contains
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         if (this%ngrid_lon(j) > 1) then
           w = filter_coef_c * this%width_lon(j)
-          n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
+          n = ceiling(w); if (mod(n, 2) == 0) n = n + 1
           this%width_lon(j) = w
-          this%ngrid_lon(j) = n
+          this%ngrid_lon(j) = max(3, min(n, this%ngrid_lon(j)))
           call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
         end if
       end do
       do j = mesh%half_jds, mesh%half_jde
         if (this%ngrid_lat(j) > 1) then
           w = filter_coef_c * this%width_lat(j)
-          n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
+          n = ceiling(w); if (mod(n, 2) == 0) n = n + 1
           this%width_lat(j) = w
-          this%ngrid_lat(j) = n
+          this%ngrid_lat(j) = max(3, min(n, this%ngrid_lat(j)))
           call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))
         end if
       end do

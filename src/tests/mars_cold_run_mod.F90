@@ -68,7 +68,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(pt)
     end associate
 
   end subroutine mars_cold_run_set_ic

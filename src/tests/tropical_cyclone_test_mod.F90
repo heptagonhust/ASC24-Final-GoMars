@@ -252,8 +252,8 @@ contains
     end do
     call fill_halo(u)
     call fill_halo(v)
-    call fill_halo(q, idx_qv, cross_pole=.true.)
-    call fill_halo(pt, cross_pole=.true.)
+    call fill_halo(q, idx_qv)
+    call fill_halo(pt)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%half_ids, mesh%half_ide

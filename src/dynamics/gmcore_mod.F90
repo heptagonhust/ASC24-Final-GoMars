@@ -199,13 +199,9 @@ contains
     call adv_prepare(old)
     call diagnose(blocks, old)
     if (proc%is_root()) call log_print_diag(curr_time%isoformat())
+    call output(old)
 
     model_main_loop: do while (.not. time_is_finished())
-      ! ------------------------------------------------------------------------
-      call diagnose(blocks, old)
-      if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call blocks(1)%accum(old)
-      call output(old)
       ! ------------------------------------------------------------------------
       !                              Dynamical Core
       do iblk = 1, size(blocks)
@@ -231,6 +227,11 @@ contains
           if (pdc_type == 3) call physics_update(blocks(iblk), new, dt_phys)
         end do
       end if
+      ! ------------------------------------------------------------------------
+      call diagnose(blocks, new)
+      if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+      call blocks(1)%accum(new)
+      call output(new)
     end do model_main_loop
     ! Last output.
     call diagnose(blocks, old)
