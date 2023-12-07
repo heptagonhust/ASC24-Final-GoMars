@@ -166,6 +166,8 @@ contains
 
     if (.not. allocated(blocks(1)%adv_batches)) return
 
+    call adv_accum_wind(itime)
+
     do iblk = 1, size(blocks)
       associate (block     => blocks(iblk)                  , &
                  dstate    => blocks(iblk)%dstate(itime)    , &

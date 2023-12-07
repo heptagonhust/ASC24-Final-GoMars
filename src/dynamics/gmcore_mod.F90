@@ -216,7 +216,6 @@ contains
       call time_advance(dt_dyn)
       ! ------------------------------------------------------------------------
       !                            Tracer Advection
-      call adv_accum_wind(new)
       call adv_run(new)
       ! ------------------------------------------------------------------------
       !                                Physics
