@@ -19,6 +19,7 @@ module nh_mod
   use math_mod
   use adv_mod
   use tracer_mod
+  use operators_mod
 
   implicit none
 
@@ -37,10 +38,13 @@ contains
     type(dstate_type), intent(inout) :: new_dstate
     real(r8), intent(in) :: dt
 
-    call interp_wind (block, star_dstate)
-    call calc_adv_lev(block, star_dstate%w_lev , block%aux%adv_w_lev , star_dstate%dmg_lev, dt)
-    call calc_adv_lev(block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
+    call interp_wind      (block, star_dstate)
+    call calc_adv_lev     (block, star_dstate%w_lev , block%aux%adv_w_lev , star_dstate%dmg_lev, dt)
+    call calc_adv_lev     (block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
     call implicit_w_solver(block, dtend, old_dstate, star_dstate, new_dstate, dt)
+    call calc_rhod        (block, new_dstate)
+    call calc_p           (block, new_dstate)
+    call interp_run       (new_dstate%gz_lev, new_dstate%gz)
 
   end subroutine nh_solve
 
@@ -281,18 +285,19 @@ contains
         b(mesh%half_nlev) = 1.0_r8
         c(mesh%half_nlev) = 0.0_r8
         d(mesh%half_nlev) = new_w_lev%d(i,j,mesh%half_nlev)
-        call tridiag_thomas(a, b, c, d, new_w_lev%d(i,j,:))
+        call tridiag_thomas(a, b, c, d, new_w_lev%d(i,j,mesh%half_kds:mesh%half_kde))
 
-        call rayleigh_damp_w(dt, star_gz_lev%d(i,j,:), new_w_lev%d(i,j,:))
+        call rayleigh_damp_w(dt, star_gz_lev%d(i,j,mesh%half_kds:mesh%half_kde), &
+                                   new_w_lev%d(i,j,mesh%half_kds:mesh%half_kde))
 
         ! Update gz after w is solved.
         do k = mesh%half_kds, mesh%half_kde - 1
           new_gz_lev%d(i,j,k) = gz1(k) + gdtbeta * new_w_lev%d(i,j,k)
         end do
 
-        do k = mesh%half_kds, mesh%half_kde
-          print *, i, j, k, new_w_lev%d(i,j,k), new_gz_lev%d(i,j,k)
-        end do
+        ! do k = mesh%half_kds, mesh%half_kde
+        !   print *, i, j, k, new_w_lev%d(i,j,k), new_gz_lev%d(i,j,k)
+        ! end do
       end do
     end do
     call fill_halo(new_w_lev )

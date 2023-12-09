@@ -22,6 +22,7 @@ module operators_mod
   public operators_prepare
   public calc_mg
   public calc_ph
+  public calc_p
   public calc_omg
   public calc_dmg
   public calc_t

@@ -569,8 +569,8 @@ contains
     this%half_jme = this%half_jde + this%lat_hw
     this%full_kms = this%full_kds - 3
     this%full_kme = this%full_kde + 3
-    this%half_kms = this%half_kds
-    this%half_kme = this%half_kde
+    this%half_kms = this%half_kds - 3
+    this%half_kme = this%half_kde + 3
 
     if (.not. allocated(this%full_lev)) then
       allocate(this%full_dlev        (this%full_kms:this%full_kme)); this%full_dlev           = 0

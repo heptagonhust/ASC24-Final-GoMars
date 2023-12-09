@@ -149,7 +149,7 @@ module namelist_mod
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_top         = 1
-  real(r8)        :: div_damp_pole        = 100
+  real(r8)        :: div_damp_pole        = 0
   real(r8)        :: div_damp_pole_x      = 10
   real(r8)        :: div_damp_pole_y      = 10
   real(r8)        :: div_damp_lat0        = 70
@@ -357,7 +357,7 @@ contains
 
     if (.not. use_div_damp) then
       div_damp_order = 0
-    else if (div_damp_pole_x == 0 .or. div_damp_pole_y == 0) then
+    else if (div_damp_pole /= 0) then
       div_damp_pole_x = div_damp_pole
       div_damp_pole_y = div_damp_pole
     end if

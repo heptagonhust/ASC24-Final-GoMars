@@ -132,10 +132,14 @@ contains
             dp2  = ph_lev %d(i  ,j,k+1) - ph_lev %d(i+1,j,k  )  ! 1 - 3
             dgz1 = gz_lev %d(i  ,j,k+1) - gz_lev %d(i+1,j,k  )  ! 1 - 3
             dgz2 = gz_lev %d(i  ,j,k  ) - gz_lev %d(i+1,j,k+1)  ! 4 - 2
-            du%d(i,j,k) = du%d(i,j,k) + (                   &
+            tmp = (                                         &
               (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
               (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part
             ) / mesh%de_lon(j)
+            du%d(i,j,k) = du%d(i,j,k) + tmp
+#ifdef OUTPUT_H1_DTEND
+            dtend%dudt_pgf%d(i,j,k) = tmp
+#endif
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
@@ -150,10 +154,14 @@ contains
             dp2  = ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j+1,k  )  ! 1 - 3
             dgz1 = gz_lev %d(i,j  ,k+1) - gz_lev %d(i,j+1,k  )  ! 1 - 3
             dgz2 = gz_lev %d(i,j  ,k  ) - gz_lev %d(i,j+1,k+1)  ! 4 - 2
-            dv%d(i,j,k) = dv%d(i,j,k) + (                   &
+            tmp = (                                         &
               (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
               (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part
             ) / mesh%de_lat(j)
+            dv%d(i,j,k) = dv%d(i,j,k) + tmp
+#ifdef OUTPUT_H1_DTEND
+            dtend%dvdt_pgf%d(i,j,k) = tmp
+#endif
           end do
         end do
       end do
