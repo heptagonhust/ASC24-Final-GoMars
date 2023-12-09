@@ -10,6 +10,7 @@
 module tracer_types_mod
 
   use const_mod
+  use namelist_mod
   use latlon_field_types_mod
 
   implicit none
@@ -44,7 +45,8 @@ module tracer_types_mod
     logical :: initialized = .false.
     type(latlon_field4d_type) q
     ! Some diagnostics:
-    type(latlon_field3d_type) qm ! Total moisture or water substances
+    type(latlon_field3d_type) qm      ! Total moisture or water substances
+    type(latlon_field3d_type) qm_lev  ! Total moisture or water substances on half level
   contains
     procedure :: init => tracers_init
     procedure :: clear => tracers_clear
@@ -81,6 +83,13 @@ contains
     units     = 'kg kg-1'
     call this%qm%init(name, long_name, units, 'cell', mesh, halo)
 
+    if (nonhydrostatic) then
+      name      = 'qm_lev'
+      long_name = 'Total moist tracer dry mixing ratioo on half level'
+      units     = 'kg kg-1'
+      call this%qm_lev%init(name, long_name, units, 'lev', mesh, halo)
+    end if
+
     this%initialized = .true.
 
   end subroutine tracers_init
@@ -89,8 +98,9 @@ contains
 
     class(tracers_type), intent(inout) :: this
 
-    call this%q %clear()
-    call this%qm%clear()
+    call this%q     %clear()
+    call this%qm    %clear()
+    call this%qm_lev%clear()
 
     this%initialized = .false.
 

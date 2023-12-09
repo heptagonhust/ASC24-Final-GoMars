@@ -39,6 +39,7 @@ module block_mod
     type(ptend_type) ptend
     type(aux_array_type) aux
     type(adv_batch_type) adv_batch_pt
+    type(adv_batch_type) adv_batch_nh
     type(adv_batch_type), allocatable :: adv_batches(:)
     type(filter_type) big_filter
     type(filter_type) small_filter
@@ -186,6 +187,7 @@ contains
     call this%ptend       %clear()
     call this%aux         %clear()
     call this%adv_batch_pt%clear()
+    call this%adv_batch_nh%clear()
     call this%accum_list  %clear()
     if (allocated(this%dstate     )) then
       do i = 1, size(this%dstate)

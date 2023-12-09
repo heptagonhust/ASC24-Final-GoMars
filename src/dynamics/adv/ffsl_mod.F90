@@ -358,7 +358,7 @@ contains
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
     select case (batch%loc)
-    case ('cell')
+    case ('cell', 'lev')
       do k = mesh%full_kds, mesh%full_kde
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -388,7 +388,7 @@ contains
           end do
         end do
       end do
-    case ('lev')
+    case ('vtx')
     end select
     end associate
 
@@ -450,7 +450,7 @@ contains
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
     select case (batch%loc)
-    case ('cell')
+    case ('cell', 'lev')
       do k = mesh%full_kds, mesh%full_kde
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -507,63 +507,7 @@ contains
           end do
         end do
       end do
-    case ('lev')
-      do k = mesh%half_kds, mesh%half_kde - 1
-        ! Along x-axis
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            ci = int(cflx%d(i,j,k))
-            cf = cflx%d(i,j,k) - ci
-            if (abs(cflx%d(i,j,k)) < 1.0e-16_r8) then
-              mfx%d(i,j,k) = 0
-            else if (cflx%d(i,j,k) > 0) then
-              iu = i - ci
-              call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
-              s1 = 1 - cf
-              s2 = 1
-              ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
-              ds3 = s2**3 - s1**3
-              mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(i+1-ci:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-            else
-              iu = i - ci + 1
-              call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
-              s1 = 0
-              s2 = -cf
-              ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
-              ds3 = s2**3 - s1**3
-              mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:i-ci,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-            end if
-          end do
-        end do
-        ! Along y-axis
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            if (abs(cfly%d(i,j,k)) < 1.0e-16_r8) then
-              mfy%d(i,j,k) = 0
-            else if (cfly%d(i,j,k) > 0) then
-              ju = j
-              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
-              s1 = 1 - cfly%d(i,j,k)
-              s2 = 1
-              ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
-              ds3 = s2**3 - s1**3
-              mfy%d(i,j,k) =  v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
-            else
-              ju = j + 1
-              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
-              s1 = 0
-              s2 = -cfly%d(i,j,k)
-              ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
-              ds3 = s2**3 - s1**3
-              mfy%d(i,j,k) = -v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
-            end if
-          end do
-        end do
-      end do
+    case ('vtx')
     end select
     end associate
 
@@ -619,7 +563,7 @@ contains
             ci = int(cflz%d(i,j,k))
             cf = cflz%d(i,j,k) - ci
             if (abs(cflz%d(i,j,k)) < 1.0e-16_r8) then
-              mfz%d(i,j,k) = (m%d(i,j,k) + m%d(i,j,k+1)) * 0.5_r8
+              mfz%d(i,j,k) = 0
             else if (cflz%d(i,j,k) > 0) then
               ku = k - ci
               call ppm(m%d(i,j,ku-2), m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1), m%d(i,j,ku+2), ml, dm, m6)

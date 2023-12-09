@@ -1131,14 +1131,14 @@ contains
       j = mesh%full_jde
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = -ptf_lat%d(i,j-1,k)
+          work(i,k) = ptf_lat%d(i,j-1,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
-          dpt%d(i,j,k) = -pole(k)
+          dpt%d(i,j,k) = pole(k)
         end do
       end do
     end if

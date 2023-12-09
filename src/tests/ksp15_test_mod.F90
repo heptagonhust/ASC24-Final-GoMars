@@ -44,8 +44,7 @@ contains
     h0 = 25.0_r8
 
     associate (mesh   => block%mesh            , &
-               u      => block%dstate(1)%u_lon , &
-               v      => block%dstate(1)%v_lat , &
+               u_lon  => block%dstate(1)%u_lon , &
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static   %gzs   , &
@@ -57,11 +56,11 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            u%d(i,j,k) = ueq * mesh%full_cos_lat(j)
+            u_lon%d(i,j,k) = ueq * mesh%full_cos_lat(j)
           end do
         end do
       end do
-      call fill_halo(u)
+      call fill_halo(u_lon)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -115,8 +114,7 @@ contains
     h0 = 250.0_r8
 
     associate (mesh   => block%mesh            , &
-               u      => block%dstate(1)%u_lon , &
-               v      => block%dstate(1)%v_lat , &
+               u_lon  => block%dstate(1)%u_lon , &
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static   %gzs   , &
@@ -127,11 +125,11 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%half_ids, mesh%half_ide
-            u%d(i,j,k) = ueq * mesh%full_cos_lat(j)
+            u_lon%d(i,j,k) = ueq * mesh%full_cos_lat(j)
           end do
         end do
       end do
-      call fill_halo(u)
+      call fill_halo(u_lon)
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide

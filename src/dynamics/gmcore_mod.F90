@@ -38,6 +38,7 @@ module gmcore_mod
   use gas_mod
   use adv_mod
   use pgf_mod
+  use nh_mod
   use damp_mod
   use physics_mod
   use filter_mod
@@ -397,136 +398,137 @@ contains
 
   end subroutine diagnose
 
-  subroutine space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, pass, substep)
+  subroutine space_operators(block, old_dstate, star_dstate, new_dstate, dtend1, dtend2, dt, pass, substep)
 
-    type(block_type), intent(inout) :: block
-    type(dstate_type), intent(in) :: old_state
-    type(dstate_type), intent(inout) :: star_state
-    type(dstate_type), intent(inout) :: new_state
-    type(dtend_type), intent(inout) :: tend1
-    type(dtend_type), intent(in) :: tend2
+    type(block_type ), intent(inout) :: block
+    type(dstate_type), intent(in   ) :: old_dstate
+    type(dstate_type), intent(inout) :: star_dstate
+    type(dstate_type), intent(inout) :: new_dstate
+    type(dtend_type ), intent(inout) :: dtend1
+    type(dtend_type ), intent(in   ) :: dtend2
     real(r8), intent(in) :: dt
     integer, intent(in) :: pass
     integer, intent(in) :: substep
 
     integer i, j, k
 
-    call tend1%reset_flags()
+    call dtend1%reset_flags()
 
     associate (mesh => block%mesh)
     select case (pass)
     case (all_pass)
-      call operators_prepare(block, star_state, dt, pass, substep)
+      call operators_prepare(block, star_dstate, dt, pass, substep)
       if (hydrostatic) then
-        call calc_grad_mf          (block, star_state, tend1, dt)
-        call calc_dmgsdt           (block, star_state, tend1, dt)
-        call calc_we_lev           (block, star_state, tend1, dt)
-        call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
-        call calc_grad_ptf         (block, star_state, tend1, dt)
-        call calc_coriolis         (block, star_state, tend1, dt)
-        call calc_grad_ke          (block, star_state, tend1, dt)
-        call pgf_run               (block, star_state, tend1)
+        call calc_grad_mf          (block, star_dstate, dtend1, dt)
+        call calc_dmgsdt           (block, star_dstate, dtend1, dt)
+        call calc_we_lev           (block, star_dstate, dtend1, dt)
+        call calc_wedudlev_wedvdlev(block, star_dstate, dtend1, dt)
+        call calc_grad_ptf         (block, star_dstate, dtend1, dt)
+        call calc_coriolis         (block, star_dstate, dtend1, dt)
+        call calc_grad_ke          (block, star_dstate, dtend1, dt)
+        call pgf_run               (block, star_dstate, dtend1)
 
-        tend1%update_u   = .true.
-        tend1%update_v   = .true.
-        tend1%update_mgs = .true.
-        tend1%update_pt  = .true.
+        dtend1%update_u   = .true.
+        dtend1%update_v   = .true.
+        dtend1%update_mgs = .true.
+        dtend1%update_pt  = .true.
       else
-        call calc_grad_mf        (block, star_state, tend1, dt)
-        call calc_coriolis       (block, star_state, tend1, dt)
-        call calc_grad_ke        (block, star_state, tend1, dt)
-        call pgf_run             (block, star_state, tend1)
+        call calc_grad_mf        (block, star_dstate, dtend1, dt)
+        call calc_coriolis       (block, star_dstate, dtend1, dt)
+        call calc_grad_ke        (block, star_dstate, dtend1, dt)
+        call pgf_run             (block, star_dstate, dtend1)
 
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz%d(i,j,k) = -block%aux%dmf%d(i,j,k) * g
+              dtend1%dgz%d(i,j,k) = -block%aux%dmf%d(i,j,k) * g
             end do
           end do
         end do
 
-        tend1%update_u  = .true.
-        tend1%update_v  = .true.
-        tend1%update_gz = .true.
+        dtend1%update_u  = .true.
+        dtend1%update_v  = .true.
+        dtend1%update_gz = .true.
       end if
     case (forward_pass)
-      call operators_prepare(block, star_state, dt, pass, substep)
-      if (hydrostatic) then
-        call calc_grad_mf          (block, star_state, tend1, dt)
-        call calc_dmgsdt           (block, star_state, tend1, dt)
-        call calc_we_lev           (block, star_state, tend1, dt)
-        call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
-        call calc_grad_ptf         (block, star_state, tend1, dt)
-        call calc_coriolis         (block, star_state, tend1, dt)
-        call calc_grad_ke          (block, star_state, tend1, dt)
+      call operators_prepare(block, star_dstate, dt, pass, substep)
+      if (baroclinic) then
+        call calc_grad_mf          (block, star_dstate, dtend1, dt)
+        call calc_dmgsdt           (block, star_dstate, dtend1, dt)
+        call calc_we_lev           (block, star_dstate, dtend1, dt)
+        call calc_wedudlev_wedvdlev(block, star_dstate, dtend1, dt)
+        call calc_grad_ptf         (block, star_dstate, dtend1, dt)
+        call calc_coriolis         (block, star_dstate, dtend1, dt)
+        call calc_grad_ke          (block, star_dstate, dtend1, dt)
 
-        tend1%update_mgs = .true.
-        tend1%update_pt  = .true.
+        dtend1%update_mgs = .true.
+        dtend1%update_pt  = .true.
       else
-        call calc_grad_mf         (block, star_state, tend1, dt)
-        call calc_coriolis        (block, star_state, tend1, dt)
-        call calc_grad_ke         (block, star_state, tend1, dt)
+        call calc_grad_mf         (block, star_dstate, dtend1, dt)
+        call calc_coriolis        (block, star_dstate, dtend1, dt)
+        call calc_grad_ke         (block, star_dstate, dtend1, dt)
 
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds, mesh%full_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dgz%d(i,j,k) = -block%aux%dmf%d(i,j,k) * g
+              dtend1%dgz%d(i,j,k) = -block%aux%dmf%d(i,j,k) * g
             end do
           end do
         end do
 
-        tend1%update_gz = .true.
+        dtend1%update_gz = .true.
       end if
     case (backward_pass)
-      call operators_prepare(block, new_state, dt, pass, substep)
-      if (hydrostatic) then
-        call pgf_run(block, new_state, tend1)
+      call operators_prepare(block, new_dstate, dt, pass, substep)
+      if (baroclinic) then
+        if (nonhydrostatic) call nh_solve(block, dtend1, old_dstate, star_dstate, new_dstate, dt)
+        call pgf_run(block, new_dstate, dtend1)
 
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
             do i = mesh%half_ids, mesh%half_ide
-              tend1%du%d(i,j,k) = tend1%du%d(i,j,k) + tend2%du%d(i,j,k)
+              dtend1%du%d(i,j,k) = dtend1%du%d(i,j,k) + dtend2%du%d(i,j,k)
 #ifdef OUTPUT_H1_DTEND
-              tend1%dudt_coriolis%d(i,j,k) = tend2%dudt_coriolis%d(i,j,k)
-              tend1%dudt_wedudeta%d(i,j,k) = tend2%dudt_wedudeta%d(i,j,k)
-              tend1%dudt_dkedx   %d(i,j,k) = tend2%dudt_dkedx   %d(i,j,k)
+              dtend1%dudt_coriolis%d(i,j,k) = dtend2%dudt_coriolis%d(i,j,k)
+              dtend1%dudt_wedudeta%d(i,j,k) = dtend2%dudt_wedudeta%d(i,j,k)
+              dtend1%dudt_dkedx   %d(i,j,k) = dtend2%dudt_dkedx   %d(i,j,k)
 #endif
             end do
           end do
 
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dv%d(i,j,k) = tend1%dv%d(i,j,k) + tend2%dv%d(i,j,k)
+              dtend1%dv%d(i,j,k) = dtend1%dv%d(i,j,k) + dtend2%dv%d(i,j,k)
 #ifdef OUTPUT_H1_DTEND
-              tend1%dvdt_coriolis%d(i,j,k) = tend2%dvdt_coriolis%d(i,j,k)
-              tend1%dvdt_wedvdeta%d(i,j,k) = tend2%dvdt_wedvdeta%d(i,j,k)
-              tend1%dvdt_dkedy   %d(i,j,k) = tend2%dvdt_dkedy   %d(i,j,k)
+              dtend1%dvdt_coriolis%d(i,j,k) = dtend2%dvdt_coriolis%d(i,j,k)
+              dtend1%dvdt_wedvdeta%d(i,j,k) = dtend2%dvdt_wedvdeta%d(i,j,k)
+              dtend1%dvdt_dkedy   %d(i,j,k) = dtend2%dvdt_dkedy   %d(i,j,k)
 #endif
             end do
           end do
         end do
 
-        tend1%update_u   = .true.
-        tend1%update_v   = .true.
+        dtend1%update_u   = .true.
+        dtend1%update_v   = .true.
       else
-        call pgf_run(block, new_state, tend1)
+        call pgf_run(block, new_dstate, dtend1)
 
         do k = mesh%full_kds, mesh%full_kde
           do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
             do i = mesh%half_ids, mesh%half_ide
-              tend1%du%d(i,j,k) = tend1%du%d(i,j,k) + tend2%du%d(i,j,k)
+              dtend1%du%d(i,j,k) = dtend1%du%d(i,j,k) + dtend2%du%d(i,j,k)
             end do
           end do
 
           do j = mesh%half_jds, mesh%half_jde
             do i = mesh%full_ids, mesh%full_ide
-              tend1%dv%d(i,j,k) = tend1%dv%d(i,j,k) + tend2%dv%d(i,j,k)
+              dtend1%dv%d(i,j,k) = dtend1%dv%d(i,j,k) + dtend2%dv%d(i,j,k)
             end do
           end do
         end do
 
-        tend1%update_u  = .true.
-        tend1%update_v  = .true.
+        dtend1%update_u  = .true.
+        dtend1%update_v  = .true.
       end if
     end select
     end associate

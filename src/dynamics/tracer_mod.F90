@@ -12,11 +12,12 @@ module tracer_mod
   use flogger
   use string
   use const_mod, only: r8
-  use namelist_mod, only: mp_scheme, dt_adv, advection
+  use namelist_mod
   use block_mod
   use latlon_parallel_mod
   use process_mod, only: proc
   use tracer_types_mod
+  use interp_mod
 
   implicit none
 
@@ -219,9 +220,10 @@ contains
     if (.not. allocated(tracers)) return
     if (.not. tracers(block%id)%qm%initialized) return
 
-    associate (mesh => block%mesh          , &
-               q    => tracers(block%id)%q , & ! in
-               qm   => tracers(block%id)%qm)   ! out
+    associate (mesh   => block%mesh              , &
+               q      => tracers(block%id)%q     , & ! in
+               qm     => tracers(block%id)%qm    , & ! out
+               qm_lev => tracers(block%id)%qm_lev)   ! out
     if (idx_qv > 0) then
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
@@ -286,6 +288,7 @@ contains
       end do
     end if
     call fill_halo(qm, west_halo=.false., south_halo=.false.)
+    if (nonhydrostatic) call interp_run(qm, qm_lev)
     end associate
 
   end subroutine tracer_calc_qm

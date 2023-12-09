@@ -101,6 +101,10 @@ contains
           blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
           blocks(iblk)%mesh, blocks(iblk)%halo              , &
           'cell', 'pt', dt_dyn, dynamic=.true.)
+        call blocks(iblk)%adv_batch_nh%init(                  &
+          blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
+          blocks(iblk)%mesh, blocks(iblk)%halo              , &
+          'lev', 'nh', dt_dyn, dynamic=.true.)
       end if
     end do
 
@@ -270,10 +274,23 @@ contains
 
     type(latlon_field3d_type), intent(inout) :: f
 
-    integer i, j, k
+    integer kds, kde, kms, kme, i, j, k
+
+    select case (f%loc)
+    case ('cell')
+      kds = f%mesh%full_kds
+      kde = f%mesh%full_kde
+      kms = f%mesh%full_kms
+      kme = f%mesh%full_kme
+    case ('lev')
+      kds = f%mesh%half_kds
+      kde = f%mesh%half_kde
+      kms = f%mesh%half_kms
+      kme = f%mesh%half_kme
+    end select
 
     ! Set upper and lower boundary conditions.
-    do k = f%mesh%full_kds - 1, f%mesh%full_kms, -1
+    do k = kds - 1, kms, -1
       do j = f%mesh%full_jds, f%mesh%full_jde
         do i = f%mesh%full_ids, f%mesh%full_ide
           ! f%d(i,j,k) = f%d(i,j,mesh%full_kds)
@@ -283,7 +300,7 @@ contains
         end do
       end do
     end do
-    do k = f%mesh%full_kde + 1, f%mesh%full_kme
+    do k = kde + 1, kme
       do j = f%mesh%full_jds, f%mesh%full_jde
         do i = f%mesh%full_ids, f%mesh%full_ide
           ! f%d(i,j,k) = f%d(i,j,mesh%full_kde)

@@ -164,6 +164,13 @@ module dynamics_types_mod
     type(latlon_field3d_type) gz_ptb
     type(latlon_field3d_type) dp_ptb
     type(latlon_field3d_type) ad_ptb
+    ! Nonhydrostatic variables
+    type(latlon_field3d_type) u_lev_lon
+    type(latlon_field3d_type) v_lev_lat
+    type(latlon_field3d_type) mfx_lev_lon
+    type(latlon_field3d_type) mfy_lev_lat
+    type(latlon_field3d_type) adv_w_lev
+    type(latlon_field3d_type) adv_gz_lev
   contains
     procedure :: init      => aux_array_init
     procedure :: init_phys => aux_array_init_phys
@@ -223,7 +230,7 @@ contains
     long_name = 'Geopotential on half level'
     units     = 'm2 s-2'
     if (nonhydrostatic) then
-      call this%gz_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo)
+      call this%gz_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo, halo_cross_pole=.true.)
     else
       call this%gz_lev%init(name, long_name, units, 'lev', mesh, halo)
     end if
@@ -327,7 +334,7 @@ contains
     long_name = 'Vertical wind speed on half level'
     units     = 'm s-1'
     if (nonhydrostatic) then
-      call this%w_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo)
+      call this%w_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo, halo_cross_pole=.true.)
     end if
 
     name      = 'p'
@@ -935,6 +942,38 @@ contains
       call this%ad_ptb%init(name, long_name, units, 'cell', mesh, halo)
     end if
 
+    if (nonhydrostatic) then
+      name      = 'u_lev_lon'
+      long_name = 'U wind component on lon edge on half level'
+      units     = 'm s-1'
+      call this%u_lev_lon%init(name, long_name, units, 'lev_lon', mesh, halo)
+
+      name      = 'v_lev_lat'
+      long_name = 'V wind component on lat edge on half level'
+      units     = 'm s-1'
+      call this%v_lev_lat%init(name, long_name, units, 'lev_lat', mesh, halo)
+
+      name      = 'mfx_lev_lon'
+      long_name = 'Zonal mass flux on lon edge on half level'
+      units     = 'Pa m s-1'
+      call this%mfx_lev_lon%init(name, long_name, units, 'lev_lon', mesh, halo)
+
+      name      = 'mfy_lev_lat'
+      long_name = 'Meridional mass flux on lat edge on half level'
+      units     = 'Pa m s-1'
+      call this%mfy_lev_lat%init(name, long_name, units, 'lev_lat', mesh, halo)
+
+      name      = 'adv_w_lev'
+      long_name = 'Advection tendency of vertical wind speed on half level'
+      units     = 'm s-2'
+      call this%adv_w_lev%init(name, long_name, units, 'lev', mesh, halo)
+
+      name      = 'adv_gz_lev'
+      long_name = 'Advection tendency of geopotential on half level'
+      units     = 'm2 s-2'
+      call this%adv_gz_lev%init(name, long_name, units, 'lev', mesh, halo)
+    end if
+
   end subroutine aux_array_init
 
   subroutine aux_array_init_phys(this, filter_mesh, filter_halo, mesh, halo)
@@ -1030,6 +1069,12 @@ contains
     call this%gz_ptb     %clear()
     call this%dp_ptb     %clear()
     call this%ad_ptb     %clear()
+    call this%u_lev_lon  %clear()
+    call this%v_lev_lat  %clear()
+    call this%mfx_lev_lon%clear()
+    call this%mfy_lev_lat%clear()
+    call this%adv_w_lev  %clear()
+    call this%adv_gz_lev %clear()
 
   end subroutine aux_array_clear
 

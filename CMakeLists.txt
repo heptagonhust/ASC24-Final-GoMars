@@ -228,6 +228,7 @@ set(gmcore_files
   src/dynamics/gmcore_mod.F90
   src/dynamics/interp_mod.F90
   src/dynamics/operators_mod.F90
+  src/dynamics/nh_mod.F90
   src/dynamics/pgf/pgf_lin97_mod.F90
   src/dynamics/pgf/pgf_ptb_mod.F90
   src/dynamics/pgf/pgf_mod.F90

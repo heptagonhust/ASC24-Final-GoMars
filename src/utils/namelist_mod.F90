@@ -46,7 +46,7 @@ module namelist_mod
   character(256)  :: initial_file         = 'N/A'
   character(256)  :: restart_file         = 'N/A'
   character(256)  :: topo_file            = 'N/A'
-  character(30 )  :: topo_type            = 'etopo1' ! etopo1, mola32
+  character(30 )  :: topo_type            = 'etopo1' ! etopo1, gmted, mola32
   character(256)  :: bkg_file             = 'N/A'
   character(30 )  :: bkg_type             = 'era5'
 
