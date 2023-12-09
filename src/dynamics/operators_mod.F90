@@ -78,16 +78,17 @@ contains
     integer iblk
 
     do iblk = 1, size(blocks)
-      if (baroclinic ) call calc_mg       (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic    ) call calc_mg    (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_dmg                       (blocks(iblk), blocks(iblk)%dstate(itime))
-      if (baroclinic ) call calc_ph       (blocks(iblk), blocks(iblk)%dstate(itime))
-      if (baroclinic ) call calc_t        (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic    ) call calc_ph    (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic    ) call calc_t     (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt, total_substeps)
-      if (hydrostatic) call calc_gz_lev   (blocks(iblk), blocks(iblk)%dstate(itime))
-      if (hydrostatic) call calc_rhod     (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (hydrostatic   ) call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic    ) call calc_rhod  (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (nonhydrostatic) call calc_p     (blocks(iblk), blocks(iblk)%dstate(itime))
       call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
       call tracer_calc_qm                 (blocks(iblk))
     end do
@@ -105,16 +106,17 @@ contains
     select case (pass)
     ! --------------------------------------------------------------------------
     case (all_pass)
-      if (baroclinic ) call calc_mg       (block, dstate)
+      if (baroclinic    ) call calc_mg    (block, dstate)
       call calc_dmg                       (block, dstate)
-      if (baroclinic ) call calc_ph       (block, dstate)
-      if (baroclinic ) call calc_t        (block, dstate)
+      if (baroclinic    ) call calc_ph    (block, dstate)
+      if (baroclinic    ) call calc_t     (block, dstate)
       call calc_mf                        (block, dstate, dt)
       call calc_ke                        (block, dstate)
       call calc_pv                        (block, dstate)
       call interp_pv                      (block, dstate, dt, substep)
-      if (hydrostatic) call calc_gz_lev   (block, dstate)
-      if (hydrostatic) call calc_rhod     (block, dstate)
+      if (hydrostatic   ) call calc_gz_lev(block, dstate)
+      if (baroclinic    ) call calc_rhod  (block, dstate)
+      if (nonhydrostatic) call calc_p     (block, dstate)
       call pgf_prepare                    (block, dstate)
     ! --------------------------------------------------------------------------
     case (forward_pass)
@@ -127,8 +129,9 @@ contains
       if (hydrostatic) then
         call calc_t                       (block, dstate)
         call calc_gz_lev                  (block, dstate)
-        call calc_rhod                    (block, dstate)
       end if
+      if (baroclinic    ) call calc_rhod  (block, dstate)
+      if (nonhydrostatic) call calc_p     (block, dstate)
       call pgf_prepare                    (block, dstate)
     end select
 
@@ -203,6 +206,32 @@ contains
     end associate
 
   end subroutine calc_ph
+
+  subroutine calc_p(block, dstate)
+
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
+
+    real(r8), parameter :: p0 = 1.0e5_r8
+    integer i, j, k
+
+    associate (mesh  => block%mesh  , & ! in
+               rhod  => dstate%rhod , & ! in
+               pt    => dstate%pt   , & ! in
+               p     => dstate%p    , & ! out
+               p_lev => dstate%p_lev)   ! out
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          p%d(i,j,k) = p0 * (Rd * pt%d(i,j,k) * rhod%d(i,j,k) / p0)**cpd_o_cvd
+        end do
+      end do
+    end do
+    call interp_run(p, p_lev)
+    call fill_halo(p_lev)
+    end associate
+
+  end subroutine calc_p
 
   subroutine calc_omg(block, dstate)
 

@@ -37,39 +37,12 @@ contains
     type(dstate_type), intent(inout) :: new_dstate
     real(r8), intent(in) :: dt
 
-    call calc_p      (block, star_dstate)
     call interp_wind (block, star_dstate)
     call calc_adv_lev(block, star_dstate%w_lev , block%aux%adv_w_lev , dt)
     call calc_adv_lev(block, star_dstate%gz_lev, block%aux%adv_gz_lev, dt)
     call implicit_w_solver(block, dtend, old_dstate, star_dstate, new_dstate, dt)
 
   end subroutine nh_solve
-
-  subroutine calc_p(block, dstate)
-
-    type(block_type ), intent(in   ) :: block
-    type(dstate_type), intent(inout) :: dstate
-
-    real(r8), parameter :: p0 = 1.0e5_r8
-    integer i, j, k
-
-    associate (mesh  => block%mesh  , & ! in
-               rhod  => dstate%rhod , & ! in
-               pt    => dstate%pt   , & ! in
-               p     => dstate%p    , & ! out
-               p_lev => dstate%p_lev)   ! out
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          p%d(i,j,k) = p0 * (Rd * pt%d(i,j,k) * rhod%d(i,j,k) / p0)**cpd_o_cvd
-        end do
-      end do
-    end do
-    call interp_run(p, p_lev)
-    call fill_halo(p_lev)
-    end associate
-
-  end subroutine calc_p
 
   subroutine interp_wind(block, dstate)
 
@@ -315,11 +288,11 @@ contains
           d(mesh%half_nlev) = new_w_lev%d(i,j,mesh%half_nlev) * new_dmg_lev%d(i,j,mesh%half_nlev)
           call tridiag_thomas(a, b, c, d, new_w_lev%d(i,j,:))
 
-          ! do k = mesh%half_kds + 1, mesh%half_kde
-          !   new_w_lev%d(i,j,k) = new_w_lev%d(i,j,k) / new_dmg_lev%d(i,j,k)
-          !   print *, k, new_w_lev%d(i,j,k)
-          ! end do
-          ! stop 999
+          do k = mesh%half_kds + 1, mesh%half_kde
+            new_w_lev%d(i,j,k) = new_w_lev%d(i,j,k) / new_dmg_lev%d(i,j,k)
+            print *, k, new_w_lev%d(i,j,k)
+          end do
+          stop 999
 
           call rayleigh_damp_w(dt, star_gz_lev%d(i,j,:), new_w_lev%d(i,j,:))
 
