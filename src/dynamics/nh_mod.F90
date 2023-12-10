@@ -277,8 +277,8 @@ contains
         d(1) = 0.0_r8 ! Top w is set to zero.
         do k = mesh%half_kds + 1, mesh%half_kde - 1
           a(k) = gdtbeta2gam * L(k) * old_p%d(i,j,k-1) / dgz(k-1)
-          b(k) = new_dmg_lev%d(i,j,k) - gdtbeta2gam * (old_p%d(i,j,k) / dgz(k) + old_p%d(i,j,k-1) / dgz(k-1))
           c(k) = gdtbeta2gam * L(k) * old_p%d(i,j,k  ) / dgz(k  )
+          b(k) = new_dmg_lev%d(i,j,k) - a(k) - c(k)
           d(k) = new_dmg_lev%d(i,j,k) * w1(k)
         end do
         a(mesh%half_nlev) = 0.0_r8

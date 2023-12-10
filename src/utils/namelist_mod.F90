@@ -76,7 +76,7 @@ module namelist_mod
 
   character(30)   :: tangent_wgt_scheme   = 'classic'
 
-  real(r8)        :: implicit_w_wgt       = 0.5_r8
+  real(r8)        :: implicit_w_wgt       = 0.55_r8
 
   character(30)   :: vert_coord_scheme    = 'hybrid'
   character(30)   :: vert_coord_template  = 'N/A'
