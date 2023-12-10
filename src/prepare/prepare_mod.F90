@@ -27,7 +27,7 @@ contains
 
   subroutine prepare_topo()
 
-    integer iblk, i, j
+    integer iblk
 
     if (.not. use_aqua_planet) then
       call topo_reader_run(topo_file, min_lon, max_lon, min_lat, max_lat)
@@ -41,26 +41,6 @@ contains
       end if
       call ref_calc_ps()
     end if
-
-    do iblk = 1, size(blocks)
-      associate (mesh  => blocks(iblk)%mesh        , &
-                 gzs   => blocks(iblk)%static%gzs  , & ! in
-                 dzsdx => blocks(iblk)%static%dzsdx, & ! out
-                 dzsdy => blocks(iblk)%static%dzsdy)   ! out
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          dzsdx%d(i,j) = (gzs%d(i+1,j) - gzs%d(i,j)) / g / mesh%de_lon(j)
-        end do
-      end do
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          dzsdy%d(i,j) = (gzs%d(i,j+1) - gzs%d(i,j)) / g / mesh%de_lat(j)
-        end do
-      end do
-      call fill_halo(dzsdx)
-      call fill_halo(dzsdy)
-      end associate
-    end do
 
   end subroutine prepare_topo
 
@@ -84,6 +64,32 @@ contains
     end do
 
   end subroutine prepare_bkg
+
+  subroutine prepare_run()
+
+    integer iblk, i, j
+
+    do iblk = 1, size(blocks)
+      associate (mesh  => blocks(iblk)%mesh        , &
+                 gzs   => blocks(iblk)%static%gzs  , & ! in
+                 dzsdx => blocks(iblk)%static%dzsdx, & ! out
+                 dzsdy => blocks(iblk)%static%dzsdy)   ! out
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%half_ids, mesh%half_ide
+          dzsdx%d(i,j) = (gzs%d(i+1,j) - gzs%d(i,j)) / g / mesh%de_lon(j)
+        end do
+      end do
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
+          dzsdy%d(i,j) = (gzs%d(i,j+1) - gzs%d(i,j)) / g / mesh%de_lat(j)
+        end do
+      end do
+      call fill_halo(dzsdx)
+      call fill_halo(dzsdy)
+      end associate
+    end do
+
+  end subroutine prepare_run
 
   subroutine prepare_final()
 

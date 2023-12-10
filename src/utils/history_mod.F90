@@ -298,10 +298,11 @@ contains
     call fiona_add_var('h0', 'pt'     , long_name='potential temperature'       , units='K'     , dim_names=cell_dims_3d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 't'      , long_name='temperature'                 , units='K'     , dim_names=cell_dims_3d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'z'      , long_name='height'                      , units='m'     , dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'z_lev'  , long_name='height'                      , units='m'     , dim_names= lev_dims_3d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'ph'     , long_name='hydrostatic pressure'        , units='Pa'    , dim_names=cell_dims_3d)
     call fiona_add_var('h0', 'vor'    , long_name='relative vorticity'          , units='s-1'   , dim_names= vtx_dims_3d)
     call fiona_add_var('h0', 'div'    , long_name='divergence'                  , units='s-1'   , dim_names=cell_dims_3d)
-    call fiona_add_var('h0', 'w'      , long_name='vertical speed'              , units='m s-1' , dim_names= lev_dims_3d)
+    call fiona_add_var('h0', 'w_lev'  , long_name='vertical speed'              , units='m s-1' , dim_names= lev_dims_3d)
     call fiona_add_var('h0', 'p'      , long_name='full pressure'               , units='Pa'    , dim_names= lev_dims_3d)
     call fiona_add_var('h0', 'rhod'   , long_name='dry air density'             , units='kg m-3', dim_names=cell_dims_3d)
 
@@ -643,7 +644,8 @@ contains
       ks = mesh%half_kds; ke = mesh%half_kde
       start = [is,js,ks]
       count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
-      call fiona_output('h0', 'w'       , dstate%w_lev   %d(is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'w_lev'   , dstate%w_lev   %d(is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'z_lev'   , dstate%gz_lev  %d(is:ie,js:je,ks:ke) / g , start=start, count=count)
       call fiona_output('h0', 'p'       , dstate%p_lev   %d(is:ie,js:je,ks:ke)     , start=start, count=count)
 
       call fiona_output('h0', 'tm' , dstate %tm)

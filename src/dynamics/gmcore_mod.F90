@@ -29,6 +29,7 @@ module gmcore_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use history_mod
   use restart_mod
+  use prepare_mod
   use block_mod
   use vert_coord_mod
   use time_schemes_mod
@@ -195,6 +196,7 @@ contains
       end associate
     end do
 
+    call prepare_run()
     call pgf_init_after_ic()
     call operators_prepare(blocks, old, dt_dyn)
     call adv_prepare(old)

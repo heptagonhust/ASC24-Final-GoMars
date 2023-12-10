@@ -156,7 +156,7 @@ contains
 
   subroutine apply_bc_w_lev(block, dstate)
 
-    type(block_type ), intent(inout) :: block
+    type(block_type ), intent(in   ) :: block
     type(dstate_type), intent(inout) :: dstate
 
     real(r8) us_dzsdx, vs_dzsdy

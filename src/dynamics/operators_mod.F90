@@ -107,17 +107,13 @@ contains
     select case (pass)
     ! --------------------------------------------------------------------------
     case (all_pass)
-      if (baroclinic    ) call calc_mg    (block, dstate)
-      call calc_dmg                       (block, dstate)
-      if (baroclinic    ) call calc_ph    (block, dstate)
-      if (baroclinic    ) call calc_t     (block, dstate)
       call calc_mf                        (block, dstate, dt)
       call calc_ke                        (block, dstate)
       call calc_pv                        (block, dstate)
       call interp_pv                      (block, dstate, dt, substep)
+      if (baroclinic    ) call calc_t     (block, dstate)
       if (hydrostatic   ) call calc_gz_lev(block, dstate)
-      if (baroclinic    ) call calc_rhod  (block, dstate)
-      if (nonhydrostatic) call calc_p     (block, dstate)
+      if (hydrostatic   ) call calc_rhod  (block, dstate)
       call pgf_prepare                    (block, dstate)
     ! --------------------------------------------------------------------------
     case (forward_pass)
@@ -127,12 +123,9 @@ contains
       call interp_pv                      (block, dstate, dt, substep)
     ! --------------------------------------------------------------------------
     case (backward_pass)
-      if (hydrostatic) then
-        call calc_t                       (block, dstate)
-        call calc_gz_lev                  (block, dstate)
-      end if
-      if (baroclinic    ) call calc_rhod  (block, dstate)
-      if (nonhydrostatic) call calc_p     (block, dstate)
+      if (baroclinic    ) call calc_t     (block, dstate)
+      if (hydrostatic   ) call calc_gz_lev(block, dstate)
+      if (hydrostatic   ) call calc_rhod  (block, dstate)
       call pgf_prepare                    (block, dstate)
     end select
 
