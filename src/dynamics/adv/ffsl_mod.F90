@@ -187,9 +187,9 @@ contains
     type(latlon_field3d_type), intent(inout) :: qmfy
     real(r8), intent(in), optional :: dt
 
-    integer i, j, k
-    real(r8) work(q%mesh%full_ids:q%mesh%full_ide,q%mesh%full_nlev)
-    real(r8) pole(q%mesh%full_nlev)
+    integer ks, ke, i, j, k
+    real(r8) work(q%mesh%full_ids:q%mesh%full_ide,q%mesh%half_nlev)
+    real(r8) pole(q%mesh%half_nlev)
     real(r8) dt_opt
 
     dt_opt = batch%dt; if (present(dt)) dt_opt = dt
@@ -211,9 +211,11 @@ contains
     call fill_halo(qmfx, south_halo=.false., north_halo=.false.)
     call fill_halo(qmfy, west_halo=.false., east_halo=.false.)
     select case (batch%loc)
-    case ('cell')
+    case ('cell', 'lev')
+      ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
+      ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
       ! Calculate intermediate tracer density due to advective operators.
-      do k = mesh%full_kds, mesh%full_kde
+      do k = ks, ke
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%full_ids, mesh%full_ide
             ! Subtract divergence terms from flux to form advective operators.
@@ -236,14 +238,14 @@ contains
       ! Handle the Pole boundary conditions.
       if (mesh%has_south_pole()) then
         j = mesh%full_jds
-        do k = mesh%full_kds, mesh%full_kde
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             work(i,k) = qmfy%d(i,j,k)
           end do
         end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%full_kds, mesh%full_kde
+        call zonal_sum(proc%zonal_circle, work(:,ks:ke), pole(ks:ke))
+        pole(ks:ke) = pole(ks:ke) * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             qx%d(i,j,k) = q%d(i,j,k)
             qy%d(i,j,k) = q%d(i,j,k) - 0.5_r8 * (pole(k) - divy%d(i,j,k) * q%d(i,j,k)) * dt_opt
@@ -252,75 +254,21 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_jde
-        do k = mesh%full_kds, mesh%full_kde
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             work(i,k) = qmfy%d(i,j-1,k)
           end do
         end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%full_kds, mesh%full_kde
+        call zonal_sum(proc%zonal_circle, work(:,ks:ke), pole(ks:ke))
+        pole(ks:ke) = pole(ks:ke) * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             qx%d(i,j,k) = q%d(i,j,k)
             qy%d(i,j,k) = q%d(i,j,k) + 0.5_r8 * (pole(k) - divy%d(i,j,k) * q%d(i,j,k)) * dt_opt
           end do
         end do
       end if
-    case ('lev')
-      ! Calculate intermediate tracer density due to advective operators.
-      do k = mesh%half_kds, mesh%half_kde - 1
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%full_ids, mesh%full_ide
-            ! Subtract divergence terms from flux to form advective operators.
-            qx%d(i,j,k) = q%d(i,j,k) - 0.5_r8 * (      &
-              (                                        &
-                qmfx%d(i,j,k) - qmfx%d(i-1,j,k)        &
-              ) * mesh%le_lon(j) / mesh%area_cell(j) - &
-              divx%d(i,j,k) * q%d(i,j,k)               &
-            ) * dt_opt
-            qy%d(i,j,k) = q%d(i,j,k) - 0.5_r8 * (    &
-              (                                      &
-                qmfy%d(i,j  ,k) * mesh%le_lat(j  ) - &
-                qmfy%d(i,j-1,k) * mesh%le_lat(j-1)   &
-              ) / mesh%area_cell(j) -                &
-              divy%d(i,j,k) * q%d(i,j,k)             &
-            ) * dt_opt
-          end do
-        end do
-      end do
-      ! Handle the Pole boundary conditions.
-      if (mesh%has_south_pole()) then
-        j = mesh%full_jds
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = qmfy%d(i,j,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            qx%d(i,j,k) = q%d(i,j,k)
-            qy%d(i,j,k) = q%d(i,j,k) - 0.5_r8 * (pole(k) - divy%d(i,j,k) * q%d(i,j,k)) * dt_opt
-          end do
-        end do
-      end if
-      if (mesh%has_north_pole()) then
-        j = mesh%full_jde
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = qmfy%d(i,j-1,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            qx%d(i,j,k) = q%d(i,j,k)
-            qy%d(i,j,k) = q%d(i,j,k) + 0.5_r8 * (pole(k) - divy%d(i,j,k) * q%d(i,j,k)) * dt_opt
-          end do
-        end do
-      end if
+    case ('vtx')
     end select
     call fill_halo(qx, west_halo=.false., east_halo=.false.)
     call fill_halo(qy, south_halo=.false., north_halo=.false.)
@@ -351,7 +299,7 @@ contains
     type(latlon_field3d_type), intent(inout) :: mfx
     type(latlon_field3d_type), intent(inout) :: mfy
 
-    integer i, j, k, iu, ju, ci
+    integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, dm
 
     associate (mesh => u%mesh    , &
@@ -359,7 +307,9 @@ contains
                cfly => batch%cfly)   ! in
     select case (batch%loc)
     case ('cell', 'lev')
-      do k = mesh%full_kds, mesh%full_kde
+      ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
+      ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+      do k = ks, ke
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -443,7 +393,7 @@ contains
     type(latlon_field3d_type), intent(inout) :: mfx
     type(latlon_field3d_type), intent(inout) :: mfy
 
-    integer i, j, k, iu, ju, ci
+    integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
 
     associate (mesh => u%mesh    , &
@@ -451,7 +401,9 @@ contains
                cfly => batch%cfly)   ! in
     select case (batch%loc)
     case ('cell', 'lev')
-      do k = mesh%full_kds, mesh%full_kde
+      ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
+      ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+      do k = ks, ke
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide

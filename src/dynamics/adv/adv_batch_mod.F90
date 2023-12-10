@@ -526,9 +526,9 @@ contains
 
     class(adv_batch_type), intent(inout) :: this
 
-    real(r8) work(this%u%mesh%full_ids:this%u%mesh%full_ide,this%u%mesh%full_nlev)
-    real(r8) pole(this%u%mesh%full_nlev)
-    integer i, j, k
+    real(r8) work(this%u%mesh%full_ids:this%u%mesh%full_ide,this%u%mesh%half_nlev)
+    real(r8) pole(this%u%mesh%half_nlev)
+    integer ks, ke, i, j, k
 
     associate (mesh => this%u%mesh, &
                dt   => this%dt    , &
@@ -544,8 +544,10 @@ contains
                divx => this%divx  , &
                divy => this%divy  )
     select case (this%loc)
-    case ('cell')
-      do k = mesh%full_kds, mesh%full_kde
+    case ('cell', 'lev')
+      ks = merge(mesh%full_kds, mesh%half_kds, this%loc == 'cell')
+      ke = merge(mesh%full_kde, mesh%half_kde, this%loc == 'cell')
+      do k = ks, ke
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids - 1, mesh%half_ide
             cflx%d(i,j,k) = u%d(i,j,k) * dt / mesh%de_lon(j)
@@ -565,14 +567,14 @@ contains
       end do
       if (mesh%has_south_pole()) then
         j = mesh%full_jds
-        do k = mesh%full_kds, mesh%full_kde
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             work(i,k) = v%d(i,j,k)
           end do
         end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%full_kds, mesh%full_kde
+        call zonal_sum(proc%zonal_circle, work(:,ks:ke), pole(ks:ke))
+        pole(ks:ke) = pole(ks:ke) * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             divy%d(i,j,k) = pole(k)
           end do
@@ -580,19 +582,24 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_jde
-        do k = mesh%full_kds, mesh%full_kde
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             work(i,k) = -v%d(i,j-1,k)
           end do
         end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%full_kds, mesh%full_kde
+        call zonal_sum(proc%zonal_circle, work(:,ks:ke), pole(ks:ke))
+        pole(ks:ke) = pole(ks:ke) * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+        do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             divy%d(i,j,k) = pole(k)
           end do
         end do
       end if
+    case ('vtx')
+    end select
+
+    select case (this%loc)
+    case ('cell')
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -601,54 +608,6 @@ contains
         end do
       end do
     case ('lev')
-      do k = mesh%half_kds, mesh%half_kde - 1
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids - 1, mesh%half_ide
-            cflx%d(i,j,k) = u%d(i,j,k) * dt / mesh%de_lon(j)
-          end do
-        end do
-        do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            cfly%d(i,j,k) = v%d(i,j,k) * dt / mesh%de_lat(j)
-          end do
-        end do
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%full_ids, mesh%full_ide
-            divx%d(i,j,k) = (u%d(i,j,k) - u%d(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
-            divy%d(i,j,k) = (v%d(i,j,k) * mesh%le_lat(j) - v%d(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
-          end do
-        end do
-      end do
-      if (mesh%has_south_pole()) then
-        j = mesh%full_jds
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = v%d(i,j,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            divy%d(i,j,k) = pole(k)
-          end do
-        end do
-      end if
-      if (mesh%has_north_pole()) then
-        j = mesh%full_jde
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = -v%d(i,j-1,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%half_kds, mesh%half_kde - 1
-          do i = mesh%full_ids, mesh%full_ide
-            divy%d(i,j,k) = pole(k)
-          end do
-        end do
-      end if
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -656,8 +615,6 @@ contains
           end do
         end do
       end do
-    case ('vtx')
-
     end select
     end associate
 

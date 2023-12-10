@@ -87,8 +87,8 @@ contains
     type(latlon_field3d_type), intent(in   ) :: dmg_lev
     real(r8), intent(in) :: dt
 
-    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%half_kds:block%mesh%half_nlev-1)
-    real(r8) pole(block%mesh%half_nlev-1)
+    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%half_kds:block%mesh%half_nlev)
+    real(r8) pole(block%mesh%half_nlev)
     integer i, j, k
 
     associate (mesh    => block%mesh                , &
@@ -98,7 +98,7 @@ contains
     call adv_calc_tracer_hflx(block%adv_batch_nh, q_lev, qmf_lon, qmf_lat, dt)
     call fill_halo(qmf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(qmf_lat, west_halo=.false., east_halo=.false., north_halo=.false.)
-    do k = mesh%half_kds, mesh%half_kde - 1
+    do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
           dqdt_lev%d(i,j,k) = -((                   &
@@ -112,14 +112,14 @@ contains
     end do
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
-      do k = mesh%half_kds, mesh%half_kde - 1
+      do k = mesh%half_kds, mesh%half_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = qmf_lat%d(i,j,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-      do k = mesh%half_kds, mesh%half_kde - 1
+      do k = mesh%half_kds, mesh%half_kde
         do i = mesh%full_ids, mesh%full_ide
           dqdt_lev%d(i,j,k) = -pole(k)
         end do
@@ -127,14 +127,14 @@ contains
     end if
     if (mesh%has_north_pole()) then
       j = mesh%full_jde
-      do k = mesh%half_kds, mesh%half_kde - 1
+      do k = mesh%half_kds, mesh%half_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = qmf_lat%d(i,j-1,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-      do k = mesh%half_kds, mesh%half_kde - 1
+      do k = mesh%half_kds, mesh%half_kde
         do i = mesh%full_ids, mesh%full_ide
           dqdt_lev%d(i,j,k) = pole(k)
         end do
@@ -143,7 +143,7 @@ contains
     call adv_fill_vhalo(q_lev)
     call adv_calc_tracer_vflx(block%adv_batch_nh, q_lev, qmf_lev, dt)
     ! Also divide by dmg_lev to get advective tendency.
-    do k = mesh%half_kds, mesh%half_kde - 1
+    do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dqdt_lev%d(i,j,k) = (dqdt_lev%d(i,j,k) - (qmf_lev%d(i,j,k+1) - qmf_lev%d(i,j,k))) / dmg_lev%d(i,j,k)
@@ -159,23 +159,15 @@ contains
     type(block_type ), intent(in   ) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    real(r8) us_dzsdx, vs_dzsdy
     integer i, j, k
 
-    associate (mesh      => block%mesh         , &
-               u_lev_lon => block%aux%u_lev_lon, & ! in
-               v_lev_lat => block%aux%v_lev_lat, & ! in
-               dzsdx     => block%static%dzsdx , & ! in
-               dzsdy     => block%static%dzsdy , & ! in
-               w_lev     => dstate%w_lev       )   ! out
+    associate (mesh       => block%mesh          , &
+               adv_gz_lev => block%aux%adv_gz_lev, & ! in
+               w_lev      => dstate%w_lev        )   ! out
     k = mesh%half_kde
     do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
       do i = mesh%full_ids, mesh%full_ide
-        us_dzsdx = (u_lev_lon%d(i-1,j,k) * dzsdx%d(i-1,j) + &
-                    u_lev_lon%d(i  ,j,k) * dzsdx%d(i  ,j)) * 0.5_r8
-        vs_dzsdy = (v_lev_lat%d(i,j-1,k) * dzsdy%d(i,j-1) + &
-                    v_lev_lat%d(i,j  ,k) * dzsdy%d(i,j  )) * 0.5_r8
-        w_lev%d(i,j,k) = us_dzsdx + vs_dzsdy
+        w_lev%d(i,j,k) = -adv_gz_lev%d(i,j,k) / g
       end do
     end do
     end associate
@@ -294,10 +286,6 @@ contains
         do k = mesh%half_kds, mesh%half_kde - 1
           new_gz_lev%d(i,j,k) = gz1(k) + gdtbeta * new_w_lev%d(i,j,k)
         end do
-
-        ! do k = mesh%half_kds, mesh%half_kde
-        !   print *, i, j, k, new_w_lev%d(i,j,k), new_gz_lev%d(i,j,k)
-        ! end do
       end do
     end do
     call fill_halo(new_w_lev )
