@@ -419,8 +419,8 @@ contains
     call fiona_add_var('h1', 'mfy_lat'      , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmg'          , long_name='dry-air weight on full levels'                 , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
-    call fiona_add_var('h1', 'adv_gz'       , long_name='advection of gz'                               , units='', dim_names= lev_dims_3d)
-    call fiona_add_var('h1', 'adv_w'        , long_name='advection of w'                                , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'adv_w_lev'    , long_name='advection of w'                                , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'adv_gz_lev'   , long_name='advection of gz'                               , units='', dim_names= lev_dims_3d)
 
   end subroutine history_setup_h1_nonhydrostatic
 
@@ -937,7 +937,9 @@ contains
     ks = mesh%half_kds; ke = mesh%half_kde
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
-    call fiona_output('h1', 'we_lev', dstate%we_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'we_lev'    , dstate%we_lev    %d(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'adv_w_lev' ,    aux%adv_w_lev %d(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'adv_gz_lev',    aux%adv_gz_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
     end associate
 
     call fiona_end_output('h1', keep_dataset=.true.)
