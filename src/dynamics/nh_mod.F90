@@ -29,10 +29,9 @@ module nh_mod
 
 contains
 
-  subroutine nh_solve(block, dtend, old_dstate, star_dstate, new_dstate, dt)
+  subroutine nh_solve(block, old_dstate, star_dstate, new_dstate, dt)
 
     type(block_type ), intent(inout) :: block
-    type(dtend_type ), intent(inout) :: dtend
     type(dstate_type), intent(in   ) :: old_dstate
     type(dstate_type), intent(inout) :: star_dstate
     type(dstate_type), intent(inout) :: new_dstate
@@ -41,7 +40,7 @@ contains
     call interp_wind      (block, star_dstate)
     call calc_adv_lev     (block, star_dstate%w_lev , block%aux%adv_w_lev , star_dstate%dmg_lev, dt)
     call calc_adv_lev     (block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
-    call implicit_w_solver(block, dtend, old_dstate, star_dstate, new_dstate, dt)
+    call implicit_w_solver(block, old_dstate, star_dstate, new_dstate, dt)
     call calc_rhod        (block, new_dstate)
     call calc_p           (block, new_dstate)
     call interp_run       (new_dstate%gz_lev, new_dstate%gz)
@@ -190,10 +189,9 @@ contains
 
   end subroutine apply_bc_w_lev
 
-  subroutine implicit_w_solver(block, dtend, old_dstate, star_dstate, new_dstate, dt)
+  subroutine implicit_w_solver(block, old_dstate, star_dstate, new_dstate, dt)
 
     type(block_type ), intent(inout) :: block
-    type(dtend_type ), intent(in   ) :: dtend
     type(dstate_type), intent(in   ) :: old_dstate
     type(dstate_type), intent(in   ) :: star_dstate
     type(dstate_type), intent(inout) :: new_dstate

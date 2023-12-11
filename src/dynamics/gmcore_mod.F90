@@ -481,9 +481,9 @@ contains
         dtend1%update_gz = .true.
       end if
     case (backward_pass)
+      if (nonhydrostatic) call nh_solve(block, old_dstate, star_dstate, new_dstate, dt)
       call operators_prepare(block, new_dstate, dt, pass, substep)
       if (baroclinic) then
-        if (nonhydrostatic) call nh_solve(block, dtend1, old_dstate, star_dstate, new_dstate, dt)
         call pgf_run(block, new_dstate, dtend1)
 
         do k = mesh%full_kds, mesh%full_kde
