@@ -91,22 +91,30 @@ contains
     real(r8) pole(block%mesh%half_nlev)
     integer i, j, k
 
-    associate (mesh    => block%mesh                , &
-               qmf_lon => block%adv_batch_nh%qmf_lon, &
-               qmf_lat => block%adv_batch_nh%qmf_lat, &
-               qmf_lev => block%adv_batch_nh%qmf_lev)
+    associate (mesh        => block%mesh                , &
+               mfx_lev_lon => block%aux%mfx_lev_lon     , & ! in
+               mfy_lev_lat => block%aux%mfy_lev_lat     , & ! in
+               we          => block%adv_batch_nh%we     , & ! in
+               qmf_lon     => block%adv_batch_nh%qmf_lon, &
+               qmf_lat     => block%adv_batch_nh%qmf_lat, &
+               qmf_lev     => block%adv_batch_nh%qmf_lev)
     call adv_calc_tracer_hflx(block%adv_batch_nh, q_lev, qmf_lon, qmf_lat, dt)
     call fill_halo(qmf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(qmf_lat, west_halo=.false., east_halo=.false., north_halo=.false.)
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
-          dqdt_lev%d(i,j,k) = -((                   &
-            qmf_lon%d(i,j,k) - qmf_lon%d(i-1,j,k)   &
-          ) * mesh%le_lon(j) + (                    &
-            qmf_lat%d(i,j  ,k) * mesh%le_lat(j  ) - &
-            qmf_lat%d(i,j-1,k) * mesh%le_lat(j-1)   &
-          )) / mesh%area_cell(j)
+          dqdt_lev%d(i,j,k) = -((                         &
+            qmf_lon%d(i,j,k) - qmf_lon%d(i-1,j,k)         &
+          ) * mesh%le_lon(j) + (                          &
+            qmf_lat%d(i,j  ,k) * mesh%le_lat(j  ) -       &
+            qmf_lat%d(i,j-1,k) * mesh%le_lat(j-1)         &
+          ) - q_lev%d(i,j,k) * ((                         &
+            mfx_lev_lon%d(i,j,k) - mfx_lev_lon%d(i-1,j,k) &
+          ) * mesh%le_lon(j) + (                          &
+            mfy_lev_lat%d(i,j  ,k) * mesh%le_lat(j  ) -   &
+            mfy_lev_lat%d(i,j-1,k) * mesh%le_lat(j-1)     &
+          ))) / mesh%area_cell(j)
         end do
       end do
     end do
@@ -114,7 +122,7 @@ contains
       j = mesh%full_jds
       do k = mesh%half_kds, mesh%half_kde
         do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = qmf_lat%d(i,j,k)
+          work(i,k) = qmf_lat%d(i,j,k) - q_lev%d(i,j,k) * mfy_lev_lat%d(i,j,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -129,7 +137,7 @@ contains
       j = mesh%full_jde
       do k = mesh%half_kds, mesh%half_kde
         do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = qmf_lat%d(i,j-1,k)
+          work(i,k) = qmf_lat%d(i,j-1,k) - q_lev%d(i,j,k) * mfy_lev_lat%d(i,j-1,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -142,11 +150,19 @@ contains
     end if
     call adv_fill_vhalo(q_lev)
     call adv_calc_tracer_vflx(block%adv_batch_nh, q_lev, qmf_lev, dt)
-    ! Also divide by dmg_lev to get advective tendency.
+    do k = mesh%half_kds + 1, mesh%half_kde - 1
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          dqdt_lev%d(i,j,k) = dqdt_lev%d(i,j,k) - (       &
+            qmf_lev%d(i,j,k) - qmf_lev%d(i,j,k-1) -       &
+            q_lev%d(i,j,k) * (we%d(i,j,k) - we%d(i,j,k-1)))
+        end do
+      end do
+    end do
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dqdt_lev%d(i,j,k) = (dqdt_lev%d(i,j,k) - (qmf_lev%d(i,j,k+1) - qmf_lev%d(i,j,k))) / dmg_lev%d(i,j,k)
+          dqdt_lev%d(i,j,k) = dqdt_lev%d(i,j,k) / dmg_lev%d(i,j,k)
         end do
       end do
     end do
