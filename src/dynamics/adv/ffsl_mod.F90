@@ -208,8 +208,8 @@ contains
                qmfy => qmfy      )   ! out
     ! Run inner advective operators.
     call hflx(batch, u, v, q, q, qmfx, qmfy)
-    call fill_halo(qmfx, south_halo=.false., north_halo=.false.)
-    call fill_halo(qmfy, west_halo=.false., east_halo=.false.)
+    call fill_halo(qmfx, south_halo=.false., north_halo=.false., east_halo=.false.)
+    call fill_halo(qmfy, west_halo=.false., east_halo=.false., north_halo=.false.)
     select case (batch%loc)
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
@@ -320,11 +320,11 @@ contains
             else if (cflx%d(i,j,k) > 0) then
               iu = i - ci
               dm = slope(mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k))
-              mfx%d(i,j,k) = u%d(i,j,k) * (cf * (mx%d(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx%d(i+1-ci:i,j,k))) / cflx%d(i,j,k)
+              mfx%d(i,j,k) = u%d(i,j,k) * (cf * (mx%d(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx%d(iu+1:i,j,k))) / cflx%d(i,j,k)
             else
               iu = i - ci + 1
               dm = slope(mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k))
-              mfx%d(i,j,k) = u%d(i,j,k) * (cf * (mx%d(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx%d(i+1:i-ci,j,k))) / cflx%d(i,j,k)
+              mfx%d(i,j,k) = u%d(i,j,k) * (cf * (mx%d(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx%d(i+1:iu-1,j,k))) / cflx%d(i,j,k)
             end if
           end do
         end do
@@ -368,16 +368,35 @@ contains
             else if (cflz%d(i,j,k) > 0) then
               ku = k - ci - 1
               dm = slope(m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1))
-              mfz%d(i,j,k) = w%d(i,j,k) * (cf * (m%d(i,j,ku) + dm * 0.5_r8 * (1 - cf)) + sum(m%d(i,j,k-ci:k-1))) / cflz%d(i,j,k)
+              mfz%d(i,j,k) = w%d(i,j,k) * (cf * (m%d(i,j,ku) + dm * 0.5_r8 * (1 - cf)) + sum(m%d(i,j,ku+1:k-1))) / cflz%d(i,j,k)
             else
               ku = k - ci
               dm = slope(m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1))
-              mfz%d(i,j,k) = w%d(i,j,k) * (cf * (m%d(i,j,ku) - dm * 0.5_r8 * (1 + cf)) - sum(m%d(i,j,k:k-ci-1))) / cflz%d(i,j,k)
+              mfz%d(i,j,k) = w%d(i,j,k) * (cf * (m%d(i,j,ku) - dm * 0.5_r8 * (1 + cf)) - sum(m%d(i,j,k:ku-1))) / cflz%d(i,j,k)
             end if
           end do
         end do
       end do
     case ('lev')
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            ci = int(cflz%d(i,j,k))
+            cf = cflz%d(i,j,k) - ci
+            if (abs(cflz%d(i,j,k)) < 1.0e-16_r8) then
+              mfz%d(i,j,k) = 0
+            else if (cflz%d(i,j,k) > 0) then
+              ku = k - ci
+              dm = slope(m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1))
+              mfz%d(i,j,k) = w%d(i,j,k) * (cf * (m%d(i,j,ku) + dm * 0.5_r8 * (1 - cf)) + sum(m%d(i,j,ku+1:k))) / cflz%d(i,j,k)
+            else
+              ku = k - ci + 1
+              dm = slope(m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1))
+              mfz%d(i,j,k) = w%d(i,j,k) * (cf * (m%d(i,j,ku) - dm * 0.5_r8 * (1 + cf)) - sum(m%d(i,j,k+1:ku-1))) / cflz%d(i,j,k)
+            end if
+          end do
+        end do
+      end do
     end select
     end associate
 
@@ -419,7 +438,7 @@ contains
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(i+1-ci:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
+              mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(iu+1:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
             else
               iu = i - ci + 1
               call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
@@ -428,7 +447,7 @@ contains
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:i-ci,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
+              mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:iu-1,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
             end if
           end do
         end do
@@ -494,7 +513,7 @@ contains
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfz%d(i,j,k) =  w%d(i,j,k) * (sum(m%d(i,j,k-ci:k-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
+              mfz%d(i,j,k) =  w%d(i,j,k) * (sum(m%d(i,j,ku+1:k-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
             else
               ku = k - ci
               call ppm(m%d(i,j,ku-2), m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1), m%d(i,j,ku+2), ml, dm, m6)
@@ -503,7 +522,7 @@ contains
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfz%d(i,j,k) = -w%d(i,j,k) * (sum(m%d(i,j,k:k-ci-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
+              mfz%d(i,j,k) = -w%d(i,j,k) * (sum(m%d(i,j,k:ku-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
             end if
           end do
         end do
@@ -524,7 +543,7 @@ contains
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfz%d(i,j,k) =  w%d(i,j,k) * (sum(m%d(i,j,k-ci+1:k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
+              mfz%d(i,j,k) =  w%d(i,j,k) * (sum(m%d(i,j,ku+1:k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
             else
               ku = k - ci + 1
               call ppm(m%d(i,j,ku-2), m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1), m%d(i,j,ku+2), ml, dm, m6)
@@ -533,7 +552,7 @@ contains
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfz%d(i,j,k) = -w%d(i,j,k) * (sum(m%d(i,j,k+1:k-ci)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
+              mfz%d(i,j,k) = -w%d(i,j,k) * (sum(m%d(i,j,k+1:ku-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
             end if
           end do
         end do

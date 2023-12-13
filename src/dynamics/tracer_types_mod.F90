@@ -48,7 +48,8 @@ module tracer_types_mod
     type(latlon_field3d_type) qm      ! Total moisture or water substances
     type(latlon_field3d_type) qm_lev  ! Total moisture or water substances on half level
   contains
-    procedure :: init => tracers_init
+    procedure :: init_stage1 => tracers_init_stage1
+    procedure :: init_stage2 => tracers_init_stage2
     procedure :: clear => tracers_clear
     final :: tracers_final
   end type tracers_type
@@ -57,7 +58,7 @@ module tracer_types_mod
 
 contains
 
-  subroutine tracers_init(this, filter_mesh, filter_halo, mesh, halo)
+  subroutine tracers_init_stage1(this, filter_mesh, filter_halo, mesh, halo)
 
     class(tracers_type), intent(inout) :: this
     type(latlon_mesh_type), intent(in) :: filter_mesh
@@ -70,13 +71,6 @@ contains
     character(field_units_len    ) units
 
     call this%clear()
-
-    name      = 'q'
-    long_name = 'Tracer dry mixing ratio'
-    units     = 'kg kg-1'
-    if (ntracers > 0) then
-      call this%q%init(name, long_name, units, 'cell', filter_mesh, filter_halo, halo_cross_pole=.true., n4=ntracers)
-    end if
 
     name      = 'qm'
     long_name = 'Total moist tracer dry mixing ratioo'
@@ -92,7 +86,28 @@ contains
 
     this%initialized = .true.
 
-  end subroutine tracers_init
+  end subroutine tracers_init_stage1
+
+  subroutine tracers_init_stage2(this, filter_mesh, filter_halo, mesh, halo)
+
+    class(tracers_type), intent(inout) :: this
+    type(latlon_mesh_type), intent(in) :: filter_mesh
+    type(latlon_halo_type), intent(in) :: filter_halo(:)
+    type(latlon_mesh_type), intent(in) :: mesh
+    type(latlon_halo_type), intent(in) :: halo(:)
+
+    character(field_name_len     ) name
+    character(field_long_name_len) long_name
+    character(field_units_len    ) units
+
+    name      = 'q'
+    long_name = 'Tracer dry mixing ratio'
+    units     = 'kg kg-1'
+    if (ntracers > 0) then
+      call this%q%init(name, long_name, units, 'cell', filter_mesh, filter_halo, halo_cross_pole=.true., n4=ntracers)
+    end if
+
+  end subroutine tracers_init_stage2
 
   subroutine tracers_clear(this)
 

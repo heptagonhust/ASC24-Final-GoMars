@@ -966,12 +966,12 @@ contains
       name      = 'adv_w_lev'
       long_name = 'Advection tendency of vertical wind speed on half level'
       units     = 'm s-2'
-      call this%adv_w_lev%init(name, long_name, units, 'lev', mesh, halo)
+      call this%adv_w_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo)
 
       name      = 'adv_gz_lev'
       long_name = 'Advection tendency of geopotential on half level'
       units     = 'm2 s-2'
-      call this%adv_gz_lev%init(name, long_name, units, 'lev', mesh, halo)
+      call this%adv_gz_lev%init(name, long_name, units, 'lev', filter_mesh, filter_halo)
     end if
 
   end subroutine aux_array_init

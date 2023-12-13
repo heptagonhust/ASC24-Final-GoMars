@@ -20,6 +20,7 @@ module nh_mod
   use adv_mod
   use tracer_mod
   use operators_mod
+  use filter_mod
 
   implicit none
 
@@ -42,7 +43,8 @@ contains
     call calc_adv_lev     (block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
     call implicit_w_solver(block, old_dstate, star_dstate, new_dstate, dt)
     call calc_rhod        (block, new_dstate)
-    call calc_p           (block, new_dstate)
+    ! call calc_p           (block, new_dstate)
+    call calc_linearized_p(block, star_dstate, new_dstate)
     call interp_run       (new_dstate%gz_lev, new_dstate%gz)
 
   end subroutine nh_solve
@@ -165,6 +167,8 @@ contains
         end do
       end do
     end do
+    call fill_halo(dqdt_lev, south_halo=.false., north_halo=.false.)
+    call filter_run(block%big_filter, dqdt_lev)
     end associate
 
   end subroutine calc_adv_lev
@@ -180,7 +184,7 @@ contains
                adv_gz_lev => block%aux%adv_gz_lev, & ! in
                w_lev      => dstate%w_lev        )   ! out
     k = mesh%half_kde
-    do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+    do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
         w_lev%d(i,j,k) = -adv_gz_lev%d(i,j,k) / g
       end do

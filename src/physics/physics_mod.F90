@@ -43,7 +43,9 @@ contains
 
     character(*), intent(in) :: namelist_path
 
-    call time_add_alert('phys', seconds=dt_phys)
+    if (physics_suite /= 'N/A') then
+      call time_add_alert('phys', seconds=dt_phys)
+    end if
 
     select case (physics_suite)
     case ('ccpp')

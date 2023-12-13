@@ -56,6 +56,8 @@ contains
 
   subroutine tracer_init()
 
+    integer iblk
+
     call tracer_final()
 
     allocate(batch_names      (10 )); batch_names       = 'N/A'
@@ -65,6 +67,11 @@ contains
     allocate(tracer_long_names(100)); tracer_long_names = 'N/A'
     allocate(tracer_units     (100)); tracer_units      = 'kg kg-1'
     allocate(tracer_types     (100)); tracer_types      = 0
+
+    allocate(tracers(size(blocks)))
+    do iblk = 1, size(blocks)
+      call tracers(iblk)%init_stage1(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
+    end do
 
   end subroutine tracer_init
 
@@ -147,9 +154,14 @@ contains
 
   subroutine tracer_allocate()
 
-    integer iblk, ibat, i
+    integer iblk, i
 
-    if (nbatches == 0) return
+    if (ntracers == 0) return
+
+    ! Allocate tracer arrays for each block.
+    do iblk = 1, size(blocks)
+      call tracers(iblk)%init_stage2(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
+    end do
 
     ! Set tracer indices.
     do i = 1, ntracers
@@ -177,12 +189,6 @@ contains
       case ('qso2', 'SO2')
         idx_qso2  = i
       end select
-    end do
-
-    ! Allocate tracer arrays for each block.
-    allocate(tracers(size(blocks)))
-    do iblk = 1, size(blocks)
-      call tracers(iblk)%init(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
     end do
 
     do iblk = 1, size(blocks)

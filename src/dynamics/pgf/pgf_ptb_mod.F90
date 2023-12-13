@@ -25,9 +25,9 @@ module pgf_ptb_mod
   use const_mod
   use block_mod
   use formula_mod
-  use allocator_mod
   use vert_coord_mod
   use tracer_mod
+  use latlon_field_types_mod
   use latlon_parallel_mod
 
   implicit none
@@ -40,14 +40,13 @@ module pgf_ptb_mod
   public pgf_ptb_run
 
   type ref_profile_type
-    type(mesh_type), pointer :: mesh => null()
-    real(r8), allocatable, dimension(:,:,:) :: mg
-    real(r8), allocatable, dimension(:,:,:) :: gz
-    real(r8), allocatable, dimension(:,:,:) :: gz_lev
-    real(r8), allocatable, dimension(:,:,:) :: ad       ! 1 / rhod
-    real(r8), allocatable, dimension(:,:,:) :: mpt
-    real(r8), allocatable, dimension(:,:,:) :: dmgdx
-    real(r8), allocatable, dimension(:,:,:) :: dmgdy
+    type(latlon_field3d_type) mg
+    type(latlon_field3d_type) gz
+    type(latlon_field3d_type) gz_lev
+    type(latlon_field3d_type) ad ! 1 / rhod
+    type(latlon_field3d_type) mpt
+    type(latlon_field3d_type) dmgdx
+    type(latlon_field3d_type) dmgdy
   contains
     procedure :: init => ref_profile_init
     procedure :: clear => ref_profile_clear
@@ -75,12 +74,12 @@ contains
                  block => blocks(iblk)              , &
                  mgs   => blocks(iblk)%dstate(1)%mgs, &
                  pro   => ref_profiles(iblk)        )
-      call pro%init(mesh)
+      call pro%init(mesh, blocks(iblk)%halo)
       do k = mesh%half_kds, mesh%half_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
             p = vert_coord_calc_mg_lev(k, mgs%d(i,j)) / 100
-            pro%gz_lev(i,j,k) = -rd * (a * (p - ps0) + b / (1 + c) * (p**(1 + c) - ps0**(1 + c)))
+            pro%gz_lev%d(i,j,k) = -rd * (a * (p - ps0) + b / (1 + c) * (p**(1 + c) - ps0**(1 + c)))
           end do
         end do
       end do
@@ -89,10 +88,10 @@ contains
           do i = mesh%full_ids, mesh%full_ide + 1
             p = vert_coord_calc_mg(k, mgs%d(i,j)) / 100
             t = p * (a + b * p**c)
-            pro%mg (i,j,k) = p * 100
-            pro%gz (i,j,k) = -rd * (a * (p - ps0) + b / (1 + c) * (p**(1 + c) - ps0**(1 + c)))
-            pro%ad (i,j,k) = rd * t / (p * 100)
-            pro%mpt(i,j,k) = dry_potential_temperature(t, pro%mg(i,j,k)) * ( &
+            pro%mg %d(i,j,k) = p * 100
+            pro%gz %d(i,j,k) = -rd * (a * (p - ps0) + b / (1 + c) * (p**(1 + c) - ps0**(1 + c)))
+            pro%ad %d(i,j,k) = rd * t / (p * 100)
+            pro%mpt%d(i,j,k) = dry_potential_temperature(t, pro%mg%d(i,j,k)) * ( &
               vert_coord_calc_mg_lev(k+1, mgs%d(i,j)) - &
               vert_coord_calc_mg_lev(k  , mgs%d(i,j))   &
             )
@@ -102,12 +101,12 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
-            pro%dmgdx(i,j,k) = (pro%mg(i+1,j,k) - pro%mg(i,j,k)) / mesh%de_lon(j)
+            pro%dmgdx%d(i,j,k) = (pro%mg%d(i+1,j,k) - pro%mg%d(i,j,k)) / mesh%de_lon(j)
           end do
         end do
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            pro%dmgdy(i,j,k) = (pro%mg(i,j+1,k) - pro%mg(i,j,k)) / mesh%de_lat(j)
+            pro%dmgdy%d(i,j,k) = (pro%mg%d(i,j+1,k) - pro%mg%d(i,j,k)) / mesh%de_lat(j)
           end do
         end do
       end do
@@ -143,10 +142,10 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
-          p_ptb %d(i,j,k) = p %d(i,j,k) - pro%mg(i,j,k)
-          gz_ptb%d(i,j,k) = gz%d(i,j,k) - pro%gz(i,j,k)
+          p_ptb %d(i,j,k) = p %d(i,j,k) - pro%mg%d(i,j,k)
+          gz_ptb%d(i,j,k) = gz%d(i,j,k) - pro%gz%d(i,j,k)
           dp_ptb%d(i,j,k) = (p_lev%d(i,j,k+1) - p_lev%d(i,j,k)) - dmg%d(i,j,k)
-          ad_ptb%d(i,j,k) = 1.0_r8 / rhod%d(i,j,k) - pro%ad(i,j,k)
+          ad_ptb%d(i,j,k) = 1.0_r8 / rhod%d(i,j,k) - pro%ad%d(i,j,k)
         end do
       end do
     end do
@@ -180,7 +179,7 @@ contains
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
           L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i+1,j,k))
-          tmp1 = 0.5_r8 * (ad_ptb%d(i,j,k) + ad_ptb%d(i+1,j,k)) * dmgdx(i,j,k)
+          tmp1 = 0.5_r8 * (ad_ptb%d(i,j,k) + ad_ptb%d(i+1,j,k)) * dmgdx%d(i,j,k)
           tmp2 = 0.5_r8 * (1.0_r8 / rhod%d(i,j,k) + 1.0_r8 / rhod%d(i+1,j,k)) * &
                  (p_ptb%d(i+1,j,k) - p_ptb%d(i,j,k)) / mesh%de_lon(j)
           tmp3 = (gz_ptb%d(i+1,j,k) - gz_ptb%d(i,j,k)) / mesh%de_lon(j)
@@ -196,7 +195,7 @@ contains
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
           L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i,j+1,k))
-          tmp1 = 0.5_r8 * (ad_ptb%d(i,j,k) + ad_ptb%d(i,j+1,k)) * dmgdy(i,j,k)
+          tmp1 = 0.5_r8 * (ad_ptb%d(i,j,k) + ad_ptb%d(i,j+1,k)) * dmgdy%d(i,j,k)
           tmp2 = 0.5_r8 * (1.0_r8 / rhod%d(i,j,k) + 1.0_r8 / rhod%d(i,j+1,k)) * &
                  (p_ptb%d(i,j+1,k) - p_ptb%d(i,j,k)) / mesh%de_lat(j)
           tmp3 = (gz_ptb%d(i,j+1,k) - gz_ptb%d(i,j,k)) / mesh%de_lat(j)
@@ -214,22 +213,52 @@ contains
 
   end subroutine pgf_ptb_run
 
-  subroutine ref_profile_init(this, mesh)
+  subroutine ref_profile_init(this, mesh, halo)
 
     class(ref_profile_type), intent(inout) :: this
-    type(mesh_type), intent(in), target :: mesh
+    type(latlon_mesh_type), intent(in) :: mesh
+    type(latlon_halo_type), intent(in) :: halo(:)
+
+    character(field_name_len     ) name
+    character(field_long_name_len) long_name
+    character(field_units_len    ) units
 
     call this%clear()
 
-    this%mesh => mesh
+    name      = 'ref_pro_mg'
+    long_name = 'Reference dry-air pressure'
+    units     = 'Pa'
+    call this%mg%init(name, long_name, units, 'cell', mesh, halo)
 
-    call allocate_array(mesh, this%mg    , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%gz    , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%gz_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%ad    , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%mpt   , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dmgdx , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dmgdy , full_lon=.true., half_lat=.true., full_lev=.true.)
+    name      = 'ref_pro_gz'
+    long_name = 'Reference geopotential'
+    units     = 'm2 s-2'
+    call this%gz%init(name, long_name, units, 'cell', mesh, halo)
+
+    name      = 'ref_pro_gz_lev'
+    long_name = 'Reference geopotential on half level'
+    units     = 'm2 s-2'
+    call this%gz_lev%init(name, long_name, units, 'lev', mesh, halo)
+
+    name      = 'ref_pro_ad'
+    long_name = 'Reference inverse dry-air density'
+    units     = 'kg-1 m3'
+    call this%ad%init(name, long_name, units, 'cell', mesh, halo)
+
+    name      = 'ref_pro_mpt'
+    long_name = 'Reference mass weighted potential temperature'
+    units     = 'K'
+    call this%mpt%init(name, long_name, units, 'cell', mesh, halo)
+
+    name      = 'ref_pro_dmgdx'
+    long_name = 'Reference dry-air mass flux zonal gradient'
+    units     = 'Pa m-2 s-1'
+    call this%dmgdx%init(name, long_name, units, 'lon', mesh, halo)
+
+    name      = 'ref_pro_dmgdy'
+    long_name = 'Reference dry-air mass flux meridional gradient'
+    units     = 'Pa m-2 s-1'
+    call this%dmgdy%init(name, long_name, units, 'lat', mesh, halo)
 
   end subroutine ref_profile_init
 
@@ -237,14 +266,13 @@ contains
 
     class(ref_profile_type), intent(inout) :: this
 
-    this%mesh => null()
-    if (allocated(this%mg    )) deallocate(this%mg    )
-    if (allocated(this%gz    )) deallocate(this%gz    )
-    if (allocated(this%gz_lev)) deallocate(this%gz_lev)
-    if (allocated(this%ad    )) deallocate(this%ad    )
-    if (allocated(this%mpt   )) deallocate(this%mpt   )
-    if (allocated(this%dmgdx )) deallocate(this%dmgdx )
-    if (allocated(this%dmgdy )) deallocate(this%dmgdy )
+    call this%mg    %clear()
+    call this%gz    %clear()
+    call this%gz_lev%clear()
+    call this%ad    %clear()
+    call this%mpt   %clear()
+    call this%dmgdx %clear()
+    call this%dmgdy %clear()
 
   end subroutine ref_profile_clear
 

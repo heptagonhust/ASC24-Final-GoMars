@@ -49,19 +49,21 @@ program gmcore_driver
 
   call parse_namelist(namelist_path)
 
+  call gmcore_init_stage0()
+
+  select case (test_case)
+  case ('ksp15_01', 'ksp15_02')
+    call ksp15_test_set_params()
+  case ('steady_state_pgf')
+    call steady_state_pgf_test_set_params()
+  case ('dcmip31')
+    call dcmip31_test_set_params()
+  end select
+
   call gmcore_init_stage1(namelist_path)
 
-  if (initial_file == 'N/A' .and. .not. restart) then
-    select case (test_case)
-    case ('steady_state_pgf')
-      call steady_state_pgf_test_set_params()
-    case ('ksp15_01', 'ksp15_02')
-      call ksp15_test_set_params()
-    case ('dcmip31')
-      call dcmip31_test_set_params()
-    case ('N/A')
-      call prepare_topo()
-    end select
+  if (initial_file == 'N/A' .and. test_case == 'N/A' .and. .not. restart) then
+    call prepare_topo()
   end if
 
   call gmcore_init_stage2(namelist_path)

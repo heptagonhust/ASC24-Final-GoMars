@@ -51,6 +51,7 @@ module gmcore_mod
   private
 
   public gmcore_init
+  public gmcore_init_stage0
   public gmcore_init_stage1
   public gmcore_init_stage2
   public gmcore_init_stage3
@@ -72,21 +73,28 @@ contains
     character(*), intent(in) :: namelist_path
     integer, intent(in), optional :: comm
 
+    call gmcore_init_stage0()
     call gmcore_init_stage1(namelist_path, comm)
     call gmcore_init_stage2(namelist_path)
+    call gmcore_init_stage3()
 
   end subroutine gmcore_init
 
-  subroutine gmcore_init_stage1(namelist_path, comm)
-
-    character(*), intent(in) :: namelist_path
-    integer, intent(in), optional :: comm
+  subroutine gmcore_init_stage0()
 
     call log_init()
     call gas_mixture_init(planet)
     call const_init(planet)
     call time_scheme_init()
     call time_init(dt_dyn)
+
+  end subroutine gmcore_init_stage0
+
+  subroutine gmcore_init_stage1(namelist_path, comm)
+
+    character(*), intent(in) :: namelist_path
+    integer, intent(in), optional :: comm
+
     call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=lat_hw)
     call process_init(comm)
     call process_create_blocks()
@@ -129,7 +137,7 @@ contains
     call interp_init()
     call operators_init()
     call physics_init_stage1(namelist_path)
-    if (baroclinic .and. physics_suite /= 'cam') call tracer_add_moist()
+    if (baroclinic .and. physics_suite /= 'cam' .and. test_case == 'N/A') call tracer_add_moist()
     call tracer_allocate()
     call adv_init()
     call history_init_stage2()
@@ -192,7 +200,6 @@ contains
       end if
       call dstate%c2a()
       call calc_div(block, dstate)
-      call tracer_calc_qm(block)
       end associate
     end do
 
@@ -219,21 +226,21 @@ contains
       call time_advance(dt_dyn)
       ! ------------------------------------------------------------------------
       !                            Tracer Advection
-      call adv_run(new)
+      call adv_run(old)
       ! ------------------------------------------------------------------------
       !                                Physics
-      call test_forcing_run(dt_dyn, new)
+      call test_forcing_run(dt_dyn, old)
       if (baroclinic) then
         do iblk = 1, size(blocks)
-          call physics_run(blocks(iblk), new, dt_phys)
-          if (pdc_type == 3) call physics_update(blocks(iblk), new, dt_phys)
+          call physics_run(blocks(iblk), old, dt_phys)
+          if (pdc_type == 3) call physics_update(blocks(iblk), old, dt_phys)
         end do
       end if
       ! ------------------------------------------------------------------------
-      call diagnose(blocks, new)
+      call diagnose(blocks, old)
       if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call blocks(1)%accum(new)
-      call output(new)
+      call blocks(1)%accum(old)
+      call output(old)
     end do model_main_loop
 
   end subroutine gmcore_run

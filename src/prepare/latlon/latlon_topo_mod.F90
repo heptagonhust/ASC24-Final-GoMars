@@ -15,6 +15,7 @@ module latlon_topo_mod
   use block_mod
   use latlon_parallel_mod
   use process_mod
+  use math_mod
   use filter_mod
 
   implicit none
@@ -131,21 +132,21 @@ contains
 
     type(block_type), intent(inout) :: block
 
-    real(r8) wgt
+    real(r8) lat0, wgt
     integer i, j, cyc
 
+    if (.not. use_topo_smooth) return
     if (proc%is_root()) call log_notice('Filter topography.')
 
     associate (mesh  => block%mesh         , &
                gzs   => block%static%gzs   , &
                gzs_f => block%dtend(1)%dmgs)   ! Borrow the array.
+    lat0 = abs(global_mesh%full_lat_deg(2))
     do cyc = 1, topo_smooth_cycles
       call filter_run(block%big_filter, gzs, gzs_f)
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        if (abs(mesh%full_lat_deg(j)) > 60) then
-          wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (30 * rad)))
-          gzs%d(:,j) = wgt * gzs_f%d(:,j) + (1 - wgt) * gzs%d(:,j)
-        end if
+        wgt = exp_two_values(1.0_r8, 0.0_r8, lat0, 45.0_r8, abs(mesh%full_lat_deg(j)))
+        gzs%d(:,j) = wgt * gzs_f%d(:,j) + (1 - wgt) * gzs%d(:,j)
       end do
       call fill_halo(gzs)
     end do
