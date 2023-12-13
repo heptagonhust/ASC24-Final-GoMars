@@ -216,8 +216,8 @@ contains
                p     => dstate%p    , & ! out
                p_lev => dstate%p_lev)   ! out
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
           p%d(i,j,k) = p0 * (Rd * pt%d(i,j,k) * rhod%d(i,j,k) / p0)**cpd_o_cvd
         end do
       end do
@@ -247,8 +247,8 @@ contains
                old_pt     => old_dstate%pt    , & ! in
                new_pt     => new_dstate%pt    )   ! in
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
           new_p%d(i,j,k) = old_p%d(i,j,k) * (1.0_r8 + cpd_o_cvd * ( &
             (new_dmg%d(i,j,k) * new_pt%d(i,j,k)) /                  &
             (old_dmg%d(i,j,k) * old_pt%d(i,j,k)) -                  &

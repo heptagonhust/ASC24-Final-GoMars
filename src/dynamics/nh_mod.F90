@@ -38,14 +38,15 @@ contains
     type(dstate_type), intent(inout) :: new_dstate
     real(r8), intent(in) :: dt
 
-    call interp_wind      (block, star_dstate)
-    call calc_adv_lev     (block, star_dstate%w_lev , block%aux%adv_w_lev , star_dstate%dmg_lev, dt)
-    call calc_adv_lev     (block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
+    call interp_wind(block, star_dstate)
+    call calc_adv_lev(block, star_dstate%w_lev , block%aux%adv_w_lev , star_dstate%dmg_lev, dt)
+    call calc_adv_lev(block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
     call implicit_w_solver(block, old_dstate, star_dstate, new_dstate, dt)
-    call calc_rhod        (block, new_dstate)
-    ! call calc_p           (block, new_dstate)
+    call calc_rhod(block, new_dstate)
+    ! call calc_p(block, new_dstate)
     call calc_linearized_p(block, star_dstate, new_dstate)
-    call interp_run       (new_dstate%gz_lev, new_dstate%gz)
+    call interp_run(new_dstate%gz_lev, new_dstate%gz)
+    call fill_halo(new_dstate%gz, west_halo=.false., south_halo=.false.)
 
   end subroutine nh_solve
 
