@@ -293,7 +293,7 @@ contains
     do k = kds - 1, kms, -1
       do j = f%mesh%full_jds, f%mesh%full_jde
         do i = f%mesh%full_ids, f%mesh%full_ide
-          ! f%d(i,j,k) = f%d(i,j,mesh%full_kds)
+          ! f%d(i,j,k) = f%d(i,j,kds)
           ! f%d(i,j,k) = 2 * f%d(i,j,k+1) - f%d(i,j,k+2)
           f%d(i,j,k) = 3 * f%d(i,j,k+1) - 3 * f%d(i,j,k+2) + f%d(i,j,k+3)
           ! f%d(i,j,k) = 4 * f%d(i,j,k+1) - 6 * f%d(i,j,k+2) + 4 * f%d(i,j,k+3) - f%d(i,j,k+4)
@@ -303,7 +303,7 @@ contains
     do k = kde + 1, kme
       do j = f%mesh%full_jds, f%mesh%full_jde
         do i = f%mesh%full_ids, f%mesh%full_ide
-          ! f%d(i,j,k) = f%d(i,j,mesh%full_kde)
+          ! f%d(i,j,k) = f%d(i,j,kde)
           ! f%d(i,j,k) = 2 * f%d(i,j,k-1) - f%d(i,j,k-2)
           f%d(i,j,k) = 3 * f%d(i,j,k-1) - 3 * f%d(i,j,k-2) + f%d(i,j,k-3)
           ! f%d(i,j,k) = 4 * f%d(i,j,k-1) - 6 * f%d(i,j,k-2) + 4 * f%d(i,j,k-3) - f%d(i,j,k-4)
