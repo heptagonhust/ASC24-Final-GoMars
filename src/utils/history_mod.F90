@@ -44,8 +44,8 @@ module history_mod
   character(8), parameter ::     lat_dims_2d(3) = ['lon ', 'ilat',         'time']
   character(8), parameter ::     lat_dims_3d(4) = ['lon ', 'ilat', 'lev ', 'time']
   character(8), parameter ::     lev_dims_3d(4) = ['lon ', 'lat ', 'ilev', 'time']
-  character(8), parameter :: lon_lev_dims_3d(4) = ['ilon', 'lat ', 'ilev', 'time']
-  character(8), parameter :: lat_lev_dims_3d(4) = ['lon ', 'ilat', 'ilev', 'time']
+  character(8), parameter :: lev_lon_dims_3d(4) = ['ilon', 'lat ', 'ilev', 'time']
+  character(8), parameter :: lev_lat_dims_3d(4) = ['lon ', 'ilat', 'ilev', 'time']
 
 contains
 
@@ -417,14 +417,18 @@ contains
     call fiona_add_var('h1', 'dptdt'        , long_name='Potential temperature tendency'                , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'we_lev'       , long_name='Vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'dmf'          , long_name='Divergence flux'                               , units='', dim_names=cell_dims_3d)
+    call fiona_add_var('h1', 'u_lon'        , long_name='U wind component'                              , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'v_lat'        , long_name='V wind component'                              , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'mfx_lon'      , long_name='Normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'mfy_lat'      , long_name='Normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmg'          , long_name='Dry-air weight on full levels'                 , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='Kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'adv_w_lev'    , long_name='Advection of w'                                , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'adv_gz_lev'   , long_name='Advection of gz'                               , units='', dim_names= lev_dims_3d)
-    call fiona_add_var('h1', 'nh_cflx'      , long_name='Nonhydrostatic CFL number on X grid'           , units='', dim_names= lon_lev_dims_3d)
-    call fiona_add_var('h1', 'nh_cfly'      , long_name='Nonhydrostatic CFL number on Y grid'           , units='', dim_names= lat_lev_dims_3d)
+    call fiona_add_var('h1', 'u_lev_lon'    , long_name='U wind component on half levels'               , units='', dim_names= lev_lon_dims_3d)
+    call fiona_add_var('h1', 'v_lev_lat'    , long_name='V wind component on half levels'               , units='', dim_names= lev_lat_dims_3d)
+    call fiona_add_var('h1', 'nh_cflx'      , long_name='Nonhydrostatic CFL number on X grid'           , units='', dim_names= lev_lon_dims_3d)
+    call fiona_add_var('h1', 'nh_cfly'      , long_name='Nonhydrostatic CFL number on Y grid'           , units='', dim_names= lev_lat_dims_3d)
     call fiona_add_var('h1', 'nh_cflz'      , long_name='Nonhydrostatic CFL number on Z grid'           , units='', dim_names=cell_dims_3d)
 
 #ifdef OUTPUT_H1_DTEND
@@ -875,8 +879,8 @@ contains
     call fiona_output('h1', 'we_lev', dstate%we_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'gz_lev', dstate%gz_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ph_lev', dstate%ph_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'n2_lev', reshape(pstate%n2_lev, count), start=start, count=count)
-    call fiona_output('h1', 'ri_lev', reshape(pstate%ri_lev, count), start=start, count=count)
+    ! call fiona_output('h1', 'n2_lev', reshape(pstate%n2_lev, count), start=start, count=count)
+    ! call fiona_output('h1', 'ri_lev', reshape(pstate%ri_lev, count), start=start, count=count)
     if (allocated(blocks(1)%adv_batches)) then
       do m = 1, size(blocks(1)%adv_batches)
         tag = blocks(1)%adv_batches(m)%name
@@ -944,6 +948,7 @@ contains
     start = [is,js,ks]
     count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
     call fiona_output('h1', 'dudt   ' ,  dtend%du       %d(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'u_lon'   , dstate%u_lon    %d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mfx_lon' ,    aux%mfx_lon  %d(is:ie,js:je,ks:ke), start=start, count=count)
 #ifdef OUTPUT_H1_DTEND
     call fiona_output('h1', 'dudt_coriolis', dtend%dudt_coriolis%d(is:ie,js:je,ks:ke), start=start, count=count)
@@ -958,6 +963,7 @@ contains
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
     call fiona_output('h1', 'dvdt'    ,  dtend%dv       %d(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'v_lat'   , dstate%v_lat    %d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mfy_lat' ,    aux%mfy_lat  %d(is:ie,js:je,ks:ke), start=start, count=count)
 #ifdef OUTPUT_H1_DTEND
     call fiona_output('h1', 'dvdt_coriolis', dtend%dvdt_coriolis%d(is:ie,js:je,ks:ke), start=start, count=count)
@@ -980,6 +986,7 @@ contains
     ks = mesh%half_kds; ke = mesh%half_kde
     start = [is,js,ks]
     count = [mesh%half_nlon,mesh%full_nlat,mesh%half_nlev]
+    call fiona_output('h1', 'u_lev_lon', blocks(1)%aux%u_lev_lon%d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'nh_cflx', blocks(1)%adv_batch_nh%cflx%d(is:ie,js:je,ks:ke), start=start, count=count)
 
     is = mesh%full_ids; ie = mesh%full_ide
@@ -987,6 +994,7 @@ contains
     ks = mesh%half_kds; ke = mesh%half_kde
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%half_nlat,mesh%half_nlev]
+    call fiona_output('h1', 'v_lev_lat', blocks(1)%aux%v_lev_lat%d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'nh_cfly', blocks(1)%adv_batch_nh%cfly%d(is:ie,js:je,ks:ke), start=start, count=count)
 
     is = mesh%full_ids; ie = mesh%full_ide
