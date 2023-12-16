@@ -37,8 +37,6 @@ module adv_mod
   public adv_final
   public adv_fill_vhalo
   public adv_accum_wind
-  public adv_calc_mass_hflx
-  public adv_calc_mass_vflx
   public adv_calc_tracer_hflx
   public adv_calc_tracer_vflx
   public adv_batch_type
@@ -50,29 +48,6 @@ module adv_mod
   public weno5
   public tvd
 
-  interface
-    subroutine calc_hflx_interface(batch, m, mfx, mfy, dt)
-      import adv_batch_type, latlon_field3d_type, r8
-      type(adv_batch_type     ), intent(inout) :: batch
-      type(latlon_field3d_type), intent(in   ) :: m
-      type(latlon_field3d_type), intent(inout) :: mfx
-      type(latlon_field3d_type), intent(inout) :: mfy
-      real(r8), intent(in), optional :: dt
-    end subroutine calc_hflx_interface
-    subroutine calc_vflx_interface(batch, m, mfz, dt)
-      import adv_batch_type, latlon_field3d_type, r8
-      type(adv_batch_type     ), intent(inout) :: batch
-      type(latlon_field3d_type), intent(in   ) :: m
-      type(latlon_field3d_type), intent(inout) :: mfz
-      real(r8), intent(in), optional :: dt
-    end subroutine calc_vflx_interface
-  end interface
-
-  procedure(calc_hflx_interface), pointer :: adv_calc_mass_hflx   => null()
-  procedure(calc_vflx_interface), pointer :: adv_calc_mass_vflx   => null()
-  procedure(calc_hflx_interface), pointer :: adv_calc_tracer_hflx => null()
-  procedure(calc_vflx_interface), pointer :: adv_calc_tracer_vflx => null()
-
 contains
 
   subroutine adv_init()
@@ -81,33 +56,17 @@ contains
 
     call adv_final()
 
-    select case (adv_scheme)
-    case ('ffsl')
-      call ffsl_init()
-      adv_calc_mass_hflx   => ffsl_calc_mass_hflx
-      adv_calc_mass_vflx   => ffsl_calc_mass_vflx
-      adv_calc_tracer_hflx => ffsl_calc_tracer_hflx
-      adv_calc_tracer_vflx => ffsl_calc_tracer_vflx
-    case ('upwind')
-      adv_calc_tracer_hflx => upwind_calc_tracer_hflx
-      adv_calc_tracer_vflx => upwind_calc_tracer_vflx
-    case default
-      call log_error('Invalid adv_scheme ' // trim(adv_scheme) // '!', pid=proc%id)
-    end select
-
-    call tvd_init()
-
     ! Initialize advection batches.
     do iblk = 1, size(blocks)
       if (.not. advection) then
         call blocks(iblk)%adv_batch_pt%init(                  &
           blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
           blocks(iblk)%mesh, blocks(iblk)%halo              , &
-          'cell', 'pt', dt_dyn, dynamic=.true.)
+          'upwind', 'cell', 'pt', dt_dyn, dynamic=.true.)
         call blocks(iblk)%adv_batch_nh%init(                  &
           blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
           blocks(iblk)%mesh, blocks(iblk)%halo              , &
-          'lev', 'nh', dt_dyn, dynamic=.true.)
+          'upwind', 'lev', 'nh', dt_dyn, dynamic=.true.)
       end if
     end do
 
@@ -129,7 +88,7 @@ contains
         call blocks(iblk)%adv_batches(ibat)%init(             &
           blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
           blocks(iblk)%mesh, blocks(iblk)%halo              , &
-          'cell', batch_names(ibat), batch_dts(ibat), dynamic=.false., idx=idx(1:n))
+          'ffsl', 'cell', batch_names(ibat), batch_dts(ibat), dynamic=.false., idx=idx(1:n))
       end do
     end do
 
@@ -162,6 +121,39 @@ contains
     end if
 
   end subroutine adv_prepare
+
+  subroutine adv_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
+
+    type(adv_batch_type     ), intent(inout) :: batch
+    type(latlon_field3d_type), intent(in   ) :: q
+    type(latlon_field3d_type), intent(inout) :: qmfx
+    type(latlon_field3d_type), intent(inout) :: qmfy
+    real(r8), intent(in), optional :: dt
+
+    select case (batch%scheme)
+    case ('upwind')
+      call upwind_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
+    case ('ffsl')
+      call ffsl_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
+    end select
+
+  end subroutine adv_calc_tracer_hflx
+
+  subroutine adv_calc_tracer_vflx(batch, q, qmfz, dt)
+
+    type(adv_batch_type     ), intent(inout) :: batch
+    type(latlon_field3d_type), intent(in   ) :: q
+    type(latlon_field3d_type), intent(inout) :: qmfz
+    real(r8), intent(in), optional :: dt
+
+    select case (batch%scheme)
+    case ('upwind')
+      call upwind_calc_tracer_vflx(batch, q, qmfz, dt)
+    case ('ffsl')
+      call ffsl_calc_tracer_vflx(batch, q, qmfz, dt)
+    end select
+
+  end subroutine adv_calc_tracer_vflx
 
   subroutine adv_run(itime)
 

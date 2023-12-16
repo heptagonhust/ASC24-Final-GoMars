@@ -25,10 +25,44 @@ module upwind_mod
 
 contains
 
+  subroutine upwind_calc_mass_hflx(batch, m, mfx, mfy, dt)
+
+    type(adv_batch_type     ), intent(inout) :: batch
+    type(latlon_field3d_type), intent(in   ) :: m
+    type(latlon_field3d_type), intent(inout) :: mfx
+    type(latlon_field3d_type), intent(inout) :: mfy
+    real(r8), intent(in), optional :: dt
+
+    integer ks, ke, i, j, k
+
+    associate (mesh => m%mesh , &
+               u    => batch%u, & ! in
+               v    => batch%v)   ! in
+    select case (batch%loc)
+    case ('cell', 'lev')
+      ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
+      ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+      do k = ks, ke
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
+            mfx%d(i,j,k) = upwind3(sign(1.0_r8, u%d(i,j,k)), 0.75_r8, m%d(i-1:i+2,j,k)) * u%d(i,j,k)
+          end do
+        end do
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
+            mfy%d(i,j,k) = upwind3(sign(1.0_r8, v%d(i,j,k)), 0.75_r8, m%d(i,j-1:j+2,k)) * v%d(i,j,k)
+          end do
+        end do
+      end do
+    end select
+    end associate
+
+  end subroutine upwind_calc_mass_hflx
+
   subroutine upwind_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
 
-    type(adv_batch_type), intent(inout) :: batch
-    type(latlon_field3d_type), intent(in) :: q
+    type(adv_batch_type     ), intent(inout) :: batch
+    type(latlon_field3d_type), intent(in   ) :: q
     type(latlon_field3d_type), intent(inout) :: qmfx
     type(latlon_field3d_type), intent(inout) :: qmfy
     real(r8), intent(in), optional :: dt

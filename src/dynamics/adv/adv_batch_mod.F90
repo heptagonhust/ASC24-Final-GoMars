@@ -47,6 +47,7 @@ module adv_batch_mod
   ! Different tracers can be combined into one batch, and advected in different
   ! frequencies.
   type adv_batch_type
+    character(30) :: scheme = 'N/A'
     character(10) :: loc  = 'cell'
     character(30) :: name = ''
     logical  :: dynamic   = .false.
@@ -92,13 +93,14 @@ module adv_batch_mod
 
 contains
 
-  subroutine adv_batch_init(this, filter_mesh, filter_halo, mesh, halo, batch_loc, batch_name, dt, dynamic, idx)
+  subroutine adv_batch_init(this, filter_mesh, filter_halo, mesh, halo, scheme, batch_loc, batch_name, dt, dynamic, idx)
 
     class(adv_batch_type), intent(inout) :: this
     type(latlon_mesh_type), intent(in) :: filter_mesh
     type(latlon_halo_type), intent(in) :: filter_halo(:)
     type(latlon_mesh_type), intent(in) :: mesh
     type(latlon_halo_type), intent(in) :: halo(:)
+    character(*), intent(in) :: scheme
     character(*), intent(in) :: batch_loc
     character(*), intent(in) :: batch_name
     real(r8), intent(in) :: dt
@@ -111,6 +113,7 @@ contains
 
     call this%clear()
 
+    this%scheme   = scheme
     this%loc      = batch_loc
     this%name     = batch_name
     this%dt       = dt
@@ -376,7 +379,7 @@ contains
     call this%mfy%link(mfy_lat)
     call this%mz %link(dmg_lev)
 
-    if (adv_scheme == 'ffsl') call this%prepare()
+    if (this%scheme == 'ffsl') call this%prepare()
 
   end subroutine adv_batch_set_wind
 
@@ -517,7 +520,7 @@ contains
         end do
       end do
       end associate
-      call this%prepare()
+      if (this%scheme == 'ffsl') call this%prepare()
     end if
 
   end subroutine adv_batch_accum_wind
