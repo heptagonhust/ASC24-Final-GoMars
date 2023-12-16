@@ -376,7 +376,7 @@ contains
     call this%mfy%link(mfy_lat)
     call this%mz %link(dmg_lev)
 
-    call this%prepare()
+    if (adv_scheme == 'ffsl') call this%prepare()
 
   end subroutine adv_batch_set_wind
 

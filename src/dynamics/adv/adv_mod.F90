@@ -88,6 +88,9 @@ contains
       adv_calc_mass_vflx   => ffsl_calc_mass_vflx
       adv_calc_tracer_hflx => ffsl_calc_tracer_hflx
       adv_calc_tracer_vflx => ffsl_calc_tracer_vflx
+    case ('upwind')
+      adv_calc_tracer_hflx => upwind_calc_tracer_hflx
+      adv_calc_tracer_vflx => upwind_calc_tracer_vflx
     case default
       call log_error('Invalid adv_scheme ' // trim(adv_scheme) // '!', pid=proc%id)
     end select

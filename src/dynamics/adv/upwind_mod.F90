@@ -10,16 +10,87 @@
 module upwind_mod
 
   use const_mod
+  use adv_batch_mod
+  use latlon_field_types_mod
 
   implicit none
 
   private
 
+  public upwind_calc_tracer_hflx
+  public upwind_calc_tracer_vflx
   public upwind1
   public upwind3
   public upwind5
 
 contains
+
+  subroutine upwind_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
+
+    type(adv_batch_type), intent(inout) :: batch
+    type(latlon_field3d_type), intent(in) :: q
+    type(latlon_field3d_type), intent(inout) :: qmfx
+    type(latlon_field3d_type), intent(inout) :: qmfy
+    real(r8), intent(in), optional :: dt
+
+    integer ks, ke, i, j, k
+
+    associate (mesh => q%mesh   , &
+               mfx  => batch%mfx, & ! in
+               mfy  => batch%mfy)   ! in
+    select case (batch%loc)
+    case ('cell', 'lev')
+      ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
+      ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+      do k = ks, ke
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
+            qmfx%d(i,j,k) = upwind3(sign(1.0_r8, mfx%d(i,j,k)), 0.75_r8, q%d(i-1:i+2,j,k)) * mfx%d(i,j,k)
+          end do
+        end do
+        do j = mesh%half_jds, mesh%half_jde
+          do i = mesh%full_ids, mesh%full_ide
+            qmfy%d(i,j,k) = upwind3(sign(1.0_r8, mfy%d(i,j,k)), 0.75_r8, q%d(i,j-1:j+2,k)) * mfy%d(i,j,k)
+          end do
+        end do
+      end do
+    end select
+    end associate
+
+  end subroutine upwind_calc_tracer_hflx
+
+  subroutine upwind_calc_tracer_vflx(batch, q, qmfz, dt)
+
+    type(adv_batch_type), intent(inout) :: batch
+    type(latlon_field3d_type), intent(in) :: q
+    type(latlon_field3d_type), intent(inout) :: qmfz
+    real(r8), intent(in), optional :: dt
+
+    integer i, j, k
+
+    associate (mesh => q%mesh  , &
+               we   => batch%we)   ! in
+    select case (batch%loc)
+    case ('cell')
+      do k = mesh%half_kds + 1, mesh%half_kde - 1
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            qmfz%d(i,j,k) = upwind3(sign(1.0_r8, we%d(i,j,k)), 0.75_r8, q%d(i,j,k-2:k+1)) * we%d(i,j,k)
+          end do
+        end do
+      end do
+    case ('lev')
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds, mesh%full_jde
+          do i = mesh%full_ids, mesh%full_ide
+            qmfz%d(i,j,k) = upwind3(sign(1.0_r8, we%d(i,j,k)), 0.75_r8, q%d(i,j,k-1:k+2)) * we%d(i,j,k)
+          end do
+        end do
+      end do
+    end select
+    end associate
+
+  end subroutine upwind_calc_tracer_vflx
 
   pure real(r8) function upwind1(dir, wgt, f) result(res)
 

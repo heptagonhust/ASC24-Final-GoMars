@@ -987,7 +987,9 @@ contains
     start = [is,js,ks]
     count = [mesh%half_nlon,mesh%full_nlat,mesh%half_nlev]
     call fiona_output('h1', 'u_lev_lon', blocks(1)%aux%u_lev_lon%d(is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'nh_cflx', blocks(1)%adv_batch_nh%cflx%d(is:ie,js:je,ks:ke), start=start, count=count)
+    if (adv_scheme == 'ffsl') then
+      call fiona_output('h1', 'nh_cflx', blocks(1)%adv_batch_nh%cflx%d(is:ie,js:je,ks:ke), start=start, count=count)
+    end if
 
     is = mesh%full_ids; ie = mesh%full_ide
     js = mesh%half_jds; je = mesh%half_jde
@@ -995,14 +997,18 @@ contains
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%half_nlat,mesh%half_nlev]
     call fiona_output('h1', 'v_lev_lat', blocks(1)%aux%v_lev_lat%d(is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'nh_cfly', blocks(1)%adv_batch_nh%cfly%d(is:ie,js:je,ks:ke), start=start, count=count)
+    if (adv_scheme == 'ffsl') then
+      call fiona_output('h1', 'nh_cfly', blocks(1)%adv_batch_nh%cfly%d(is:ie,js:je,ks:ke), start=start, count=count)
+    end if
 
     is = mesh%full_ids; ie = mesh%full_ide
     js = mesh%full_jds; je = mesh%full_jde
     ks = mesh%full_kds; ke = mesh%full_kde
     start = [is,js,ks]
     count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-    call fiona_output('h1', 'nh_cflz', blocks(1)%adv_batch_nh%cflz%d(is:ie,js:je,ks:ke), start=start, count=count)
+    if (adv_scheme == 'ffsl') then
+      call fiona_output('h1', 'nh_cflz', blocks(1)%adv_batch_nh%cflz%d(is:ie,js:je,ks:ke), start=start, count=count)
+    end if
     end associate
 
     call fiona_end_output('h1', keep_dataset=.true.)
