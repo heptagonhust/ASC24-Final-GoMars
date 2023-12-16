@@ -56,6 +56,8 @@ contains
 
     call adv_final()
 
+    call ffsl_init()
+
     ! Initialize advection batches.
     do iblk = 1, size(blocks)
       if (.not. advection) then

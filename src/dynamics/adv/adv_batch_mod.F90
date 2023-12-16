@@ -208,7 +208,7 @@ contains
       long_name   = 'Tracer mass flux in z direction'
       units       = 'Pa kg kg-1 m s-1'
       call this%qmf_lev%init(batch_name, long_name, units, 'lev', mesh, halo)
-      select case (adv_scheme)
+      select case (this%scheme)
       case ('ffsl')
         name      = trim(this%name) // '_cflx'
         long_name = 'CFL number in x direction'
@@ -261,7 +261,7 @@ contains
       long_name   = 'Tracer mass flux in z direction'
       units       = 'Pa kg kg-1 m s-1'
       call this%qmf_lev%init(batch_name, long_name, units, 'cell', mesh, halo)
-      select case (adv_scheme)
+      select case (this%scheme)
       case ('ffsl')
         name      = trim(this%name) // '_cflx'
         long_name = 'CFL number in x direction'
