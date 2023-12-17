@@ -110,8 +110,8 @@ module namelist_mod
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
 
-  character(8)    :: adv_scheme           = 'ffsl'
-  character(8)    :: depart_point_scheme  = 'eul'
+  character(8)    :: pt_adv_scheme        = 'upwind'
+  character(8)    :: nh_adv_scheme        = 'upwind'
   character(8)    :: limiter_type         = 'mono'
   character(8)    :: ffsl_flux_type       = 'ppm'
   character(8)    :: tvd_limiter_type     = 'van_leer'
@@ -252,8 +252,8 @@ module namelist_mod
     upwind_wgt_pv             , &
     pgf_scheme                , &
     coriolis_scheme           , &
-    adv_scheme                , &
-    depart_point_scheme       , &
+    pt_adv_scheme             , &
+    nh_adv_scheme             , &
     limiter_type              , &
     ffsl_flux_type            , &
     tvd_limiter_type          , &
@@ -416,10 +416,10 @@ contains
       write(*, *) 'filter_min_width    = ', filter_min_width
       write(*, *) 'filter_ptend        = ', to_str(filter_ptend)
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
-      write(*, *) 'adv_scheme          = ', trim(adv_scheme)
-      write(*, *) 'depart_point_scheme = ', trim(depart_point_scheme)
+      write(*, *) 'pt_adv_scheme       = ', trim(pt_adv_scheme)
+      write(*, *) 'nh_adv_scheme       = ', trim(nh_adv_scheme)
       write(*, *) 'limiter_type        = ', trim(limiter_type)
-    if (adv_scheme == 'ffsl') then
+    if (pt_adv_scheme == 'ffsl') then
       write(*, *) 'ffsl_flux_type      = ', trim(ffsl_flux_type)
     end if
       write(*, *) 'ke_scheme           = ', to_str(ke_scheme)

@@ -60,15 +60,17 @@ contains
 
     ! Initialize advection batches.
     do iblk = 1, size(blocks)
-      if (.not. advection) then
+      if (baroclinic) then
         call blocks(iblk)%adv_batch_pt%init(                  &
           blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
           blocks(iblk)%mesh, blocks(iblk)%halo              , &
-          'upwind', 'cell', 'pt', dt_dyn, dynamic=.true.)
+          pt_adv_scheme, 'cell', 'pt', dt_dyn, dynamic=.true.)
+      end if
+      if (nonhydrostatic) then
         call blocks(iblk)%adv_batch_nh%init(                  &
           blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, &
           blocks(iblk)%mesh, blocks(iblk)%halo              , &
-          'upwind', 'lev', 'nh', dt_dyn, dynamic=.true.)
+          nh_adv_scheme, 'lev', 'nh', dt_dyn, dynamic=.true.)
       end if
     end do
 
