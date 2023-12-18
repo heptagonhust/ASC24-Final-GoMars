@@ -110,7 +110,7 @@ module namelist_mod
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
 
-  character(8)    :: pt_adv_scheme        = 'upwind'
+  character(8)    :: pt_adv_scheme        = 'ffsl'
   character(8)    :: nh_adv_scheme        = 'upwind'
   character(8)    :: limiter_type         = 'mono'
   character(8)    :: ffsl_flux_type       = 'ppm'
