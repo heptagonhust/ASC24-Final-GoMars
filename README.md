@@ -1,15 +1,13 @@
 # Introduction
 
-Grid-point Multiple-Conservation dynamical cORE
-
-Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wiki/Test-Archive).
+Grid-point Model dynamical CORE (GMCORE) is currently on the latitude-longitude grid, but we also plan to incorporate quasi-uniform grid as backup. The numerics are working on C-grid, with general terrain following vertical coordinate.
 
 # Status
 
 - [ ] Parallelization using MPI:
   - [X] 1D latitudional decomposition (done)
   - [X] 2D decomposition (partially done)
-  - [ ] Optimize for X86 (~2021.04)
+  - [ ] Optimize for X86 (~2024.04)
 - [ ] Nesting at middle and low latitudes (~2021.11).
 - [ ] Acceleration using GPU (~?).
 - [X] Baroclinic version (~2021.02).
@@ -25,7 +23,7 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
     - [X] Circular mountain wave on reduced sphere (done)
     - [X] Internal gravity wave (done)
 - [X] Advection module (done)
-- [ ] Incorporation with physics parameterisation (2022.07-2022.12).
+- [ ] Incorporation with physics parameterisation (2024.01-2024.10).
 - [ ] Data assimilation (~?).
 
 # Usage
@@ -34,7 +32,7 @@ First make sure you have installed netCDF library, and set `NETCDF_ROOT` environ
 ```
 $ git clone https://gitee.com/dongli85/GMCORE gmcore
 $ cd gmcore
-$ git submodule update --init
+$ ./pull_libs.py
 ```
 You could build the model by following:
 ```

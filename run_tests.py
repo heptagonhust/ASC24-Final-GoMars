@@ -3,8 +3,6 @@
 import argparse
 import os
 import subprocess
-import sys
-import hashlib
 import time
 import signal
 
@@ -20,7 +18,7 @@ parser.add_argument('-c', '--cases', help='Which cases to run', nargs='+', defau
 args = parser.parse_args()
 
 gmcore_root = os.path.dirname(os.path.realpath(__file__))
-job_name = 'gmcore_' + hashlib.new('ripemd160', str(time.time()).encode()).hexdigest()[:8]
+job_name = 'gmcore_' + str(int(time.time()))
 
 if args.node_list:
 	args.node_list = os.path.abspath(args.node_list)
