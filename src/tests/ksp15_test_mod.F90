@@ -6,7 +6,6 @@ module ksp15_test_mod
   use block_mod
   use formula_mod
   use operators_mod
-  use latlon_topo_mod
 
   implicit none
 
@@ -72,12 +71,10 @@ contains
         end do
       end do
       call fill_halo(gzs)
-      call latlon_topo_smooth(blocks(1))
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           mgs%d(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs%d(i,j) / Rd / teq)
-          phs%d(i,j) = mgs%d(i,j)
         end do
       end do
       call fill_halo(mgs)
@@ -87,8 +84,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            t %d(i,j,k) = teq
-            pt%d(i,j,k) = modified_potential_temperature(t%d(i,j,k), mg%d(i,j,k), 0.0_r8)
+            pt%d(i,j,k) = modified_potential_temperature(teq, mg%d(i,j,k), 0.0_r8)
           end do
         end do
       end do
@@ -120,7 +116,7 @@ contains
                t      => block%dstate(1)%t     , &
                pt     => block%dstate(1)%pt    , &
                gzs    => block%static   %gzs   , &
-               phs    => block%dstate(1)%phs   , &
+               mgs    => block%dstate(1)%mgs   , &
                mg     => block%dstate(1)%mg    , &
                mg_lev => block%dstate(1)%mg_lev, &
                gz_lev => block%dstate(1)%gz_lev)
@@ -143,18 +139,17 @@ contains
 
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          phs%d(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs%d(i,j) / Rd / teq)
+          mgs%d(i,j) = peq * exp(-0.5_r8 * ueq**2 / Rd / teq * mesh%full_sin_lat(j)**2 - gzs%d(i,j) / Rd / teq)
         end do
       end do
-      call fill_halo(phs)
+      call fill_halo(mgs)
 
       call calc_mg(block, block%dstate(1))
 
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            t %d(i,j,k) = teq
-            pt%d(i,j,k) = modified_potential_temperature(t%d(i,j,k), mg%d(i,j,k), 0.0_r8)
+            pt%d(i,j,k) = modified_potential_temperature(teq, mg%d(i,j,k), 0.0_r8)
           end do
         end do
       end do
