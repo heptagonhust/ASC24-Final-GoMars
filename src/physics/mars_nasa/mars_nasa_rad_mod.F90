@@ -1,20 +1,21 @@
 module mars_nasa_rad_mod
 
+  use fiona
   use const_mod
-  use namelist_mod
-  use process_mod
+  use mars_nasa_namelist_mod
 
   implicit none
 
   integer               nlev_rad
-  integer, parameter :: nspec_vis = 7                 ! Number of visible spectral intervals
-  integer, parameter :: nspec_ir  = 5                 ! Number of IR spectral intervals
-  integer               ntref                         ! Number of reference temperature levels for K-coefficients
-  integer               npref                         ! Number of reference pressure levels for K-coefficients
-  integer               nqref                         ! Number of different water mixing ratios for K-coefficients that are now CO2 + H2O
-  integer               ngauss                        ! Number of Gaussian quadrature points for K-coefficients
-  integer               npint                         ! Number of Lagrange interpolated reference pressures for the CO2 K-coefficients
-  integer, parameter :: taumax    = 35                ! Maximum optical depth
+  integer, parameter :: nspec_vis = 7  ! Number of visible spectral intervals
+  integer, parameter :: nspec_ir  = 5  ! Number of IR spectral intervals
+  integer               ntref          ! Number of reference temperature levels for K-coefficients
+  integer               npref          ! Number of reference pressure levels for K-coefficients
+  integer               nqref          ! Number of different water mixing ratios for K-coefficients that are now CO2 + H2O
+  integer               ngauss         ! Number of Gaussian quadrature points for K-coefficients
+  integer               npint          ! Number of Lagrange interpolated reference pressures for the CO2 K-coefficients
+  integer               nbin_dust      ! Number of dust particle size bins
+  integer, parameter :: taumax    = 35 ! Maximum optical depth
 
   ! Bin wavenumber - wavenumber [cm^(-1)] at the edges of the visible
   ! spectral bins.  Go from smaller to larger wavenumbers, the same as
@@ -43,7 +44,7 @@ module mars_nasa_rad_mod
   real(r8), parameter :: ray_p0   = 9.423e6_r8        ! Reference pressure for Rayleigh scattering (Pa)
 
   ! Dust optical properties for log-normal size distribution with reff = 1.5 micron, veff = 0.5
-  real(r8), parameter :: dust_qext_vis(nspec_vis) = [ &
+  real(r8), parameter :: dust_qext0_vis(nspec_vis) = [ &
     1.834_r8, &
     2.296_r8, &
     2.672_r8, &
@@ -52,7 +53,7 @@ module mars_nasa_rad_mod
     2.452_r8, &
     2.261_r8  &
   ]
-  real(r8), parameter :: dust_qscat_vis(nspec_vis) = [ &
+  real(r8), parameter :: dust_qscat0_vis(nspec_vis) = [ &
     1.695_r8, &
     2.031_r8, &
     2.583_r8, &
@@ -61,7 +62,7 @@ module mars_nasa_rad_mod
     2.225_r8, &
     1.525_r8  &
   ]
-  real(r8), parameter :: dust_g_vis(nspec_vis) = [ &
+  real(r8), parameter :: dust_g0_vis(nspec_vis) = [ &
     0.551_r8, &
     0.640_r8, &
     0.661_r8, &
@@ -70,29 +71,34 @@ module mars_nasa_rad_mod
     0.743_r8, &
     0.868_r8  &
   ]
-  real(r8), parameter :: dust_qext_ir(nspec_ir) = [ &
+  real(r8), parameter :: dust_qext0_ir(nspec_ir) = [ &
     0.008_r8, &
     0.262_r8, &
     0.491_r8, &
     1.017_r8, &
     0.444_r8  &
   ]
-  real(r8), parameter :: dust_qscat_ir(nspec_ir) = [ &
+  real(r8), parameter :: dust_qscat0_ir(nspec_ir) = [ &
     0.001_r8, &
     0.037_r8, &
     0.122_r8, &
     0.351_r8, &
     0.336_r8  &
   ]
-  real(r8), parameter :: dust_g_ir(nspec_ir) = [ &
+  real(r8), parameter :: dust_g0_ir(nspec_ir) = [ &
     0.004_r8, &
     0.030_r8, &
     0.095_r8, &
     0.214_r8, &
     0.316_r8  &
   ]
+  real(r8), allocatable, dimension(:,:) :: dust_qext_vis
+  real(r8), allocatable, dimension(:,:) :: dust_qscat_vis
+  real(r8), allocatable, dimension(:,:) :: dust_g_vis
+  real(r8), allocatable, dimension(:,:) :: dust_qext_ir
+  real(r8), allocatable, dimension(:,:) :: dust_qscat_ir
+  real(r8), allocatable, dimension(:,:) :: dust_g_ir
 
-  ! K-coefficients
   real(r8), allocatable, dimension(:        ) :: tref         ! Reference temperature for K-coefficients (K)
   real(r8), allocatable, dimension(  :      ) :: pref         ! Reference pressure for K-coefficients (Pa)
   real(r8), allocatable, dimension(    :    ) :: qh2oref      ! Reference water vapor volume mixing ratio for K-coefficients (1)
@@ -126,10 +132,9 @@ module mars_nasa_rad_mod
 
 contains
 
-  subroutine mars_nasa_rad_init(nlev, kcoef_file_path)
+  subroutine mars_nasa_rad_init(nlev)
 
     integer, intent(in) :: nlev
-    character(*), intent(in) :: kcoef_file_path
 
     real(r8) a, b, t
     integer i, j
@@ -186,72 +191,75 @@ contains
       end do
     end do
 
-    call read_kcoef(kcoef_file_path)
+    call read_kcoef()
     call interp_kcoef()
+    call read_dust_optics()
 
     do i = 1, nspec_vis
-      qext_vis(i) = dust_qext_vis(i)
-      qscat_vis(i) = dust_qscat_vis(i)
+      qext_vis(i) = dust_qext0_vis(i)
+      qscat_vis(i) = dust_qscat0_vis(i)
       if (qscat_vis(i) >= qext_vis(i)) then
         qscat_vis(i) = 0.99999_r8 * qext_vis(i)
       end if
       wscat_vis(i) = qscat_vis(i) / qext_vis(i)
-      gscat_vis(i) = dust_g_vis(i)
+      gscat_vis(i) = dust_g0_vis(i)
     end do
 
     do i = 1, nspec_ir
-      qext_ir(i) = dust_qext_ir(i)
-      qscat_ir(i) = dust_qscat_ir(i)
+      qext_ir(i) = dust_qext0_ir(i)
+      qscat_ir(i) = dust_qscat0_ir(i)
       if (qscat_ir(i) >= qext_ir(i)) then
         qscat_ir(i) = 0.99999_r8 * qext_ir(i)
       end if
       wscat_ir(i) = qscat_ir(i) / qext_ir(i)
-      gscat_ir(i) = dust_g_ir(i)
+      gscat_ir(i) = dust_g0_ir(i)
     end do
 
   end subroutine mars_nasa_rad_init
 
   subroutine mars_nasa_rad_final()
 
-    if (allocated(tref       )) deallocate(tref       )
-    if (allocated(pref       )) deallocate(pref       )
-    if (allocated(qco2ref    )) deallocate(qco2ref    )
-    if (allocated(qh2oref    )) deallocate(qh2oref    )
-    if (allocated(gwgt       )) deallocate(gwgt       )
-    if (allocated(klut_in_vis)) deallocate(klut_in_vis)
-    if (allocated(klut_in_ir )) deallocate(klut_in_ir )
-    if (allocated(klut_vis   )) deallocate(klut_vis   )
-    if (allocated(klut_ir    )) deallocate(klut_ir    )
-    if (allocated(f0_vis     )) deallocate(f0_vis     )
-    if (allocated(f0_ir      )) deallocate(f0_ir      )
-    if (allocated(logpint    )) deallocate(logpint    )
-    if (allocated(wn_vis     )) deallocate(wn_vis     )
-    if (allocated(wn_ir      )) deallocate(wn_ir      )
-    if (allocated(dwn_vis    )) deallocate(dwn_vis    )
-    if (allocated(dwn_ir     )) deallocate(dwn_ir     )
-    if (allocated(wl_vis     )) deallocate(wl_vis     )
-    if (allocated(wl_ir      )) deallocate(wl_ir      )
-    if (allocated(qext_vis   )) deallocate(qext_vis   )
-    if (allocated(qext_ir    )) deallocate(qext_ir    )
-    if (allocated(qscat_vis  )) deallocate(qscat_vis  )
-    if (allocated(qscat_ir   )) deallocate(qscat_ir   )
-    if (allocated(wscat_vis  )) deallocate(wscat_vis  )
-    if (allocated(wscat_ir   )) deallocate(wscat_ir   )
-    if (allocated(gscat_vis  )) deallocate(gscat_vis  )
-    if (allocated(gscat_ir   )) deallocate(gscat_ir   )
-    if (allocated(plnk_ir    )) deallocate(plnk_ir    )
-    if (allocated(sol_flx    )) deallocate(sol_flx    )
-    if (allocated(tauray_vis )) deallocate(tauray_vis )
+    if (allocated(dust_qext_vis )) deallocate(dust_qext_vis )
+    if (allocated(dust_qscat_vis)) deallocate(dust_qscat_vis)
+    if (allocated(dust_g_vis    )) deallocate(dust_g_vis    )
+    if (allocated(dust_qext_ir  )) deallocate(dust_qext_ir  )
+    if (allocated(dust_qscat_ir )) deallocate(dust_qscat_ir )
+    if (allocated(dust_g_ir     )) deallocate(dust_g_ir     )
+    if (allocated(tref          )) deallocate(tref          )
+    if (allocated(pref          )) deallocate(pref          )
+    if (allocated(qco2ref       )) deallocate(qco2ref       )
+    if (allocated(qh2oref       )) deallocate(qh2oref       )
+    if (allocated(gwgt          )) deallocate(gwgt          )
+    if (allocated(klut_in_vis   )) deallocate(klut_in_vis   )
+    if (allocated(klut_in_ir    )) deallocate(klut_in_ir    )
+    if (allocated(klut_vis      )) deallocate(klut_vis      )
+    if (allocated(klut_ir       )) deallocate(klut_ir       )
+    if (allocated(f0_vis        )) deallocate(f0_vis        )
+    if (allocated(f0_ir         )) deallocate(f0_ir         )
+    if (allocated(logpint       )) deallocate(logpint       )
+    if (allocated(wn_vis        )) deallocate(wn_vis        )
+    if (allocated(wn_ir         )) deallocate(wn_ir         )
+    if (allocated(dwn_vis       )) deallocate(dwn_vis       )
+    if (allocated(dwn_ir        )) deallocate(dwn_ir        )
+    if (allocated(wl_vis        )) deallocate(wl_vis        )
+    if (allocated(wl_ir         )) deallocate(wl_ir         )
+    if (allocated(qext_vis      )) deallocate(qext_vis      )
+    if (allocated(qext_ir       )) deallocate(qext_ir       )
+    if (allocated(qscat_vis     )) deallocate(qscat_vis     )
+    if (allocated(qscat_ir      )) deallocate(qscat_ir      )
+    if (allocated(wscat_vis     )) deallocate(wscat_vis     )
+    if (allocated(wscat_ir      )) deallocate(wscat_ir      )
+    if (allocated(gscat_vis     )) deallocate(gscat_vis     )
+    if (allocated(gscat_ir      )) deallocate(gscat_ir      )
+    if (allocated(plnk_ir       )) deallocate(plnk_ir       )
+    if (allocated(sol_flx       )) deallocate(sol_flx       )
+    if (allocated(tauray_vis    )) deallocate(tauray_vis    )
 
   end subroutine mars_nasa_rad_final
 
-  subroutine read_kcoef(file_path)
+  subroutine read_kcoef()
 
-    use fiona
-
-    character(*), intent(in) :: file_path
-
-    call fiona_open_dataset('kcoef', file_path=file_path)
+    call fiona_open_dataset('kcoef', file_path=kcoef_file)
     call fiona_get_dim('kcoef', 'tref' , size=ntref )
     call fiona_get_dim('kcoef', 'pref' , size=npref )
     call fiona_get_dim('kcoef', 'qref' , size=nqref )
@@ -278,6 +286,27 @@ contains
     call fiona_end_input('kcoef')
 
   end subroutine read_kcoef
+
+  subroutine read_dust_optics()
+
+    call fiona_open_dataset('dust_optics', file_path=dust_optics_file)
+    call fiona_get_dim('dust_optics', 'bin', size=nbin_dust)
+    allocate(dust_qext_vis (nbin_dust,nspec_vis))
+    allocate(dust_qscat_vis(nbin_dust,nspec_vis))
+    allocate(dust_g_vis    (nbin_dust,nspec_vis))
+    allocate(dust_qext_ir  (nbin_dust,nspec_ir ))
+    allocate(dust_qscat_ir (nbin_dust,nspec_ir ))
+    allocate(dust_g_ir     (nbin_dust,nspec_ir ))
+    call fiona_start_input('dust_optics')
+    call fiona_input('dust_optics', 'dust_qext_vis' , dust_qext_vis )
+    call fiona_input('dust_optics', 'dust_qscat_vis', dust_qscat_vis)
+    call fiona_input('dust_optics', 'dust_g_vis'    , dust_g_vis    )
+    call fiona_input('dust_optics', 'dust_qext_ir'  , dust_qext_ir  )
+    call fiona_input('dust_optics', 'dust_qscat_ir' , dust_qscat_ir )
+    call fiona_input('dust_optics', 'dust_g_ir'     , dust_g_ir     )
+    call fiona_end_input('dust_optics')
+
+  end subroutine read_dust_optics
 
   subroutine interp_kcoef()
 

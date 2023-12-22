@@ -273,8 +273,9 @@ set(gmcore_files
   src/physics/physics_types_mod.F90
   src/physics/simple_physics_v6.f90
   src/physics/test_forcing_mod.F90
-  src/physics/mars_nasa/mars_nasa_physics_driver_mod.F90
+  src/physics/mars_nasa/mars_nasa_namelist_mod.F90
   src/physics/mars_nasa/mars_nasa_rad_mod.F90
+  src/physics/mars_nasa/mars_nasa_physics_driver_mod.F90
   src/prepare/latlon/latlon_bkg_mod.F90
   src/prepare/latlon/latlon_topo_mod.F90
   src/prepare/prepare_mod.F90
