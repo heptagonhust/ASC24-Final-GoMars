@@ -24,6 +24,7 @@ module physics_mod
 #ifdef HAS_CAM
   use cam_physics_driver_mod
 #endif
+  use mars_nasa_physics_driver_mod
 
   implicit none
 
@@ -60,6 +61,8 @@ contains
 #else
       if (proc%is_root()) call log_error('CAM physics is not compiled!')
 #endif
+    case ('mars_nasa')
+      call mars_nasa_physics_driver_init(namelist_path, nlev)
     end select
 
   end subroutine physics_init_stage1

@@ -73,7 +73,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
       # -fp-model precise
     )
   endif ()
-  if (CMAKE_Fortran_COMPILER_VERSION GREATER 2021.0)
+  if (CMAKE_Fortran_COMPILER_VERSION GREATER 2021.1)
     list(APPEND fortran_flags -qmkl=sequential)
   else ()
     list(APPEND fortran_flags -mkl=sequential)
@@ -265,7 +265,6 @@ set(gmcore_files
   src/physics/mars/mars_mp_nasa_mod.F90
   src/physics/mars/mars_nasa_mod.F90
   src/physics/mars/mars_pbl_nasa_mod.F90
-  src/physics/mars/mars_rad_nasa_mod.F90
   src/physics/mars/mars_rad_rrtmgp_mod.F90
   src/physics/mars/mars_sfc_nasa_mod.F90
   src/physics/pbl/pbl_driver_mod.F90
@@ -274,6 +273,8 @@ set(gmcore_files
   src/physics/physics_types_mod.F90
   src/physics/simple_physics_v6.f90
   src/physics/test_forcing_mod.F90
+  src/physics/mars_nasa/mars_nasa_physics_driver_mod.F90
+  src/physics/mars_nasa/mars_nasa_rad_mod.F90
   src/prepare/latlon/latlon_bkg_mod.F90
   src/prepare/latlon/latlon_topo_mod.F90
   src/prepare/prepare_mod.F90
