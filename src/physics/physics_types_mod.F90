@@ -88,8 +88,6 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:  ) :: delta    ! Entrainment layer depth (m)
     ! Precipitation
     real(r8), allocatable, dimension(:    ) :: precl    ! Large scale precipitation
-    ! Mars
-    real(r8), allocatable, dimension(:    ) :: co2ice   ! CO2 ice on the surface (Kg m-2)
     !
     real(r8), allocatable, dimension(:,:  ) :: rho      ! Air density
     real(r8), allocatable, dimension(:,:  ) :: cp       ! Specific heat capacity of total air in constant pressure
@@ -207,11 +205,6 @@ contains
     allocate(this%delta     (this%ncol,this%nlev  ))
     ! Precipitation
     allocate(this%precl     (this%ncol            ))
-    ! Mars
-    select case (planet)
-    case ('mars')
-      allocate(this%co2ice  (this%ncol            ))
-    end select
     ! Others
     allocate(this%rho       (this%ncol,this%nlev  ))
     allocate(this%cp        (this%ncol,this%nlev  ))
@@ -294,8 +287,6 @@ contains
     if (allocated(this%delta    )) deallocate(this%delta    )
     ! Precipitation
     if (allocated(this%precl    )) deallocate(this%precl    )
-    ! Mars
-    if (allocated(this%co2ice   )) deallocate(this%co2ice   )
     ! Others
     if (allocated(this%rho      )) deallocate(this%rho      )
     if (allocated(this%cp       )) deallocate(this%cp       )

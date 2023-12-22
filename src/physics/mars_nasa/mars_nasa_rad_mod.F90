@@ -49,7 +49,7 @@ contains
     nlev_rad = nlev + 1
 
     call mars_nasa_spectra_init()
-    call mars_nasa_optics_init()
+    call mars_nasa_optics_init(nlev_rad)
 
     call read_kcoef()
     call interp_kcoef()

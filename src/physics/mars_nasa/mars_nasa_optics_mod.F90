@@ -28,16 +28,18 @@ module mars_nasa_optics_mod
   type optics_type
     integer :: nbin  = 0
     integer :: nspec = 0
+    integer :: nlev  = 0
     real(r8), allocatable, dimension(  :) :: qext0
     real(r8), allocatable, dimension(  :) :: qscat0
     real(r8), allocatable, dimension(  :) :: gscat0
+    real(r8), allocatable, dimension(  :) :: wscat0
     real(r8), allocatable, dimension(:,:) :: qext_bin
     real(r8), allocatable, dimension(:,:) :: qscat_bin
     real(r8), allocatable, dimension(:,:) :: gscat_bin
-    real(r8), allocatable, dimension(  :) :: qext       ! Extinction efficiency at each spectral interval
-    real(r8), allocatable, dimension(  :) :: qscat      ! Scattering efficiency at each spectral interval
-    real(r8), allocatable, dimension(  :) :: gscat      ! Asymmetry parameter at each spectral interval
-    real(r8), allocatable, dimension(  :) :: wscat      ! Single scattering albedo at each spectral interval
+    real(r8), allocatable, dimension(:,:) :: qext       ! Extinction efficiency at each spectral interval on each level
+    real(r8), allocatable, dimension(:,:) :: qscat      ! Scattering efficiency at each spectral interval on each level
+    real(r8), allocatable, dimension(:,:) :: gscat      ! Asymmetry parameter at each spectral interval on each level
+    real(r8), allocatable, dimension(:,:) :: wscat      ! Single scattering albedo at each spectral interval on each level
   contains
     procedure :: init  => optics_init
     procedure :: clear => optics_clear
@@ -49,10 +51,12 @@ module mars_nasa_optics_mod
 
 contains
 
-  subroutine mars_nasa_optics_init()
+  subroutine mars_nasa_optics_init(nlev_rad)
 
-    call dust_vis%init(dust_optics_file, 'dust', 'vis')
-    call dust_ir %init(dust_optics_file, 'dust', 'ir' )
+    integer, intent(in) :: nlev_rad
+
+    call dust_vis%init(dust_optics_file, 'dust', 'vis', nlev_rad)
+    call dust_ir %init(dust_optics_file, 'dust', 'ir' , nlev_rad)
 
   end subroutine mars_nasa_optics_init
 
@@ -63,15 +67,18 @@ contains
 
   end subroutine mars_nasa_optics_final
 
-  subroutine optics_init(this, optics_file, species, spectra)
+  subroutine optics_init(this, optics_file, species, spectra, nlev_rad)
 
     class(optics_type), intent(inout) :: this
     character(*), intent(in) :: optics_file
     character(*), intent(in) :: species
     character(*), intent(in) :: spectra
+    integer, intent(in) :: nlev_rad
 
     character(30) tag
     integer i
+
+    this%nlev = nlev_rad
 
     tag = 'optics_' // trim(species) // '_' // trim(spectra)
     call fiona_open_dataset(tag, file_path=optics_file)
@@ -80,13 +87,14 @@ contains
     allocate(this%qext0    (          this%nspec))
     allocate(this%qscat0   (          this%nspec))
     allocate(this%gscat0   (          this%nspec))
+    allocate(this%wscat0   (          this%nspec))
     allocate(this%qext_bin (this%nbin,this%nspec))
     allocate(this%qscat_bin(this%nbin,this%nspec))
     allocate(this%gscat_bin(this%nbin,this%nspec))
-    allocate(this%qext     (          this%nspec))
-    allocate(this%qscat    (          this%nspec))
-    allocate(this%gscat    (          this%nspec))
-    allocate(this%wscat    (          this%nspec))
+    allocate(this%qext     (this%nlev,this%nspec))
+    allocate(this%qscat    (this%nlev,this%nspec))
+    allocate(this%gscat    (this%nlev,this%nspec))
+    allocate(this%wscat    (this%nlev,this%nspec))
     call fiona_start_input(tag)
     call fiona_input(tag, trim(species) // '_qext0_'     // trim(spectra), this%qext0    )
     call fiona_input(tag, trim(species) // '_qscat0_'    // trim(spectra), this%qscat0   )
@@ -97,13 +105,10 @@ contains
     call fiona_end_input(tag)
 
     do i = 1, this%nspec
-      this%qext (i) = this%qext0 (i)
-      this%qscat(i) = this%qscat0(i)
-      if (this%qscat(i) >= this%qext(i)) then
-        this%qscat(i) = 0.99999_r8 * this%qext(i)
+      if (this%qscat0(i) >= this%qext0(i)) then
+        this%qscat0(i) = 0.99999_r8 * this%qext0(i)
       end if
-      this%wscat(i) = this%qscat(i) / this%qext(i)
-      this%gscat(i) = this%gscat0(i)
+      this%wscat0(i) = this%qscat0(i) / this%qext0(i)
     end do
 
   end subroutine optics_init
@@ -112,9 +117,13 @@ contains
 
     class(optics_type), intent(inout) :: this
 
+    this%nbin  = 0
+    this%nspec = 0
+    this%nlev  = 0
     if (allocated(this%qext0    )) deallocate(this%qext0    )
     if (allocated(this%qscat0   )) deallocate(this%qscat0   )
     if (allocated(this%gscat0   )) deallocate(this%gscat0   )
+    if (allocated(this%wscat0   )) deallocate(this%wscat0   )
     if (allocated(this%qext_bin )) deallocate(this%qext_bin )
     if (allocated(this%qscat_bin)) deallocate(this%qscat_bin)
     if (allocated(this%gscat_bin)) deallocate(this%gscat_bin)
