@@ -13,7 +13,7 @@ module latlon_decomp_mod
   use string
   use flogger
   use math_mod, only: round_robin
-  use latlon_mesh_mod
+  use namelist_mod
   use latlon_parallel_types_mod
 
   implicit none
@@ -52,10 +52,10 @@ contains
 
     if (nproc_lon(1) * nproc_lat(1) /= proc%np) then
       ! User does not set process dimensions in the namelist, so we set them here.
-      if (proc%np < global_mesh%full_nlon / 2) then
+      if (proc%np < nlon / 2) then
         nproc_lat(1) = proc%np
       else
-        nproc_lat(1) = global_mesh%full_nlat / 3
+        nproc_lat(1) = nlat / 3
       end if
       if (mod(proc%np, nproc_lat(1)) /= 0) then
         ierr = 3
@@ -147,29 +147,29 @@ contains
     end if
 
     ! Set initial values for nlon, nlat, ids, jds.
-    proc%nlon = global_mesh%full_nlon
+    proc%nlon = nlon
     select case (proc%decomp_loc)
     case (decomp_normal_region)
-      proc%nlat = global_mesh%full_nlat
+      proc%nlat = nlat
     end select
 
     call round_robin(proc%cart_dims(cart_dim_lon), proc%cart_coords(cart_dim_lon), proc%nlon, proc%ids, proc%ide)
     call round_robin(proc%cart_dims(cart_dim_lat), proc%cart_coords(cart_dim_lat), proc%nlat, proc%jds, proc%jde)
 
     correct = .true.
-    if (proc%nlat < 2) then
+    if (proc%nlat < 3) then
       correct = .false.
     end if
     call MPI_ALLREDUCE(correct, all_correct, 1, MPI_LOGICAL, MPI_LAND, proc%comm, ierr)
     if (.not. all_correct) then
-      ierr = 2 ! Decomposed grid size along latitude should be >= 2!
+      ierr = 2 ! Decomposed grid size along latitude should be >= 3!
       return
     end if
 
     ! Set grid_proc_idmap for later use.
-    allocate(proc%grid_proc_idmap(global_mesh%full_nlon,global_mesh%full_nlat))
-    allocate(proc%global_grid_id (global_mesh%full_nlon,global_mesh%full_nlat))
-    allocate(proc%local_grid_id  (global_mesh%full_nlon,global_mesh%full_nlat))
+    allocate(proc%grid_proc_idmap(nlon,nlat))
+    allocate(proc%global_grid_id (nlon,nlat))
+    allocate(proc%local_grid_id  (nlon,nlat))
     allocate(all_ids(proc%np), all_ide(proc%np))
     allocate(all_jds(proc%np), all_jde(proc%np))
     call MPI_ALLGATHER(proc%ids, 1, MPI_INTEGER, all_ids, 1, MPI_INTEGER, proc%cart_comm, ierr)

@@ -43,17 +43,15 @@ contains
     latv = latv0
     lonvr0 = lonvr
 
+    call tracer_add('moving_vortices', dt, 'q0', 'background tracer')
+    call tracer_add('moving_vortices', dt, 'q1', 'vortex tracer'    )
+
   end subroutine moving_vortices_test_init
 
   subroutine moving_vortices_test_set_ic()
 
     integer iblk, i, j
     real(8) lon, lat, lonr, latr
-
-    call tracer_add('moving_vortices', dt, 'q0', 'background tracer')
-    call tracer_add('moving_vortices', dt, 'q1', 'vortex tracer'    )
-
-    call tracer_allocate()
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &

@@ -38,17 +38,15 @@ contains
     ptop = 25494.4
     rho0 = p0 / (rd * T0)
 
+    call tracer_add('dcmip12', dt, 'q0', 'background tracer')
+    call tracer_add('dcmip12', dt, 'q1', 'test tracer'      )
+
   end subroutine dcmip12_test_init
 
   subroutine dcmip12_test_set_ic()
 
     real(r8) z
     integer i, j, k, iblk
-
-    call tracer_add('dcmip12', dt, 'q0', 'background tracer')
-    call tracer_add('dcmip12', dt, 'q1', 'test tracer'      )
-
-    call tracer_allocate()
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)             , &

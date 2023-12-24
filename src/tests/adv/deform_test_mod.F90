@@ -47,6 +47,11 @@ contains
       lat2 = 0
     end select
 
+    call tracer_add('deform_test', dt, 'q0', 'background tracer'       )
+    call tracer_add('deform_test', dt, 'q1', 'cosine hills tracer'     )
+    call tracer_add('deform_test', dt, 'q2', 'slotted cylinders tracer')
+    call tracer_add('deform_test', dt, 'q3', 'gaussian hills tracer'   )
+
   end subroutine deform_test_init
 
   subroutine deform_test_set_ic()
@@ -54,13 +59,6 @@ contains
     integer iblk, i, j
     real(8) lon, lat, r, r1, r2, qmax, qmin, c
     real(8) x(3), x1(3), x2(3)
-
-    call tracer_add('deform_test', dt, 'q0', 'background tracer'       )
-    call tracer_add('deform_test', dt, 'q1', 'cosine hills tracer'     )
-    call tracer_add('deform_test', dt, 'q2', 'slotted cylinders tracer')
-    call tracer_add('deform_test', dt, 'q3', 'gaussian hills tracer'   )
-
-    call tracer_allocate()
 
     call lonlat2xyz(radius, lon1, lat1, x1(1), x1(2), x1(3)); x1 = x1 / radius
     call lonlat2xyz(radius, lon2, lat2, x2(1), x2(2), x2(3)); x2 = x2 / radius

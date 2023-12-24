@@ -23,9 +23,7 @@ module block_mod
   public halo_type
   public static_type
   public dstate_type
-  public pstate_type
   public dtend_type
-  public ptend_type
   public accum_type
 
   type block_type
@@ -34,9 +32,7 @@ module block_mod
     type(mesh_type) mesh
     type(static_type) static
     type(dstate_type), allocatable :: dstate(:)
-    type(pstate_type) pstate
     type(dtend_type), allocatable :: dtend(:)
-    type(ptend_type) ptend
     type(aux_array_type) aux
     type(adv_batch_type) adv_batch_pt
     type(adv_batch_type) adv_batch_nh
@@ -183,8 +179,6 @@ contains
     call this%mesh        %clear()
     call this%big_filter  %clear()
     call this%small_filter%clear()
-    call this%pstate      %clear()
-    call this%ptend       %clear()
     call this%aux         %clear()
     call this%adv_batch_pt%clear()
     call this%adv_batch_nh%clear()

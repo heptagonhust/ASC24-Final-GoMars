@@ -23,6 +23,7 @@ module history_mod
   use block_mod
   use tracer_mod
   use operators_mod, only: calc_div
+  use physics_mod
 
   implicit none
 
@@ -269,9 +270,7 @@ contains
       end select
     end do
 
-    if (test_case == 'tropical_cyclone') then
-      call fiona_add_var('h0', 'precl', '', 'Large-scale precipitation', dim_names=cell_dims_2d, dtype=output_h0_dtype)
-    end if
+    call physics_add_output()
 
   end subroutine history_setup_h0_hydrostatic
 
@@ -546,7 +545,6 @@ contains
                  div2        => blocks(iblk)%aux%div2         , &
                  vor         => blocks(iblk)%aux%vor          , &
                  q           => tracers(iblk)%q               , &
-                 precl       => blocks(iblk)%pstate%precl     , &
                  accum_list  => blocks(iblk)%accum_list       )
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
@@ -605,17 +603,10 @@ contains
           call fiona_output('h0', accum%name, accum%array(:,:,:,1), start=start, count=count)
         end select
       end do
-
-      if (test_case == 'tropical_cyclone') then
-        is = mesh%full_ids; ie = mesh%full_ide
-        js = mesh%full_jds; je = mesh%full_jde
-        ks = mesh%full_kds; ke = mesh%full_kde
-        start = [is,js,ks]
-        count = [mesh%full_nlon,mesh%full_nlat,mesh%full_nlev]
-        call fiona_output('h0', 'precl', reshape(precl, count(1:2)), start=start(1:2), count=count(1:2))
-      end if
       end associate
+      call physics_output(blocks(iblk))
     end do
+
 
   end subroutine history_write_h0_hydrostatic
 
@@ -801,7 +792,6 @@ contains
 
     associate (mesh   => blocks(1)%mesh         , &
                dstate => blocks(1)%dstate(itime), &
-               pstate => blocks(1)%pstate       , &
                dtend  => blocks(1)%dtend (itime), &
                aux    => blocks(1)%aux          , &
                static => blocks(1)%static)
@@ -879,8 +869,6 @@ contains
     call fiona_output('h1', 'we_lev', dstate%we_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'gz_lev', dstate%gz_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ph_lev', dstate%ph_lev%d(is:ie,js:je,ks:ke), start=start, count=count)
-    ! call fiona_output('h1', 'n2_lev', reshape(pstate%n2_lev, count), start=start, count=count)
-    ! call fiona_output('h1', 'ri_lev', reshape(pstate%ri_lev, count), start=start, count=count)
     if (allocated(blocks(1)%adv_batches)) then
       do m = 1, size(blocks(1)%adv_batches)
         tag = blocks(1)%adv_batches(m)%name

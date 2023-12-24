@@ -86,7 +86,6 @@ program gmcore_adv_driver
 
   call set_uv(elapsed_seconds, old)
   call set_ic()
-  call adv_init()
   call adv_prepare(old)
   call adv_accum_wind(old)
 

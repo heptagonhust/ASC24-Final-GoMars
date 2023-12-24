@@ -17,10 +17,7 @@ module physics_mod
   use physics_types_mod
   use dp_coupling_mod
   use latlon_parallel_mod
-  use pbl_driver_mod
-#ifdef HAS_CCPP
-  use ccpp_driver_mod
-#endif
+  use simple_physics_driver_mod
 #ifdef HAS_CAM
   use cam_physics_driver_mod
 #endif
@@ -32,11 +29,14 @@ module physics_mod
 
   public physics_init_stage1
   public physics_init_stage2
+  public physics_init_stage3
   public physics_run
   public physics_update
   public physics_update_dynamics
   public physics_update_tracers
   public physics_final
+  public physics_add_output
+  public physics_output
 
 contains
 
@@ -44,33 +44,62 @@ contains
 
     character(*), intent(in) :: namelist_path
 
+    integer nblk, iblk, icol, i, j
+    integer , allocatable :: ncol(:)
+    real(r8), allocatable :: lon (:,:)
+    real(r8), allocatable :: lat (:,:)
+    real(r8), allocatable :: area(:,:)
+
     if (physics_suite /= 'N/A') then
       call time_add_alert('phys', seconds=dt_phys)
     end if
 
+    nblk = size(blocks)
+    allocate(ncol(nblk))
+    ncol = blocks(:)%mesh%full_nlon * blocks(:)%mesh%full_nlat
+    allocate(lon (maxval(ncol),nblk))
+    allocate(lat (maxval(ncol),nblk))
+    allocate(area(maxval(ncol),nblk))
+    do iblk = 1, nblk
+      ! This is specific to lat-lon mesh. Maybe it should be put into mesh type.
+      associate (mesh => blocks(iblk)%mesh)
+      icol = 1
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          lon (icol,iblk) = mesh%full_lon_deg(i)
+          lat (icol,iblk) = mesh%full_lat_deg(j)
+          area(icol,iblk) = mesh%area_cell(j)
+          icol = icol + 1
+        end do
+      end do
+      end associate
+    end do
+
     select case (physics_suite)
-    case ('ccpp')
-#ifdef HAS_CCPP
-      call ccpp_driver_init(namelist_path)
-#else
-      if (proc%is_root()) call log_error('CCPP physics is not compiled!')
-#endif
+    case ('simple_physics')
+      call simple_physics_driver_init(namelist_path, nblk, ncol, nlev, lon, lat, area, dt_adv, dt_phys)
     case ('cam')
 #ifdef HAS_CAM
-      call cam_physics_driver_init(namelist_path)
+      call cam_physics_driver_init(namelist_path, nblk, ncol, nlev, lon, lat, area, dt_adv, dt_phys)
 #else
       if (proc%is_root()) call log_error('CAM physics is not compiled!')
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_driver_init(namelist_path, nlev)
+      call mars_nasa_physics_driver_init(namelist_path, nblk, ncol, nlev, &
+        lon, lat, area, dt_adv, dt_phys, min_lon, max_lon, min_lat, max_lat)
     end select
+
+    deallocate(ncol, lon, lat, area)
 
   end subroutine physics_init_stage1
 
   subroutine physics_init_stage2()
 
-
   end subroutine physics_init_stage2
+
+  subroutine physics_init_stage3()
+
+  end subroutine physics_init_stage3
 
   subroutine physics_run(block, itime, dt)
 
@@ -80,56 +109,22 @@ contains
 
     if (.not. time_is_alerted('phys')) return
 
-    associate (mesh   => block%mesh  , &
-               pstate => block%pstate, &
-               ptend  => block%ptend )
     call dp_coupling_d2p(block, itime)
-
-    call ptend%reset()
 
     select case (physics_suite)
     case ('simple_physics')
-      call simple_physics(      &
-        pstate%ncol           , &
-        pstate%nlev           , &
-        dt                    , &
-        pstate%lat * rad      , &
-        pstate%t              , &
-        pstate%qv             , &
-        pstate%u              , &
-        pstate%v              , &
-        pstate%p              , &
-        pstate%p_lev          , &
-        pstate%dp             , &
-        pstate%rdp            , &
-        pstate%ps             , &
-        ptend%dudt            , &
-        ptend%dvdt            , &
-        ptend%dtdt            , &
-        ptend%dqdt(:,:,idx_qv), &
-        pstate%precl          , &
-        0                     , & ! test
-        .true.                , & ! RJ2012_precip
-        .false.                 & ! TC_PBL_mod
-      )
-      ptend%updated_u         = .true.
-      ptend%updated_v         = .true.
-      ptend%updated_t         = .true.
-      ptend%updated_q(idx_qv) = .true.
-#ifdef HAS_CCPP
-    case ('ccpp')
-      call ccpp_driver_run()
-#endif
+      call simple_physics_driver_run()
 #ifdef HAS_CAM
     case ('cam')
       call cam_physics_driver_run1()
       call cam_physics_driver_sfc_flux()
       call cam_physics_driver_run2()
 #endif
+    case ('mars_nasa')
+      call mars_nasa_physics_driver_run()
     end select
 
     call dp_coupling_p2d(block, itime)
-    end associate
 
   end subroutine physics_run
 
@@ -139,10 +134,10 @@ contains
     integer, intent(in) :: itime
     real(r8), intent(in) :: dt
 
+    class(physics_tend_type), pointer :: tend
     integer i, j, k, m
 
     associate (mesh  => block%mesh               , &
-               ptend => block%ptend              , &
                dudt  => block%aux%dudt_phys      , & ! in
                dvdt  => block%aux%dvdt_phys      , & ! in
                dptdt => block%aux%dptdt_phys     , & ! in
@@ -153,49 +148,41 @@ contains
                pt    => block%dstate(itime)%pt   , & ! inout
                q     => tracers(block%id)%q      )   ! inout
     ! Update dynamics.
-    if (ptend%updated_u) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            u_lon%d(i,j,k) = u_lon%d(i,j,k) + dt * 0.5_r8 * (dudt%d(i,j,k) + dudt%d(i+1,j,k))
-          end do
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%half_ids, mesh%half_ide
+          u_lon%d(i,j,k) = u_lon%d(i,j,k) + dt * 0.5_r8 * (dudt%d(i,j,k) + dudt%d(i+1,j,k))
         end do
       end do
-      call fill_halo(u_lon)
-    end if
-    if (ptend%updated_v) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            v_lat%d(i,j,k) = v_lat%d(i,j,k) + dt * 0.5_r8 * (dvdt%d(i,j,k) + dvdt%d(i,j+1,k))
-          end do
+    end do
+    call fill_halo(u_lon)
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
+          v_lat%d(i,j,k) = v_lat%d(i,j,k) + dt * 0.5_r8 * (dvdt%d(i,j,k) + dvdt%d(i,j+1,k))
         end do
       end do
-      call fill_halo(v_lat)
-    end if
-    if (ptend%updated_t) then
+    end do
+    call fill_halo(v_lat)
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          pt%d(i,j,k) = pt%d(i,j,k) + dt * dptdt%d(i,j,k) / dmg%d(i,j,k)
+        end do
+      end do
+    end do
+    call fill_halo(pt)
+    ! Update tracers.
+    do m = 1, ntracers
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            pt%d(i,j,k) = pt%d(i,j,k) + dt * dptdt%d(i,j,k) / dmg%d(i,j,k)
+            q%d(i,j,k,m) = q%d(i,j,k,m) + dt * dqdt%d(i,j,k,m) / dmg%d(i,j,k)
           end do
         end do
       end do
-      call fill_halo(pt)
-    end if
-    ! Update tracers.
-    do m = 1, ntracers
-      if (ptend%updated_q(m)) then
-        do k = mesh%full_kds, mesh%full_kde
-          do j = mesh%full_jds, mesh%full_jde
-            do i = mesh%full_ids, mesh%full_ide
-              q%d(i,j,k,m) = q%d(i,j,k,m) + dt * dqdt%d(i,j,k,m) / dmg%d(i,j,k)
-            end do
-          end do
-        end do
-        call tracer_fill_negative_values(block, itime, q%d(:,:,:,m))
-        call fill_halo(q, m)
-      end if
+      call tracer_fill_negative_values(block, itime, q%d(:,:,:,m))
+      call fill_halo(q, m)
     end do
     call tracer_calc_qm(block)
     end associate
@@ -211,7 +198,6 @@ contains
     integer i, j, k
 
     associate (mesh  => block%mesh               , &
-               ptend => block%ptend              , &
                dudt  => block%aux%dudt_phys      , & ! in
                dvdt  => block%aux%dvdt_phys      , & ! in
                dptdt => block%aux%dptdt_phys     , & ! in
@@ -220,36 +206,30 @@ contains
                v_lat => block%dstate(itime)%v_lat, & ! inout
                pt    => block%dstate(itime)%pt   )   ! inout
     ! Update dynamics.
-    if (ptend%updated_u) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            u_lon%d(i,j,k) = u_lon%d(i,j,k) + dt * 0.5_r8 * (dudt%d(i,j,k) + dudt%d(i+1,j,k))
-          end do
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+        do i = mesh%half_ids, mesh%half_ide
+          u_lon%d(i,j,k) = u_lon%d(i,j,k) + dt * 0.5_r8 * (dudt%d(i,j,k) + dudt%d(i+1,j,k))
         end do
       end do
-      call fill_halo(u_lon)
-    end if
-    if (ptend%updated_v) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            v_lat%d(i,j,k) = v_lat%d(i,j,k) + dt * 0.5_r8 * (dvdt%d(i,j,k) + dvdt%d(i,j+1,k))
-          end do
+    end do
+    call fill_halo(u_lon)
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide
+          v_lat%d(i,j,k) = v_lat%d(i,j,k) + dt * 0.5_r8 * (dvdt%d(i,j,k) + dvdt%d(i,j+1,k))
         end do
       end do
-      call fill_halo(v_lat)
-    end if
-    if (ptend%updated_t) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            pt%d(i,j,k) = pt%d(i,j,k) + dt * dptdt%d(i,j,k) / dmg%d(i,j,k)
-          end do
+    end do
+    call fill_halo(v_lat)
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          pt%d(i,j,k) = pt%d(i,j,k) + dt * dptdt%d(i,j,k) / dmg%d(i,j,k)
         end do
       end do
-      call fill_halo(pt)
-    end if
+    end do
+    call fill_halo(pt)
     end associate
 
   end subroutine physics_update_dynamics
@@ -264,22 +244,19 @@ contains
     integer i, j, k
 
     associate (mesh  => block%mesh             , &
-               ptend => block%ptend            , &
                dqdt  => block%aux%dqdt_phys    , &
                dmg   => block%dstate(itime)%dmg, &
                q     => tracers(block%id)%q    )
     ! Update tracers.
-    if (ptend%updated_q(idx)) then
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            q%d(i,j,k,idx) = q%d(i,j,k,idx) + dt * dqdt%d(i,j,k,idx) / dmg%d(i,j,k)
-          end do
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          q%d(i,j,k,idx) = q%d(i,j,k,idx) + dt * dqdt%d(i,j,k,idx) / dmg%d(i,j,k)
         end do
       end do
-      call tracer_fill_negative_values(block, itime, q%d(:,:,:,idx))
-      call fill_halo(q, idx)
-    end if
+    end do
+    call tracer_fill_negative_values(block, itime, q%d(:,:,:,idx))
+    call fill_halo(q, idx)
     end associate
 
   end subroutine physics_update_tracers
@@ -287,16 +264,45 @@ contains
   subroutine physics_final()
 
     select case (physics_suite)
-#ifdef HAS_CCPP
-    case ('ccpp')
-      call ccpp_driver_final()
-#endif
+    case ('simple_physics')
+      call simple_physics_driver_final()
 #ifdef HAS_CAM
     case ('cam')
       call cam_physics_driver_final()
 #endif
+    case ('mars_nasa')
+      call mars_nasa_physics_driver_final()
     end select
 
   end subroutine physics_final
+
+  subroutine physics_add_output()
+
+    select case (physics_suite)
+    case ('mars_nasa')
+      call mars_nasa_physics_add_output('h0', output_h0_dtype)
+    end select
+
+  end subroutine physics_add_output
+
+  subroutine physics_output(block)
+
+    type(block_type), intent(in) :: block
+
+    integer is, ie, js, je, ks, ke
+    integer start(3), count(3)
+
+    is = block%mesh%full_ids; ie = block%mesh%full_ide
+    js = block%mesh%full_jds; je = block%mesh%full_jde
+    ks = block%mesh%full_kds; ke = block%mesh%full_kde
+    start = [is,js,ks]
+    count = [ie-is+1,je-js+1,ke-ks+1]
+
+    select case (physics_suite)
+    case ('mars_nasa')
+      call mars_nasa_physics_output('h0', block%id, start, count)
+    end select
+
+  end subroutine physics_output
 
 end module physics_mod

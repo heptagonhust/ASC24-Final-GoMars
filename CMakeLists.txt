@@ -258,22 +258,27 @@ set(gmcore_files
   src/meshes/latlon/latlon_interp_mod.F90
   src/physics/albedo_mod.F90
   src/physics/dp_coupling_mod.F90
-  src/physics/mars/mars_cnv_nasa_mod.F90
-  src/physics/mars/mars_co2cyc_nasa_mod.F90
-  src/physics/mars/mars_data_mod.F90
-  src/physics/mars/mars_lsm_nasa_mod.F90
-  src/physics/mars/mars_mp_nasa_mod.F90
-  src/physics/mars/mars_nasa_mod.F90
-  src/physics/mars/mars_pbl_nasa_mod.F90
-  src/physics/mars/mars_rad_rrtmgp_mod.F90
-  src/physics/mars/mars_sfc_nasa_mod.F90
-  src/physics/pbl/pbl_driver_mod.F90
-  src/physics/pbl/pbl_ysu_mod.F90
+  # src/physics/mars/mars_cnv_nasa_mod.F90
+  # src/physics/mars/mars_co2cyc_nasa_mod.F90
+  # src/physics/mars/mars_data_mod.F90
+  # src/physics/mars/mars_lsm_nasa_mod.F90
+  # src/physics/mars/mars_mp_nasa_mod.F90
+  # src/physics/mars/mars_nasa_mod.F90
+  # src/physics/mars/mars_pbl_nasa_mod.F90
+  # src/physics/mars/mars_rad_rrtmgp_mod.F90
+  # src/physics/mars/mars_sfc_nasa_mod.F90
+  # src/physics/pbl/pbl_driver_mod.F90
+  # src/physics/pbl/pbl_ysu_mod.F90
   src/physics/physics_mod.F90
+  src/physics/physics_mesh_mod.F90
   src/physics/physics_types_mod.F90
-  src/physics/simple_physics_v6.f90
+  src/physics/simple_physics/simple_physics_v6.f90
+  src/physics/simple_physics/simple_physics_types_mod.F90
+  src/physics/simple_physics/simple_physics_driver_mod.F90
   src/physics/test_forcing_mod.F90
   src/physics/mars_nasa/mars_nasa_namelist_mod.F90
+  src/physics/mars_nasa/mars_nasa_physics_types_mod.F90
+  src/physics/mars_nasa/mars_nasa_objects_mod.F90
   src/physics/mars_nasa/mars_nasa_spectra_mod.F90
   src/physics/mars_nasa/mars_nasa_optics_mod.F90
   src/physics/mars_nasa/mars_nasa_rad_mod.F90

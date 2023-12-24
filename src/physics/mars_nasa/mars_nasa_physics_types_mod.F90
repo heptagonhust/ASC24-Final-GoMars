@@ -1,0 +1,174 @@
+module mars_nasa_physics_types_mod
+
+  use fiona
+  use const_mod
+  use process_mod
+  use namelist_mod
+  use latlon_interp_mod
+  use mars_nasa_namelist_mod
+  use physics_types_mod
+
+  implicit none
+
+  private
+
+  public mars_nasa_state_type
+  public mars_nasa_tend_type
+  public mars_nasa_static_type
+
+  type, extends(physics_state_type) :: mars_nasa_state_type
+    real(r8), allocatable, dimension(:) :: co2ice
+  contains
+    procedure :: init  => mars_nasa_state_init
+    procedure :: clear => mars_nasa_state_clear
+    final mars_nasa_state_final
+  end type mars_nasa_state_type
+
+  type, extends(physics_tend_type) :: mars_nasa_tend_type
+  contains
+    procedure :: init  => mars_nasa_tend_init
+    procedure :: clear => mars_nasa_tend_clear
+    final mars_nasa_tend_final
+  end type mars_nasa_tend_type
+
+  type, extends(physics_static_type) :: mars_nasa_static_type
+    real(r8), allocatable, dimension(:) :: sfc_tin        ! Surface thermal interial
+  contains
+    procedure :: init  => mars_nasa_static_init
+    procedure :: clear => mars_nasa_static_clear
+    procedure :: read  => mars_nasa_static_read
+    final mars_nasa_static_final
+  end type mars_nasa_static_type
+
+contains
+
+  subroutine mars_nasa_state_init(this, mesh)
+
+    class(mars_nasa_state_type), intent(inout) :: this
+    type(physics_mesh_type), intent(in), target :: mesh
+
+    call this%clear()
+
+    call this%physics_state_init(mesh)
+
+    allocate(this%co2ice(mesh%ncol))
+
+  end subroutine mars_nasa_state_init
+
+  subroutine mars_nasa_state_clear(this)
+
+    class(mars_nasa_state_type), intent(inout) :: this
+
+      if (allocated(this%co2ice)) deallocate(this%co2ice)
+
+      call this%physics_state_clear()
+
+  end subroutine mars_nasa_state_clear
+
+  subroutine mars_nasa_state_final(this)
+
+    type(mars_nasa_state_type), intent(inout) :: this
+
+    call this%clear()
+
+  end subroutine mars_nasa_state_final
+
+  subroutine mars_nasa_tend_init(this, mesh)
+
+    class(mars_nasa_tend_type), intent(inout) :: this
+    type(physics_mesh_type), intent(in), target :: mesh
+
+    call this%clear()
+
+    call this%physics_tend_init(mesh)
+
+  end subroutine mars_nasa_tend_init
+
+  subroutine mars_nasa_tend_clear(this)
+
+    class(mars_nasa_tend_type), intent(inout) :: this
+
+    call this%physics_tend_clear()
+
+  end subroutine mars_nasa_tend_clear
+
+  subroutine mars_nasa_tend_final(this)
+
+    type(mars_nasa_tend_type), intent(inout) :: this
+
+    call this%clear()
+
+  end subroutine mars_nasa_tend_final
+
+  subroutine mars_nasa_static_init(this, mesh)
+
+    class(mars_nasa_static_type), intent(inout) :: this
+    type(physics_mesh_type), intent(in), target :: mesh
+
+    call this%clear()
+
+    call this%physics_static_init(mesh)
+
+    allocate(this%sfc_tin(mesh%ncol))
+
+  end subroutine mars_nasa_static_init
+
+  subroutine mars_nasa_static_clear(this)
+
+    class(mars_nasa_static_type), intent(inout) :: this
+
+    if (allocated(this%sfc_tin)) deallocate(this%sfc_tin)
+
+    call this%physics_static_clear()
+
+  end subroutine mars_nasa_static_clear
+
+  subroutine mars_nasa_static_read(this, min_lon, max_lon, min_lat, max_lat)
+
+    class(mars_nasa_static_type), intent(inout) :: this
+    real(r8), intent(in) :: min_lon
+    real(r8), intent(in) :: max_lon
+    real(r8), intent(in) :: min_lat
+    real(r8), intent(in) :: max_lat
+
+    real(r8), allocatable :: lon(:)
+    real(r8), allocatable :: lat(:)
+    real(r8), allocatable :: array(:,:)
+
+    integer icol
+
+    ! Surface albedo
+    call fiona_open_dataset('alb', file_path=albedo_file, mpi_comm=proc%comm, ngroup=input_ngroup)
+    call fiona_set_dim('alb', 'lon', span=[0, 360], cyclic=.true.)
+    call fiona_set_dim('alb', 'lat', span=[-90, 90])
+    call fiona_start_input('alb')
+    call fiona_input_range('alb', 'lon', lon, coord_range=[min_lon, max_lon])
+    call fiona_input_range('alb', 'lat', lat, coord_range=[min_lat, max_lat])
+    call fiona_input_range('alb', 'albedo', array, coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_end_input('alb')
+    call latlon_interp_bilinear_column(lon, lat, array, this%mesh%lon, this%mesh%lat, this%sfc_alb)
+    deallocate(lon, lat, array)
+
+    ! Surface thermal inertia
+    call fiona_open_dataset('tin', file_path=thermal_inertia_file, mpi_comm=proc%comm, ngroup=input_ngroup)
+    call fiona_set_dim('tin', 'lon', span=[0, 360], cyclic=.true.)
+    call fiona_set_dim('tin', 'lat', span=[-90, 90])
+    call fiona_start_input('tin')
+    call fiona_input_range('tin', 'lon', lon, coord_range=[min_lon, max_lon])
+    call fiona_input_range('tin', 'lat', lat, coord_range=[min_lat, max_lat])
+    call fiona_input_range('tin', 'thin', array, coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
+    call fiona_end_input('tin')
+    call latlon_interp_bilinear_column(lon, lat, array, this%mesh%lon, this%mesh%lat, this%sfc_tin)
+    deallocate(lon, lat, array)
+
+  end subroutine mars_nasa_static_read
+
+  subroutine mars_nasa_static_final(this)
+
+    type(mars_nasa_static_type), intent(inout) :: this
+
+    call this%clear()
+
+  end subroutine mars_nasa_static_final
+
+end module mars_nasa_physics_types_mod

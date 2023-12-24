@@ -27,17 +27,15 @@ contains
 
     u0 = pi2 * radius / period
 
+    call tracer_add('solid_rotation', dt, 'q0', 'background tracer' )
+    call tracer_add('solid_rotation', dt, 'q1', 'cosine bell tracer')
+
   end subroutine solid_rotation_test_init
 
   subroutine solid_rotation_test_set_ic()
 
     integer iblk, i, j
     real(8) lon, lat, r, R0
-
-    call tracer_add('solid_rotation', dt, 'q0', 'background tracer' )
-    call tracer_add('solid_rotation', dt, 'q1', 'cosine bell tracer')
-
-    call tracer_allocate()
 
     R0 = radius / 3.0_r8
 

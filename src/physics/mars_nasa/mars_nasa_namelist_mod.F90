@@ -4,10 +4,17 @@ module mars_nasa_namelist_mod
 
   character(256) kcoef_file
   character(256) dust_optics_file
+  character(256) albedo_file
+  character(256) thermal_inertia_file
+
+  integer :: nlev_soil = 0
 
   namelist /mars_nasa_control/ &
     kcoef_file               , &
-    dust_optics_file
+    dust_optics_file         , &
+    albedo_file              , &
+    thermal_inertia_file     , &
+    nlev_soil
 
 contains
 

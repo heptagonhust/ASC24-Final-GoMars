@@ -23,11 +23,10 @@ module tracer_mod
 
   private
 
-  public tracer_init
+  public tracer_init_stage1
+  public tracer_init_stage2
   public tracer_final
   public tracer_add
-  public tracer_add_moist
-  public tracer_allocate
   public tracer_get_idx
   public tracer_calc_qm
   public tracer_fill_negative_values
@@ -50,11 +49,12 @@ module tracer_mod
   public tracer_long_names
   public tracer_units
   public tracer_types
+  public tracers_type
   public tracers
 
 contains
 
-  subroutine tracer_init()
+  subroutine tracer_init_stage1()
 
     integer iblk
 
@@ -73,7 +73,25 @@ contains
       call tracers(iblk)%init_stage1(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
     end do
 
-  end subroutine tracer_init
+  end subroutine tracer_init_stage1
+
+  subroutine tracer_init_stage2()
+
+    integer iblk, i
+
+    if (ntracers == 0) return
+
+    ! Allocate tracer arrays for each block.
+    do iblk = 1, size(blocks)
+      call tracers(iblk)%init_stage2(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
+    end do
+
+    do iblk = 1, size(blocks)
+      ! Allocate physics tendency arrays for dynamics.
+      call blocks(iblk)%aux%init_phys(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
+    end do
+
+  end subroutine tracer_init_stage2
 
   subroutine tracer_final()
 
@@ -103,20 +121,6 @@ contains
     if (allocated(tracers          )) deallocate(tracers          )
 
   end subroutine tracer_final
-
-  subroutine tracer_add_moist()
-
-      call tracer_add('moist', dt_adv, 'qv', 'water vapor' , 'kg kg-1', type=0)
-    if (mp_scheme /= 'N/A') then
-      call tracer_add('moist', dt_adv, 'qc', 'cloud liquid', 'kg kg-1', type=0)
-      call tracer_add('moist', dt_adv, 'qi', 'cloud ice'   , 'kg kg-1', type=0)
-      call tracer_add('moist', dt_adv, 'qr', 'rain'        , 'kg kg-1', type=0)
-      call tracer_add('moist', dt_adv, 'qs', 'snow'        , 'kg kg-1', type=0)
-      call tracer_add('moist', dt_adv, 'qg', 'graupel'     , 'kg kg-1', type=0)
-      call tracer_add('moist', dt_adv, 'qh', 'hail'        , 'kg kg-1', type=0)
-    end if
-
-  end subroutine tracer_add_moist
 
   subroutine tracer_add(batch_name, dt, name, long_name, units, type)
 
@@ -150,56 +154,33 @@ contains
     if (present(units)) tracer_units(ntracers) = units
     if (present(type)) tracer_types(ntracers) = type
 
-  end subroutine tracer_add
-
-  subroutine tracer_allocate()
-
-    integer iblk, i
-
-    if (ntracers == 0) return
-
-    ! Allocate tracer arrays for each block.
-    do iblk = 1, size(blocks)
-      call tracers(iblk)%init_stage2(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
-    end do
-
     ! Set tracer indices.
-    do i = 1, ntracers
-      select case (tracer_names(i))
-      case ('qv', 'Q')
-        idx_qv    = i; ntracers_water = ntracers_water + 1
-      case ('qc', 'CLDLIQ')
-        idx_qc    = i; ntracers_water = ntracers_water + 1
-      case ('nc', 'NUMLIQ')
-        idx_nc    = i
-      case ('qi', 'CLDICE')
-        idx_qi    = i; ntracers_water = ntracers_water + 1
-      case ('ni', 'NUMICE')
-        idx_ni    = i
-      case ('qr', 'RAINQM')
-        idx_qr    = i; ntracers_water = ntracers_water + 1
-      case ('qs', 'SNOWQM')
-        idx_qs    = i; ntracers_water = ntracers_water + 1
-      case ('qg')
-        idx_qg    = i; ntracers_water = ntracers_water + 1
-      case ('qh')
-        idx_qh    = i; ntracers_water = ntracers_water + 1
-      case ('qo3')
-        idx_qo3   = i
-      case ('qso2', 'SO2')
-        idx_qso2  = i
-      end select
-    end do
+    select case (name)
+    case ('qv', 'Q')
+      idx_qv    = ntracers; ntracers_water = ntracers_water + 1
+    case ('qc', 'CLDLIQ')
+      idx_qc    = ntracers; ntracers_water = ntracers_water + 1
+    case ('nc', 'NUMLIQ')
+      idx_nc    = ntracers
+    case ('qi', 'CLDICE')
+      idx_qi    = ntracers; ntracers_water = ntracers_water + 1
+    case ('ni', 'NUMICE')
+      idx_ni    = ntracers
+    case ('qr', 'RAINQM')
+      idx_qr    = ntracers; ntracers_water = ntracers_water + 1
+    case ('qs', 'SNOWQM')
+      idx_qs    = ntracers; ntracers_water = ntracers_water + 1
+    case ('qg')
+      idx_qg    = ntracers; ntracers_water = ntracers_water + 1
+    case ('qh')
+      idx_qh    = ntracers; ntracers_water = ntracers_water + 1
+    case ('qo3')
+      idx_qo3   = ntracers
+    case ('qso2', 'SO2')
+      idx_qso2  = ntracers
+    end select
 
-    do iblk = 1, size(blocks)
-      ! Allocate tracer arrays in physics state and tendency.
-      call blocks(iblk)%pstate%init(blocks(iblk)%mesh)
-      call blocks(iblk)%ptend%init(blocks(iblk)%mesh)
-      ! Allocate physics tendency arrays for dynamics.
-      call blocks(iblk)%aux%init_phys(blocks(iblk)%filter_mesh, blocks(iblk)%filter_halo, blocks(iblk)%mesh, blocks(iblk)%halo)
-    end do
-
-  end subroutine tracer_allocate
+  end subroutine tracer_add
 
   pure integer function tracer_get_idx(name) result(res)
 

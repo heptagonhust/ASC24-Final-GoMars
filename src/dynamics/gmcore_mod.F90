@@ -74,49 +74,29 @@ contains
     integer, intent(in), optional :: comm
 
     call gmcore_init_stage0()
-    call gmcore_init_stage1(namelist_path, comm)
+    call gmcore_init_stage1(namelist_path)
     call gmcore_init_stage2(namelist_path)
     call gmcore_init_stage3()
 
   end subroutine gmcore_init
 
-  subroutine gmcore_init_stage0()
+  ! ============================================================================
+  ! Description:
+  !
+  !   This subroutine runs some basic initialization procedures, including setup
+  !   MPI environment and constants. Users can modify the constants after it.
+  ! ============================================================================
+
+  subroutine gmcore_init_stage0(comm)
+
+    integer, intent(in), optional :: comm
 
     call log_init()
     call gas_mixture_init(planet)
     call const_init(planet)
     call time_scheme_init()
     call time_init(dt_dyn)
-
-  end subroutine gmcore_init_stage0
-
-  subroutine gmcore_init_stage1(namelist_path, comm)
-
-    character(*), intent(in) :: namelist_path
-    integer, intent(in), optional :: comm
-
-    call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=lat_hw)
     call process_init(comm)
-    call process_create_blocks()
-    call damp_init()
-    call history_init_stage1()
-
-    associate (mesh => blocks(1)%mesh)
-    min_lon = mesh%full_lon_deg(mesh%full_ims)
-    max_lon = mesh%full_lon_deg(mesh%full_ime)
-    min_lat = mesh%full_lat_deg(max(mesh%full_jms, 1))
-    max_lat = mesh%full_lat_deg(min(mesh%full_jme, global_mesh%full_nlat))
-    end associate
-
-  end subroutine gmcore_init_stage1
-
-  subroutine gmcore_init_stage2(namelist_path)
-
-    character(*), intent(in) :: namelist_path
-
-    character(10) time_value, time_units
-    integer iblk
-    real(r8) seconds
 
     if (proc%is_root()) then
       print *, ''
@@ -130,15 +110,57 @@ contains
       print *, ''
     end if
 
+  end subroutine gmcore_init_stage0
+
+  ! ============================================================================
+  ! Description:
+  !
+  !   This subroutine creates blocks which include dynamics mesh, state, tend
+  !   objects. Users can prepare some surface static data, such as topography,
+  !   after it.
+  ! ============================================================================
+
+  subroutine gmcore_init_stage1(namelist_path)
+
+    character(*), intent(in) :: namelist_path
+
+    call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=lat_hw)
+    call process_create_blocks()
+    associate (mesh => blocks(1)%mesh)
+    min_lon = mesh%full_lon_deg(mesh%full_ims)
+    max_lon = mesh%full_lon_deg(mesh%full_ime)
+    min_lat = mesh%full_lat_deg(max(mesh%full_jms, 1))
+    max_lat = mesh%full_lat_deg(min(mesh%full_jme, global_mesh%full_nlat))
+    end associate
+    call history_init_stage1()
+    call damp_init()
+    call tracer_init_stage1()
+    call physics_init_stage1(namelist_path)
+
+  end subroutine gmcore_init_stage1
+
+  ! ============================================================================
+  ! Description:
+  !
+  !   This subroutine initialize vertical coordinate which may depend on the
+  !   topography. The tracers are also allocated, so users should already add
+  !   the necessary tracer species.
+  ! ============================================================================
+
+  subroutine gmcore_init_stage2(namelist_path)
+
+    character(*), intent(in) :: namelist_path
+
+    character(10) time_value, time_units
+    integer iblk
+    real(r8) seconds
+
     call vert_coord_init(namelist_path)
     call restart_init()
-    call tracer_init()
     call pgf_init()
     call interp_init()
     call operators_init()
-    call physics_init_stage1(namelist_path)
-    if (baroclinic .and. physics_suite /= 'cam' .and. test_case == 'N/A') call tracer_add_moist()
-    call tracer_allocate()
+    call tracer_init_stage2()
     call adv_init()
     call history_init_stage2()
 
@@ -174,9 +196,16 @@ contains
 
   end subroutine gmcore_init_stage2
 
+  ! ============================================================================
+  ! Description:
+  !
+  !   This subroutine runs some initializations that need to be after initial
+  !   conditions.
+  ! ============================================================================
+
   subroutine gmcore_init_stage3()
 
-    call physics_init_stage2()
+    call physics_init_stage3()
 
   end subroutine gmcore_init_stage3
 

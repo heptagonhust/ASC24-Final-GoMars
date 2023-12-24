@@ -82,9 +82,9 @@ contains
         voce              =pstate%vos            , & ! ?
         rthraten          =ptend%dptdt_rad       , & ! ?
         ysu_topdown_pblmix=ysu_topdown_pblmix    , &
-        ids=1, ide=pstate%ncol, jds=1, jde=1, kds=1, kde=pstate%nlev, &
-        ims=1, ime=pstate%ncol, jms=1, jme=1, kms=1, kme=pstate%nlev, &
-        its=1, ite=pstate%ncol, jts=1, jte=1, kts=1, kte=pstate%nlev  &
+        ids=1, ide=pstate%mesh%ncol, jds=1, jde=1, kds=1, kde=pstate%mesh%nlev, &
+        ims=1, ime=pstate%mesh%ncol, jms=1, jme=1, kms=1, kme=pstate%mesh%nlev, &
+        its=1, ite=pstate%mesh%ncol, jts=1, jte=1, kts=1, kte=pstate%mesh%nlev  &
         !ctopo             =...                , &
         !ctopo2            =...                , &
       )
