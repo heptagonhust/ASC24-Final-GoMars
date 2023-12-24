@@ -1,3 +1,15 @@
+! ==============================================================================
+! This file is part of GoMars since 2023.
+!
+! GoMars is a Martian general circulation model developed in Institute of
+! Atmospheric Physics (IAP), Chinese Academy of Sciences (CAS).
+!
+! GMCORE is a dynamical core for atmospheric model used in GoMars.
+!
+! GoMars and GMCORE are distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module mars_nasa_rad_mod
 
   use fiona
@@ -5,16 +17,22 @@ module mars_nasa_rad_mod
   use mars_nasa_namelist_mod
   use mars_nasa_spectra_mod
   use mars_nasa_optics_mod
+  use mars_nasa_solar_mod
 
   implicit none
 
-  integer               nlev_rad
-  integer               ntref          ! Number of reference temperature levels for K-coefficients
-  integer               npref          ! Number of reference pressure levels for K-coefficients
-  integer               nqref          ! Number of different water mixing ratios for K-coefficients that are now CO2 + H2O
-  integer               ngauss         ! Number of Gaussian quadrature points for K-coefficients
-  integer               npint          ! Number of Lagrange interpolated reference pressures for the CO2 K-coefficients
-  integer               nbin_dust      ! Number of dust particle size bins
+  private
+
+  public mars_nasa_rad_init
+  public mars_nasa_rad_final
+
+  integer nlev_rad
+  integer ntref     ! Number of reference temperature levels for K-coefficients
+  integer npref     ! Number of reference pressure levels for K-coefficients
+  integer nqref     ! Number of different water mixing ratios for K-coefficients that are now CO2 + H2O
+  integer ngauss    ! Number of Gaussian quadrature points for K-coefficients
+  integer npint     ! Number of Lagrange interpolated reference pressures for the CO2 K-coefficients
+  integer nbin_dust ! Number of dust particle size bins
   integer, parameter :: taumax    = 35 ! Maximum optical depth
 
   real(r8), parameter :: ray_p0   = 9.423e6_r8        ! Reference pressure for Rayleigh scattering (Pa)
@@ -33,7 +51,6 @@ module mars_nasa_rad_mod
   real(r8), allocatable, dimension(  :      ) :: logpint     ! Interpolated reference pressure for K-coefficients (logPa)
   real(r8), allocatable, dimension(      :  ) :: tauray_vis  ! Rayleigh scattering optical depth at each visible spectral interval
   real(r8), allocatable, dimension(      :,:) :: plnk_ir     ! Integrated Planck function lookup table at each IR spectral interval (W m-2 cm-1)
-  real(r8), allocatable, dimension(      :  ) :: sol_flx     ! Solar flux within each visible spectral interval at 1AU (W m-2)
 
 contains
 
@@ -50,16 +67,13 @@ contains
 
     call mars_nasa_spectra_init()
     call mars_nasa_optics_init(nlev_rad)
+    call mars_nasa_solar_init()
 
     call read_kcoef()
     call interp_kcoef()
 
     allocate(tauray_vis(spec_vis%n     ))
     allocate(plnk_ir   (spec_ir %n,8501))
-    allocate(sol_flx   (spec_vis%n     ))
-
-    ! Sum equals 1356 W m-2 (values from Wehrli, 1985)
-    sol_flx = [12.7_r8, 24.2_r8, 54.6_r8, 145.9_r8, 354.9_r8, 657.5_r8, 106.3_r8]
 
     do i = 1, spec_vis%n
       tauray_vis(i) = 8.7_r8 / g * (1.527_r8 * (1 + 0.013_r8 / spec_vis%wl(i)**2) / spec_vis%wl(i)**4) / (ray_p0 / 100)
@@ -81,7 +95,9 @@ contains
 
   subroutine mars_nasa_rad_final()
 
+    call mars_nasa_spectra_final()
     call mars_nasa_optics_final()
+    call mars_nasa_solar_final()
 
     if (allocated(tref          )) deallocate(tref          )
     if (allocated(pref          )) deallocate(pref          )
@@ -96,7 +112,6 @@ contains
     if (allocated(f0_ir         )) deallocate(f0_ir         )
     if (allocated(logpint       )) deallocate(logpint       )
     if (allocated(plnk_ir       )) deallocate(plnk_ir       )
-    if (allocated(sol_flx       )) deallocate(sol_flx       )
     if (allocated(tauray_vis    )) deallocate(tauray_vis    )
 
   end subroutine mars_nasa_rad_final

@@ -1,9 +1,23 @@
+! ==============================================================================
+! This file is part of GoMars since 2023.
+!
+! GoMars is a Martian general circulation model developed in Institute of
+! Atmospheric Physics (IAP), Chinese Academy of Sciences (CAS).
+!
+! GMCORE is a dynamical core for atmospheric model used in GoMars.
+!
+! GoMars and GMCORE are distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module mars_nasa_physics_driver_mod
 
+  use fiona
   use tracer_mod
   use mars_nasa_namelist_mod
   use mars_nasa_physics_types_mod
   use mars_nasa_objects_mod
+  use mars_nasa_orbit_mod
   use mars_nasa_rad_mod
 
   implicit none
@@ -44,13 +58,10 @@ contains
     integer iblk
 
     call mars_nasa_physics_driver_final()
-
     call mars_nasa_objects_init(nblk, ncol, nlev, lon, lat, area)
-
     call mars_nasa_parse_namelist(namelist_path)
-
     call mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat)
-
+    call mars_nasa_orbit_init()
     call mars_nasa_rad_init(nlev)
 
   end subroutine mars_nasa_physics_driver_init

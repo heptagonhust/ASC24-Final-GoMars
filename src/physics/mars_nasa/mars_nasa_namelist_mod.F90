@@ -1,3 +1,15 @@
+! ==============================================================================
+! This file is part of GoMars since 2023.
+!
+! GoMars is a Martian general circulation model developed in Institute of
+! Atmospheric Physics (IAP), Chinese Academy of Sciences (CAS).
+!
+! GMCORE is a dynamical core for atmospheric model used in GoMars.
+!
+! GoMars and GMCORE are distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module mars_nasa_namelist_mod
 
   implicit none

@@ -1,3 +1,15 @@
+! ==============================================================================
+! This file is part of GoMars since 2023.
+!
+! GoMars is a Martian general circulation model developed in Institute of
+! Atmospheric Physics (IAP), Chinese Academy of Sciences (CAS).
+!
+! GMCORE is a dynamical core for atmospheric model used in GoMars.
+!
+! GoMars and GMCORE are distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module mars_nasa_physics_types_mod
 
   use fiona
@@ -17,6 +29,7 @@ module mars_nasa_physics_types_mod
   public mars_nasa_static_type
 
   type, extends(physics_state_type) :: mars_nasa_state_type
+    real(r8), allocatable, dimension(:,:,:) :: tau
     real(r8), allocatable, dimension(:) :: co2ice
   contains
     procedure :: init  => mars_nasa_state_init
@@ -32,7 +45,9 @@ module mars_nasa_physics_types_mod
   end type mars_nasa_tend_type
 
   type, extends(physics_static_type) :: mars_nasa_static_type
-    real(r8), allocatable, dimension(:) :: sfc_tin        ! Surface thermal interial
+    ! The fact that Mars is now a desert planet without oceans and lakes means
+    ! that the thermal inertia of the surface is small.
+    real(r8), allocatable, dimension(:) :: sfc_tin        ! Surface thermal interia
   contains
     procedure :: init  => mars_nasa_static_init
     procedure :: clear => mars_nasa_static_clear
@@ -59,6 +74,7 @@ contains
 
     class(mars_nasa_state_type), intent(inout) :: this
 
+      if (allocated(this%tau   )) deallocate(this%tau   )
       if (allocated(this%co2ice)) deallocate(this%co2ice)
 
       call this%physics_state_clear()
