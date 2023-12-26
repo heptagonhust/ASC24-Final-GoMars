@@ -17,7 +17,7 @@ module mars_nasa_physics_driver_mod
   use mars_nasa_namelist_mod
   use mars_nasa_physics_types_mod
   use mars_nasa_objects_mod
-  use mars_nasa_orbit_mod
+  use mars_orbit_mod
   use mars_nasa_rad_mod
 
   implicit none
@@ -61,7 +61,7 @@ contains
     call mars_nasa_objects_init(nblk, ncol, nlev, lon, lat, area)
     call mars_nasa_parse_namelist(namelist_path)
     call mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat)
-    call mars_nasa_orbit_init()
+    call mars_orbit_init()
     call mars_nasa_rad_init(nlev)
 
   end subroutine mars_nasa_physics_driver_init

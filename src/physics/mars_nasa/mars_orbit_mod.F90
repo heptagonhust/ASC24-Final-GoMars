@@ -10,7 +10,7 @@
 ! WITHOUT ANY WARRANTY. You may contact authors for helping or cooperation.
 ! ==============================================================================
 
-module mars_nasa_orbit_mod
+module mars_orbit_mod
 
   use const_mod
 
@@ -18,32 +18,35 @@ module mars_nasa_orbit_mod
 
   private
 
-  public mars_nasa_orbit_init
+  public mars_orbit_init
   public solar_dist
   public solar_decl
 
   ! Convert Mkm to AU
-  real(r8), parameter :: au       = 1.0_r8 / 149.597927_r8
+  real(r8), parameter :: au        = 1.0_r8 / 149.597927_r8
   ! Aphelion Sun-Mars distance (Mkm)
-  real(r8), parameter :: aphe     = 249.22_r8
+  real(r8), parameter :: raphe     = 249.22_r8
   ! Perihelion Sun-Mars distance (Mkm)
-  real(r8), parameter :: peri     = 206.66_r8
+  real(r8), parameter :: rperi     = 206.66_r8
   ! Obliquity (deg)
-  real(r8), parameter :: obliq    = 25.19_r8
+  real(r8), parameter :: obliq     = 25.19_r8 * rad
+  real(r8), parameter :: sin_obliq = sin(obliq)
   ! Eccentricity (rad)
-  real(r8), parameter :: eccen    = (aphe - peri) / (aphe + peri)
+  real(r8), parameter :: eccen     = (raphe - rperi) / (raphe + rperi)
   ! Semimajor axis (AU)
-  real(r8), parameter :: semia    = 0.5_r8 * (aphe + peri) * (1 - eccen**2) * au
+  real(r8), parameter :: semia     = rperi / (1 - eccen) * au
+  ! Semi-laus rectum
+  real(r8), parameter :: pelip     = 0.5_r8 * (raphe + rperi) * (1 - eccen**2) * au
   ! Sol day per Martian year
-  real(r8), parameter :: year_sol = 669
+  real(r8), parameter :: year_sol  = 669
   ! Sol day at perihelion
-  real(r8), parameter :: peri_sol = 485
+  real(r8), parameter :: peri_sol  = 485
   ! Difference of solar longiutde between Ls~0 and perihelion (rad)
   real(r8) peri_dls
 
 contains
 
-  subroutine mars_nasa_orbit_init()
+  subroutine mars_orbit_init()
 
     real(r8) A, E
 
@@ -54,7 +57,7 @@ contains
 
     peri_dls = 2 * atan(sqrt((1 + eccen) / (1 - eccen)) * tan(E / 2.0_r8)) ! Gauss' equation
 
-  end subroutine mars_nasa_orbit_init
+  end subroutine mars_orbit_init
 
   pure real(r8) function eccen_anomaly(ls) result(E)
 
@@ -76,7 +79,7 @@ contains
 
     real(r8), intent(in) :: ls ! Solar longitude (rad)
 
-    res = semia / (1 + eccen * cos(eccen_anomaly(ls + peri_dls)))
+    res = semia * (1 - eccen * cos(eccen_anomaly(ls + peri_dls)))
 
   end function solar_dist
 
@@ -84,8 +87,8 @@ contains
 
     real(r8), intent(in) :: ls ! Solar longitude (rad)
 
-    res = asin(sin(ls) * sin(obliq * rad))
+    res = asin(sin(ls) * sin_obliq)
 
   end function solar_decl
 
-end module mars_nasa_orbit_mod
+end module mars_orbit_mod

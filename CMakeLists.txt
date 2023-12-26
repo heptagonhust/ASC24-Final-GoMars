@@ -256,7 +256,6 @@ set(gmcore_files
   src/meshes/latlon/latlon_parallel_mod.F90
   src/meshes/latlon/latlon_decomp_mod.F90
   src/meshes/latlon/latlon_interp_mod.F90
-  src/physics/albedo_mod.F90
   src/physics/dp_coupling_mod.F90
   # src/physics/mars/mars_cnv_nasa_mod.F90
   # src/physics/mars/mars_co2cyc_nasa_mod.F90
@@ -279,7 +278,7 @@ set(gmcore_files
   src/physics/mars_nasa/mars_nasa_namelist_mod.F90
   src/physics/mars_nasa/mars_nasa_physics_types_mod.F90
   src/physics/mars_nasa/mars_nasa_objects_mod.F90
-  src/physics/mars_nasa/mars_nasa_orbit_mod.F90
+  src/physics/mars_nasa/mars_orbit_mod.F90
   src/physics/mars_nasa/mars_nasa_spectra_mod.F90
   src/physics/mars_nasa/mars_nasa_optics_mod.F90
   src/physics/mars_nasa/mars_nasa_solar_mod.F90
