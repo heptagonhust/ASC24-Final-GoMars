@@ -88,6 +88,7 @@ contains
     allocate(this%dwn(n  ))
     allocate(this%bwn(n+1))
 
+    this%n = n
     this%bwn = bwn
     do i = 1, n
       this%wn(i) = 0.5_r8 * (bwn(i) + bwn(i+1))
@@ -101,6 +102,7 @@ contains
 
     class(spectra_type), intent(inout) :: this
 
+    this%n = 0
     if (allocated(this%wn )) deallocate(this%wn )
     if (allocated(this%wl )) deallocate(this%wl )
     if (allocated(this%dwn)) deallocate(this%dwn)
