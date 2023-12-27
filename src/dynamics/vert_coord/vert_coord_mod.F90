@@ -30,30 +30,44 @@ module vert_coord_mod
   public hyai, hybi, hyam, hybm, nlevp
 
   interface
-    pure real(r8) function vert_coord_calc_mg_interface(k, mgs, ref_ps_perb)
+    pure real(r8) function calc_mg_interface(k, mgs, ref_ps_perb)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: mgs
       real(r8), intent(in), optional :: ref_ps_perb
-    end function vert_coord_calc_mg_interface
+    end function calc_mg_interface
 
-    pure real(r8) function vert_coord_calc_mg_lev_interface(k, mgs, ref_ps_perb)
+    pure real(r8) function calc_mg_lev_interface(k, mgs, ref_ps_perb)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: mgs
       real(r8), intent(in), optional :: ref_ps_perb
-    end function vert_coord_calc_mg_lev_interface
+    end function calc_mg_lev_interface
 
-    pure real(r8) function vert_coord_calc_dmgdt_lev_interface(k, dmgsdt)
+    pure real(r8) function calc_dmgdt_interface(k, dmgsdt)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: dmgsdt
-    end function vert_coord_calc_dmgdt_lev_interface
+    end function calc_dmgdt_interface
+
+    pure real(r8) function calc_dmgdt_lev_interface(k, dmgsdt)
+      import r8
+      integer, intent(in) :: k
+      real(r8), intent(in) :: dmgsdt
+    end function calc_dmgdt_lev_interface
+
+    pure real(r8) function calc_ddmgdt_interface(k, dmgsdt)
+      import r8
+      integer, intent(in) :: k
+      real(r8), intent(in) :: dmgsdt
+    end function calc_ddmgdt_interface
   end interface
 
-  procedure(vert_coord_calc_mg_interface), pointer :: vert_coord_calc_mg
-  procedure(vert_coord_calc_mg_lev_interface), pointer :: vert_coord_calc_mg_lev
-  procedure(vert_coord_calc_dmgdt_lev_interface), pointer :: vert_coord_calc_dmgdt_lev
+  procedure(calc_mg_interface       ), pointer :: vert_coord_calc_mg
+  procedure(calc_mg_lev_interface   ), pointer :: vert_coord_calc_mg_lev
+  procedure(calc_dmgdt_interface    ), pointer :: vert_coord_calc_dmgdt
+  procedure(calc_dmgdt_lev_interface), pointer :: vert_coord_calc_dmgdt_lev
+  procedure(calc_ddmgdt_interface   ), pointer :: vert_coord_calc_ddmgdt
 
 contains
 
@@ -83,19 +97,25 @@ contains
     select case (vert_coord_scheme)
     case ('sigma')
       call sigma_coord_init(namelist_file, vert_coord_template)
-      vert_coord_calc_mg => sigma_coord_calc_mg
-      vert_coord_calc_mg_lev => sigma_coord_calc_mg_lev
+      vert_coord_calc_mg        => sigma_coord_calc_mg
+      vert_coord_calc_mg_lev    => sigma_coord_calc_mg_lev
+      vert_coord_calc_dmgdt     => sigma_coord_calc_dmgdt
       vert_coord_calc_dmgdt_lev => sigma_coord_calc_dmgdt_lev
+      vert_coord_calc_ddmgdt    => sigma_coord_calc_ddmgdt
     case ('hybrid')
       call hybrid_coord_init(namelist_file, vert_coord_template)
-      vert_coord_calc_mg => hybrid_coord_calc_mg
-      vert_coord_calc_mg_lev => hybrid_coord_calc_mg_lev
+      vert_coord_calc_mg        => hybrid_coord_calc_mg
+      vert_coord_calc_mg_lev    => hybrid_coord_calc_mg_lev
+      vert_coord_calc_dmgdt     => hybrid_coord_calc_dmgdt
       vert_coord_calc_dmgdt_lev => hybrid_coord_calc_dmgdt_lev
+      vert_coord_calc_ddmgdt    => hybrid_coord_calc_ddmgdt
     case ('smooth')
       call smooth_coord_init()
-      vert_coord_calc_mg => smooth_coord_calc_mg
-      vert_coord_calc_mg_lev => smooth_coord_calc_mg_lev
+      vert_coord_calc_mg        => smooth_coord_calc_mg
+      vert_coord_calc_mg_lev    => smooth_coord_calc_mg_lev
+      vert_coord_calc_dmgdt     => smooth_coord_calc_dmgdt
       vert_coord_calc_dmgdt_lev => smooth_coord_calc_dmgdt_lev
+      vert_coord_calc_ddmgdt    => smooth_coord_calc_ddmgdt
     case default
       call log_error('Invalid vert_coord_scheme: ' // trim(vert_coord_scheme) // '!')
     end select

@@ -13,7 +13,9 @@ module smooth_coord_mod
   public smooth_coord_final
   public smooth_coord_calc_mg
   public smooth_coord_calc_mg_lev
+  public smooth_coord_calc_dmgdt
   public smooth_coord_calc_dmgdt_lev
+  public smooth_coord_calc_ddmgdt
   public nlevp
 
   real(r8), parameter :: eta_b = 0.2_r8
@@ -110,6 +112,15 @@ contains
 
   end function smooth_coord_calc_mg_lev
 
+  pure real(r8) function smooth_coord_calc_dmgdt(k, dmgsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dmgsdt
+
+    res = bm(k) * dmgsdt
+
+  end function smooth_coord_calc_dmgdt
+
   pure real(r8) function smooth_coord_calc_dmgdt_lev(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
@@ -118,5 +129,14 @@ contains
     res = bi(k) * dmgsdt
 
   end function smooth_coord_calc_dmgdt_lev
+
+  pure real(r8) function smooth_coord_calc_ddmgdt(k, dmgsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dmgsdt
+
+    res = (bi(k+1) - bi(k)) * dmgsdt
+
+  end function smooth_coord_calc_ddmgdt
 
 end module smooth_coord_mod

@@ -12,8 +12,8 @@
 
 module mars_nasa_objects_mod
 
-  use const_mod
   use physics_mesh_mod
+  use mars_nasa_const_mod
   use mars_nasa_physics_types_mod
 
   implicit none
@@ -67,18 +67,19 @@ contains
 
   end subroutine mars_nasa_objects_final
 
-  subroutine mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat)
+  subroutine mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat, input_ngroup)
 
     real(r8), intent(in) :: min_lon
     real(r8), intent(in) :: max_lon
     real(r8), intent(in) :: min_lat
     real(r8), intent(in) :: max_lat
+    integer , intent(in) :: input_ngroup
 
     integer iblk
 
     if (allocated(objects)) then
       do iblk = 1, size(objects)
-        call objects(iblk)%static%read(min_lon, max_lon, min_lat, max_lat)
+        call objects(iblk)%static%read(min_lon, max_lon, min_lat, max_lat, input_ngroup)
       end do
     end if
 

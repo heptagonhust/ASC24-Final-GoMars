@@ -14,6 +14,7 @@ module mars_nasa_physics_driver_mod
 
   use datetime
   use tracer_mod
+  use mars_nasa_const_mod
   use mars_nasa_namelist_mod
   use mars_nasa_physics_types_mod
   use mars_nasa_physics_output_mod
@@ -41,7 +42,7 @@ contains
 
   subroutine mars_nasa_physics_driver_init(namelist_path, nblk, &
       ncol, nlev, lon, lat, area, dt_adv, dt_phys, min_lon, max_lon, &
-      min_lat, max_lat)
+      min_lat, max_lat, input_ngroup)
 
     character(*), intent(in) :: namelist_path
     integer , intent(in) :: nblk
@@ -56,11 +57,19 @@ contains
     real(r8), intent(in) :: max_lon
     real(r8), intent(in) :: min_lat
     real(r8), intent(in) :: max_lat
+    integer , intent(in) :: input_ngroup
+
+    call tracer_add('mars', dt_adv, 'qm_dst', 'Dust mass mixing ratio'           , 'kg kg-1'); idx_m_dst = ntracers
+    call tracer_add('mars', dt_adv, 'qn_dst', 'Dust number mixing ratio'         , 'kg-1'   ); idx_n_dst = ntracers
+    call tracer_add('mars', dt_adv, 'qm_vap', 'Water vapor mass mixing ratio'    , 'kg kg-1'); idx_m_vap = ntracers
+    call tracer_add('mars', dt_adv, 'qm_cld', 'Cloud droplet mass mixing ratio'  , 'kg kg-1'); idx_m_cld = ntracers
+    call tracer_add('mars', dt_adv, 'qn_cld', 'Cloud droplet number mixing ratio', 'kg-1'   ); idx_n_cld = ntracers
+    call tracer_add('mars', dt_adv, 'qm_ccn', 'CCN mass mixing ratio'            , 'kg kg-1'); idx_m_ccn = ntracers
 
     call mars_nasa_physics_driver_final()
     call mars_nasa_objects_init(nblk, ncol, nlev, lon, lat, area)
     call mars_nasa_parse_namelist(namelist_path)
-    call mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat)
+    call mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat, input_ngroup)
     call mars_orbit_init()
     call mars_nasa_rad_init(nlev)
 

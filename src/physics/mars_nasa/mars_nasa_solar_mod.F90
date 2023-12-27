@@ -12,7 +12,7 @@
 
 module mars_nasa_solar_mod
 
-  use const_mod
+  use mars_nasa_const_mod
   use mars_nasa_spectra_mod
   use mars_nasa_objects_mod
   use mars_orbit_mod

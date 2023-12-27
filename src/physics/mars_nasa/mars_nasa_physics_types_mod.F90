@@ -13,12 +13,11 @@
 module mars_nasa_physics_types_mod
 
   use fiona
-  use const_mod
   use process_mod
-  use namelist_mod
   use latlon_interp_mod
-  use mars_nasa_namelist_mod
   use physics_types_mod
+  use mars_nasa_const_mod
+  use mars_nasa_namelist_mod
 
   implicit none
 
@@ -140,13 +139,14 @@ contains
 
   end subroutine mars_nasa_static_clear
 
-  subroutine mars_nasa_static_read(this, min_lon, max_lon, min_lat, max_lat)
+  subroutine mars_nasa_static_read(this, min_lon, max_lon, min_lat, max_lat, input_ngroup)
 
     class(mars_nasa_static_type), intent(inout) :: this
     real(r8), intent(in) :: min_lon
     real(r8), intent(in) :: max_lon
     real(r8), intent(in) :: min_lat
     real(r8), intent(in) :: max_lat
+    integer , intent(in) :: input_ngroup
 
     real(r8), allocatable :: lon(:)
     real(r8), allocatable :: lat(:)

@@ -12,7 +12,7 @@
 
 module mars_nasa_spectra_mod
 
-  use const_mod
+  use mars_nasa_const_mod
 
   implicit none
 

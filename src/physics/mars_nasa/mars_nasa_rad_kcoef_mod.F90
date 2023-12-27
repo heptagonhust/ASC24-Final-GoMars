@@ -13,7 +13,7 @@
 module mars_nasa_rad_kcoef_mod
 
   use fiona
-  use const_mod
+  use mars_nasa_const_mod
   use mars_nasa_namelist_mod
   use mars_nasa_spectra_mod
 

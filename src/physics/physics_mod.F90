@@ -281,6 +281,8 @@ contains
 
     character(3) :: dims(2) = ['lon', 'lat']
 
+    if (physics_suite == 'N/A') return
+
     call fiona_add_var('h0', 'alb' , long_name='Surface albedo'              , units='', dim_names=dims, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'cosz', long_name='Cosine of solar zenith angle', units='', dim_names=dims, dtype=output_h0_dtype)
 
@@ -299,6 +301,8 @@ contains
     class(physics_static_type), pointer :: static => null()
     integer is, ie, js, je, ks, ke
     integer start(3), count(3)
+
+    if (physics_suite == 'N/A') return
 
     is = block%mesh%full_ids; ie = block%mesh%full_ide
     js = block%mesh%full_jds; je = block%mesh%full_jde

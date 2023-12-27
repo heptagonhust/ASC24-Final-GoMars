@@ -24,7 +24,9 @@ module sigma_coord_mod
   public sigma_coord_final
   public sigma_coord_calc_mg
   public sigma_coord_calc_mg_lev
+  public sigma_coord_calc_dmgdt
   public sigma_coord_calc_dmgdt_lev
+  public sigma_coord_calc_ddmgdt
 
   real(r8), allocatable, dimension(:) :: sigi
   real(r8), allocatable, dimension(:) :: sig
@@ -104,6 +106,15 @@ contains
 
   end function sigma_coord_calc_mg_lev
 
+  pure real(r8) function sigma_coord_calc_dmgdt(k, dmgsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dmgsdt
+
+    res = sig(k) * dmgsdt
+
+  end function sigma_coord_calc_dmgdt
+
   pure real(r8) function sigma_coord_calc_dmgdt_lev(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
@@ -112,6 +123,15 @@ contains
     res = sigi(k) * dmgsdt
 
   end function sigma_coord_calc_dmgdt_lev
+
+  pure real(r8) function sigma_coord_calc_ddmgdt(k, dmgsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dmgsdt
+
+    res = (sigi(k+1) - sigi(k)) * dmgsdt
+
+  end function sigma_coord_calc_ddmgdt
 
   subroutine sigma_coord_test_l26(ptop, sigi, sig)
 

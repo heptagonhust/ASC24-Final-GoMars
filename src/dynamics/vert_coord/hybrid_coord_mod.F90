@@ -27,7 +27,9 @@ module hybrid_coord_mod
   public hybrid_coord_final
   public hybrid_coord_calc_mg
   public hybrid_coord_calc_mg_lev
+  public hybrid_coord_calc_dmgdt
   public hybrid_coord_calc_dmgdt_lev
+  public hybrid_coord_calc_ddmgdt
   public hyai, hybi, hyam, hybm
 
   real(r8), allocatable, target, dimension(:) :: hyai
@@ -159,6 +161,15 @@ contains
 
   end function hybrid_coord_calc_mg_lev
 
+  pure real(r8) function hybrid_coord_calc_dmgdt(k, dmgsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dmgsdt
+
+    res = hybm(k) * dmgsdt
+
+  end function hybrid_coord_calc_dmgdt
+
   pure real(r8) function hybrid_coord_calc_dmgdt_lev(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
@@ -167,5 +178,14 @@ contains
     res = hybi(k) * dmgsdt
 
   end function hybrid_coord_calc_dmgdt_lev
+
+  pure real(r8) function hybrid_coord_calc_ddmgdt(k, dmgsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dmgsdt
+
+    res = (hybi(k+1) - hybi(k)) * dmgsdt
+
+  end function hybrid_coord_calc_ddmgdt
 
 end module hybrid_coord_mod
