@@ -25,6 +25,21 @@ module mars_nasa_optics_mod
   public dust_vis
   public dust_ir
 
+
+  ! Absorption coefficient (m-1): βa
+  !
+  ! Scattering coefficient (m-1): βs
+  !
+  ! Volume extinction coefficient (m-1): βe = βa + βs
+  !
+  ! Single scattering albedo (1): ω = βs / βe
+  !
+  ! Optical depth (1): τ(s1,s2) = ∫ βe(s) ds from s1 to s2
+  !
+  ! Transmittance (1): t(s1,s2) = exp(-τ(s1,s2))
+  !
+  ! Mass extinction coefficient: ke = βe / ρ
+
   type optics_type
     integer :: nbin  = 0
     integer :: nspec = 0
