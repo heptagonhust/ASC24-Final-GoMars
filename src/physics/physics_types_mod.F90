@@ -25,24 +25,54 @@ module physics_types_mod
 
   type, abstract :: physics_state_type
     type(physics_mesh_type), pointer :: mesh => null()
-    real(r8), allocatable, dimension(:,:  ) :: u      ! U-wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:  ) :: v      ! V-wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:  ) :: t      ! Temperature (K)
-    real(r8), allocatable, dimension(:,:,:) :: q      ! Tracer mixing ratio (moist)
-    real(r8), allocatable, dimension(:,:  ) :: p      ! Full pressure (hydrostatic) on full level (Pa)
-    real(r8), allocatable, dimension(:,:  ) :: p_lev  ! Full pressure (hydrostatic) on half level (Pa)
-    real(r8), allocatable, dimension(:,:  ) :: pk     ! Exner function of full pressure (hydrostatic) on full level
-    real(r8), allocatable, dimension(:,:  ) :: pk_lev ! Exner function of full pressure (hydrostatic) on half levels
-    real(r8), allocatable, dimension(:,:  ) :: dp     ! Full pressure thickness (Pa)
-    real(r8), allocatable, dimension(:,:  ) :: omg    ! Vertical pressure velocity (Pa s-1)
-    real(r8), allocatable, dimension(:,:  ) :: z      ! Height on full levels
-    real(r8), allocatable, dimension(:,:  ) :: z_lev  ! Height on half levels
-    real(r8), allocatable, dimension(:,:  ) :: dz     ! Height thickness on full levels
-    real(r8), allocatable, dimension(:,:  ) :: rho    ! Air density
-    real(r8), allocatable, dimension(:    ) :: ps     ! Surface pressure (Pa)
-    real(r8), allocatable, dimension(:    ) :: ts     ! Surface temperature (K)
-    real(r8), allocatable, dimension(:    ) :: wsb    ! Wind speed on lowest model level (m s-1)
-    real(r8), allocatable, dimension(:    ) :: ustar  ! u* in similarity theory (m s-1)
+    ! U-wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: u
+    ! V-wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:  ) :: v
+    ! Air temperature (K)
+    real(r8), allocatable, dimension(:,:  ) :: t
+    ! Tracer mixing ratio (moist)
+    real(r8), allocatable, dimension(:,:,:) :: q
+    ! Full pressure (hydrostatic) on full level (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: p
+    ! Full pressure (hydrostatic) on half level (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: p_lev
+    ! Exner function of full pressure (hydrostatic) on full level
+    real(r8), allocatable, dimension(:,:  ) :: pk
+    ! Exner function of full pressure (hydrostatic) on half levels
+    real(r8), allocatable, dimension(:,:  ) :: pk_lev
+    ! Full pressure thickness (Pa)
+    real(r8), allocatable, dimension(:,:  ) :: dp
+    ! Vertical pressure velocity (Pa s-1)
+    real(r8), allocatable, dimension(:,:  ) :: omg
+    ! Height on full levels (m)
+    real(r8), allocatable, dimension(:,:  ) :: z
+    ! Height on half levels (m)
+    real(r8), allocatable, dimension(:,:  ) :: z_lev
+    ! Height thickness on full levels (m)
+    real(r8), allocatable, dimension(:,:  ) :: dz
+    ! Air density (kg m-3)
+    real(r8), allocatable, dimension(:,:  ) :: rho
+    ! Surface pressure (hydrostatic) (Pa)
+    real(r8), allocatable, dimension(:    ) :: ps
+    ! Surface temperature (K)
+    real(r8), allocatable, dimension(:    ) :: ts
+    ! Wind speed on lowest model level (m s-1)
+    real(r8), allocatable, dimension(:    ) :: wsp_bot
+    ! u* in similarity theory (m s-1)
+    real(r8), allocatable, dimension(:    ) :: ustar
+    ! Surface albedo
+    real(r8), allocatable, dimension(:    ) :: alb
+    ! Cosine of solar zenith angle
+    real(r8), allocatable, dimension(:    ) :: cosz
+    ! Downward solar shortwave flux on the top of atmosphere (W m-2)
+    real(r8), allocatable, dimension(:    ) :: fdntoa
+    ! Direct downward solar shortwave flux on the surface (W m-2)
+    real(r8), allocatable, dimension(:    ) :: fdns_dir
+    ! Diffusive downward solar shortwave flux on the surface (W m-2)
+    real(r8), allocatable, dimension(:    ) :: fdns_dif
+    ! Downward solar shortwave flux on the surface (W m-2)
+    real(r8), allocatable, dimension(:    ) :: fdns
   contains
     procedure physics_state_init
     procedure physics_state_clear
@@ -67,8 +97,10 @@ module physics_types_mod
 
   type, abstract :: physics_static_type
     type(physics_mesh_type), pointer :: mesh => null()
-    real(r8), allocatable, dimension(:) :: z0      ! Surface roughness length (m)
-    real(r8), allocatable, dimension(:) :: sfc_alb ! Surface albedo
+    ! Surface roughness length (m)
+    real(r8), allocatable, dimension(:) :: z0
+    ! Surface albedo
+    real(r8), allocatable, dimension(:) :: alb
   contains
     procedure physics_static_init
     procedure physics_static_clear
@@ -101,8 +133,14 @@ contains
     allocate(this%rho       (mesh%ncol,mesh%nlev         ))
     allocate(this%ps        (mesh%ncol                   ))
     allocate(this%ts        (mesh%ncol                   ))
-    allocate(this%wsb       (mesh%ncol                   ))
+    allocate(this%wsp_bot   (mesh%ncol                   ))
     allocate(this%ustar     (mesh%ncol                   ))
+    allocate(this%alb       (mesh%ncol                   ))
+    allocate(this%cosz      (mesh%ncol                   ))
+    allocate(this%fdntoa    (mesh%ncol                   ))
+    allocate(this%fdns_dir  (mesh%ncol                   ))
+    allocate(this%fdns_dif  (mesh%ncol                   ))
+    allocate(this%fdns      (mesh%ncol                   ))
 
   end subroutine physics_state_init
 
@@ -128,8 +166,14 @@ contains
     if (allocated(this%rho      )) deallocate(this%rho      )
     if (allocated(this%ps       )) deallocate(this%ps       )
     if (allocated(this%ts       )) deallocate(this%ts       )
-    if (allocated(this%wsb      )) deallocate(this%wsb      )
+    if (allocated(this%wsp_bot  )) deallocate(this%wsp_bot  )
     if (allocated(this%ustar    )) deallocate(this%ustar    )
+    if (allocated(this%alb      )) deallocate(this%alb      )
+    if (allocated(this%cosz     )) deallocate(this%cosz     )
+    if (allocated(this%fdntoa   )) deallocate(this%fdntoa   )
+    if (allocated(this%fdns_dir )) deallocate(this%fdns_dir )
+    if (allocated(this%fdns_dif )) deallocate(this%fdns_dif )
+    if (allocated(this%fdns     )) deallocate(this%fdns     )
 
   end subroutine physics_state_clear
 
@@ -187,7 +231,7 @@ contains
     this%mesh => mesh
 
     allocate(this%z0     (mesh%ncol))
-    allocate(this%sfc_alb(mesh%ncol))
+    allocate(this%alb    (mesh%ncol))
 
   end subroutine physics_static_init
 
@@ -197,7 +241,7 @@ contains
 
     this%mesh => null()
     if (allocated(this%z0     )) deallocate(this%z0     )
-    if (allocated(this%sfc_alb)) deallocate(this%sfc_alb)
+    if (allocated(this%alb    )) deallocate(this%alb    )
 
   end subroutine physics_static_clear
 

@@ -29,7 +29,7 @@ module mars_nasa_physics_types_mod
   public mars_nasa_static_type
 
   type, extends(physics_state_type) :: mars_nasa_state_type
-    real(r8), allocatable, dimension(:,:,:) :: tau
+    real(r8), allocatable, dimension(:,:,:,:) :: tau
     real(r8), allocatable, dimension(:) :: co2ice
   contains
     procedure :: init  => mars_nasa_state_init
@@ -47,7 +47,8 @@ module mars_nasa_physics_types_mod
   type, extends(physics_static_type) :: mars_nasa_static_type
     ! The fact that Mars is now a desert planet without oceans and lakes means
     ! that the thermal inertia of the surface is small.
-    real(r8), allocatable, dimension(:) :: sfc_tin        ! Surface thermal interia
+    ! Surface thermal interia
+    real(r8), allocatable, dimension(:) :: tin
   contains
     procedure :: init  => mars_nasa_static_init
     procedure :: clear => mars_nasa_static_clear
@@ -64,9 +65,9 @@ contains
 
     call this%clear()
 
-    call this%physics_state_init(mesh)
-
     allocate(this%co2ice(mesh%ncol))
+
+    call this%physics_state_init(mesh)
 
   end subroutine mars_nasa_state_init
 
@@ -125,7 +126,7 @@ contains
 
     call this%physics_static_init(mesh)
 
-    allocate(this%sfc_tin(mesh%ncol))
+    allocate(this%tin(mesh%ncol))
 
   end subroutine mars_nasa_static_init
 
@@ -133,7 +134,7 @@ contains
 
     class(mars_nasa_static_type), intent(inout) :: this
 
-    if (allocated(this%sfc_tin)) deallocate(this%sfc_tin)
+    if (allocated(this%tin)) deallocate(this%tin)
 
     call this%physics_static_clear()
 
@@ -158,11 +159,11 @@ contains
     call fiona_set_dim('alb', 'lon', span=[0, 360], cyclic=.true.)
     call fiona_set_dim('alb', 'lat', span=[-90, 90])
     call fiona_start_input('alb')
-    call fiona_input_range('alb', 'lon', lon, coord_range=[min_lon, max_lon])
-    call fiona_input_range('alb', 'lat', lat, coord_range=[min_lat, max_lat])
+    call fiona_input_range('alb', 'lon', lon, coord_range=[min_lon, max_lon]); lon = lon * rad
+    call fiona_input_range('alb', 'lat', lat, coord_range=[min_lat, max_lat]); lat = lat * rad
     call fiona_input_range('alb', 'albedo', array, coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
     call fiona_end_input('alb')
-    call latlon_interp_bilinear_column(lon, lat, array, this%mesh%lon, this%mesh%lat, this%sfc_alb)
+    call latlon_interp_bilinear_column(lon, lat, array, this%mesh%lon, this%mesh%lat, this%alb)
     deallocate(lon, lat, array)
 
     ! Surface thermal inertia
@@ -170,11 +171,11 @@ contains
     call fiona_set_dim('tin', 'lon', span=[0, 360], cyclic=.true.)
     call fiona_set_dim('tin', 'lat', span=[-90, 90])
     call fiona_start_input('tin')
-    call fiona_input_range('tin', 'lon', lon, coord_range=[min_lon, max_lon])
-    call fiona_input_range('tin', 'lat', lat, coord_range=[min_lat, max_lat])
+    call fiona_input_range('tin', 'lon', lon, coord_range=[min_lon, max_lon]); lon = lon * rad
+    call fiona_input_range('tin', 'lat', lat, coord_range=[min_lat, max_lat]); lat = lat * rad
     call fiona_input_range('tin', 'thin', array, coord_range_1=[min_lon, max_lon], coord_range_2=[min_lat, max_lat])
     call fiona_end_input('tin')
-    call latlon_interp_bilinear_column(lon, lat, array, this%mesh%lon, this%mesh%lat, this%sfc_tin)
+    call latlon_interp_bilinear_column(lon, lat, array, this%mesh%lon, this%mesh%lat, this%tin)
     deallocate(lon, lat, array)
 
   end subroutine mars_nasa_static_read

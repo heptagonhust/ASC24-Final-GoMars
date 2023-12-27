@@ -12,12 +12,14 @@
 
 module mars_nasa_physics_driver_mod
 
-  use fiona
+  use datetime
   use tracer_mod
   use mars_nasa_namelist_mod
   use mars_nasa_physics_types_mod
+  use mars_nasa_physics_output_mod
   use mars_nasa_objects_mod
   use mars_orbit_mod
+  use mars_nasa_solar_mod
   use mars_nasa_rad_mod
 
   implicit none
@@ -55,8 +57,6 @@ contains
     real(r8), intent(in) :: min_lat
     real(r8), intent(in) :: max_lat
 
-    integer iblk
-
     call mars_nasa_physics_driver_final()
     call mars_nasa_objects_init(nblk, ncol, nlev, lon, lat, area)
     call mars_nasa_parse_namelist(namelist_path)
@@ -74,7 +74,26 @@ contains
 
   end subroutine mars_nasa_physics_driver_final
 
-  subroutine mars_nasa_physics_driver_run()
+  subroutine mars_nasa_physics_driver_run(time)
+
+    type(datetime_type), intent(in) :: time
+
+    integer iblk, icol
+    real(r8) ls
+
+    ls = time%solar_longitude()
+
+    call update_solar_decl_angle(ls)
+    call update_solar_flux(ls)
+
+    do iblk = 1, size(objects)
+      associate (mesh  => objects(iblk)%mesh , &
+                 state => objects(iblk)%state)
+      do icol = 1, objects(iblk)%mesh%ncol
+        state%cosz(icol) = solar_cos_zenith_angle(mesh%lon(icol), mesh%lat(icol), time%hours_in_day())
+      end do
+      end associate
+    end do
 
   end subroutine mars_nasa_physics_driver_run
 
@@ -85,29 +104,5 @@ contains
   subroutine mars_nasa_physics_p2d()
 
   end subroutine mars_nasa_physics_p2d
-
-  subroutine mars_nasa_physics_add_output(tag, dtype)
-
-    character(*), intent(in) :: tag
-    character(*), intent(in) :: dtype
-
-    call fiona_add_var(tag, 'alb', long_name='Surface albedo'         , units='', dim_names=['lon','lat'], dtype=dtype)
-    call fiona_add_var(tag, 'tin', long_name='Surface thermal inertia', units='', dim_names=['lon','lat'], dtype=dtype)
-
-  end subroutine mars_nasa_physics_add_output
-
-  subroutine mars_nasa_physics_output(tag, iblk, start, count)
-
-    character(*), intent(in) :: tag
-    integer, intent(in) :: iblk
-    integer, intent(in) :: start(3)
-    integer, intent(in) :: count(3)
-
-    associate (static => objects(iblk)%static)
-    call fiona_output(tag, 'alb', reshape(static%sfc_alb, count(1:2)), start=start(1:2), count=count(1:2))
-    call fiona_output(tag, 'tin', reshape(static%sfc_tin, count(1:2)), start=start(1:2), count=count(1:2))
-    end associate
-
-  end subroutine mars_nasa_physics_output
 
 end module mars_nasa_physics_driver_mod

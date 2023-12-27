@@ -79,7 +79,7 @@ contains
         mesh%ncol            , &
         mesh%nlev            , &
         dt                   , &
-        mesh%lat * rad       , &
+        mesh%lat             , &
         state%t              , &
         state%qv             , &
         state%u              , &

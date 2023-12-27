@@ -9,6 +9,7 @@
 
 module physics_mod
 
+  use fiona
   use const_mod
   use namelist_mod
   use time_mod
@@ -21,7 +22,7 @@ module physics_mod
 #ifdef HAS_CAM
   use cam_physics_driver_mod
 #endif
-  use mars_nasa_physics_driver_mod
+  use mars_nasa_physics_driver_mod, mars_nasa_objects => objects
 
   implicit none
 
@@ -66,8 +67,8 @@ contains
       icol = 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          lon (icol,iblk) = mesh%full_lon_deg(i)
-          lat (icol,iblk) = mesh%full_lat_deg(j)
+          lon (icol,iblk) = mesh%full_lon (i)
+          lat (icol,iblk) = mesh%full_lat (j)
           area(icol,iblk) = mesh%area_cell(j)
           icol = icol + 1
         end do
@@ -121,7 +122,7 @@ contains
       call cam_physics_driver_run2()
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_driver_run()
+      call mars_nasa_physics_driver_run(curr_time)
     end select
 
     call dp_coupling_p2d(block, itime)
@@ -278,6 +279,11 @@ contains
 
   subroutine physics_add_output()
 
+    character(3) :: dims(2) = ['lon', 'lat']
+
+    call fiona_add_var('h0', 'alb' , long_name='Surface albedo'              , units='', dim_names=dims, dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'cosz', long_name='Cosine of solar zenith angle', units='', dim_names=dims, dtype=output_h0_dtype)
+
     select case (physics_suite)
     case ('mars_nasa')
       call mars_nasa_physics_add_output('h0', output_h0_dtype)
@@ -289,6 +295,8 @@ contains
 
     type(block_type), intent(in) :: block
 
+    class(physics_state_type ), pointer :: state  => null()
+    class(physics_static_type), pointer :: static => null()
     integer is, ie, js, je, ks, ke
     integer start(3), count(3)
 
@@ -301,7 +309,12 @@ contains
     select case (physics_suite)
     case ('mars_nasa')
       call mars_nasa_physics_output('h0', block%id, start, count)
+      state  => mars_nasa_objects(block%id)%state
+      static => mars_nasa_objects(block%id)%static
     end select
+
+    call fiona_output('h0', 'alb' , reshape(static%alb    , count(1:2)), start=start(1:2), count=count(1:2))
+    call fiona_output('h0', 'cosz', reshape(state%cosz    , count(1:2)), start=start(1:2), count=count(1:2))
 
   end subroutine physics_output
 

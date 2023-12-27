@@ -283,6 +283,7 @@ set(gmcore_files
   src/physics/mars_nasa/mars_nasa_optics_mod.F90
   src/physics/mars_nasa/mars_nasa_solar_mod.F90
   src/physics/mars_nasa/mars_nasa_rad_mod.F90
+  src/physics/mars_nasa/mars_nasa_physics_output_mod.F90
   src/physics/mars_nasa/mars_nasa_physics_driver_mod.F90
   src/prepare/latlon/latlon_bkg_mod.F90
   src/prepare/latlon/latlon_topo_mod.F90

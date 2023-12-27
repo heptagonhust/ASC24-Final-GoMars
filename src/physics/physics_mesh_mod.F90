@@ -11,9 +11,9 @@ module physics_mesh_mod
   type physics_mesh_type
     integer :: ncol = 0
     integer :: nlev = 0
-    real(r8), allocatable, dimension(:) :: lon
-    real(r8), allocatable, dimension(:) :: lat
-    real(r8), allocatable, dimension(:) :: area
+    real(r8), allocatable, dimension(:) :: lon  ! Longitude (rad)
+    real(r8), allocatable, dimension(:) :: lat  ! Latitude (rad)
+    real(r8), allocatable, dimension(:) :: area ! Cell area (m2)
   contains
     procedure :: init => physics_mesh_init
     procedure :: clear => physics_mesh_clear

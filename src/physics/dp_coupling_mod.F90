@@ -106,8 +106,8 @@ contains
       icol = 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          pstate%ps (icol) = dstate%phs%d(i,j)
-          pstate%wsb(icol) = sqrt(dstate%u%d(i,j,mesh%full_kde)**2 + dstate%v%d(i,j,mesh%full_kde)**2)
+          pstate%ps     (icol) = dstate%phs%d(i,j)
+          pstate%wsp_bot(icol) = sqrt(dstate%u%d(i,j,mesh%full_kde)**2 + dstate%v%d(i,j,mesh%full_kde)**2)
           icol = icol + 1
         end do
       end do

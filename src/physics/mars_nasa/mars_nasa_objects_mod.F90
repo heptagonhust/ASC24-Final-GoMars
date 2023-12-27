@@ -25,7 +25,7 @@ module mars_nasa_objects_mod
     type(mars_nasa_static_type) static
   end type mars_nasa_objects_type
 
-  type(mars_nasa_objects_type), allocatable :: objects(:)
+  type(mars_nasa_objects_type), allocatable, target :: objects(:)
 
 contains
 
