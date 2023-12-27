@@ -87,7 +87,7 @@ contains
 #endif
     case ('mars_nasa')
       call mars_nasa_physics_driver_init(namelist_path, nblk, ncol, nlev, &
-        lon, lat, area, dt_adv, dt_phys, min_lon, max_lon, min_lat, max_lat)
+        lon, lat, area, dt_adv, dt_phys, min_lon, max_lon, min_lat, max_lat, input_ngroup)
     end select
 
     deallocate(ncol, lon, lat, area)

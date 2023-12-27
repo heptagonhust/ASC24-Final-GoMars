@@ -108,7 +108,7 @@ contains
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    call dt%init(seconds=dt_in_seconds/time_scale)
+    call dt%init(seconds=dt_in_seconds)
 
     curr_time = start_time
 
@@ -170,8 +170,8 @@ contains
 
     time_step = time_step + 1
     if (present(dt_in_seconds)) then
-      elapsed_seconds = elapsed_seconds + dt_in_seconds / time_scale
-      call curr_time%add(seconds=dt_in_seconds / time_scale)
+      elapsed_seconds = elapsed_seconds + dt_in_seconds
+      call curr_time%add(seconds=dt_in_seconds)
     else
       elapsed_seconds = elapsed_seconds + dt%total_seconds()
       curr_time = curr_time + dt

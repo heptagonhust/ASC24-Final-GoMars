@@ -56,7 +56,6 @@ module const_mod
   real(r8)            :: lapse_rate   = 0 ! K m-1
   real(r8)            :: p0           = 0 ! Pa
   real(r8)            :: pk0          = 0 ! Pa
-  real(r8)            :: time_scale   = 1
 
   integer, parameter :: inf_i4 = 10000000
 

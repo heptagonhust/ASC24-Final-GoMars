@@ -11,7 +11,7 @@ module namelist_mod
 
   use string
   use flogger
-  use const_mod, only: r8, const_init, time_scale, earth_day_seconds, mars_sol_seconds
+  use const_mod, only: r8, const_init, earth_day_seconds, mars_sol_seconds
 
   implicit none
 
@@ -368,19 +368,6 @@ contains
       vor_damp_pole_x = vor_damp_pole
       vor_damp_pole_y = vor_damp_pole
     end if
-
-    select case (planet)
-    case ('earth')
-      time_scale = 1
-    case ('mars')
-      time_scale = mars_sol_seconds / earth_day_seconds
-    case default
-      call log_error('Invalid planet!')
-    end select
-
-    dt_dyn  = dt_dyn  * time_scale
-    dt_adv  = dt_adv  * time_scale
-    dt_phys = dt_phys * time_scale
 
   end subroutine parse_namelist
 

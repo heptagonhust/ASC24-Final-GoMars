@@ -308,7 +308,7 @@ contains
       this%idx = idx
     end if
 
-    call time_add_alert(batch_name, seconds=dt/time_scale)
+    call time_add_alert(batch_name, seconds=dt)
 
   end subroutine adv_batch_init
 
