@@ -16,6 +16,7 @@ module mars_nasa_namelist_mod
 
   character(256) kcoef_file
   character(256) dust_optics_file
+  character(256) cloud_optics_file
   character(256) albedo_file
   character(256) thermal_inertia_file
 
@@ -24,6 +25,7 @@ module mars_nasa_namelist_mod
   namelist /mars_nasa_control/ &
     kcoef_file               , &
     dust_optics_file         , &
+    cloud_optics_file        , &
     albedo_file              , &
     thermal_inertia_file     , &
     nlev_soil

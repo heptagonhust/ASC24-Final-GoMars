@@ -277,6 +277,7 @@ set(gmcore_files
   src/physics/test_forcing_mod.F90
   src/physics/mars_nasa/mars_nasa_const_mod.F90
   src/physics/mars_nasa/mars_nasa_namelist_mod.F90
+  src/physics/mars_nasa/mars_nasa_tracers_mod.F90
   src/physics/mars_nasa/mars_nasa_physics_types_mod.F90
   src/physics/mars_nasa/mars_nasa_objects_mod.F90
   src/physics/mars_nasa/mars_orbit_mod.F90

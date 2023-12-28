@@ -16,6 +16,7 @@ module mars_nasa_physics_driver_mod
   use tracer_mod
   use mars_nasa_const_mod
   use mars_nasa_namelist_mod
+  use mars_nasa_tracers_mod
   use mars_nasa_physics_types_mod
   use mars_nasa_physics_output_mod
   use mars_nasa_objects_mod
@@ -59,14 +60,8 @@ contains
     real(r8), intent(in) :: max_lat
     integer , intent(in) :: input_ngroup
 
-    call tracer_add('mars', dt_adv, 'qm_dst', 'Dust mass mixing ratio'           , 'kg kg-1'); idx_m_dst = ntracers
-    call tracer_add('mars', dt_adv, 'qn_dst', 'Dust number mixing ratio'         , 'kg-1'   ); idx_n_dst = ntracers
-    call tracer_add('mars', dt_adv, 'qm_vap', 'Water vapor mass mixing ratio'    , 'kg kg-1'); idx_m_vap = ntracers
-    call tracer_add('mars', dt_adv, 'qm_cld', 'Cloud droplet mass mixing ratio'  , 'kg kg-1'); idx_m_cld = ntracers
-    call tracer_add('mars', dt_adv, 'qn_cld', 'Cloud droplet number mixing ratio', 'kg-1'   ); idx_n_cld = ntracers
-    call tracer_add('mars', dt_adv, 'qm_ccn', 'CCN mass mixing ratio'            , 'kg kg-1'); idx_m_ccn = ntracers
-
     call mars_nasa_physics_driver_final()
+    call mars_nasa_tracers_init(dt_adv)
     call mars_nasa_objects_init(nblk, ncol, nlev, lon, lat, area)
     call mars_nasa_parse_namelist(namelist_path)
     call mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat, input_ngroup)
