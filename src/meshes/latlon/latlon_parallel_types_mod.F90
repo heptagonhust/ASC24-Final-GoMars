@@ -10,7 +10,6 @@
 module latlon_parallel_types_mod
 
   use mpi
-  use math_mod, only: round_robin
   use namelist_mod
 
   implicit none
@@ -93,7 +92,7 @@ contains
     class(zonal_circle_type), intent(inout) :: this
     type(process_type), intent(in) :: proc
 
-    integer ierr, i, ibeg, iend
+    integer ierr, i
     integer cart_coords(2), west_cart_id, east_cart_id, tmp_id(1)
     integer, allocatable :: zonal_proc_id(:)
 
@@ -118,43 +117,40 @@ contains
       ! Integer
       allocate(this%recv_type_i4(this%np,0:2))
       do i = 1, this%np
-        call round_robin(this%np, i - 1, nlon, ibeg, iend)
-        call MPI_TYPE_CREATE_SUBARRAY(1, [nlon], [nlon], [ibeg-1], MPI_ORDER_FORTRAN, MPI_INT, &
-                                         this%recv_type_i4(i,0), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(1, [nlon], [proc%nlon], [proc%ids-1], MPI_ORDER_FORTRAN, &
+                                      MPI_INT, this%recv_type_i4(i,0), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_i4(i,0), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev], [nlon,nlev], [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_INT, &
-                                         this%recv_type_i4(i,1), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev], [proc%nlon,nlev], [proc%ids-1,0], MPI_ORDER_FORTRAN, &
+                                      MPI_INT, this%recv_type_i4(i,1), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_i4(i,1), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev+1], [nlon,nlev+1], [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_INT, &
-                                         this%recv_type_i4(i,2), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev+1], [proc%nlon,nlev+1], [proc%ids-1,0], MPI_ORDER_FORTRAN, &
+                                      MPI_INT, this%recv_type_i4(i,2), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_i4(i,2), ierr)
       end do
       ! Single precision
       allocate(this%recv_type_r4(this%np,0:2))
       do i = 1, this%np
-        call round_robin(this%np, i - 1, nlon, ibeg, iend)
-        call MPI_TYPE_CREATE_SUBARRAY(1, [nlon], [nlon], [ibeg-1], MPI_ORDER_FORTRAN, MPI_REAL, &
-                                         this%recv_type_r4(i,0), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(1, [nlon], [proc%nlon], [proc%ids-1], MPI_ORDER_FORTRAN, &
+                                      MPI_REAL, this%recv_type_r4(i,0), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r4(i,0), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev], [nlon,nlev], [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_REAL, &
-                                         this%recv_type_r4(i,1), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev], [proc%nlon,nlev], [proc%ids-1,0], MPI_ORDER_FORTRAN, &
+                                      MPI_REAL, this%recv_type_r4(i,1), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r4(i,1), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev+1], [nlon,nlev+1], [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_REAL, &
-                                         this%recv_type_r4(i,2), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev+1], [proc%nlon,nlev+1], [proc%ids-1,0], MPI_ORDER_FORTRAN, &
+                                      MPI_REAL, this%recv_type_r4(i,2), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r4(i,2), ierr)
       end do
       ! Double precision
       allocate(this%recv_type_r8(this%np,0:2))
       do i = 1, this%np
-        call round_robin(this%np, i - 1, nlon, ibeg, iend)
-        call MPI_TYPE_CREATE_SUBARRAY(1, [nlon], [nlon], [ibeg-1], MPI_ORDER_FORTRAN, MPI_DOUBLE, &
-                                         this%recv_type_r8(i,0), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(1, [nlon], [proc%nlon], [proc%ids-1], MPI_ORDER_FORTRAN, &
+                                      MPI_DOUBLE, this%recv_type_r8(i,0), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r8(i,0), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev], [nlon,nlev], [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_DOUBLE, &
-                                         this%recv_type_r8(i,1), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev], [proc%nlon,nlev], [proc%ids-1,0], MPI_ORDER_FORTRAN, &
+                                      MPI_DOUBLE, this%recv_type_r8(i,1), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r8(i,1), ierr)
-        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev+1], [nlon,nlev+1], [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_DOUBLE, &
-                                         this%recv_type_r8(i,2), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [nlon,nlev+1], [proc%nlon,nlev+1], [proc%ids-1,0], MPI_ORDER_FORTRAN, &
+                                      MPI_DOUBLE, this%recv_type_r8(i,2), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_r8(i,2), ierr)
       end do
     end if

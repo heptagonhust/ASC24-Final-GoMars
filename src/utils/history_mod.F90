@@ -226,6 +226,8 @@ contains
     ! call fiona_add_var('h0', 'te_ie'  , long_name='Total internal energy'       , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     ! call fiona_add_var('h0', 'te_pe'  , long_name='Total potential energy'      , units=''      , dim_names=['time']      , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'zs'     , long_name='Surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'dzsdx'  , long_name='Zonal gradient of zs'        , units='1'     , dim_names=['ilon','lat '], dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'dzsdy'  , long_name='Meridional gradient of zs'   , units='1'     , dim_names=['lon ','ilat'], dtype=output_h0_dtype)
     call fiona_add_var('h0', 'phs'    , long_name='Surface hydrostatic pressure', units='Pa'    , dim_names=cell_dims_2d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'u'      , long_name='U wind component'            , units='m s-1' , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
     call fiona_add_var('h0', 'v'      , long_name='V wind component'            , units='m s-1' , dim_names=cell_dims_3d  , dtype=output_h0_dtype)
@@ -291,6 +293,8 @@ contains
     call fiona_add_var('h0', 'te'     , long_name='Total energy'                , units='m4 s-4', dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'tpe'    , long_name='Total potential enstrophy'   , units='m2 s-5', dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'zs'     , long_name='Surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype='r8')
+    call fiona_add_var('h0', 'dzsdx'  , long_name='Zonal gradient of zs'        , units='1'     , dim_names=['ilon','lat '], dtype=output_h0_dtype)
+    call fiona_add_var('h0', 'dzsdy'  , long_name='Meridional gradient of zs'   , units='1'     , dim_names=['lon ','ilat'], dtype=output_h0_dtype)
     call fiona_add_var('h0', 'phs'    , long_name='Surface hydrostatic pressure', units='Pa'    , dim_names=cell_dims_2d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'u'      , long_name='U wind component'            , units='m s-1' , dim_names=cell_dims_3d, dtype=output_h0_dtype)
     call fiona_add_var('h0', 'v'      , long_name='V wind component'            , units='m s-1' , dim_names=cell_dims_3d, dtype=output_h0_dtype)
@@ -531,6 +535,8 @@ contains
     do iblk = 1, size(blocks)
       associate (mesh        => blocks(iblk)%mesh             , &
                  gzs         => blocks(iblk)%static%gzs       , &
+                 dzsdx       => blocks(iblk)%static%dzsdx     , &
+                 dzsdy       => blocks(iblk)%static%dzsdy     , &
                  landmask    => blocks(iblk)%static%landmask  , &
                  tm          => blocks(iblk)%dstate(itime)%tm , &
                  te          => blocks(iblk)%dstate(itime)%te , &
@@ -581,6 +587,21 @@ contains
       if (idx_ni > 0) then
         call fiona_output('h0', 'ni'    , q%d(is:ie,js:je,ks:ke,idx_ni), start=start, count=count)
       end if
+
+      is = mesh%half_ids; ie = mesh%half_ide
+      js = mesh%full_jds; je = mesh%full_jde
+      ks = mesh%full_kds; ke = mesh%full_kde
+      start = [is,js,ks]
+      count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
+      call fiona_output('h0', 'dzsdx', dzsdx%d(is:ie,js:je), start=start, count=count)
+
+      is = mesh%full_ids; ie = mesh%full_ide
+      js = mesh%half_jds; je = mesh%half_jde
+      ks = mesh%full_kds; ke = mesh%full_kde
+      start = [is,js,ks]
+      count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
+      call fiona_output('h0', 'dzsdy', dzsdy%d(is:ie,js:je), start=start, count=count)
+
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%half_jds; je = mesh%half_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -606,7 +627,6 @@ contains
       end associate
       call physics_output(blocks(iblk))
     end do
-
 
   end subroutine history_write_h0_hydrostatic
 
@@ -644,6 +664,21 @@ contains
       call fiona_output('h0', 't'       , dstate%t      %d(is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'div'     , aux%div       %d(is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'rhod'    , dstate%rhod   %d(is:ie,js:je,ks:ke)     , start=start, count=count)
+
+      is = mesh%half_ids; ie = mesh%half_ide
+      js = mesh%full_jds; je = mesh%full_jde
+      ks = mesh%full_kds; ke = mesh%full_kde
+      start = [is,js,ks]
+      count = [mesh%half_nlon,mesh%full_nlat,mesh%full_nlev]
+      call fiona_output('h0', 'dzsdx', static%dzsdx%d(is:ie,js:je), start=start, count=count)
+
+      is = mesh%full_ids; ie = mesh%full_ide
+      js = mesh%half_jds; je = mesh%half_jde
+      ks = mesh%full_kds; ke = mesh%full_kde
+      start = [is,js,ks]
+      count = [mesh%full_nlon,mesh%half_nlat,mesh%full_nlev]
+      call fiona_output('h0', 'dzsdy', static%dzsdy%d(is:ie,js:je), start=start, count=count)
+
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%half_jds; je = mesh%half_jde
       ks = mesh%full_kds; ke = mesh%full_kde
