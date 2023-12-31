@@ -275,6 +275,9 @@ set(gmcore_files
   src/physics/simple_physics/simple_physics_types_mod.F90
   src/physics/simple_physics/simple_physics_driver_mod.F90
   src/physics/test_forcing_mod.F90
+  src/physics/wrf/wrf_namelist_mod.F90
+  src/physics/wrf/wrf_physics_types_mod.F90
+  src/physics/wrf/noahlsm_types_mod.F90
   src/physics/mars_nasa/mars_nasa_const_mod.F90
   src/physics/mars_nasa/mars_nasa_namelist_mod.F90
   src/physics/mars_nasa/mars_nasa_tracers_mod.F90
