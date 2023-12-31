@@ -348,6 +348,8 @@ if (HAS_NOAHMP)
     src/physics/wrf/lsm_noahmp_types_mod.F90
     src/physics/wrf/lsm_noahmp_driver_mod.F90
     src/physics/wrf/lsm_driver_mod.F90
+    src/physics/wrf/pbl_ysu_mod.F90
+    src/physics/wrf/pbl_driver_mod.F90
   )
   add_definitions(-DHAS_WRF)
 endif ()

@@ -31,6 +31,8 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:  ) :: v
     ! Air temperature (K)
     real(r8), allocatable, dimension(:,:  ) :: t
+    ! Potential temperature (K)
+    real(r8), allocatable, dimension(:,:  ) :: pt
     ! Tracer mixing ratio (moist)
     real(r8), allocatable, dimension(:,:,:) :: q
     ! Full pressure (hydrostatic) on full level (Pa)
@@ -63,6 +65,8 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: z0
     ! u* in similarity theory (m s-1)
     real(r8), allocatable, dimension(:    ) :: ustar
+    ! w* in similarity theory (m s-1)
+    real(r8), allocatable, dimension(:    ) :: wstar
     ! Similarity function for momentum
     real(r8), allocatable, dimension(:    ) :: psim
     ! Similarity function for heat
@@ -71,6 +75,10 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: fm
     ! Integrated function for heat
     real(r8), allocatable, dimension(:    ) :: fh
+    ! PBL height (m)
+    real(r8), allocatable, dimension(:    ) :: pblh
+    ! PBL top vertical index
+    integer , allocatable, dimension(:    ) :: pblk
     ! Surface albedo
     real(r8), allocatable, dimension(:    ) :: alb
     ! Cosine of solar zenith angle
@@ -130,6 +138,7 @@ contains
     allocate(this%u         (mesh%ncol,mesh%nlev         ))
     allocate(this%v         (mesh%ncol,mesh%nlev         ))
     allocate(this%t         (mesh%ncol,mesh%nlev         ))
+    allocate(this%pt        (mesh%ncol,mesh%nlev         ))
     allocate(this%q         (mesh%ncol,mesh%nlev,ntracers))
     allocate(this%p         (mesh%ncol,mesh%nlev         ))
     allocate(this%p_lev     (mesh%ncol,mesh%nlev+1       ))
@@ -146,10 +155,13 @@ contains
     allocate(this%wsp_bot   (mesh%ncol                   ))
     allocate(this%z0        (mesh%ncol                   ))
     allocate(this%ustar     (mesh%ncol                   ))
+    allocate(this%wstar     (mesh%ncol                   ))
     allocate(this%psim      (mesh%ncol                   ))
     allocate(this%psih      (mesh%ncol                   ))
     allocate(this%fm        (mesh%ncol                   ))
     allocate(this%fh        (mesh%ncol                   ))
+    allocate(this%pblh      (mesh%ncol                   ))
+    allocate(this%pblk      (mesh%ncol                   ))
     allocate(this%alb       (mesh%ncol                   ))
     allocate(this%cosz      (mesh%ncol                   ))
     allocate(this%fdntoa    (mesh%ncol                   ))
@@ -168,6 +180,7 @@ contains
     if (allocated(this%u        )) deallocate(this%u        )
     if (allocated(this%v        )) deallocate(this%v        )
     if (allocated(this%t        )) deallocate(this%t        )
+    if (allocated(this%pt       )) deallocate(this%pt       )
     if (allocated(this%q        )) deallocate(this%q        )
     if (allocated(this%p        )) deallocate(this%p        )
     if (allocated(this%p_lev    )) deallocate(this%p_lev    )
@@ -184,10 +197,13 @@ contains
     if (allocated(this%wsp_bot  )) deallocate(this%wsp_bot  )
     if (allocated(this%z0       )) deallocate(this%z0       )
     if (allocated(this%ustar    )) deallocate(this%ustar    )
+    if (allocated(this%wstar    )) deallocate(this%wstar    )
     if (allocated(this%psim     )) deallocate(this%psim     )
     if (allocated(this%psih     )) deallocate(this%psih     )
     if (allocated(this%fm       )) deallocate(this%fm       )
     if (allocated(this%fh       )) deallocate(this%fh       )
+    if (allocated(this%pblh     )) deallocate(this%pblh     )
+    if (allocated(this%pblk     )) deallocate(this%pblk     )
     if (allocated(this%alb      )) deallocate(this%alb      )
     if (allocated(this%cosz     )) deallocate(this%cosz     )
     if (allocated(this%fdntoa   )) deallocate(this%fdntoa   )
