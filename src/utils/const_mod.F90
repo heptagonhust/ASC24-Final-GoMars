@@ -33,10 +33,6 @@ module const_mod
 
   real(r8)            :: omega        = 0 ! s-1
   real(r8)            :: radius       = 0 ! m
-  real(r8)            :: periheli     = 0 ! Perihelion distance (million km)
-  real(r8)            :: apheli       = 0 ! Aphelion distance (million km)
-  real(r8)            :: eccen        = 0 ! Eccentricity
-  real(r8)            :: obliq        = 0 ! Obliquity (deg)
   real(r8)            :: g            = 0 ! m2 s-2
   real(r8)            :: rd           = 0 ! J kg-1 K-1
   real(r8)            :: rv           = 0 ! J kg-1 K-1
@@ -85,9 +81,6 @@ contains
     case ('earth')
       omega      = 7.2921e-5_r8
       radius     = 6.37122d6
-      periheli   = 147.1d0
-      apheli     = 145.1d0
-      obliq      = 23.4d0
       g          = 9.80616d0
       rv         = minor_gas%r
       cpv        = minor_gas%cp
@@ -100,9 +93,6 @@ contains
     case ('mars')
       omega      = 2 * pi / mars_sol_seconds
       radius     = 3.397200d6
-      periheli   = 206.66d0
-      apheli     = 249.22d0
-      obliq      = 25.19d0
       g          = 3.72d0
       lv         = 2.84d6
       lapse_rate = 5.06d-3
@@ -111,7 +101,6 @@ contains
       call log_error('Invalid planet!')
     end select
 
-    eccen     = (apheli - periheli) / (apheli + periheli)
     rd_o_g    = rd / g
     rd_o_cpd  = rd / cpd
     cpd_o_cvd = cpd / cvd
