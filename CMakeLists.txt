@@ -207,7 +207,14 @@ add_subdirectory(lib/string)
 add_subdirectory(lib/fiona)
 add_subdirectory(lib/flogger)
 
-set(gmcore_files
+if (EXISTS ${PROJECT_SOURCE_DIR}/lib/noahmp/LICENSE.txt)
+  add_subdirectory(lib/noahmp)
+  set(EXTERNAL_LIBS noahmp)
+  set(HAS_NOAHMP TRUE)
+endif ()
+
+add_library(gmcore)
+target_sources(gmcore PRIVATE
   lib/quadpack.f90
   src/dynamics/adv/adv_batch_mod.F90
   src/dynamics/adv/adv_mod.F90
@@ -257,17 +264,6 @@ set(gmcore_files
   src/meshes/latlon/latlon_decomp_mod.F90
   src/meshes/latlon/latlon_interp_mod.F90
   src/physics/dp_coupling_mod.F90
-  # src/physics/mars/mars_cnv_nasa_mod.F90
-  # src/physics/mars/mars_co2cyc_nasa_mod.F90
-  # src/physics/mars/mars_data_mod.F90
-  # src/physics/mars/mars_lsm_nasa_mod.F90
-  # src/physics/mars/mars_mp_nasa_mod.F90
-  # src/physics/mars/mars_nasa_mod.F90
-  # src/physics/mars/mars_pbl_nasa_mod.F90
-  # src/physics/mars/mars_rad_rrtmgp_mod.F90
-  # src/physics/mars/mars_sfc_nasa_mod.F90
-  # src/physics/pbl/pbl_driver_mod.F90
-  # src/physics/pbl/pbl_ysu_mod.F90
   src/physics/physics_mod.F90
   src/physics/physics_mesh_mod.F90
   src/physics/physics_types_mod.F90
@@ -275,9 +271,6 @@ set(gmcore_files
   src/physics/simple_physics/simple_physics_types_mod.F90
   src/physics/simple_physics/simple_physics_driver_mod.F90
   src/physics/test_forcing_mod.F90
-  src/physics/wrf/wrf_namelist_mod.F90
-  src/physics/wrf/wrf_physics_types_mod.F90
-  src/physics/wrf/noahlsm_types_mod.F90
   src/physics/mars_nasa/mars_nasa_const_mod.F90
   src/physics/mars_nasa/mars_nasa_namelist_mod.F90
   src/physics/mars_nasa/mars_nasa_tracers_mod.F90
@@ -348,38 +341,17 @@ set(gmcore_files
   src/utils/tridiag_spk_mod.F90
 )
 
-if (EXISTS ${PROJECT_SOURCE_DIR}/src/physics/ccpp/host/CCPP_CAPS.cmake)
-  include(src/physics/ccpp/host/CCPP_CAPS.cmake)
-  include(src/physics/ccpp/host/CCPP_SCHEMES.cmake)
-  include(src/physics/ccpp/host/CCPP_STATIC_API.cmake)
-  list(APPEND gmcore_files ${CAPS} ${SCHEMES} ${API} src/physics/ccpp/host/ccpp_driver_mod.F90)
-  if (NOT DEFINED ENV{NCEPLIBS_ROOT})
-    message(WARNING "NCEPLIBS_ROOT environment variable was not defined!")
-  else ()
-    include_directories($ENV{NCEPLIBS_ROOT}/bacio-2.4.1/include_4)
-    link_directories($ENV{NCEPLIBS_ROOT}/bacio-2.4.1/lib)
-    list(APPEND EXTERNAL_LIBS bacio_4)
-    include_directories($ENV{NCEPLIBS_ROOT}/nemsio-2.5.2/include)
-    link_directories($ENV{NCEPLIBS_ROOT}/nemsio-2.5.2/lib)
-    list(APPEND EXTERNAL_LIBS nemsio)
-    include_directories($ENV{NCEPLIBS_ROOT}/w3emc-2.7.3/include_4)
-    link_directories($ENV{NCEPLIBS_ROOT}/w3emc-2.7.3/lib)
-    list(APPEND EXTERNAL_LIBS w3emc_4)
-    include_directories($ENV{NCEPLIBS_ROOT}/w3nco-2.4.1/include_4)
-    link_directories($ENV{NCEPLIBS_ROOT}/w3nco-2.4.1/lib)
-    list(APPEND EXTERNAL_LIBS w3nco_4)
-    include_directories($ENV{NCEPLIBS_ROOT}/g2-3.4.5/include_4)
-    link_directories($ENV{NCEPLIBS_ROOT}/g2-3.4.5/lib)
-    link_directories($ENV{NCEPLIBS_ROOT}/g2-3.4.5/lib64)
-    list(APPEND EXTERNAL_LIBS g2_4)
-    include_directories($ENV{NCEPLIBS_ROOT}/sp-2.3.3/include_4)
-    link_directories($ENV{NCEPLIBS_ROOT}/sp-2.3.3/lib)
-    list(APPEND EXTERNAL_LIBS sp_4)
-    add_definitions(-DHAS_CCPP)
-  endif ()
+if (HAS_NOAHMP)
+  target_sources(gmcore PRIVATE
+    src/physics/wrf/wrf_namelist_mod.F90
+    src/physics/wrf/wrf_physics_types_mod.F90
+    src/physics/wrf/lsm_noahmp_types_mod.F90
+    src/physics/wrf/lsm_noahmp_driver_mod.F90
+    src/physics/wrf/lsm_driver_mod.F90
+  )
+  add_definitions(-DHAS_WRF)
 endif ()
 
-add_library(gmcore ${gmcore_files})
 target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 if (USE_CAM AND HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)
   message(STATUS "GPTL, PIO, LAPACK, ESMF, and MCT are found. Building CAM physics and chemistry.")

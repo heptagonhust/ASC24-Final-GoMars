@@ -17,3 +17,6 @@
 [submodule "lib/string"]
 	path = lib/string
 	url = https://gitee.com/dongli85/fortran-string
+[submodule "lib/noahmp"]
+	path = lib/noahmp
+	url = https://gitee.com/dongli85/noahmp

@@ -1,0 +1,221 @@
+diff --git a/drivers/hrldas/NoahmpDriverMainMod.F90 b/drivers/hrldas/NoahmpDriverMainMod.F90
+index eaa36a2..1e2ef12 100644
+--- a/drivers/hrldas/NoahmpDriverMainMod.F90
++++ b/drivers/hrldas/NoahmpDriverMainMod.F90
+@@ -20,7 +20,6 @@ module NoahmpDriverMainMod
+   use BiochemVarOutTransferMod
+   use NoahmpMainMod
+   use NoahmpMainGlacierMod
+-  use module_ra_gfdleta,  only: cal_mon_day
+ #if ( WRF_CHEM == 1 )
+   USE module_data_gocart_dust
+ #endif
+@@ -39,7 +38,7 @@ contains
+  
+     implicit none 
+     
+-    type(NoahmpIO_type), intent(inout)  :: NoahmpIO
++    class(NoahmpIO_type), intent(inout)  :: NoahmpIO
+     
+     ! local variables
+     type(noahmp_type)                   :: noahmp
+@@ -170,7 +169,6 @@ contains
+                 if ( (NoahmpIO%SF_URBAN_PHYSICS > 0) .and. (NoahmpIO%IRI_URBAN == 1) ) then
+                    SOLAR_TIME = (NoahmpIO%JULIAN - int(NoahmpIO%JULIAN))*24 + NoahmpIO%XLONG(I,J)/15.0
+                    if ( SOLAR_TIME < 0.0 ) SOLAR_TIME = SOLAR_TIME + 24.0
+-                   call CAL_MON_DAY(int(NoahmpIO%JULIAN), NoahmpIO%YR, JMONTH, JDAY)
+                    if ( (SOLAR_TIME >= 21.0) .and. (SOLAR_TIME <= 23.0) .and. &
+                         (JMONTH >= 5) .and. (JMONTH <= 9) ) then
+                        noahmp%water%state%SoilMoisture(1) = &
+diff --git a/drivers/hrldas/NoahmpIOVarInitMod.F90 b/drivers/hrldas/NoahmpIOVarInitMod.F90
+index b09a0cd..feae542 100644
+--- a/drivers/hrldas/NoahmpIOVarInitMod.F90
++++ b/drivers/hrldas/NoahmpIOVarInitMod.F90
+@@ -21,7 +21,7 @@ contains
+ 
+     implicit none
+ 
+-    type(NoahmpIO_type), intent(inout) :: NoahmpIO
++    class(NoahmpIO_type), intent(inout) :: NoahmpIO
+    
+ ! ------------------------------------------------- 
+     associate(                               &
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..de0efb7
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,173 @@
++cmake_minimum_required(VERSION 3.0)
++
++project(noahmp LANGUAGES Fortran)
++
++if (DEFINED ENV{NETCDF} AND (NOT DEFINED ENV{NETCDF_ROOT}))
++  set(ENV{NETCDF_ROOT} $ENV{NETCDF})
++endif ()
++if (DEFINED ENV{NETCDF_ROOT})
++  include_directories("$ENV{NETCDF_ROOT}/include")
++  link_directories("$ENV{NETCDF_ROOT}/lib")
++else ()
++  find_package(PkgConfig)
++  if (PKG_CONFIG_FOUND)
++    pkg_search_module(NETCDF REQUIRED netcdf)
++    if (NETCDF_FOUND)
++      include_directories(${NETCDF_INCLUDEDIR})
++      link_directories(${NETCDF_LIBDIR})
++    else ()
++      message(FATAL_ERROR "Pkg-config could not find netcdf library!")
++    endif ()
++  else ()
++    message(FATAL_ERROR "Unable to find pkg-config library!")
++  endif ()
++endif ()
++set(EXTERNAL_LIBS netcdff netcdf)
++
++add_library(noahmp)
++target_link_libraries(noahmp ${EXTERNAL_LIBS})
++target_sources(noahmp PRIVATE
++  drivers/hrldas/NoahmpIOVarType.F90
++  drivers/hrldas/NoahmpIOVarInitMod.F90
++  drivers/hrldas/ConfigVarInTransferMod.F90
++  drivers/hrldas/ConfigVarOutTransferMod.F90
++  drivers/hrldas/EnergyVarInTransferMod.F90
++  drivers/hrldas/EnergyVarOutTransferMod.F90
++  drivers/hrldas/ForcingVarInTransferMod.F90
++  drivers/hrldas/ForcingVarOutTransferMod.F90
++  drivers/hrldas/WaterVarInTransferMod.F90
++  drivers/hrldas/WaterVarOutTransferMod.F90
++  drivers/hrldas/PedoTransferSR2006Mod.F90
++  drivers/hrldas/BiochemVarInTransferMod.F90
++  drivers/hrldas/BiochemVarOutTransferMod.F90
++  drivers/hrldas/NoahmpDriverMainMod.F90
++  utility/Machine.F90
++  utility/CheckNanMod.F90
++  utility/ErrorHandleMod.F90
++  src/ConstantDefineMod.F90
++  src/ConfigVarType.F90
++  src/ForcingVarType.F90
++  src/EnergyVarType.F90
++  src/WaterVarType.F90
++  src/BiochemVarType.F90
++  src/NoahmpVarType.F90
++  src/ConfigVarInitMod.F90
++  src/ForcingVarInitMod.F90
++  src/EnergyVarInitMod.F90
++  src/WaterVarInitMod.F90
++  src/BiochemVarInitMod.F90
++  src/CanopyHydrologyMod.F90
++  src/GroundWaterTopModelMod.F90
++  src/IrrigationFloodMod.F90
++  src/IrrigationInfilPhilipMod.F90
++  src/IrrigationMicroMod.F90
++  src/MatrixSolverTriDiagonalMod.F90
++  src/RunoffSubSurfaceDrainageMod.F90
++  src/RunoffSubSurfaceEquiWaterTableMod.F90
++  src/RunoffSubSurfaceGroundWaterMod.F90
++  src/RunoffSubSurfaceShallowMmfMod.F90
++  src/RunoffSurfaceBatsMod.F90
++  src/RunoffSurfaceDynamicVicMod.F90
++  src/RunoffSurfaceExcessDynamicVicMod.F90
++  src/RunoffSurfaceFreeDrainMod.F90
++  src/RunoffSurfaceTopModelEquiMod.F90
++  src/RunoffSurfaceTopModelGrdMod.F90
++  src/RunoffSurfaceTopModelMmfMod.F90
++  src/RunoffSurfaceVicMod.F90
++  src/RunoffSurfaceXinAnJiangMod.F90
++  src/ShallowWaterTableMmfMod.F90
++  src/SnowfallBelowCanopyMod.F90
++  src/SnowLayerCombineMod.F90
++  src/SnowLayerDivideMod.F90
++  src/SnowLayerWaterComboMod.F90
++  src/SnowpackCompactionMod.F90
++  src/SnowpackHydrologyMod.F90
++  src/SnowWaterMainMod.F90
++  src/SoilHydraulicPropertyMod.F90
++  src/SoilMoistureSolverMod.F90
++  src/SoilWaterDiffusionRichardsMod.F90
++  src/SoilWaterInfilGreenAmptMod.F90
++  src/SoilWaterInfilPhilipMod.F90
++  src/SoilWaterInfilSmithParlangeMod.F90
++  src/SoilWaterMainMod.F90
++  src/TileDrainageEquiDepthMod.F90
++  src/TileDrainageHooghoudtMod.F90
++  src/TileDrainageSimpleMod.F90
++  src/WaterMainMod.F90
++  src/WaterTableDepthSearchMod.F90
++  src/WaterTableEquilibriumMod.F90
++  src/IrrigationTriggerMod.F90
++  src/IrrigationSprinklerMod.F90
++  src/CanopyWaterInterceptMod.F90
++  src/PrecipitationHeatAdvectMod.F90
++  src/SnowThermalPropertyMod.F90
++  src/SoilThermalPropertyMod.F90
++  src/GroundThermalPropertyMod.F90
++  src/EnergyMainMod.F90
++  src/NoahmpMainMod.F90
++  src/SnowAgingBatsMod.F90
++  src/SnowAlbedoBatsMod.F90
++  src/SnowAlbedoClassMod.F90
++  src/GroundAlbedoMod.F90
++  src/CanopyRadiationTwoStreamMod.F90
++  src/SurfaceAlbedoMod.F90
++  src/SurfaceRadiationMod.F90
++  src/HumiditySaturationMod.F90
++  src/ResistanceAboveCanopyChen97Mod.F90
++  src/ResistanceAboveCanopyMostMod.F90
++  src/ResistanceCanopyStomataBallBerryMod.F90
++  src/ResistanceCanopyStomataJarvisMod.F90
++  src/ResistanceLeafToGroundMod.F90
++  src/VaporPressureSaturationMod.F90
++  src/SurfaceEnergyFluxVegetatedMod.F90
++  src/ResistanceBareGroundChen97Mod.F90
++  src/ResistanceBareGroundMostMod.F90
++  src/SurfaceEnergyFluxBareGroundMod.F90
++  src/SoilSnowTemperatureMainMod.F90
++  src/SoilSnowTemperatureSolverMod.F90
++  src/SoilSnowThermalDiffusionMod.F90
++  src/SoilSnowWaterPhaseChangeMod.F90
++  src/SoilWaterSupercoolKoren99Mod.F90
++  src/SoilWaterSupercoolNiu06Mod.F90
++  src/SnowCoverGroundNiu07Mod.F90
++  src/GroundRoughnessPropertyMod.F90
++  src/SurfaceEmissivityMod.F90
++  src/PsychrometricVariableMod.F90
++  src/ResistanceGroundEvaporationMod.F90
++  src/SoilWaterTranspirationMod.F90
++  src/AtmosForcingMod.F90
++  src/PhenologyMainMod.F90
++  src/BiochemCropMainMod.F90
++  src/BiochemNatureVegMainMod.F90
++  src/CarbonFluxCropMod.F90
++  src/CarbonFluxNatureVegMod.F90
++  src/CropGrowDegreeDayMod.F90
++  src/CropPhotosynthesisMod.F90
++  src/IrrigationPrepareMod.F90
++  src/BalanceErrorCheckMod.F90
++  src/GeneralInitMod.F90
++  src/GroundWaterMmfMod.F90
++  src/BalanceErrorCheckGlacierMod.F90
++  src/EnergyMainGlacierMod.F90
++  src/GeneralInitGlacierMod.F90
++  src/GlacierIceThermalPropertyMod.F90
++  src/GlacierPhaseChangeMod.F90
++  src/GlacierTemperatureMainMod.F90
++  src/GlacierTemperatureSolverMod.F90
++  src/GlacierThermalDiffusionMod.F90
++  src/GroundAlbedoGlacierMod.F90
++  src/GroundRoughnessPropertyGlacierMod.F90
++  src/GroundThermalPropertyGlacierMod.F90
++  src/NoahmpMainGlacierMod.F90
++  src/PrecipitationHeatAdvectGlacierMod.F90
++  src/PsychrometricVariableGlacierMod.F90
++  src/ResistanceGroundEvaporationGlacierMod.F90
++  src/SnowCoverGlacierMod.F90
++  src/SnowWaterMainGlacierMod.F90
++  src/SnowpackHydrologyGlacierMod.F90
++  src/SurfaceAlbedoGlacierMod.F90
++  src/SurfaceEmissivityGlacierMod.F90
++  src/SurfaceEnergyFluxGlacierMod.F90
++  src/SurfaceRadiationGlacierMod.F90
++  src/WaterMainGlacierMod.F90
++)

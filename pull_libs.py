@@ -5,7 +5,7 @@ import os
 import subprocess
 
 parser = argparse.ArgumentParser(description='Pulls all or some submodules from external repositories.')
-parser.add_argument('--libs', nargs='+', help='The libraries to pull.', choices=('ccpp',), default=[])
+parser.add_argument('--libs', nargs='+', help='The libraries to pull.', choices=('noahmp',), default=[])
 args = parser.parse_args()
 
 def run(cmd):
@@ -25,8 +25,7 @@ pull('lib/fiona')
 pull('lib/flogger')
 pull('lib/string')
 
-if 'ccpp' in args.libs:
-	pull('src/physics/ccpp/framework')
-	pull('src/physics/ccpp/physics', recursive=True)
-	os.chdir('src/physics/ccpp')
-	run('./run.sh')
+if 'noahmp' in args.libs:
+	pull('lib/noahmp')
+	os.chdir('lib/noahmp')
+	run('git apply ../noahmp.diff')

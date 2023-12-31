@@ -59,8 +59,18 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: ts
     ! Wind speed on lowest model level (m s-1)
     real(r8), allocatable, dimension(:    ) :: wsp_bot
+    ! Background roughness length (m)
+    real(r8), allocatable, dimension(:    ) :: z0
     ! u* in similarity theory (m s-1)
     real(r8), allocatable, dimension(:    ) :: ustar
+    ! Similarity function for momentum
+    real(r8), allocatable, dimension(:    ) :: psim
+    ! Similarity function for heat
+    real(r8), allocatable, dimension(:    ) :: psih
+    ! Integrated function for momentum
+    real(r8), allocatable, dimension(:    ) :: fm
+    ! Integrated function for heat
+    real(r8), allocatable, dimension(:    ) :: fh
     ! Surface albedo
     real(r8), allocatable, dimension(:    ) :: alb
     ! Cosine of solar zenith angle
@@ -134,7 +144,12 @@ contains
     allocate(this%ps        (mesh%ncol                   ))
     allocate(this%ts        (mesh%ncol                   ))
     allocate(this%wsp_bot   (mesh%ncol                   ))
+    allocate(this%z0        (mesh%ncol                   ))
     allocate(this%ustar     (mesh%ncol                   ))
+    allocate(this%psim      (mesh%ncol                   ))
+    allocate(this%psih      (mesh%ncol                   ))
+    allocate(this%fm        (mesh%ncol                   ))
+    allocate(this%fh        (mesh%ncol                   ))
     allocate(this%alb       (mesh%ncol                   ))
     allocate(this%cosz      (mesh%ncol                   ))
     allocate(this%fdntoa    (mesh%ncol                   ))
@@ -167,7 +182,12 @@ contains
     if (allocated(this%ps       )) deallocate(this%ps       )
     if (allocated(this%ts       )) deallocate(this%ts       )
     if (allocated(this%wsp_bot  )) deallocate(this%wsp_bot  )
+    if (allocated(this%z0       )) deallocate(this%z0       )
     if (allocated(this%ustar    )) deallocate(this%ustar    )
+    if (allocated(this%psim     )) deallocate(this%psim     )
+    if (allocated(this%psih     )) deallocate(this%psih     )
+    if (allocated(this%fm       )) deallocate(this%fm       )
+    if (allocated(this%fh       )) deallocate(this%fh       )
     if (allocated(this%alb      )) deallocate(this%alb      )
     if (allocated(this%cosz     )) deallocate(this%cosz     )
     if (allocated(this%fdntoa   )) deallocate(this%fdntoa   )
