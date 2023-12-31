@@ -161,7 +161,7 @@ module namelist_mod
   real(r8)        :: vor_damp_coef2       = 0.001_r8
   real(r8)        :: vor_damp_top         = 1
   integer         :: vor_damp_k0          = 6
-  real(r8)        :: vor_damp_pole        = 100
+  real(r8)        :: vor_damp_pole        = 0
   real(r8)        :: vor_damp_pole_x      = 200
   real(r8)        :: vor_damp_pole_y      = 200
   real(r8)        :: vor_damp_lat0        = 60
@@ -364,7 +364,7 @@ contains
 
     if (.not. use_vor_damp) then
       vor_damp_order = 0
-    else if (vor_damp_pole_x == 0 .or. vor_damp_pole_y == 0) then
+    else if (vor_damp_pole /= 0) then
       vor_damp_pole_x = vor_damp_pole
       vor_damp_pole_y = vor_damp_pole
     end if

@@ -316,8 +316,13 @@ contains
               end if
             end do
           else
-            call log_error('Negative tracer mass is larger than positive one at i=' // &
-                           to_str(i) // ', j=' // to_str(j) // '!', __FILE__, __LINE__)
+            call log_warning('Negative tracer mass is larger than positive one at i=' // &
+                             to_str(i) // ', j=' // to_str(j) // '!', __FILE__, __LINE__)
+            do k = mesh%full_kds, mesh%full_kde
+              if (q(i,j,k) < 0) then
+                q(i,j,k) = 0
+              end if
+            end do
           end if
         end if
       end do
