@@ -28,9 +28,9 @@ module mars_nasa_physics_driver_mod
 
   private
 
-  public mars_nasa_physics_driver_init
-  public mars_nasa_physics_driver_final
-  public mars_nasa_physics_driver_run
+  public mars_nasa_physics_init
+  public mars_nasa_physics_final
+  public mars_nasa_physics_run
   public mars_nasa_physics_d2p
   public mars_nasa_physics_p2d
   public mars_nasa_physics_add_output
@@ -41,17 +41,11 @@ module mars_nasa_physics_driver_mod
 
 contains
 
-  subroutine mars_nasa_physics_driver_init(namelist_path, nblk, &
-      ncol, nlev, lon, lat, area, dt_adv, dt_phys, min_lon, max_lon, &
-      min_lat, max_lat, input_ngroup)
+  subroutine mars_nasa_physics_init(namelist_path, mesh, dt_adv, dt_phys, &
+    min_lon, max_lon, min_lat, max_lat, input_ngroup)
 
     character(*), intent(in) :: namelist_path
-    integer , intent(in) :: nblk
-    integer , intent(in) :: ncol(nblk)
-    integer , intent(in) :: nlev
-    real(r8), intent(in) :: lon (:,:) ! (ncol(iblk),nblk)
-    real(r8), intent(in) :: lat (:,:) ! (ncol(iblk),nblk)
-    real(r8), intent(in) :: area(:,:) ! (ncol(iblk),nblk)
+    type(physics_mesh_type), intent(in), target :: mesh(:)
     real(r8), intent(in) :: dt_adv
     real(r8), intent(in) :: dt_phys
     real(r8), intent(in) :: min_lon
@@ -60,25 +54,29 @@ contains
     real(r8), intent(in) :: max_lat
     integer , intent(in) :: input_ngroup
 
-    call mars_nasa_physics_driver_final()
+    integer nlev
+
+    nlev = mesh(1)%nlev
+
+    call mars_nasa_physics_final()
     call mars_nasa_tracers_init(dt_adv)
-    call mars_nasa_objects_init(nblk, ncol, nlev, lon, lat, area)
+    call mars_nasa_objects_init(mesh)
     call mars_nasa_parse_namelist(namelist_path)
     call mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat, input_ngroup)
     call mars_orbit_init()
     call mars_nasa_rad_init(nlev)
 
-  end subroutine mars_nasa_physics_driver_init
+  end subroutine mars_nasa_physics_init
 
-  subroutine mars_nasa_physics_driver_final()
+  subroutine mars_nasa_physics_final()
 
     call mars_nasa_rad_final()
 
     call mars_nasa_objects_final()
 
-  end subroutine mars_nasa_physics_driver_final
+  end subroutine mars_nasa_physics_final
 
-  subroutine mars_nasa_physics_driver_run(time)
+  subroutine mars_nasa_physics_run(time)
 
     type(datetime_type), intent(in) :: time
 
@@ -99,7 +97,7 @@ contains
       end associate
     end do
 
-  end subroutine mars_nasa_physics_driver_run
+  end subroutine mars_nasa_physics_run
 
   subroutine mars_nasa_physics_d2p()
 

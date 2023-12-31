@@ -7,14 +7,14 @@ module simple_physics_driver_mod
 
   private
 
-  public simple_physics_driver_init
-  public simple_physics_driver_final
-  public simple_physics_driver_run
+  public simple_physics_init
+  public simple_physics_final
+  public simple_physics_run
   public simple_physics_p2d
   public objects
 
   type simple_physics_objects_type
-    type(physics_mesh_type) mesh
+    type(physics_mesh_type), pointer :: mesh
     type(simple_state_type) state
     type(simple_tend_type ) tend
   end type simple_physics_objects_type
@@ -24,50 +24,45 @@ module simple_physics_driver_mod
 
 contains
 
-  subroutine simple_physics_driver_init(namelist_path, nblk, ncol, nlev, lon, lat, area, dt_adv, dt_phys)
+  subroutine simple_physics_init(namelist_path, mesh, dt_adv, dt_phys)
 
     character(*), intent(in) :: namelist_path
-    integer     , intent(in) :: nblk
-    integer     , intent(in) :: ncol(nblk)
-    integer     , intent(in) :: nlev
-    real(r8)    , intent(in) :: lon (:,:)
-    real(r8)    , intent(in) :: lat (:,:)
-    real(r8)    , intent(in) :: area(:,:)
-    real(r8)    , intent(in) :: dt_adv
-    real(r8)    , intent(in) :: dt_phys
+    type(physics_mesh_type), intent(in), target :: mesh(:)
+    real(r8), intent(in) :: dt_adv
+    real(r8), intent(in) :: dt_phys
 
-    integer iblk
+    integer nblk, iblk
 
-    call simple_physics_driver_final()
+    call simple_physics_final()
 
     call tracer_add('moist', dt_adv, 'qv', 'Water vapor', 'kg kg-1')
 
+    nblk = size(mesh)
     allocate(objects(nblk))
     do iblk = 1, nblk
-      call objects(iblk)%mesh %init(ncol(iblk), nlev, lon(:,iblk), lat(:,iblk), area(:,iblk))
+      objects(iblk)%mesh => mesh(iblk)
       call objects(iblk)%state%init(objects(iblk)%mesh)
       call objects(iblk)%tend %init(objects(iblk)%mesh)
     end do
 
     dt = dt_phys
 
-  end subroutine simple_physics_driver_init
+  end subroutine simple_physics_init
 
-  subroutine simple_physics_driver_final()
+  subroutine simple_physics_final()
 
     integer iblk
 
     if (allocated(objects)) then
       do iblk = 1, size(objects)
-        call objects(iblk)%mesh %clear()
         call objects(iblk)%state%clear()
         call objects(iblk)%tend %clear()
       end do
     end if
 
-  end subroutine simple_physics_driver_final
+  end subroutine simple_physics_final
 
-  subroutine simple_physics_driver_run()
+  subroutine simple_physics_run()
 
     integer iblk
 
@@ -104,7 +99,7 @@ contains
       end associate
     end do
 
-  end subroutine simple_physics_driver_run
+  end subroutine simple_physics_run
 
   subroutine simple_physics_p2d()
 

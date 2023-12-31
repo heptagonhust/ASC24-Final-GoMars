@@ -45,11 +45,11 @@ module cam_physics_driver_mod
 
   private
 
-  public cam_physics_driver_init
-  public cam_physics_driver_final
-  public cam_physics_driver_run1
-  public cam_physics_driver_sfc_flux
-  public cam_physics_driver_run2
+  public cam_physics_init
+  public cam_physics_final
+  public cam_physics_run1
+  public cam_physics_sfc_flux
+  public cam_physics_run2
   public cam_physics_d2p
   public cam_physics_p2d
 
@@ -73,7 +73,7 @@ module cam_physics_driver_mod
 
 contains
 
-  subroutine cam_physics_driver_init(namelist_path)
+  subroutine cam_physics_init(namelist_path)
 
     character(*), intent(in) :: namelist_path
 
@@ -158,9 +158,9 @@ contains
 
     ! call intht('gmcore')
 
-  end subroutine cam_physics_driver_init
+  end subroutine cam_physics_init
 
-  subroutine cam_physics_driver_run1()
+  subroutine cam_physics_run1()
 
     integer ncol, c
     real(r8) coszrs(pcols)
@@ -173,7 +173,7 @@ contains
         pbuf => pbuf2d(:,c)
         call cam_export(phys_state(c), cam_out(c), pbuf)
       end do
-      call cam_physics_driver_sfc_flux()
+      call cam_physics_sfc_flux()
       first_call = .false.
     end if
 
@@ -194,9 +194,9 @@ contains
     end do
     call phys_run1(dt_phys, phys_state, phys_tend, pbuf2d, cam_in, cam_out)
 
-  end subroutine cam_physics_driver_run1
+  end subroutine cam_physics_run1
 
-  subroutine cam_physics_driver_sfc_flux()
+  subroutine cam_physics_sfc_flux()
 
     integer ncol, c
     real(r8) zeros(pcols)
@@ -244,16 +244,16 @@ contains
       cam_in(c)%cflx(:ncol,1) = -cam_in(c)%cflx(:ncol,1)
     end do
 
-  end subroutine cam_physics_driver_sfc_flux
+  end subroutine cam_physics_sfc_flux
 
-  subroutine cam_physics_driver_run2()
+  subroutine cam_physics_run2()
 
     call phys_run2(phys_state, dt_phys, phys_tend, pbuf2d,  cam_out, cam_in)
     call advance_timestep()
 
-  end subroutine cam_physics_driver_run2
+  end subroutine cam_physics_run2
 
-  subroutine cam_physics_driver_final()
+  subroutine cam_physics_final()
 
     call phys_final(phys_state, phys_tend , pbuf2d)
     call dyn_grid_final()
@@ -261,7 +261,7 @@ contains
 
     if (allocated(wetq)) deallocate(wetq)
 
-  end subroutine cam_physics_driver_final
+  end subroutine cam_physics_final
 
   subroutine cam_physics_d2p(block, itime)
 

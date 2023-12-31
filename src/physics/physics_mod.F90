@@ -39,6 +39,8 @@ module physics_mod
   public physics_add_output
   public physics_output
 
+  type(physics_mesh_type), allocatable :: mesh(:)
+
 contains
 
   subroutine physics_init_stage1(namelist_path)
@@ -73,24 +75,29 @@ contains
           icol = icol + 1
         end do
       end do
+      ncol(iblk) = icol - 1
       end associate
     end do
+    ! Create mesh objects.
+    allocate(mesh(nblk))
+    do iblk = 1, nblk
+      call mesh(iblk)%init(ncol(iblk), nlev, lon(:,iblk), lat(:,iblk), area(:,iblk))
+    end do
+    deallocate(ncol, lon, lat, area)
 
     select case (physics_suite)
     case ('simple_physics')
-      call simple_physics_driver_init(namelist_path, nblk, ncol, nlev, lon, lat, area, dt_adv, dt_phys)
+      call simple_physics_init(namelist_path, mesh, dt_adv, dt_phys)
     case ('cam')
 #ifdef HAS_CAM
-      call cam_physics_driver_init(namelist_path, nblk, ncol, nlev, lon, lat, area, dt_adv, dt_phys)
+      call cam_physics_init(namelist_path, mesh, dt_adv, dt_phys)
 #else
       if (proc%is_root()) call log_error('CAM physics is not compiled!')
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_driver_init(namelist_path, nblk, ncol, nlev, &
-        lon, lat, area, dt_adv, dt_phys, min_lon, max_lon, min_lat, max_lat, input_ngroup)
+      call mars_nasa_physics_init(namelist_path, mesh, dt_adv, dt_phys, &
+        min_lon, max_lon, min_lat, max_lat, input_ngroup)
     end select
-
-    deallocate(ncol, lon, lat, area)
 
   end subroutine physics_init_stage1
 
@@ -114,15 +121,15 @@ contains
 
     select case (physics_suite)
     case ('simple_physics')
-      call simple_physics_driver_run()
+      call simple_physics_run()
 #ifdef HAS_CAM
     case ('cam')
-      call cam_physics_driver_run1()
-      call cam_physics_driver_sfc_flux()
-      call cam_physics_driver_run2()
+      call cam_physics_run1()
+      call cam_physics_sfc_flux()
+      call cam_physics_run2()
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_driver_run(curr_time)
+      call mars_nasa_physics_run(curr_time)
     end select
 
     call dp_coupling_p2d(block, itime)
@@ -264,15 +271,17 @@ contains
 
   subroutine physics_final()
 
+    if (allocated(mesh)) deallocate(mesh)
+
     select case (physics_suite)
     case ('simple_physics')
-      call simple_physics_driver_final()
+      call simple_physics_final()
 #ifdef HAS_CAM
     case ('cam')
-      call cam_physics_driver_final()
+      call cam_physics_final()
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_driver_final()
+      call mars_nasa_physics_final()
     end select
 
   end subroutine physics_final

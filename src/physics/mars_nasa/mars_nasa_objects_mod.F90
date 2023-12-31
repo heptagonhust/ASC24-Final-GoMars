@@ -19,9 +19,9 @@ module mars_nasa_objects_mod
   implicit none
 
   type mars_nasa_objects_type
-    type(physics_mesh_type    ) mesh
-    type(mars_nasa_state_type ) state
-    type(mars_nasa_tend_type  ) tend
+    type(physics_mesh_type), pointer :: mesh
+    type(mars_nasa_state_type) state
+    type(mars_nasa_tend_type) tend
     type(mars_nasa_static_type) static
   end type mars_nasa_objects_type
 
@@ -29,22 +29,18 @@ module mars_nasa_objects_mod
 
 contains
 
-  subroutine mars_nasa_objects_init(nblk, ncol, nlev, lon, lat, area)
+  subroutine mars_nasa_objects_init(mesh)
 
-    integer , intent(in) :: nblk
-    integer , intent(in) :: ncol(nblk)
-    integer , intent(in) :: nlev
-    real(r8), intent(in) :: lon (:,:) ! (ncol(iblk),nblk)
-    real(r8), intent(in) :: lat (:,:) ! (ncol(iblk),nblk)
-    real(r8), intent(in) :: area(:,:) ! (ncol(iblk),nblk)
+    type(physics_mesh_type), intent(in), target :: mesh(:)
 
-    integer iblk
+    integer nblk, iblk
 
     call mars_nasa_objects_final()
 
+    nblk = size(mesh)
     allocate(objects(nblk))
     do iblk = 1, nblk
-      call objects(iblk)%mesh  %init(ncol(iblk), nlev, lon(:,iblk), lat(:,iblk), area(:,iblk))
+      objects(iblk)%mesh => mesh(iblk)
       call objects(iblk)%state %init(objects(iblk)%mesh)
       call objects(iblk)%tend  %init(objects(iblk)%mesh)
       call objects(iblk)%static%init(objects(iblk)%mesh)
@@ -58,7 +54,6 @@ contains
 
     if (allocated(objects)) then
       do iblk = 1, size(objects)
-        call objects(iblk)%mesh  %clear()
         call objects(iblk)%state %clear()
         call objects(iblk)%tend  %clear()
         call objects(iblk)%static%clear()
