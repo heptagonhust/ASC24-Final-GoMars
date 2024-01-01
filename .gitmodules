@@ -20,3 +20,6 @@
 [submodule "lib/noahmp"]
 	path = lib/noahmp
 	url = https://gitee.com/dongli85/noahmp
+[submodule "lib/rrtmgp"]
+	path = lib/rrtmgp
+	url = https://gitee.com/dongli85/rte-rrtmgp
