@@ -208,14 +208,14 @@ add_subdirectory(lib/fiona)
 add_subdirectory(lib/flogger)
 
 if (EXISTS ${PROJECT_SOURCE_DIR}/lib/rrtmgp/LICENSE)
-  message("Build RRTMGP radiation codes.")
+  message(STATUS "Build RRTMGP radiation codes.")
   add_subdirectory(lib/rrtmgp)
   list(APPEND EXTERNAL_LIBS rrtmgp)
   set(HAS_RRTMGP TRUE)
 endif ()
 
 if (EXISTS ${PROJECT_SOURCE_DIR}/lib/noahmp/LICENSE.txt)
-  message("Build NoahMP land codes.")
+  message(STATUS "Build NoahMP land codes.")
   add_subdirectory(lib/noahmp)
   list(APPEND EXTERNAL_LIBS noahmp)
   set(HAS_NOAHMP TRUE)
@@ -352,12 +352,15 @@ target_sources(gmcore PRIVATE
 if (HAS_RRTMGP AND HAS_NOAHMP)
   target_sources(gmcore PRIVATE
     src/physics/wrf/wrf_namelist_mod.F90
+    src/physics/wrf/wrf_tracers_mod.F90
     src/physics/wrf/wrf_physics_types_mod.F90
+    src/physics/wrf/wrf_objects_mod.F90
     src/physics/wrf/lsm_noahmp_types_mod.F90
     src/physics/wrf/lsm_noahmp_driver_mod.F90
     src/physics/wrf/lsm_driver_mod.F90
     src/physics/wrf/pbl_ysu_mod.F90
     src/physics/wrf/pbl_driver_mod.F90
+    src/physics/wrf/rad_rrtmgp_types_mod.F90
     src/physics/wrf/rad_rrtmgp_mod.F90
   )
   add_definitions(-DHAS_WRF)

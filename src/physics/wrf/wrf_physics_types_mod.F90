@@ -3,6 +3,7 @@ module wrf_physics_types_mod
   use const_mod
   use physics_types_mod
   use wrf_namelist_mod
+  use rad_rrtmgp_types_mod
   use lsm_noahmp_types_mod
 
   implicit none
@@ -41,6 +42,7 @@ module wrf_physics_types_mod
     real(r8), allocatable, dimension(:  ) :: vos
     ! Land mask
     real(r8), allocatable, dimension(:  ) :: land
+    type(rad_rrtmgp_state_type) rad_rrtmgp
     type(lsm_noahmp_state_type) lsm_noahmp
   contains
     procedure :: init  => wrf_state_init
@@ -80,6 +82,7 @@ contains
     allocate(this%vos   (mesh%ncol          ))
     allocate(this%land  (mesh%ncol          ))
 
+    call this%rad_rrtmgp%init(mesh)
     call this%lsm_noahmp%init(mesh)
 
     call this%physics_state_init(mesh)
