@@ -189,18 +189,8 @@ contains
     real(r8), pointer, contiguous :: tmp(:,:)
     integer is, ie, js, je
 
-    if (this%initialized .and. this%loc /= other%loc) then
+    if (this%initialized .and. (this%full_lon /= other%full_lon .or. this%full_lat /= other%full_lat)) then
       call log_error('latlon_field2d_link: cannot link fields with different loc!', __FILE__, __LINE__)
-    else
-      this%name            = other%name
-      this%long_name       = other%long_name
-      this%units           = other%units
-      this%loc             = other%loc
-      this%mesh            => other%mesh
-      this%halo            => other%halo
-      this%halo_cross_pole = other%halo_cross_pole
-      this%full_lon        = other%full_lon
-      this%full_lat        = other%full_lat
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     select case (this%loc)

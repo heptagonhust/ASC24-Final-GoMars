@@ -313,7 +313,7 @@ contains
     units     = 'Pa'
     if (baroclinic) then
       call this%phs%init(name, long_name, units, 'cell', mesh, halo)
-      call this%phs%link(this%ph, mesh%full_nlev)
+      call this%phs%link(this%ph_lev, mesh%half_nlev)
     end if
 
     name      = 'we'
