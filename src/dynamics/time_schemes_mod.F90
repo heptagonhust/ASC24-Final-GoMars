@@ -173,7 +173,6 @@ contains
             new_state%mgs%d(i,j) = old_state%mgs%d(i,j) + dt * dmgsdt%d(i,j)
           end do
         end do
-        call fill_halo(new_state%mgs)
         call calc_mg (block, new_state)
         call calc_dmg(block, new_state)
         call calc_ph (block, new_state)
