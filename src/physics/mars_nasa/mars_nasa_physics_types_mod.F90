@@ -18,6 +18,8 @@ module mars_nasa_physics_types_mod
   use physics_types_mod
   use mars_nasa_const_mod
   use mars_nasa_namelist_mod
+  use mars_nasa_spectra_mod
+  use mars_nasa_rad_kcoef_mod
 
   implicit none
 
@@ -32,7 +34,12 @@ module mars_nasa_physics_types_mod
     real(r8), allocatable, dimension(:,:    ) :: ro_dst
     ! Cloud particle median radius
     real(r8), allocatable, dimension(:,:    ) :: ro_cld
-    real(r8), allocatable, dimension(:,:,:,:) :: tau
+    ! 
+    real(r8), allocatable, dimension(:,:,:,:) :: tau_gas_vis
+    real(r8), allocatable, dimension(:,:,:,:) :: tau_dst_vis
+    real(r8), allocatable, dimension(:,:,:,:) :: tau_cld_vis
+    ! Top or stratosphere temperature (K)
+    real(r8), allocatable, dimension(:      ) :: t_top
     real(r8), allocatable, dimension(:      ) :: co2ice
   contains
     procedure :: init  => mars_nasa_state_init
@@ -41,6 +48,7 @@ module mars_nasa_physics_types_mod
   end type mars_nasa_state_type
 
   type, extends(physics_tend_type) :: mars_nasa_tend_type
+    real(r8), allocatable :: dpsdt(:)
   contains
     procedure :: init  => mars_nasa_tend_init
     procedure :: clear => mars_nasa_tend_clear
@@ -68,9 +76,13 @@ contains
 
     call this%clear()
 
-    allocate(this%ro_dst(mesh%ncol,mesh%nlev))
-    allocate(this%ro_cld(mesh%ncol,mesh%nlev))
-    allocate(this%co2ice(mesh%ncol))
+    allocate(this%ro_dst     (                  mesh%ncol,mesh%nlev))
+    allocate(this%ro_cld     (                  mesh%ncol,mesh%nlev))
+    allocate(this%tau_gas_vis(spec_vis%n,ngauss,mesh%ncol,mesh%nlev))
+    allocate(this%tau_dst_vis(spec_vis%n,ngauss,mesh%ncol,mesh%nlev))
+    allocate(this%tau_cld_vis(spec_vis%n,ngauss,mesh%ncol,mesh%nlev))
+    allocate(this%t_top      (                  mesh%ncol          ))
+    allocate(this%co2ice     (                  mesh%ncol          ))
 
     call this%physics_state_init(mesh)
 
@@ -80,12 +92,15 @@ contains
 
     class(mars_nasa_state_type), intent(inout) :: this
 
-      if (allocated(this%ro_dst)) deallocate(this%ro_dst)
-      if (allocated(this%ro_cld)) deallocate(this%ro_cld)
-      if (allocated(this%tau   )) deallocate(this%tau   )
-      if (allocated(this%co2ice)) deallocate(this%co2ice)
+    if (allocated(this%ro_dst     )) deallocate(this%ro_dst     )
+    if (allocated(this%ro_cld     )) deallocate(this%ro_cld     )
+    if (allocated(this%tau_gas_vis)) deallocate(this%tau_gas_vis)
+    if (allocated(this%tau_dst_vis)) deallocate(this%tau_dst_vis)
+    if (allocated(this%tau_cld_vis)) deallocate(this%tau_cld_vis)
+    if (allocated(this%t_top      )) deallocate(this%t_top      )
+    if (allocated(this%co2ice     )) deallocate(this%co2ice     )
 
-      call this%physics_state_clear()
+    call this%physics_state_clear()
 
   end subroutine mars_nasa_state_clear
 
@@ -104,6 +119,8 @@ contains
 
     call this%clear()
 
+    allocate(this%dpsdt(mesh%ncol))
+
     call this%physics_tend_init(mesh)
 
   end subroutine mars_nasa_tend_init
@@ -111,6 +128,8 @@ contains
   subroutine mars_nasa_tend_clear(this)
 
     class(mars_nasa_tend_type), intent(inout) :: this
+
+    if (allocated(this%dpsdt)) deallocate(this%dpsdt)
 
     call this%physics_tend_clear()
 

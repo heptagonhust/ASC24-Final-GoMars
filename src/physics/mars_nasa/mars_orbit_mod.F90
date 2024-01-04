@@ -46,6 +46,7 @@ module mars_orbit_mod
   ! Difference of solar longiutde between Ls~0 and perihelion (rad)
   real(r8) peri_dls
 
+  ! Solar declination angle (rad), updated periodically
   real(r8) decl_angle
   real(r8) cos_decl_angle
   real(r8) sin_decl_angle

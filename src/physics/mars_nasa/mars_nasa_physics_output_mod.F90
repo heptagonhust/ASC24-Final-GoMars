@@ -19,12 +19,12 @@ module mars_nasa_physics_output_mod
 
   private
 
-  public mars_nasa_physics_add_output
-  public mars_nasa_physics_output
+  public mars_nasa_add_output
+  public mars_nasa_output
 
 contains
 
-  subroutine mars_nasa_physics_add_output(tag, dtype)
+  subroutine mars_nasa_add_output(tag, dtype)
 
     character(*), intent(in) :: tag
     character(*), intent(in) :: dtype
@@ -33,9 +33,9 @@ contains
 
     call fiona_add_var(tag, 'tin' , long_name='Surface thermal inertia'     , units='', dim_names=dims, dtype=dtype)
 
-  end subroutine mars_nasa_physics_add_output
+  end subroutine mars_nasa_add_output
 
-  subroutine mars_nasa_physics_output(tag, iblk, start, count)
+  subroutine mars_nasa_output(tag, iblk, start, count)
 
     character(*), intent(in) :: tag
     integer, intent(in) :: iblk
@@ -46,6 +46,6 @@ contains
     call fiona_output(tag, 'tin' , reshape(static%tin, count(1:2)), start=start(1:2), count=count(1:2))
     end associate
 
-  end subroutine mars_nasa_physics_output
+  end subroutine mars_nasa_output
 
 end module mars_nasa_physics_output_mod

@@ -9,6 +9,14 @@
 ! GoMars and GMCORE are distributed in the hope that it will be useful, but
 ! WITHOUT ANY WARRANTY. You may contact authors for helping or cooperation.
 ! ==============================================================================
+! Introduction:
+!
+!   The solar fluxes for Mars at given time are calculated from the 1985 Wehrli
+!   Standard Extraterrestrial Solar Irradiance Spectrum.
+!
+!   A black-body at 5780 K produces an integrated flux over these intervals of
+!   1359 W m-2 at 1 AU compared to 1355 W m-2 for the obserged sun.
+! ==============================================================================
 
 module mars_nasa_solar_mod
 
@@ -25,7 +33,8 @@ module mars_nasa_solar_mod
   public mars_nasa_solar_final
   public update_solar_flux
 
-  real(r8), allocatable, dimension(:) :: sol_flx_spec_1au ! Solar flux within each visible spectral interval at 1AU (W m-2)
+  ! Solar flux within each visible spectral interval at 1AU (W m-2)
+  real(r8), allocatable, dimension(:) :: sol_flx_spec_1au
   real(r8), allocatable, dimension(:) :: sol_flx_spec_mars
   real(r8) sol_flx_1au
   real(r8) sol_flx_mars

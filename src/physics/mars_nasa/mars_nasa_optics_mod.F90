@@ -76,8 +76,8 @@ contains
 
     call optics_dst_vis%init( dust_optics_file, 'dust' , 'vis')
     call optics_dst_ir %init( dust_optics_file, 'dust' , 'ir' )
-    call optics_cld_vis%init(cloud_optics_file, 'cloud', 'vis')
-    call optics_cld_ir %init(cloud_optics_file, 'cloud', 'ir' )
+    ! call optics_cld_vis%init(cloud_optics_file, 'cloud', 'vis')
+    ! call optics_cld_ir %init(cloud_optics_file, 'cloud', 'ir' )
 
   end subroutine mars_nasa_optics_init
 

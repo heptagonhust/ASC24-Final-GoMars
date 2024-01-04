@@ -20,6 +20,9 @@ module mars_nasa_namelist_mod
   character(256) albedo_file
   character(256) thermal_inertia_file
 
+  logical :: active_water   = .false.
+  logical :: active_dust    = .false.
+
   integer :: nlev_soil = 0
 
   namelist /mars_nasa_control/ &
@@ -28,6 +31,8 @@ module mars_nasa_namelist_mod
     cloud_optics_file        , &
     albedo_file              , &
     thermal_inertia_file     , &
+    active_water             , &
+    active_dust              , &
     nlev_soil
 
 contains

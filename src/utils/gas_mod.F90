@@ -21,14 +21,14 @@ module gas_mod
 
   integer, parameter :: r8 = 8
 
-  real(r8), parameter :: kb       = 1.380649e-23_r8     ! Boltzmann constant
-  real(r8), parameter :: na       = 6.02214076e23_r8    ! Avogadro constant
-  real(r8), parameter :: ru       = kb * na             ! Universal gas constant
-  real(r8), parameter :: m_o2     = 32.00e-3_r8         ! O2 molar mass (kg mol-1)
-  real(r8), parameter :: m_n2     = 28.01e-3_r8         ! N2 molar mass (kg mol-1)
-  real(r8), parameter :: m_ar     = 39.94e-3_r8         ! Ar molar mass (kg mol-1)
-  real(r8), parameter :: m_co2    = 44.01e-3_r8         ! CO2 molar mass (kg mol-1)
-  real(r8), parameter :: m_h2o    = 18.02e-3_r8         ! H2O molar mass (kg mol-1)
+  real(r8), public, parameter :: kb       = 1.380649e-23_r8     ! Boltzmann constant
+  real(r8), public, parameter :: na       = 6.02214076e23_r8    ! Avogadro constant
+  real(r8), public, parameter :: ru       = kb * na             ! Universal gas constant
+  real(r8), public, parameter :: m_o2     = 32.00e-3_r8         ! O2 molar mass (kg mol-1)
+  real(r8), public, parameter :: m_n2     = 28.01e-3_r8         ! N2 molar mass (kg mol-1)
+  real(r8), public, parameter :: m_ar     = 39.94e-3_r8         ! Ar molar mass (kg mol-1)
+  real(r8), public, parameter :: m_co2    = 44.01e-3_r8         ! CO2 molar mass (kg mol-1)
+  real(r8), public, parameter :: m_h2o    = 18.02e-3_r8         ! H2O molar mass (kg mol-1)
 
   type gas_type
     character(30) :: name = ''

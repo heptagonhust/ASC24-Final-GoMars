@@ -52,6 +52,7 @@ module const_mod
   real(r8)            :: lapse_rate   = 0 ! K m-1
   real(r8)            :: p0           = 0 ! Pa
   real(r8)            :: pk0          = 0 ! Pa
+  real(r8)            :: time_scale   = 1
 
   integer, parameter :: inf_i4 = 10000000
 
@@ -91,12 +92,13 @@ contains
       rv_o_rd    = rv / rd
       p0         = 1.0d5
     case ('mars')
+      time_scale = mars_sol_seconds / earth_day_seconds
       omega      = 2 * pi / mars_sol_seconds
       radius     = 3.397200d6
       g          = 3.72d0
       lv         = 2.84d6
       lapse_rate = 5.06d-3
-      p0         = 6.1d2 ! FIXME: Should we use 6 hPa?
+      p0         = 6.1d2
     case default
       call log_error('Invalid planet!')
     end select

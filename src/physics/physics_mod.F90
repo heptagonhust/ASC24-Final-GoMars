@@ -47,6 +47,12 @@ contains
 
     character(*), intent(in) :: namelist_path
 
+  end subroutine physics_init_stage1
+
+  subroutine physics_init_stage2(namelist_path)
+
+    character(*), intent(in) :: namelist_path
+
     integer nblk, iblk, icol, i, j
     integer , allocatable :: ncol(:)
     real(r8), allocatable :: lon (:,:)
@@ -81,7 +87,7 @@ contains
     ! Create mesh objects.
     allocate(mesh(nblk))
     do iblk = 1, nblk
-      call mesh(iblk)%init(ncol(iblk), nlev, lon(:,iblk), lat(:,iblk), area(:,iblk))
+      call mesh(iblk)%init(ncol(iblk), nlev, lon(:,iblk), lat(:,iblk), area(:,iblk), ptop=ptop)
     end do
     deallocate(ncol, lon, lat, area)
 
@@ -95,17 +101,24 @@ contains
       if (proc%is_root()) call log_error('CAM physics is not compiled!')
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_init(namelist_path, mesh, dt_adv, dt_phys, &
+      call mars_nasa_init_stage2(namelist_path, mesh, dt_adv, dt_phys, &
         min_lon, max_lon, min_lat, max_lat, input_ngroup)
     end select
-
-  end subroutine physics_init_stage1
-
-  subroutine physics_init_stage2()
 
   end subroutine physics_init_stage2
 
   subroutine physics_init_stage3()
+
+    integer iblk
+
+    do iblk = 1, size(blocks)
+      call dp_coupling_d2p(blocks(iblk), 1)
+    end do
+
+    select case (physics_suite)
+    case ('mars_nasa')
+      call mars_nasa_init_stage3()
+    end select
 
   end subroutine physics_init_stage3
 
@@ -129,7 +142,7 @@ contains
       call cam_physics_run2()
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_run(curr_time)
+      call mars_nasa_run(curr_time)
     end select
 
     call dp_coupling_p2d(block, itime)
@@ -281,7 +294,7 @@ contains
       call cam_physics_final()
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_final()
+      call mars_nasa_final()
     end select
 
   end subroutine physics_final
@@ -297,7 +310,7 @@ contains
 
     select case (physics_suite)
     case ('mars_nasa')
-      call mars_nasa_physics_add_output('h0', output_h0_dtype)
+      call mars_nasa_add_output('h0', output_h0_dtype)
     end select
 
   end subroutine physics_add_output
@@ -321,7 +334,7 @@ contains
 
     select case (physics_suite)
     case ('mars_nasa')
-      call mars_nasa_physics_output('h0', block%id, start, count)
+      call mars_nasa_output('h0', block%id, start, count)
       state  => mars_nasa_objects(block%id)%state
       static => mars_nasa_objects(block%id)%static
     end select

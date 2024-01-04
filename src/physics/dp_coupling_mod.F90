@@ -22,8 +22,8 @@ module dp_coupling_mod
   use cam_physics_driver_mod      , only: cam_physics_d2p, cam_physics_p2d, &
                                           cam_objects => objects
 #endif
-  use mars_nasa_physics_driver_mod, only: mars_nasa_physics_d2p, &
-                                          mars_nasa_physics_p2d, &
+  use mars_nasa_physics_driver_mod, only: mars_nasa_d2p, &
+                                          mars_nasa_p2d, &
                                           mars_nasa_objects => objects
   use filter_mod
 
@@ -53,7 +53,7 @@ contains
 #endif
     case ('mars_nasa')
       call common_d2p(block, itime, tracers(block%id), mars_nasa_objects(block%id)%state)
-      call mars_nasa_physics_d2p()
+      call mars_nasa_d2p()
     end select
 
   contains
@@ -132,7 +132,7 @@ contains
       call common_p2d(block, itime, tracers(block%id), cam_objects(block%id)%tend)
 #endif
     case ('mars_nasa')
-      call mars_nasa_physics_p2d()
+      call mars_nasa_p2d()
       call common_p2d(block, itime, tracers(block%id), mars_nasa_objects(block%id)%tend)
     end select
 

@@ -31,6 +31,8 @@ module physics_types_mod
     real(r8), allocatable, dimension(:,:  ) :: v
     ! Air temperature (K)
     real(r8), allocatable, dimension(:,:  ) :: t
+    ! Surface or ground temperature (K)
+    real(r8), allocatable, dimension(:    ) :: t_sfc
     ! Potential temperature (K)
     real(r8), allocatable, dimension(:,:  ) :: pt
     ! Tracer mixing ratio (moist)
@@ -138,6 +140,7 @@ contains
     allocate(this%u         (mesh%ncol,mesh%nlev         ))
     allocate(this%v         (mesh%ncol,mesh%nlev         ))
     allocate(this%t         (mesh%ncol,mesh%nlev         ))
+    allocate(this%t_sfc     (mesh%ncol                   ))
     allocate(this%pt        (mesh%ncol,mesh%nlev         ))
     allocate(this%q         (mesh%ncol,mesh%nlev,ntracers))
     allocate(this%p         (mesh%ncol,mesh%nlev         ))
@@ -180,6 +183,7 @@ contains
     if (allocated(this%u        )) deallocate(this%u        )
     if (allocated(this%v        )) deallocate(this%v        )
     if (allocated(this%t        )) deallocate(this%t        )
+    if (allocated(this%t_sfc    )) deallocate(this%t_sfc    )
     if (allocated(this%pt       )) deallocate(this%pt       )
     if (allocated(this%q        )) deallocate(this%q        )
     if (allocated(this%p        )) deallocate(this%p        )

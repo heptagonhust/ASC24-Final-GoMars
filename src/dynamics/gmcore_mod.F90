@@ -156,6 +156,7 @@ contains
     real(r8) seconds
 
     call vert_coord_init(namelist_path)
+    call physics_init_stage2(namelist_path)
     call restart_init()
     call pgf_init()
     call interp_init()

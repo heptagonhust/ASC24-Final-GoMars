@@ -11,7 +11,7 @@ module namelist_mod
 
   use string
   use flogger
-  use const_mod, only: r8, const_init, earth_day_seconds, mars_sol_seconds
+  use const_mod, only: r8, const_init, time_scale, earth_day_seconds, mars_sol_seconds
 
   implicit none
 
@@ -26,6 +26,7 @@ module namelist_mod
   real(r8)        :: run_my               = 0
   real(r8)        :: run_sol              = 0
 
+  ! Individual time step sizes in target planet time system
   real(r8)        :: dt_dyn               = 0
   real(r8)        :: dt_adv               = 0
   real(r8)        :: dt_phys              = 0
@@ -350,6 +351,11 @@ contains
     if (dt_dyn  == 0) dt_dyn  = dt_adv
     if (dt_adv  == 0) dt_adv  = dt_dyn
     if (dt_phys == 0) dt_phys = dt_adv
+
+    ! Convert time step sizes to Earth time system
+    dt_dyn  = dt_dyn  * time_scale
+    dt_adv  = dt_adv  * time_scale
+    dt_phys = dt_phys * time_scale
 
     if (physics_suite == 'N/A') then
       pdc_type       = 0

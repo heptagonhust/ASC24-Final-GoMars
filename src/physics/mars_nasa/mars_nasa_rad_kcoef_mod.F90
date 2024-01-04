@@ -9,6 +9,16 @@
 ! GoMars and GMCORE are distributed in the hope that it will be useful, but
 ! WITHOUT ANY WARRANTY. You may contact authors for helping or cooperation.
 ! ==============================================================================
+! Introduction:
+!
+!   The absorption coefficient K is a function of local temperature, pressure, 
+!   gas mixture, and wavelength. It is pre-computed over a wide range of air
+!   conditions, and stored in a look up table.
+!
+!   K distribution method (KDM) resorts K in each selected spectral band by
+!   assuming each wavelength is no more important than others.
+!
+! ==============================================================================
 
 module mars_nasa_rad_kcoef_mod
 
@@ -23,7 +33,7 @@ module mars_nasa_rad_kcoef_mod
 
   public mars_nasa_rad_kcoef_init
   public mars_nasa_rad_kcoef_final
-  public get_kcoef
+  public get_kcoef_vis
   public ntref
   public npint
   public nqref
@@ -86,11 +96,11 @@ contains
     call fiona_get_dim('kcoef', 'pref' , size=npref )
     call fiona_get_dim('kcoef', 'qref' , size=nqref )
     call fiona_get_dim('kcoef', 'gauss', size=ngauss)
-    allocate(tref       (ntref                             ))
-    allocate(pref       (      npref                       ))
-    allocate(qco2ref    (            nqref                 ))
-    allocate(qh2oref    (            nqref                 ))
-    allocate(gwgt       (                            ngauss))
+    allocate(tref       (ntref                              ))
+    allocate(pref       (      npref                        ))
+    allocate(qco2ref    (            nqref                  ))
+    allocate(qh2oref    (            nqref                  ))
+    allocate(gwgt       (                             ngauss))
     allocate(klut_in_vis(ntref,npref,nqref,spec_vis%n,ngauss))
     allocate(klut_in_ir (ntref,npref,nqref,spec_ir %n,ngauss))
     allocate(f0_vis     (                  spec_vis%n       ))
@@ -263,11 +273,80 @@ contains
 
   end subroutine interp_kcoef
 
-  pure real(r8) function get_kcoef(p, t) result(res)
+  subroutine get_kcoef_vis(t, p, qh2o, kcoef)
 
-    real(r8), intent(in) :: p ! Pressure (Pa)
-    real(r8), intent(in) :: t ! Temperature (K)
+    ! Temperature (K)
+    real(r8), intent(in   ) :: t
+    ! Pressure (Pa)
+    real(r8), intent(in   ) :: p
+    ! Water vapor mixing ratio (kg kg-1)
+    real(r8), intent(in   ) :: qh2o
+    ! Optical depth
+    real(r8), intent(inout) :: kcoef(:,:)
 
-  end function get_kcoef
+    integer i, it, ip, iq, is, ig
+    real(r8) logp, wt, wp, wq, c(4), k(4)
+
+    if (t < tref(1)) then
+      it = 1
+    else if (t > tref(ntref)) then
+      it = ntref - 1
+    else
+      do i = 1, ntref - 1
+        if (tref(i) < t .and. t <= tref(i+1)) then
+          it = i
+          exit
+        end if
+      end do
+    end if
+    wt = (t - tref(it)) / (tref(it+1) - tref(it))
+
+    logp = log10(p)
+    if (logp < logpint(1)) then
+      ip = 1
+    else if (logp > logpint(npint)) then
+      ip = npint - 1
+    else
+      do i = 1, npint - 1
+        if (logpint(i) < logp .and. logp <= logpint(i+1)) then
+          ip = i
+          exit
+        end if
+      end do
+    end if
+    wp = (logp - logpint(ip)) / (logpint(ip+1) - logpint(ip))
+
+    c(1) = (1 - wp) * (1 - wt)
+    c(2) = wp * (1 - wt)
+    c(3) = wp * wt
+    c(4) = (1 - wp) * wt
+
+    if (qh2o <= qh2oref(1)) then
+      iq = 1
+      wq = 0
+    else if (qh2o >= qh2oref(nqref)) then
+      iq = nqref
+      wq = 0
+    else
+      do i = 2, nqref
+        if (qh2oref(i-1) <= qh2o .and. qh2o < qh2oref(i)) then
+          iq = i - 1
+          wq = (qh2o - qh2oref(i-1)) / (qh2oref(i) - qh2oref(i-1))
+          exit
+        end if
+      end do
+    end if
+
+    do is = 1, spec_vis%n
+      do ig = 1, ngauss - 1
+        k(1) = klut_vis(it  ,ip  ,iq,is,ig) + wq * (klut_vis(it  ,ip  ,iq+1,is,ig) - klut_vis(it  ,ip  ,iq,is,ig))
+        k(2) = klut_vis(it  ,ip+1,iq,is,ig) + wq * (klut_vis(it  ,ip+1,iq+1,is,ig) - klut_vis(it  ,ip+1,iq,is,ig))
+        k(3) = klut_vis(it+1,ip+1,iq,is,ig) + wq * (klut_vis(it+1,ip+1,iq+1,is,ig) - klut_vis(it+1,ip+1,iq,is,ig))
+        k(4) = klut_vis(it+1,ip  ,iq,is,ig) + wq * (klut_vis(it+1,ip  ,iq+1,is,ig) - klut_vis(it+1,ip  ,iq,is,ig))
+        kcoef(is,ig) = sum(c * k)
+      end do
+    end do
+
+  end subroutine get_kcoef_vis
 
 end module mars_nasa_rad_kcoef_mod

@@ -11,6 +11,8 @@ module physics_mesh_mod
   type physics_mesh_type
     integer :: ncol = 0
     integer :: nlev = 0
+    real(r8) :: ptop = 0
+    real(r8) :: ztop = 0
     real(r8), allocatable, dimension(:) :: lon  ! Longitude (rad)
     real(r8), allocatable, dimension(:) :: lat  ! Latitude (rad)
     real(r8), allocatable, dimension(:) :: area ! Cell area (m2)
@@ -22,7 +24,7 @@ module physics_mesh_mod
 
 contains
 
-  subroutine physics_mesh_init(this, ncol, nlev, lon, lat, area)
+  subroutine physics_mesh_init(this, ncol, nlev, lon, lat, area, ptop, ztop)
 
     class(physics_mesh_type), intent(inout) :: this
     integer , intent(in) :: ncol
@@ -30,6 +32,8 @@ contains
     real(r8), intent(in) :: lon (ncol)
     real(r8), intent(in) :: lat (ncol)
     real(r8), intent(in) :: area(ncol)
+    real(r8), intent(in), optional :: ptop
+    real(r8), intent(in), optional :: ztop
 
     call this%clear()
 
@@ -38,6 +42,8 @@ contains
     allocate(this%lon (ncol)); this%lon  = lon
     allocate(this%lat (ncol)); this%lat  = lat
     allocate(this%area(ncol)); this%area = area
+    if (present(ptop)) this%ptop = ptop
+    if (present(ztop)) this%ztop = ztop
 
   end subroutine physics_mesh_init
 

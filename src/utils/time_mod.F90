@@ -46,6 +46,7 @@ module time_mod
   type(datetime_type) end_time
   type(datetime_type) curr_time
   type(timedelta_type) dt
+  ! Elapsed seconds in target planet time system
   real(r8) elapsed_seconds
   type(hash_table_type) alerts
   integer time_step
@@ -58,6 +59,7 @@ contains
 
   subroutine time_init(dt_in_seconds)
 
+    ! Time step size in Earth time system (s)
     real(r8), intent(in) :: dt_in_seconds
 
     select case (planet)
@@ -108,7 +110,8 @@ contains
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    call dt%init(seconds=dt_in_seconds)
+    ! NOTE: Here convert time step size back to the target planet time system.
+    call dt%init(seconds=dt_in_seconds/time_scale)
 
     curr_time = start_time
 
@@ -170,8 +173,8 @@ contains
 
     time_step = time_step + 1
     if (present(dt_in_seconds)) then
-      elapsed_seconds = elapsed_seconds + dt_in_seconds
-      call curr_time%add(seconds=dt_in_seconds)
+      elapsed_seconds = elapsed_seconds + dt_in_seconds / time_scale
+      call curr_time%add(seconds=dt_in_seconds/time_scale)
     else
       elapsed_seconds = elapsed_seconds + dt%total_seconds()
       curr_time = curr_time + dt
