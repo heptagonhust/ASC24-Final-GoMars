@@ -324,13 +324,14 @@ contains
     integer, intent(in) :: itime
 
     integer i, j, k, iblk
-    real(r8) tm, te, tpe, tpt, max_w
+    real(r8) tm, te, tpe, tpt, tqv, max_w
     real(r8) te_ke, te_ie, te_pe
 
     tm    = 0
     te    = 0
     tpe   = 0
     tpt   = 0
+    tqv   = 0
     te_ke = 0
     te_ie = 0
     te_pe = 0
@@ -342,19 +343,30 @@ contains
                  dmg     => blocks(iblk)%dstate(itime)%dmg  , &
                  dmg_lon => blocks(iblk)%aux%dmg_lon        , &
                  dmg_lat => blocks(iblk)%aux%dmg_lat        , &
-                 u_lon  => blocks(iblk)%dstate(itime)%u_lon , &
-                 v_lat  => blocks(iblk)%dstate(itime)%v_lat , &
-                 tv     => blocks(iblk)%dstate(itime)%tv    , &
-                 pt     => blocks(iblk)%dstate(itime)%pt    , &
-                 pv_lon => blocks(iblk)%aux%pv_lon          , &
-                 pv_lat => blocks(iblk)%aux%pv_lat          )
+                 u_lon   => blocks(iblk)%dstate(itime)%u_lon, &
+                 v_lat   => blocks(iblk)%dstate(itime)%v_lat, &
+                 tv      => blocks(iblk)%dstate(itime)%tv   , &
+                 pt      => blocks(iblk)%dstate(itime)%pt   , &
+                 pv_lon  => blocks(iblk)%aux%pv_lon         , &
+                 pv_lat  => blocks(iblk)%aux%pv_lat         , &
+                 q       => tracers(iblk)%q                 )
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            tm = tm + dmg%d(i,j,k) * mesh%area_cell(j)
+            tm  = tm  + dmg%d(i,j,k) * mesh%area_cell(j)
+            if (idx_qv > 0) tqv = tqv + dmg%d(i,j,k) * q%d(i,j,k,idx_qv) * mesh%area_cell(j)
           end do
         end do
       end do
+      if (idx_qv > 0) then
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              tqv = tqv + dmg%d(i,j,k) * q%d(i,j,k,idx_qv) * mesh%area_cell(j)
+            end do
+          end do
+        end do
+      end if
 
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -413,12 +425,13 @@ contains
       end if
       end associate
     end do
-    call global_sum(proc%comm, tm)
-    call global_sum(proc%comm, te_ke)
-    call global_sum(proc%comm, te_ie)
-    call global_sum(proc%comm, te_pe)
-    call global_sum(proc%comm, tpe)
-    if (baroclinic) call global_sum(proc%comm, tpt)
+                    call global_sum(proc%comm, tm   )
+    if (idx_qv > 0) call global_sum(proc%comm, tqv  )
+                    call global_sum(proc%comm, te_ke)
+                    call global_sum(proc%comm, te_ie)
+                    call global_sum(proc%comm, te_pe)
+                    call global_sum(proc%comm, tpe  )
+    if (baroclinic) call global_sum(proc%comm, tpt  )
     te = te_ke + te_ie + te_pe
 
     do iblk = 1, size(blocks)
@@ -428,14 +441,14 @@ contains
       blocks(iblk)%dstate(itime)%te_ke = te_ke
       blocks(iblk)%dstate(itime)%te_ie = te_ie
       blocks(iblk)%dstate(itime)%te_pe = te_pe
-      ! call calc_omg(blocks(iblk), blocks(iblk)%dstate(itime))
     end do
 
     if (planet == 'mars') call log_add_diag('ls', curr_time%solar_longitude())
-    call log_add_diag('tm' , tm )
-    if (baroclinic) call log_add_diag('tpt', tpt)
-    call log_add_diag('te' , te )
-    call log_add_diag('tpe', tpe)
+                          call log_add_diag('tm' , tm )
+    if (idx_qv > 0      ) call log_add_diag('tqv', tqv)
+    if (baroclinic      ) call log_add_diag('tpt', tpt)
+                          call log_add_diag('te' , te )
+                          call log_add_diag('tpe', tpe)
 
   end subroutine diagnose
 
