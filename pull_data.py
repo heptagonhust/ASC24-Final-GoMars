@@ -23,4 +23,4 @@ if os.path.isdir(args.planet):
 if args.planet == 'earth':
 	pass
 elif args.planet == 'mars':
-	run('git clone https://gitee.com/dongli85/gomars-data mars')
+	run('git clone https://gitee.com/dongli85/gomars-data mars --depth 1')
