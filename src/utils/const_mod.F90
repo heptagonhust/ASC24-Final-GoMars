@@ -92,7 +92,6 @@ contains
       rv_o_rd    = rv / rd
       p0         = 1.0d5
     case ('mars')
-      time_scale = mars_sol_seconds / earth_day_seconds
       omega      = 2 * pi / mars_sol_seconds
       radius     = 3.397200d6
       g          = 3.72d0

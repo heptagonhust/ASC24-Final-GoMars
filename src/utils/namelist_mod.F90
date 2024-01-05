@@ -353,6 +353,10 @@ contains
     if (dt_phys == 0) dt_phys = dt_adv
 
     ! Convert time step sizes to Earth time system
+    select case (planet)
+    case ('mars')
+      time_scale = mars_sol_seconds / earth_day_seconds
+    end select
     dt_dyn  = dt_dyn  * time_scale
     dt_adv  = dt_adv  * time_scale
     dt_phys = dt_phys * time_scale

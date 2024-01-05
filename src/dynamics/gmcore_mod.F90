@@ -431,6 +431,7 @@ contains
       ! call calc_omg(blocks(iblk), blocks(iblk)%dstate(itime))
     end do
 
+    if (planet == 'mars') call log_add_diag('ls', curr_time%solar_longitude())
     call log_add_diag('tm' , tm )
     if (baroclinic) call log_add_diag('tpt', tpt)
     call log_add_diag('te' , te )
