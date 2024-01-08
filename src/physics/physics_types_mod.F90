@@ -81,6 +81,8 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: pblh
     ! PBL top vertical index
     integer , allocatable, dimension(:    ) :: pblk
+    ! Upward heat flux at surface (W m-2)
+    real(r8), allocatable, dimension(:    ) :: hflx
     ! Surface albedo
     real(r8), allocatable, dimension(:    ) :: alb
     ! Cosine of solar zenith angle
@@ -165,6 +167,7 @@ contains
     allocate(this%fh        (mesh%ncol                   ))
     allocate(this%pblh      (mesh%ncol                   ))
     allocate(this%pblk      (mesh%ncol                   ))
+    allocate(this%hflx      (mesh%ncol                   ))
     allocate(this%alb       (mesh%ncol                   ))
     allocate(this%cosz      (mesh%ncol                   ))
     allocate(this%fdntoa    (mesh%ncol                   ))
@@ -208,6 +211,7 @@ contains
     if (allocated(this%fh       )) deallocate(this%fh       )
     if (allocated(this%pblh     )) deallocate(this%pblh     )
     if (allocated(this%pblk     )) deallocate(this%pblk     )
+    if (allocated(this%hflx     )) deallocate(this%hflx     )
     if (allocated(this%alb      )) deallocate(this%alb      )
     if (allocated(this%cosz     )) deallocate(this%cosz     )
     if (allocated(this%fdntoa   )) deallocate(this%fdntoa   )

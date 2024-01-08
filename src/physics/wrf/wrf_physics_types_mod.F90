@@ -24,10 +24,8 @@ module wrf_physics_types_mod
     real(r8), allocatable, dimension(:  ) :: pt2
     ! Specific humidity at 2 m (kg kg-1)
     real(r8), allocatable, dimension(:  ) :: qv2
-    ! Upward heat flux at surface (W m-2)
-    real(r8), allocatable, dimension(:  ) :: hfx
     ! Upward moisture flux at surface (kg m-2 s-1)
-    real(r8), allocatable, dimension(:  ) :: qfx
+    real(r8), allocatable, dimension(:  ) :: qflx
     ! Bulk Richardson
     real(r8), allocatable, dimension(:  ) :: br
     ! Scalar exchange coefficients
@@ -72,8 +70,7 @@ contains
     allocate(this%v10   (mesh%ncol          ))
     allocate(this%pt2   (mesh%ncol          ))
     allocate(this%qv2   (mesh%ncol          ))
-    allocate(this%hfx   (mesh%ncol          ))
-    allocate(this%qfx   (mesh%ncol          ))
+    allocate(this%qflx  (mesh%ncol          ))
     allocate(this%br    (mesh%ncol          ))
     allocate(this%exch_h(mesh%ncol,mesh%nlev))
     allocate(this%exch_m(mesh%ncol,mesh%nlev))
@@ -99,8 +96,7 @@ contains
     if (allocated(this%v10   )) deallocate(this%v10   )
     if (allocated(this%pt2   )) deallocate(this%pt2   )
     if (allocated(this%qv2   )) deallocate(this%qv2   )
-    if (allocated(this%hfx   )) deallocate(this%hfx   )
-    if (allocated(this%qfx   )) deallocate(this%qfx   )
+    if (allocated(this%qflx  )) deallocate(this%qflx  )
     if (allocated(this%br    )) deallocate(this%br    )
     if (allocated(this%exch_h)) deallocate(this%exch_h)
     if (allocated(this%exch_m)) deallocate(this%exch_m)
