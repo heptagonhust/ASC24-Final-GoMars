@@ -77,7 +77,7 @@ contains
 
     character(*), intent(in) :: planet
 
-    call get_command(gmcore_root)
+    call get_command_argument(0, gmcore_root)
     gmcore_root = abspath(trim(dirname(gmcore_root)) // '/..')
 
     rd  = major_gas%r

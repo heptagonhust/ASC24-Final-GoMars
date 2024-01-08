@@ -18,7 +18,7 @@ module mars_cold_run_mod
   public mars_cold_run_set_ic
 
   real(r8), parameter :: t0   = 170.0_r8   ! K
-  real(r8), parameter :: ps0  = 610.0_r8   ! Pa
+  real(r8), parameter :: ps0  = 701.0_r8   ! Pa
 
 contains
 
@@ -26,7 +26,7 @@ contains
 
     type(block_type), intent(inout), target :: block
 
-    real(r8) min_lon, max_lon, min_lat, max_lat
+    real(r8) min_lon, max_lon, min_lat, max_lat, ps
     integer i, j, k
 
     associate (mesh   => block%mesh            , &
@@ -51,12 +51,19 @@ contains
     u%d = 0
     v%d = 0
     t%d = t0
+
+    ps = 0
     do j = mesh%full_jds, mesh%full_jde
       do i = mesh%full_ids, mesh%full_ide
-        mgs%d(i,j) = ps0 * exp(-gzs%d(i,j) / (Rd * t0)) - ptop
+        mgs%d(i,j) = ps0 * exp(-gzs%d(i,j) / (Rd * t0))
         phs%d(i,j) = mgs%d(i,j)
+        ps = ps + mgs%d(i,j) * mesh%area_cell(j)
       end do
     end do
+    call global_sum(proc%comm, ps)
+    ps = ps / global_mesh%total_area
+    ! Scale mgs to get area-weighted mean value 701 hPa.
+    mgs%d = mgs%d * ps0 / ps
     call fill_halo(mgs)
 
     call calc_mg(block, block%dstate(1))

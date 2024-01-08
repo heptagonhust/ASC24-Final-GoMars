@@ -153,9 +153,9 @@ contains
         call get_kcoef_vis(t_rad(k), p_rad(k), qh2o_rad(k), tau_vis(:,:))
         tau_vis = cmk * (p_rad(k) - p_rad(k-1)) * tau_vis
         tau_vis_sfc = tau_vis_sfc + tau_vis
-        print *, k, t_rad(k), p_rad(k), qh2o_rad(k), tau_vis(1,1)
+        ! print *, k, t_rad(k), p_rad(k), qh2o_rad(k), tau_vis(1,1)
       end do
-      stop 999
+      ! stop 999
     end do
     end associate
 
