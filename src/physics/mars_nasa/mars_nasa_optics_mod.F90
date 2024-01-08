@@ -15,6 +15,7 @@ module mars_nasa_optics_mod
   use fiona
   use const_mod
   use mars_nasa_namelist_mod
+  use mars_nasa_spectra_mod
 
   implicit none
 
@@ -22,10 +23,6 @@ module mars_nasa_optics_mod
 
   public mars_nasa_optics_init
   public mars_nasa_optics_final
-  public optics_dst_vis
-  public optics_dst_ir
-  public optics_cld_vis
-  public optics_cld_ir
 
 
   ! Absorption coefficient (m-1): βa
@@ -36,37 +33,22 @@ module mars_nasa_optics_mod
   ! Transmittance (1): t(s1,s2) = exp(-τ(s1,s2))
   ! Mass extinction coefficient: ke = βe / ρ
 
-  type optics_type
-    ! Particle radius bin number
-    integer :: nbin  = 0
-    ! Spectral number
-    integer :: nspec = 0
-    ! Particle radius bin boundaries
-    real(r8), allocatable, dimension(:  ) :: r_bnds
-    ! Extinction efficient at each spectral interval
-    real(r8), allocatable, dimension(  :) :: be0
-    ! Scattering efficient at each spectral interval
-    real(r8), allocatable, dimension(  :) :: bs0
-    ! Asymmetry parameter at each spectral interval
-    real(r8), allocatable, dimension(  :) :: gs0
-    ! Single scattering albedo at each spectral interval
-    real(r8), allocatable, dimension(  :) :: ws0
-    ! Extinction efficient at each spectral interval and each particle bin
-    real(r8), allocatable, dimension(:,:) :: be
-    ! Scattering efficient at each spectral interval and each particle bin
-    real(r8), allocatable, dimension(:,:) :: bs
-    ! Asymmetry parameter at each spectral interval and each particle bin
-    real(r8), allocatable, dimension(:,:) :: gs
-  contains
-    procedure :: init  => optics_init
-    procedure :: clear => optics_clear
-    final optics_final
-  end type optics_type
-
-  type(optics_type) optics_dst_vis
-  type(optics_type) optics_dst_ir
-  type(optics_type) optics_cld_vis
-  type(optics_type) optics_cld_ir
+  integer, public :: nbin_dst = 0
+  integer, public :: nratio_cld = 0
+  real(r8), public, allocatable, dimension(    :) :: dst_r_bnds
+  real(r8), public, allocatable, dimension(    :) :: dst_be0_vis, dst_be0_ir
+  real(r8), public, allocatable, dimension(    :) :: dst_bs0_vis, dst_bs0_ir
+  real(r8), public, allocatable, dimension(    :) :: dst_gs0_vis, dst_gs0_ir
+  real(r8), public, allocatable, dimension(    :) :: dst_ws0_vis, dst_ws0_ir
+  real(r8), public, allocatable, dimension(  :,:) :: dst_be_vis , dst_be_ir
+  real(r8), public, allocatable, dimension(  :,:) :: dst_bs_vis , dst_bs_ir
+  real(r8), public, allocatable, dimension(  :,:) :: dst_gs_vis , dst_gs_ir
+  real(r8), public, allocatable, dimension(  :,:) :: dst_ws_vis , dst_ws_ir
+  real(r8), public, allocatable, dimension(:    ) :: cld_ratio
+  real(r8), public, allocatable, dimension(:,:,:) :: cld_be_vis , cld_be_ir
+  real(r8), public, allocatable, dimension(:,:,:) :: cld_bs_vis , cld_bs_ir
+  real(r8), public, allocatable, dimension(:,:,:) :: cld_gs_vis , cld_gs_ir
+  real(r8), public, allocatable, dimension(:,:,:) :: cld_ws_vis , cld_ws_ir
 
 contains
 
@@ -74,86 +56,126 @@ contains
 
     integer, intent(in) :: nlev_rad
 
-    call optics_dst_vis%init( dust_optics_file, 'dust' , 'vis')
-    call optics_dst_ir %init( dust_optics_file, 'dust' , 'ir' )
-    ! call optics_cld_vis%init(cloud_optics_file, 'cloud', 'vis')
-    ! call optics_cld_ir %init(cloud_optics_file, 'cloud', 'ir' )
+    integer i, n
+
+    call mars_nasa_optics_final()
+
+    call fiona_open_dataset('dust_optics', dust_optics_file)
+    call fiona_get_dim('dust_optics', 'bin', size=nbin_dst)
+    call fiona_get_dim('dust_optics', 'spec_vis', size=n)
+    if (n /= spec_vis%n) then
+      stop 999
+    end if
+    call fiona_get_dim('dust_optics', 'spec_ir', size=n)
+    if (n /= spec_ir%n) then
+      stop 999
+    end if
+    allocate(dst_r_bnds (nbin_dst+1))
+    allocate(dst_be0_vis(         spec_vis%n))
+    allocate(dst_bs0_vis(         spec_vis%n))
+    allocate(dst_gs0_vis(         spec_vis%n))
+    allocate(dst_ws0_vis(         spec_vis%n))
+    allocate(dst_be_vis (nbin_dst,spec_vis%n))
+    allocate(dst_bs_vis (nbin_dst,spec_vis%n))
+    allocate(dst_gs_vis (nbin_dst,spec_vis%n))
+    allocate(dst_ws_vis (nbin_dst,spec_vis%n))
+    allocate(dst_be0_ir (         spec_ir %n))
+    allocate(dst_bs0_ir (         spec_ir %n))
+    allocate(dst_gs0_ir (         spec_ir %n))
+    allocate(dst_ws0_ir (         spec_ir %n))
+    allocate(dst_be_ir  (nbin_dst,spec_ir %n))
+    allocate(dst_bs_ir  (nbin_dst,spec_ir %n))
+    allocate(dst_gs_ir  (nbin_dst,spec_ir %n))
+    allocate(dst_ws_ir  (nbin_dst,spec_ir %n))
+    call fiona_start_input('dust_optics')
+    call fiona_input('dust_optics', 'dust_r_bnds' , dst_r_bnds )
+    call fiona_input('dust_optics', 'dust_be0_vis', dst_be0_vis)
+    call fiona_input('dust_optics', 'dust_bs0_vis', dst_bs0_vis)
+    call fiona_input('dust_optics', 'dust_gs0_vis', dst_gs0_vis)
+    call fiona_input('dust_optics', 'dust_be_vis' , dst_be_vis )
+    call fiona_input('dust_optics', 'dust_bs_vis' , dst_bs_vis )
+    call fiona_input('dust_optics', 'dust_gs_vis' , dst_gs_vis )
+    call fiona_input('dust_optics', 'dust_be0_ir' , dst_be0_ir )
+    call fiona_input('dust_optics', 'dust_bs0_ir' , dst_bs0_ir )
+    call fiona_input('dust_optics', 'dust_gs0_ir' , dst_gs0_ir )
+    call fiona_input('dust_optics', 'dust_be_ir'  , dst_be_ir  )
+    call fiona_input('dust_optics', 'dust_bs_ir'  , dst_bs_ir  )
+    call fiona_input('dust_optics', 'dust_gs_ir'  , dst_gs_ir  )
+    call fiona_end_input('dust_optics')
+
+    do i = 1, spec_vis%n
+      if (dst_bs0_vis(i) >= dst_be0_vis(i)) then
+        dst_bs0_vis(i) = 0.99999_r8 * dst_be0_vis(i)
+      end if
+      dst_ws0_vis(i) = dst_bs0_vis(i) / dst_be0_vis(i)
+    end do
+    do i = 1, spec_ir%n
+      if (dst_bs0_ir(i) >= dst_be0_ir(i)) then
+        dst_bs0_ir(i) = 0.99999_r8 * dst_be0_ir(i)
+      end if
+      dst_ws0_ir(i) = dst_bs0_ir(i) / dst_be0_ir(i)
+    end do
+
+    call fiona_open_dataset('cld_optics', cld_optics_file)
+    call fiona_get_dim('cld_optics', 'ratio', size=nratio_cld)
+    call fiona_get_dim('cld_optics', 'spec_vis', size=n)
+    if (n /= spec_vis%n) then
+      stop 999
+    end if
+    call fiona_get_dim('cld_optics', 'spec_ir', size=n)
+    if (n /= spec_ir%n) then
+      stop 999
+    end if
+    allocate(cld_ratio (nratio_cld))
+    allocate(cld_be_vis(nratio_cld,nbin_dst,spec_vis%n))
+    allocate(cld_bs_vis(nratio_cld,nbin_dst,spec_vis%n))
+    allocate(cld_gs_vis(nratio_cld,nbin_dst,spec_vis%n))
+    allocate(cld_ws_vis(nratio_cld,nbin_dst,spec_vis%n))
+    allocate(cld_be_ir (nratio_cld,nbin_dst,spec_ir %n))
+    allocate(cld_bs_ir (nratio_cld,nbin_dst,spec_ir %n))
+    allocate(cld_gs_ir (nratio_cld,nbin_dst,spec_ir %n))
+    allocate(cld_ws_ir (nratio_cld,nbin_dst,spec_ir %n))
+    call fiona_start_input('cld_optics')
+    call fiona_input('cld_optics', 'cld_ratio' , cld_ratio )
+    call fiona_input('cld_optics', 'cld_be_vis', cld_be_vis)
+    call fiona_input('cld_optics', 'cld_bs_vis', cld_bs_vis)
+    call fiona_input('cld_optics', 'cld_gs_vis', cld_gs_vis)
+    call fiona_input('cld_optics', 'cld_be_ir' , cld_be_ir )
+    call fiona_input('cld_optics', 'cld_bs_ir' , cld_bs_ir )
+    call fiona_input('cld_optics', 'cld_gs_ir' , cld_gs_ir )
+    call fiona_end_input('cld_optics')
 
   end subroutine mars_nasa_optics_init
 
   subroutine mars_nasa_optics_final()
 
-    call optics_dst_vis%clear()
-    call optics_dst_ir %clear()
-    call optics_cld_vis%clear()
-    call optics_cld_ir %clear()
+    if (allocated(dst_r_bnds )) deallocate(dst_r_bnds )
+    if (allocated(dst_be0_vis)) deallocate(dst_be0_vis)
+    if (allocated(dst_bs0_vis)) deallocate(dst_bs0_vis)
+    if (allocated(dst_gs0_vis)) deallocate(dst_gs0_vis)
+    if (allocated(dst_ws0_vis)) deallocate(dst_ws0_vis)
+    if (allocated(dst_be0_ir )) deallocate(dst_be0_ir )
+    if (allocated(dst_bs0_ir )) deallocate(dst_bs0_ir )
+    if (allocated(dst_gs0_ir )) deallocate(dst_gs0_ir )
+    if (allocated(dst_ws0_ir )) deallocate(dst_ws0_ir )
+    if (allocated(dst_be_vis )) deallocate(dst_be_vis )
+    if (allocated(dst_bs_vis )) deallocate(dst_bs_vis )
+    if (allocated(dst_gs_vis )) deallocate(dst_gs_vis )
+    if (allocated(dst_ws_vis )) deallocate(dst_ws_vis )
+    if (allocated(dst_be_ir  )) deallocate(dst_be_ir  )
+    if (allocated(dst_bs_ir  )) deallocate(dst_bs_ir  )
+    if (allocated(dst_gs_ir  )) deallocate(dst_gs_ir  )
+    if (allocated(dst_ws_ir  )) deallocate(dst_ws_ir  )
+    if (allocated(cld_ratio  )) deallocate(cld_ratio  )
+    if (allocated(cld_be_vis )) deallocate(cld_be_vis )
+    if (allocated(cld_bs_vis )) deallocate(cld_bs_vis )
+    if (allocated(cld_gs_vis )) deallocate(cld_gs_vis )
+    if (allocated(cld_ws_vis )) deallocate(cld_ws_vis )
+    if (allocated(cld_be_ir  )) deallocate(cld_be_ir  )
+    if (allocated(cld_bs_ir  )) deallocate(cld_bs_ir  )
+    if (allocated(cld_gs_ir  )) deallocate(cld_gs_ir  )
+    if (allocated(cld_ws_ir  )) deallocate(cld_ws_ir  )
 
   end subroutine mars_nasa_optics_final
-
-  subroutine optics_init(this, optics_file, species, spectra)
-
-    class(optics_type), intent(inout) :: this
-    character(*), intent(in) :: optics_file
-    character(*), intent(in) :: species
-    character(*), intent(in) :: spectra
-
-    character(30) tag
-    integer i
-
-    tag = 'optics_' // trim(species) // '_' // trim(spectra)
-    call fiona_open_dataset(tag, file_path=optics_file)
-    call fiona_get_dim(tag, 'bin', size=this%nbin)
-    call fiona_get_dim(tag, 'spec_' // trim(spectra), size=this%nspec)
-    allocate(this%r_bnds(this%nbin+1))
-    allocate(this%be0(          this%nspec))
-    allocate(this%bs0(          this%nspec))
-    allocate(this%gs0(          this%nspec))
-    allocate(this%ws0(          this%nspec))
-    allocate(this%be (this%nbin,this%nspec))
-    allocate(this%bs (this%nbin,this%nspec))
-    allocate(this%gs (this%nbin,this%nspec))
-    call fiona_start_input(tag)
-    call fiona_input(tag, trim(species) // '_r_bnds', this%r_bnds)
-    call fiona_input(tag, trim(species) // '_be0_'// trim(spectra), this%be0)
-    call fiona_input(tag, trim(species) // '_bs0_'// trim(spectra), this%bs0)
-    call fiona_input(tag, trim(species) // '_gs0_'// trim(spectra), this%gs0)
-    call fiona_input(tag, trim(species) // '_be_' // trim(spectra), this%be )
-    call fiona_input(tag, trim(species) // '_bs_' // trim(spectra), this%bs )
-    call fiona_input(tag, trim(species) // '_gs_' // trim(spectra), this%gs )
-    call fiona_end_input(tag)
-
-    do i = 1, this%nspec
-      if (this%bs0(i) >= this%be0(i)) then
-        this%bs0(i) = 0.99999_r8 * this%be0(i)
-      end if
-      this%ws0(i) = this%bs0(i) / this%be0(i)
-    end do
-
-  end subroutine optics_init
-
-  subroutine optics_clear(this)
-
-    class(optics_type), intent(inout) :: this
-
-    this%nbin  = 0
-    this%nspec = 0
-    if (allocated(this%r_bnds)) deallocate(this%r_bnds)
-    if (allocated(this%be0   )) deallocate(this%be0   )
-    if (allocated(this%bs0   )) deallocate(this%bs0   )
-    if (allocated(this%gs0   )) deallocate(this%gs0   )
-    if (allocated(this%ws0   )) deallocate(this%ws0   )
-    if (allocated(this%be    )) deallocate(this%be    )
-    if (allocated(this%bs    )) deallocate(this%bs    )
-    if (allocated(this%gs    )) deallocate(this%gs    )
-
-  end subroutine optics_clear
-
-  subroutine optics_final(this)
-
-    type(optics_type), intent(inout) :: this
-
-    call this%clear()
-
-  end subroutine optics_final
 
 end module mars_nasa_optics_mod

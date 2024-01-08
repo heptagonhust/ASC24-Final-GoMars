@@ -32,13 +32,11 @@ module mars_nasa_rad_mod
 
   ! Number of radiation levels
   integer nlev_rad
-  ! Number of dust particle size bins
-  integer nbin_dust
   ! Maximum optical depth
   integer, parameter :: taumax = 35
 
   ! Reference pressure for Rayleigh scattering (Pa)
-  real(r8), parameter :: ray_p0   = 9.423e6_r8
+  real(r8), parameter :: ray_p0 = 9.423e6_r8
   ! Rayleigh scattering optical depth at each visible spectral interval
   real(r8), allocatable, dimension(:  ) :: tauray_vis
   ! Integrated Planck function lookup table at each IR spectral interval (W m-2 cm-1)
@@ -166,7 +164,7 @@ contains
     real(r8), intent(in) :: s1
     real(r8), intent(in) :: s2
     real(r8), intent(in) :: t   ! Temperature (K)
-    
+
     ! C1 and C2 values from Goody and Yung (2nd edition) MKS units
     ! These values lead to a "sigma" (sigma*T^4) of 5.67032E-8 W m^-2 K^-4
     real(8), parameter :: c1 = 3.741832d-16      ! W m-2
