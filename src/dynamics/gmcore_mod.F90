@@ -91,12 +91,19 @@ contains
 
     integer, intent(in), optional :: comm
 
+    logical is_exist
+
     call log_init()
     call gas_mixture_init(planet)
     call const_init(planet)
     call time_scheme_init()
     call time_init(dt_dyn)
     call process_init(comm)
+
+    inquire(file=gmcore_root, exist=is_exist)
+    if (.not. is_exist) then
+      call log_error('Cannot find the root directory of GMCORE!', pid=proc%id)
+    end if
 
     if (proc%is_root()) then
       print *, ''
@@ -443,7 +450,7 @@ contains
       blocks(iblk)%dstate(itime)%te_pe = te_pe
     end do
 
-    if (planet == 'mars') call log_add_diag('ls', curr_time%solar_longitude())
+    if (planet == 'mars') call log_add_diag('ls', curr_time%solar_longitude()*deg)
                           call log_add_diag('tm' , tm )
     if (idx_qv > 0      ) call log_add_diag('tqv', tqv)
     if (baroclinic      ) call log_add_diag('tpt', tpt)

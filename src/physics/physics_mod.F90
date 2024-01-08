@@ -102,7 +102,7 @@ contains
 #endif
     case ('mars_nasa')
       call mars_nasa_init_stage2(namelist_path, mesh, dt_adv, dt_phys, &
-        min_lon, max_lon, min_lat, max_lat, input_ngroup)
+        min_lon, max_lon, min_lat, max_lat, input_ngroup, gmcore_root)
     end select
 
   end subroutine physics_init_stage2

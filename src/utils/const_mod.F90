@@ -11,10 +11,13 @@ module const_mod
 
   use, intrinsic :: ieee_arithmetic
   use flogger
+  use string
   use datetime, only: earth_day_seconds, mars_sol_seconds
   use gas_mod
 
   implicit none
+
+  character(1024) :: gmcore_root = ''
 
 #ifdef REAL_KIND
   integer, parameter :: r8 = REAL_KIND
@@ -73,6 +76,9 @@ contains
   subroutine const_init(planet)
 
     character(*), intent(in) :: planet
+
+    call get_command(gmcore_root)
+    gmcore_root = abspath(trim(dirname(gmcore_root)) // '/..')
 
     rd  = major_gas%r
     cpd = major_gas%cp

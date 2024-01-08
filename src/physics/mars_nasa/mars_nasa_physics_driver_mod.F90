@@ -43,7 +43,7 @@ module mars_nasa_physics_driver_mod
 contains
 
   subroutine mars_nasa_init_stage2(namelist_path, mesh, dt_adv, dt_phys, &
-    min_lon, max_lon, min_lat, max_lat, input_ngroup)
+    min_lon, max_lon, min_lat, max_lat, input_ngroup, model_root)
 
     character(*), intent(in) :: namelist_path
     type(physics_mesh_type), intent(in), target :: mesh(:)
@@ -54,13 +54,14 @@ contains
     real(r8), intent(in) :: min_lat
     real(r8), intent(in) :: max_lat
     integer , intent(in) :: input_ngroup
+    character(*), intent(in), optional :: model_root
 
     integer nlev
 
     nlev = mesh(1)%nlev
 
     call mars_nasa_final()
-    call mars_nasa_parse_namelist(namelist_path)
+    call mars_nasa_parse_namelist(namelist_path, model_root)
     call mars_nasa_tracers_init(dt_adv)
     call mars_nasa_rad_init(nlev)
     call mars_nasa_objects_init(mesh)

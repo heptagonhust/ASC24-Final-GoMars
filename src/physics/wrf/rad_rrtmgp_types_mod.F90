@@ -24,8 +24,8 @@ module rad_rrtmgp_types_mod
     type(ty_cloud_optics_rrtmgp) cld_optics
     type(ty_gas_concs) gas_concs
   contains
-    procedure init  => rad_rrtmgp_state_init
-    procedure clear => rad_rrtmgp_state_clear
+    procedure :: init  => rad_rrtmgp_state_init
+    procedure :: clear => rad_rrtmgp_state_clear
     final rad_rrtmgp_state_final
   end type rad_rrtmgp_state_type
 
