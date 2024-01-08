@@ -15,6 +15,7 @@ module mars_nasa_namelist_mod
   use flogger
   use string
   use process_mod
+  use mars_nasa_const_mod
 
   implicit none
 
@@ -24,10 +25,15 @@ module mars_nasa_namelist_mod
   character(1024) :: albedo_file           = ''
   character(1024) :: thermal_inertia_file  = ''
 
-  logical :: active_water   = .false.
-  logical :: active_dust    = .false.
+  logical :: active_water                  = .false.
+  logical :: active_dust                   = .false.
+  logical :: albedo_feedback               = .false.
 
-  integer :: nlev_soil = 0
+  real(r8) :: ice_albedo                   = 0.4_r8
+  ! Ice depth threshold required to change surface albedo (um)
+  real(r8) :: ice_thresh_depth             = 5.0_r8
+
+  integer :: nlev_soil                     = 0
 
   namelist /mars_nasa_control/ &
     kcoef_file               , &
@@ -37,6 +43,9 @@ module mars_nasa_namelist_mod
     thermal_inertia_file     , &
     active_water             , &
     active_dust              , &
+    albedo_feedback          , &
+    ice_albedo               , &
+    ice_thresh_depth         , &
     nlev_soil
 
 contains
@@ -48,6 +57,8 @@ contains
 
     integer ierr
     logical is_exist
+
+    ice_thresh_kgm2 = ice_thresh_depth * 1.0e-6_r8 * rho_ice
 
     open(10, file=file_path, status='old')
     read(10, nml=mars_nasa_control, iostat=ierr)

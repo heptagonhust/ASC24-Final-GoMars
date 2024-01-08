@@ -23,6 +23,8 @@ module mars_nasa_physics_driver_mod
   use mars_orbit_mod
   use mars_nasa_solar_mod
   use mars_nasa_rad_mod
+  use mars_nasa_sfc_mod
+  use mars_nasa_mp_mod
 
   implicit none
 

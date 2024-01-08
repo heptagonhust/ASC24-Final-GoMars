@@ -20,6 +20,7 @@ module mars_nasa_physics_types_mod
   use mars_nasa_namelist_mod
   use mars_nasa_spectra_mod
   use mars_nasa_rad_kcoef_mod
+  use mars_nasa_tracers_mod
 
   implicit none
 
@@ -31,21 +32,23 @@ module mars_nasa_physics_types_mod
 
   type, extends(physics_state_type) :: mars_nasa_state_type
     ! Surface latent heat flux (W m-2)
-    real(r8), allocatable, dimension(      :) :: lhflx
+    real(r8), allocatable, dimension(    :    ) :: lhflx
     ! Atmosphere CO2 condensation (???)
-    real(r8), allocatable, dimension(    :,:) :: atmcond
+    real(r8), allocatable, dimension(    :,:  ) :: atmcond
     ! Dust particle median radius
-    real(r8), allocatable, dimension(    :,:) :: ro_dst
+    real(r8), allocatable, dimension(    :,:  ) :: ro_dst
     ! Cloud particle median radius
-    real(r8), allocatable, dimension(    :,:) :: ro_cld
+    real(r8), allocatable, dimension(    :,:  ) :: ro_cld
     ! delta-Eddington optical thickness on the surface (???)
-    real(r8), allocatable, dimension(:,:,:  ) :: detau
-    real(r8), allocatable, dimension(:,:,:,:) :: tau_gas_vis
-    real(r8), allocatable, dimension(:,:,:,:) :: tau_dst_vis
-    real(r8), allocatable, dimension(:,:,:,:) :: tau_cld_vis
+    real(r8), allocatable, dimension(:,:,:    ) :: detau
+    real(r8), allocatable, dimension(:,:,:,:  ) :: tau_gas_vis
+    real(r8), allocatable, dimension(:,:,:,:  ) :: tau_dst_vis
+    real(r8), allocatable, dimension(:,:,:,:  ) :: tau_cld_vis
     ! Top or stratosphere temperature (K)
-    real(r8), allocatable, dimension(      :) :: t_top
-    real(r8), allocatable, dimension(      :) :: co2ice
+    real(r8), allocatable, dimension(      :  ) :: t_top
+    real(r8), allocatable, dimension(      :  ) :: co2ice
+    ! Boundary values of tracers (kg m-2???)
+    real(r8), allocatable, dimension(    :,  :) :: q_sfc
   contains
     procedure :: init  => mars_nasa_state_init
     procedure :: clear => mars_nasa_state_clear
@@ -91,6 +94,7 @@ contains
     allocate(this%tau_cld_vis(spec_vis%n,ngauss,mesh%ncol,mesh%nlev))
     allocate(this%t_top      (                  mesh%ncol          ))
     allocate(this%co2ice     (                  mesh%ncol          ))
+    allocate(this%q_sfc      (                  mesh%ncol,         ntracers))
 
     call this%physics_state_init(mesh)
 

@@ -114,6 +114,7 @@ contains
                p_lev => state%p_lev, &
                q     => state%q    )
     call calc_fdns_dir(state)
+    state%fdns = state%fdns_dir + state%fdns_dif
     do icol = 1, mesh%ncol
       ! Set radiation levels (t, p and qh2o).
       p_rad(1) = mesh%ptop / 2.0_r8
