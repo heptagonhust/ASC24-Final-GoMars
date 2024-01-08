@@ -32,6 +32,8 @@ module mars_nasa_solar_mod
   public mars_nasa_solar_init
   public mars_nasa_solar_final
   public update_solar_flux
+  public sol_flx_spec_mars
+  public sol_flx_mars
 
   ! Solar flux within each visible spectral interval at 1AU (W m-2)
   real(r8), allocatable, dimension(:) :: sol_flx_spec_1au

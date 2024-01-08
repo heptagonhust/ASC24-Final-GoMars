@@ -113,6 +113,7 @@ contains
                p     => state%p    , &
                p_lev => state%p_lev, &
                q     => state%q    )
+    call calc_fdns_dir(state)
     do icol = 1, mesh%ncol
       ! Set radiation levels (t, p and qh2o).
       p_rad(1) = mesh%ptop / 2.0_r8
@@ -195,5 +196,38 @@ contains
     end do
 
   end function integrate_planck_function
+
+  subroutine calc_fdns_dir(state)
+
+    type(mars_nasa_state_type), intent(inout) :: state
+
+    integer icol, is, ig
+    real(r8) c
+
+    associate (mesh     => state%mesh    , &
+               cosz     => state%cosz    , &
+               detau    => state%detau   , &
+               fdns_dir => state%fdns_dir)
+    do icol = 1, mesh%ncol
+      if (cosz(icol) >= 1.0e-5_r8) then
+        do is = 1, spec_vis%n
+          c = cosz(icol) * sol_flx_spec_mars(is)
+          do ig = 1, ngauss - 1
+            if (detau(is,ig,icol) <= 5) then
+              fdns_dir(icol) = fdns_dir(icol) + c * exp(-detau(is,ig,icol) / cosz(icol)) * gwgt(ig) * (1 - f0_vis(is))
+            end if
+          end do
+          ig = ngauss
+          if (detau(is,ig,icol) <= 5) then
+            fdns_dir(icol) = fdns_dir(icol) + c * exp(-detau(is,ig,icol) / cosz(icol)) * f0_vis(is)
+          end if
+        end do
+      else
+        fdns_dir(icol) = 0
+      end if
+    end do
+    end associate
+
+  end subroutine calc_fdns_dir
 
 end module mars_nasa_rad_mod

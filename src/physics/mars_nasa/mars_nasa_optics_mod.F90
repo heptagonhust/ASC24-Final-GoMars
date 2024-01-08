@@ -32,6 +32,7 @@ module mars_nasa_optics_mod
   ! Optical depth (1): τ(s1,s2) = ∫ βe(s) ds from s1 to s2
   ! Transmittance (1): t(s1,s2) = exp(-τ(s1,s2))
   ! Mass extinction coefficient: ke = βe / ρ
+  ! Scattering asymmetry parameter: g = ∫ p(θ) cos(θ) dΩ / ∫ p(θ) dΩ
 
   integer, public :: nbin_dst = 0
   integer, public :: nratio_cld = 0

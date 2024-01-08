@@ -30,17 +30,22 @@ module mars_nasa_physics_types_mod
   public mars_nasa_static_type
 
   type, extends(physics_state_type) :: mars_nasa_state_type
+    ! Surface latent heat flux (W m-2)
+    real(r8), allocatable, dimension(      :) :: lhflx
+    ! Atmosphere CO2 condensation (???)
+    real(r8), allocatable, dimension(    :,:) :: atmcond
     ! Dust particle median radius
-    real(r8), allocatable, dimension(:,:    ) :: ro_dst
+    real(r8), allocatable, dimension(    :,:) :: ro_dst
     ! Cloud particle median radius
-    real(r8), allocatable, dimension(:,:    ) :: ro_cld
-    ! 
+    real(r8), allocatable, dimension(    :,:) :: ro_cld
+    ! delta-Eddington optical thickness on the surface (???)
+    real(r8), allocatable, dimension(:,:,:  ) :: detau
     real(r8), allocatable, dimension(:,:,:,:) :: tau_gas_vis
     real(r8), allocatable, dimension(:,:,:,:) :: tau_dst_vis
     real(r8), allocatable, dimension(:,:,:,:) :: tau_cld_vis
     ! Top or stratosphere temperature (K)
-    real(r8), allocatable, dimension(:      ) :: t_top
-    real(r8), allocatable, dimension(:      ) :: co2ice
+    real(r8), allocatable, dimension(      :) :: t_top
+    real(r8), allocatable, dimension(      :) :: co2ice
   contains
     procedure :: init  => mars_nasa_state_init
     procedure :: clear => mars_nasa_state_clear
@@ -76,8 +81,11 @@ contains
 
     call this%clear()
 
+    allocate(this%lhflx      (                  mesh%ncol          ))
+    allocate(this%atmcond    (                  mesh%ncol,mesh%nlev))
     allocate(this%ro_dst     (                  mesh%ncol,mesh%nlev))
     allocate(this%ro_cld     (                  mesh%ncol,mesh%nlev))
+    allocate(this%detau      (spec_vis%n,ngauss,mesh%ncol          ))
     allocate(this%tau_gas_vis(spec_vis%n,ngauss,mesh%ncol,mesh%nlev))
     allocate(this%tau_dst_vis(spec_vis%n,ngauss,mesh%ncol,mesh%nlev))
     allocate(this%tau_cld_vis(spec_vis%n,ngauss,mesh%ncol,mesh%nlev))
@@ -92,8 +100,11 @@ contains
 
     class(mars_nasa_state_type), intent(inout) :: this
 
+    if (allocated(this%lhflx      )) deallocate(this%lhflx      )
+    if (allocated(this%atmcond    )) deallocate(this%atmcond    )
     if (allocated(this%ro_dst     )) deallocate(this%ro_dst     )
     if (allocated(this%ro_cld     )) deallocate(this%ro_cld     )
+    if (allocated(this%detau      )) deallocate(this%detau      )
     if (allocated(this%tau_gas_vis)) deallocate(this%tau_gas_vis)
     if (allocated(this%tau_dst_vis)) deallocate(this%tau_dst_vis)
     if (allocated(this%tau_cld_vis)) deallocate(this%tau_cld_vis)
