@@ -49,6 +49,8 @@ module mars_nasa_physics_types_mod
     real(r8), allocatable, dimension(      :  ) :: co2ice
     ! Boundary values of tracers (kg m-2???)
     real(r8), allocatable, dimension(    :,  :) :: q_sfc
+    ! Heat exchange between atmosphere and surface (W m-2)
+    real(r8), allocatable, dimension(    :    ) :: heat_sfc
   contains
     procedure :: init  => mars_nasa_state_init
     procedure :: clear => mars_nasa_state_clear
@@ -95,6 +97,7 @@ contains
     allocate(this%t_top      (                  mesh%ncol          ))
     allocate(this%co2ice     (                  mesh%ncol          ))
     allocate(this%q_sfc      (                  mesh%ncol,         ntracers))
+    allocate(this%heat_sfc   (                  mesh%ncol          ))
 
     call this%physics_state_init(mesh)
 
@@ -114,6 +117,8 @@ contains
     if (allocated(this%tau_cld_vis)) deallocate(this%tau_cld_vis)
     if (allocated(this%t_top      )) deallocate(this%t_top      )
     if (allocated(this%co2ice     )) deallocate(this%co2ice     )
+    if (allocated(this%q_sfc      )) deallocate(this%q_sfc      )
+    if (allocated(this%heat_sfc   )) deallocate(this%heat_sfc   )
 
     call this%physics_state_clear()
 

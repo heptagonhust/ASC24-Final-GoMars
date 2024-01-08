@@ -66,8 +66,8 @@ contains
         psim              =state%psim           , & ! ?
         psih              =state%psih           , & ! ?
         xland             =state%land           , & ! done
-        hfx               =state%hfx            , & ! ?
-        qfx               =state%qfx            , & ! ?
+        hfx               =state%hflx           , & ! ?
+        qfx               =state%qflx           , & ! ?
         wspd              =state%wsp_bot        , & ! done
         br                =state%br             , & ! ?
         dt                =dt                   , & ! done

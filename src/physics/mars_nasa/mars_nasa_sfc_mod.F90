@@ -17,10 +17,11 @@ contains
     integer icol
     real(r8) alb
 
-    associate (mesh   => state%mesh  , &
-               co2ice => state%co2ice, &
-               q_sfc  => state%q_sfc , &
-               alb    => state%alb   )
+    associate (mesh     => state%mesh    , &
+               co2ice   => state%co2ice  , & ! in
+               q_sfc    => state%q_sfc   , & ! in
+               heat_sfc => state%heat_sfc, & ! in
+               alb      => state%alb     )   ! out
     do icol = 1, state%mesh%ncol
       if (co2ice(icol) > 0) then
         alb(icol) = merge(alb_ice_np, alb_ice_sp, mesh%lat(icol) > 0)
