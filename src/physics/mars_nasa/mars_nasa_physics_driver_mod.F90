@@ -23,7 +23,7 @@ module mars_nasa_physics_driver_mod
   use mars_orbit_mod
   use mars_nasa_solar_mod
   use mars_nasa_rad_mod
-  use mars_nasa_sfc_mod
+  use mars_nasa_lsm_mod
   use mars_nasa_mp_mod
 
   implicit none
@@ -65,9 +65,10 @@ contains
     call mars_nasa_final()
     call mars_nasa_parse_namelist(namelist_path, model_root)
     call mars_nasa_tracers_init(dt_adv)
-    call mars_nasa_rad_init(nlev)
     call mars_nasa_objects_init(mesh)
     call mars_nasa_read_static_data(min_lon, max_lon, min_lat, max_lat, input_ngroup)
+    call mars_nasa_lsm_init()
+    call mars_nasa_rad_init(nlev)
     call mars_orbit_init()
 
   end subroutine mars_nasa_init_stage2
@@ -90,8 +91,8 @@ contains
   subroutine mars_nasa_final()
 
     call mars_nasa_rad_final()
-
     call mars_nasa_objects_final()
+    call mars_nasa_lsm_final()
 
   end subroutine mars_nasa_final
 
@@ -108,12 +109,14 @@ contains
     call update_solar_flux(ls)
 
     do iblk = 1, size(objects)
-      associate (mesh  => objects(iblk)%mesh , &
-                 state => objects(iblk)%state, &
-                 tend  => objects(iblk)%tend )
+      associate (mesh   => objects(iblk)%mesh  , &
+                 static => objects(iblk)%static, &
+                 state  => objects(iblk)%state , &
+                 tend   => objects(iblk)%tend  )
       do icol = 1, objects(iblk)%mesh%ncol
         state%cosz(icol) = solar_cos_zenith_angle(mesh%lon(icol), mesh%lat(icol), time%hours_in_day())
       end do
+      call mars_nasa_lsm_run(static, state, tend)
       call mars_nasa_rad_run(state, tend)
       end associate
     end do

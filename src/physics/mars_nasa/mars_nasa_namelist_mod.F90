@@ -24,6 +24,7 @@ module mars_nasa_namelist_mod
   character(1024) :: cld_optics_file       = ''
   character(1024) :: albedo_file           = ''
   character(1024) :: thermal_inertia_file  = ''
+  character(1024) :: gnd_ice_file          = ''
 
   logical :: active_water                  = .false.
   logical :: active_dust                   = .false.
@@ -33,7 +34,8 @@ module mars_nasa_namelist_mod
   ! Ice depth threshold required to change surface albedo (um)
   real(r8) :: ice_thresh_depth             = 5.0_r8
 
-  integer :: nlev_soil                     = 0
+  ! Number of soil layers
+  integer :: nlev_soil                     = 40
 
   namelist /mars_nasa_control/ &
     kcoef_file               , &
@@ -41,6 +43,7 @@ module mars_nasa_namelist_mod
     cld_optics_file          , &
     albedo_file              , &
     thermal_inertia_file     , &
+    gnd_ice_file             , &
     active_water             , &
     active_dust              , &
     albedo_feedback          , &
@@ -105,6 +108,14 @@ contains
     inquire(file=thermal_inertia_file, exist=is_exist)
     if (.not. is_exist) then
       call log_error('thermal_inertia_file ' // trim(thermal_inertia_file) // ' does not exist!', pid=proc%id)
+    end if
+
+    if (gnd_ice_file == '' .and. present(model_root)) then
+      gnd_ice_file = abspath(trim(model_root) // '/data/mars/gnd_ice_map.nc')
+    end if
+    inquire(file=gnd_ice_file, exist=is_exist)
+    if (.not. is_exist) then
+      call log_error('gnd_ice_file ' // trim(gnd_ice_file) // ' does not exist!', pid=proc%id)
     end if
 
   end subroutine mars_nasa_parse_namelist

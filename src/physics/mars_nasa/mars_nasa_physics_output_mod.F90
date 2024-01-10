@@ -32,6 +32,7 @@ contains
     character(3) :: dims(2) = ['lon', 'lat']
 
     call fiona_add_var(tag, 'tin' , long_name='Surface thermal inertia'     , units='', dim_names=dims, dtype=dtype)
+    call fiona_add_var(tag, 'gnd_ice' , long_name='Ground ice indicator'     , units='', dim_names=dims, dtype=dtype)
 
   end subroutine mars_nasa_add_output
 
@@ -44,6 +45,7 @@ contains
 
     associate (static => objects(iblk)%static, state => objects(iblk)%state)
     call fiona_output(tag, 'tin' , reshape(static%tin, count(1:2)), start=start(1:2), count=count(1:2))
+    call fiona_output(tag, 'gnd_ice', reshape(static%gnd_ice, count(1:2)), start=start(1:2), count=count(1:2))
     end associate
 
   end subroutine mars_nasa_output

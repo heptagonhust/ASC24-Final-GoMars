@@ -95,6 +95,8 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: fdns_dif
     ! Downward solar shortwave flux on the surface (W m-2)
     real(r8), allocatable, dimension(:    ) :: fdns
+    ! Downward longwave flux on the surface (W m-2)
+    real(r8), allocatable, dimension(:    ) :: fdnl
   contains
     procedure physics_state_init
     procedure physics_state_clear
@@ -174,6 +176,7 @@ contains
     allocate(this%fdns_dir  (mesh%ncol                   ))
     allocate(this%fdns_dif  (mesh%ncol                   ))
     allocate(this%fdns      (mesh%ncol                   ))
+    allocate(this%fdnl      (mesh%ncol                   ))
 
   end subroutine physics_state_init
 
@@ -218,6 +221,7 @@ contains
     if (allocated(this%fdns_dir )) deallocate(this%fdns_dir )
     if (allocated(this%fdns_dif )) deallocate(this%fdns_dif )
     if (allocated(this%fdns     )) deallocate(this%fdns     )
+    if (allocated(this%fdnl     )) deallocate(this%fdnl     )
 
   end subroutine physics_state_clear
 
