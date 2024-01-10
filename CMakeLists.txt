@@ -42,6 +42,7 @@ endif ()
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR})
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  add_definitions(-DFC_IS_GNU)
   list(APPEND fortran_flags
     -ffree-line-length-none
     -fno-range-check
@@ -56,6 +57,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   # FIXME: OpenMP causes sigmentation faults.
   # list(APPEND fortran_flags -fopenmp)
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+  add_definitions(-DFC_IS_INTEL)
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND fortran_flags
       -no-wrap-margin

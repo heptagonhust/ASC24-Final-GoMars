@@ -100,7 +100,11 @@ contains
     call time_init(dt_dyn)
     call process_init(comm)
 
+#ifdef FC_IS_INTEL
+    inquire(directory=gmcore_root, exist=is_exist)
+#else
     inquire(file=gmcore_root, exist=is_exist)
+#endif
     if (.not. is_exist) then
       call log_error('Cannot find the root directory of GMCORE!', pid=proc%id)
     end if
