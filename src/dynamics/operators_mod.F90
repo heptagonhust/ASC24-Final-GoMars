@@ -189,13 +189,12 @@ contains
       end do
     end do
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
           ph%d(i,j,k) = 0.5_r8 * (ph_lev%d(i,j,k) + ph_lev%d(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(ph)
     ! NOTE: Move this to other place?
     if (hydrostatic) ps%d = phs%d
     end associate
@@ -314,8 +313,8 @@ contains
                tv   => dstate%tv          )   ! out
     if (idx_qv > 0) then
       do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
+        do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+          do i = mesh%full_ids, mesh%full_ide + 1
             t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), q%d(i,j,k,idx_qv))
             tv%d(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt%d(i,j,k), ph%d(i,j,k)**rd_o_cpd, q%d(i,j,k,idx_qv))
           end do
@@ -323,8 +322,8 @@ contains
       end do
     else
       do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
+        do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+          do i = mesh%full_ids, mesh%full_ide + 1
             t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), 0.0_r8)
             tv%d(i,j,k) = t%d(i,j,k)
           end do
@@ -522,8 +521,8 @@ contains
                div  => block%aux%div , & ! out
                div2 => block%aux%div2)   ! out
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%full_ids, mesh%full_ide
+      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
           div%d(i,j,k) = (                                                      &
             (u%d(i,j,k) * mesh%le_lon(j) - u%d(i-1,  j,k) * mesh%le_lon(j  )) + &
             (v%d(i,j,k) * mesh%le_lat(j) - v%d(i  ,j-1,k) * mesh%le_lat(j-1))   &
@@ -561,13 +560,11 @@ contains
         end do
       end do
     end if
-    if (div_damp_order == 2) then
-      call fill_halo(div, west_halo=.false., south_halo=.false.)
-    else if (div_damp_order == 4) then
+    if (div_damp_order == 4) then
       call fill_halo(div)
       do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%full_ids, mesh%full_ide
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
+          do i = mesh%full_ids, mesh%full_ide + 1
             div2%d(i,j,k) = (                                                                 &
               div%d(i+1,j,k) - 2 * div%d(i,j,k) + div%d(i-1,j,k)                              &
             ) / mesh%de_lon(j)**2 + (                                                         &
@@ -577,7 +574,6 @@ contains
           end do
         end do
       end do
-      call fill_halo(div2, west_halo=.false., south_halo=.false.)
     end if
     end associate
 
@@ -597,13 +593,12 @@ contains
                gz_lev => dstate%gz_lev   , & ! out
                gz     => dstate%gz       )   ! out
     do k = mesh%half_kde - 1, mesh%half_kds, -1
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
           gz_lev%d(i,j,k) = gz_lev%d(i,j,k+1) + rd * tv%d(i,j,k) * log(ph_lev%d(i,j,k+1) / ph_lev%d(i,j,k))
         end do
       end do
     end do
-    call fill_halo(gz_lev)
     ! For output
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
