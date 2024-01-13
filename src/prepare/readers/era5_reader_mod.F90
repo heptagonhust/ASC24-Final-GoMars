@@ -4,6 +4,7 @@ module era5_reader_mod
   use flogger
   use const_mod
   use namelist_mod
+  use time_mod
   use formula_mod
   use process_mod
 
@@ -41,7 +42,8 @@ contains
     real(r8), intent(in) :: max_lat_in
 
     integer i, j, k, k0
-    real(r8) min_lat, max_lat
+    character(50) time_units
+    real(r8) min_lat, max_lat, time_value
     real(r8) qm1, qm2, qm, tv1, tv2, sum_q_lev, dz, rho
 
     call era5_reader_final()
@@ -57,6 +59,9 @@ contains
     call fiona_get_dim('era5', 'level', size=era5_nlev)
     allocate(era5_lev(era5_nlev))
     call fiona_start_input('era5')
+    call fiona_input('era5', 'time', time_value)
+    call fiona_get_att('era5', 'time', 'units', time_units)
+    call time_fast_forward(time_value, time_units)
     call fiona_input_range('era5', 'longitude', era5_lon, coord_range=[min_lon, max_lon]); era5_nlon = size(era5_lon)
     call fiona_input_range('era5', 'latitude' , era5_lat, coord_range=[min_lat, max_lat]); era5_nlat = size(era5_lat)
     call fiona_input      ('era5', 'level'    , era5_lev)

@@ -215,6 +215,9 @@ contains
     elapsed_seconds = skipped_time%total_seconds()
     curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
 
+    end_time = curr_time + (end_time - start_time)
+    start_time = curr_time
+
     ! Update alerts.
     iter = hash_table_iterator(alerts)
     do while (.not. iter%ended())
