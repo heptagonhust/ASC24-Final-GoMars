@@ -507,6 +507,7 @@ contains
               mfz%d(i,j,k) = 0
             else if (cflz%d(i,j,k) > 0) then
               ku = k - ci - 1
+              ku = min(max(ku, mesh%full_kms + 2), mesh%full_kme - 2)
               call ppm(m%d(i,j,ku-2), m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1), m%d(i,j,ku+2), ml, dm, m6)
               s1 = 1 - cf
               s2 = 1
@@ -516,6 +517,7 @@ contains
               mfz%d(i,j,k) =  w%d(i,j,k) * (sum(m%d(i,j,ku+1:k-1)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz%d(i,j,k)
             else
               ku = k - ci
+              ku = min(max(ku, mesh%full_kms + 2), mesh%full_kme - 2)
               call ppm(m%d(i,j,ku-2), m%d(i,j,ku-1), m%d(i,j,ku), m%d(i,j,ku+1), m%d(i,j,ku+2), ml, dm, m6)
               s1 = 0
               s2 = -cf
