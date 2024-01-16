@@ -10,6 +10,7 @@
 module filter_mod
 
   use const_mod
+  use perf_mod
   use filter_types_mod
   use latlon_field_types_mod
 
@@ -39,6 +40,8 @@ contains
     integer, pointer :: ngrid(:)
     integer is, ie, js, je, i, j, n, hn
 
+    call perf_start('filter_run_2d')
+
     is = x%mesh%full_ids
     ie = x%mesh%full_ide
     select case (x%loc)
@@ -66,6 +69,8 @@ contains
       end if
     end do
 
+    call perf_stop('filter_run_2d')
+
   end subroutine filter_run_2d
 
   subroutine filter_run_3d(filter, x, y)
@@ -78,6 +83,8 @@ contains
     real(r8), pointer :: wgt(:,:)
     integer, pointer :: ngrid(:)
     integer is, ie, js, je, ks, ke, i, j, k, n, hn
+
+    call perf_start('filter_run_3d')
 
     is = x%mesh%full_ids
     ie = x%mesh%full_ide
@@ -124,6 +131,8 @@ contains
       end do
     end do
 
+    call perf_stop('filter_run_3d')
+
   end subroutine filter_run_3d
 
   subroutine filter_run_4d(filter, x, i4, y)
@@ -137,6 +146,8 @@ contains
     real(r8), pointer :: wgt(:,:)
     integer, pointer :: ngrid(:)
     integer is, ie, js, je, ks, ke, i, j, k, n, hn
+
+    call perf_start('filter_run_4d')
 
     is = x%mesh%full_ids
     ie = x%mesh%full_ide
@@ -168,6 +179,8 @@ contains
         end if
       end do
     end do
+
+    call perf_stop('filter_run_4d')
 
   end subroutine filter_run_4d
 

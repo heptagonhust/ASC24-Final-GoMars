@@ -1,6 +1,7 @@
 module operators_mod
 
   use const_mod
+  use perf_mod
   use vert_coord_mod
   use block_mod
   use latlon_parallel_mod
@@ -139,6 +140,8 @@ contains
 
     integer i, j, k
 
+    call perf_start('calc_mg')
+
     associate (mesh    => block%mesh    , &
                mgs     => dstate%mgs    , & ! in
                mg_lev  => dstate%mg_lev , & ! out
@@ -159,6 +162,8 @@ contains
     end do
     end associate
 
+    call perf_stop('calc_mg')
+
   end subroutine calc_mg
 
   subroutine calc_ph(block, dstate)
@@ -167,6 +172,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+
+    call perf_start('calc_ph')
 
     associate (mesh    => block%mesh          , &
                mg_lev  => dstate%mg_lev       , & ! in
@@ -199,6 +206,8 @@ contains
     if (hydrostatic) ps%d = phs%d
     end associate
 
+    call perf_stop('calc_ph')
+
   end subroutine calc_ph
 
   subroutine calc_p(block, dstate)
@@ -208,6 +217,8 @@ contains
 
     real(r8), parameter :: p0 = 1.0e5_r8
     integer i, j, k
+
+    call perf_start('calc_p')
 
     associate (mesh  => block%mesh  , & ! in
                rhod  => dstate%rhod , & ! in
@@ -224,6 +235,8 @@ contains
     call interp_run(p, p_lev)
     call fill_halo(p_lev)
     end associate
+
+    call perf_stop('calc_p')
 
   end subroutine calc_p
 
@@ -305,6 +318,8 @@ contains
 
     integer i, j, k
 
+    call perf_start('calc_t')
+
     associate (mesh => block%mesh         , &
                pt   => dstate%pt          , & ! in
                ph   => dstate%ph          , & ! in
@@ -332,6 +347,8 @@ contains
     end if
     end associate
 
+    call perf_stop('calc_t')
+
   end subroutine calc_t
 
   subroutine calc_rhod(block, dstate)
@@ -340,6 +357,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+
+    call perf_start('calc_rhod')
 
     associate (mesh   => block%mesh   , &
                gz_lev => dstate%gz_lev, & ! in
@@ -354,6 +373,8 @@ contains
     end do
     end associate
 
+    call perf_stop('calc_rhod')
+
   end subroutine calc_rhod
 
   subroutine calc_we_lev(block, dstate, dtend, dt)
@@ -364,6 +385,8 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
+
+    call perf_start('calc_we_lev')
 
     associate (mesh       => block%mesh          , &
                dmf        => block%aux%dmf       , & ! in
@@ -384,6 +407,8 @@ contains
     call interp_run(we_lev, we_lev_lat)
     end associate
 
+    call perf_stop('calc_we_lev')
+
   end subroutine calc_we_lev
 
   subroutine calc_ke(block, dstate)
@@ -395,6 +420,8 @@ contains
     real(r8) ke_vtx(4)
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
+
+    call perf_start('calc_ke')
 
     associate (mesh => block%mesh  , &
                u    => dstate%u_lon, & ! in
@@ -504,6 +531,8 @@ contains
     end if
     end associate
 
+    call perf_stop('calc_ke')
+
   end subroutine calc_ke
 
   subroutine calc_div(block, dstate)
@@ -514,6 +543,8 @@ contains
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
     integer i, j, k
+
+    call perf_start('calc_div')
 
     associate (mesh => block%mesh    , &
                u    => dstate%u_lon  , & ! in
@@ -577,6 +608,8 @@ contains
     end if
     end associate
 
+    call perf_stop('calc_div')
+
   end subroutine calc_div
 
   subroutine calc_gz_lev(block, dstate)
@@ -585,6 +618,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+
+    call perf_start('calc_gz_lev')
 
     associate (mesh   => block%mesh      , &
                gzs    => block%static%gzs, & ! in
@@ -609,6 +644,8 @@ contains
     end do
     end associate
 
+    call perf_stop('calc_gz_lev')
+
   end subroutine calc_gz_lev
 
   subroutine calc_dmg(block, dstate)
@@ -617,6 +654,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, l
+
+    call perf_start('calc_dmg')
 
     associate (mesh    => block%mesh       , &
                mg      => dstate%mg        , & ! in
@@ -684,6 +723,8 @@ contains
     call interp_run(dmg, dmg_vtx)
     end associate
 
+    call perf_stop('calc_dmg')
+
   end subroutine calc_dmg
 
   subroutine calc_mf(block, dstate, dt)
@@ -693,6 +734,8 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
+
+    call perf_start('calc_mf')
 
     associate (mesh    => block%mesh       , &
                dmg     => dstate%dmg       , & ! in
@@ -744,6 +787,8 @@ contains
     call fill_halo(v_lon)
     end associate
 
+    call perf_stop('calc_mf')
+
   end subroutine calc_mf
 
   subroutine calc_vor(block, dstate)
@@ -754,6 +799,8 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%half_ids:block%mesh%half_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
+
+    call perf_start('calc_vor')
 
     associate (mesh  => block%mesh     , &
                u_lon => dstate%u_lon   , & ! in
@@ -805,6 +852,8 @@ contains
     end if
     end associate
 
+    call perf_stop('calc_vor')
+
   end subroutine calc_vor
 
   subroutine calc_pv(block, dstate)
@@ -813,6 +862,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+
+    call perf_start('calc_pv')
 
     associate (mesh    => block%mesh       , &
                dmg_vtx => block%aux%dmg_vtx, & ! in
@@ -828,6 +879,8 @@ contains
     end do
     call fill_halo(pv)
     end associate
+
+    call perf_stop('calc_pv')
 
   end subroutine calc_pv
 
@@ -878,6 +931,8 @@ contains
     !   call interp_pv_midpoint(block, dstate, dt, substep)
     !   return
     ! end if
+
+    call perf_start('interp_pv_upwind')
 
     associate (mesh   => block%mesh      , &
                un     => dstate%u_lon    , & ! in
@@ -944,6 +999,8 @@ contains
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)
     end associate
 
+    call perf_stop('interp_pv_upwind')
+
   end subroutine interp_pv_upwind
 
   subroutine calc_coriolis(block, dstate, dtend, dt)
@@ -955,6 +1012,8 @@ contains
 
     real(r8) tmp
     integer i, j, k
+
+    call perf_start('calc_coriolis')
 
     associate (mesh    => block%mesh       , &
                mfx_lon => block%aux%mfx_lon, & ! in
@@ -1025,6 +1084,8 @@ contains
     end select
     end associate
 
+    call perf_stop('calc_coriolis')
+
   end subroutine calc_coriolis
 
   subroutine calc_grad_ke(block, dstate, dtend, dt)
@@ -1036,6 +1097,8 @@ contains
 
     real(r8) tmp
     integer i, j, k
+
+    call perf_start('calc_grad_ke')
 
     associate (mesh => block%mesh  , &
                ke   => block%aux%ke, & ! in
@@ -1065,6 +1128,8 @@ contains
     end do
     end associate
 
+    call perf_stop('calc_grad_ke')
+
   end subroutine calc_grad_ke
 
   subroutine calc_grad_mf(block, dstate, dtend, dt)
@@ -1077,6 +1142,8 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
+
+    call perf_start('calc_grad_mf')
 
     associate (mesh    => block%mesh       , &
                mfx_lon => block%aux%mfx_lon, & ! in
@@ -1126,6 +1193,8 @@ contains
     end if
     end associate
 
+    call perf_stop('calc_grad_mf')
+
   end subroutine calc_grad_mf
 
   subroutine calc_grad_ptf(block, dstate, dtend, dt)
@@ -1138,6 +1207,8 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
+
+    call perf_start('calc_grad_ptf')
 
     associate (mesh     => block%filter_mesh, &
                u_lon    => dstate%u_lon     , & ! in
@@ -1209,6 +1280,8 @@ contains
     end do
     end associate
 
+    call perf_stop('calc_grad_ptf')
+
   end subroutine calc_grad_ptf
 
   subroutine calc_dmgsdt(block, dstate, dtend, dt)
@@ -1219,6 +1292,8 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
+
+    call perf_start('calc_dmgsdt')
 
     associate (mesh => block%mesh   , &
                dmf  => block%aux%dmf, & ! in
@@ -1233,6 +1308,8 @@ contains
     end do
     end associate
 
+    call perf_stop('calc_dmgsdt')
+
   end subroutine calc_dmgsdt
 
   subroutine calc_wedudlev_wedvdlev(block, dstate, dtend, dt)
@@ -1246,6 +1323,8 @@ contains
     integer i, j, k
 
     ! Follow SB81 vertical advection discretization.
+
+    call perf_start('calc_wedudlev_wedvdlev')
 
     associate (mesh       => block%mesh          , &
                u          => dstate%u_lon        , & ! in
@@ -1285,6 +1364,8 @@ contains
       end do
     end do
     end associate
+
+    call perf_stop('calc_wedudlev_wedvdlev')
 
   end subroutine calc_wedudlev_wedvdlev
 

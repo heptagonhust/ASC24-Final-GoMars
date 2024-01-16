@@ -72,6 +72,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
       -no-wrap-margin
       -O3
       -align array64byte
+      -qopenmp
       # -fp-model precise
     )
   endif ()
@@ -80,7 +81,6 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
   else ()
     list(APPEND fortran_flags -mkl=sequential)
   endif ()
-  # list(APPEND fortran_flags -qopenmp)
 endif ()
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 

@@ -9,16 +9,18 @@ module perf_mod
 
   implicit none
 
-  private
-
   public perf_init
+  public perf_start
+  public perf_stop
+  public perf_final
+
+  ! Just for CAM
   public t_startf
   public t_stopf
   public t_disablef
   public t_enablef
   public t_adj_detailf
   public t_barrierf
-  public perf_final
 
   logical :: initialized    = .false.
   logical :: barrier        = .false.
@@ -30,15 +32,56 @@ contains
 
   subroutine perf_init()
 
+    integer ierr
+
 #ifdef HAS_GPTL
-    if (GPTLinitialize() < 0) then
+    ierr = gptlsetoption(gptloverhead, 0)
+    ierr = gptlsetoption(gptlpercent, 0)
+    ierr = gptlsetoption(gptlabort_on_error, 1)
+    ierr = gptlsetoption(gptlsync_mpi, 1)
+    if (gptlinitialize() < 0) then
       stop 'Failed to initialize GPTL!'
     end if
+    ierr = gptlstart('total')
 #endif
 
     initialized = .true.
 
   end subroutine perf_init
+
+  subroutine perf_start(name)
+
+    character(*), intent(in) :: name
+
+    integer ierr
+
+    ierr = gptlstart(name)
+
+  end subroutine perf_start
+
+  subroutine perf_stop(name)
+
+    character(*), intent(in) :: name
+
+    integer ierr
+
+    ierr = gptlstop(name)
+
+  end subroutine perf_stop
+
+  subroutine perf_final()
+
+    integer ierr
+
+#ifdef HAS_GPTL
+    ierr = gptlstop('total')
+    ierr = gptlpr(0)
+    if (gptlfinalize() /= 0) then
+      stop 'Failed to call finalize GPTL!'
+    end if
+#endif
+
+  end subroutine perf_final
 
   subroutine t_startf(event)
 
@@ -135,15 +178,5 @@ contains
 #endif
 
   end subroutine t_barrierf
-
-  subroutine perf_final()
-
-#ifdef HAS_GPTL
-    if (GPTLfinalize() /= 0) then
-      stop 'Failed to call GPTLfinalize!'
-    end if
-#endif
-
-  end subroutine perf_final
 
 end module perf_mod

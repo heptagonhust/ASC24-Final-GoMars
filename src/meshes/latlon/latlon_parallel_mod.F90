@@ -12,6 +12,7 @@ module latlon_parallel_mod
   use mpi
   use flogger
   use const_mod
+  use perf_mod
   use latlon_mesh_mod
   use latlon_halo_mod
   use latlon_parallel_types_mod
@@ -61,6 +62,8 @@ contains
     integer t1, t2, i, j, js, je, nx, mx, hx, hy, ierr
     integer send_req, recv_req
     real(r8) tmp(size(field%d,1),field%halo(1)%lat_hw)
+
+    call perf_start('fill_halo_2d')
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
     east_halo_opt  = .true. ; if (present(east_halo )) east_halo_opt  = east_halo
@@ -163,6 +166,8 @@ contains
       end if
     end if
 
+    call perf_stop('fill_halo_2d')
+
   end subroutine fill_halo_2d
 
   subroutine fill_halo_3d(field, west_halo, east_halo, south_halo, north_halo)
@@ -177,6 +182,8 @@ contains
     integer t1, t2, t3, i, j, js, je, nx, mx, hx, hy, ierr
     integer send_req, recv_req
     real(r8) tmp(size(field%d,1),field%halo(1)%lat_hw,size(field%d,3))
+
+    call perf_start('fill_halo_3d')
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
     east_halo_opt  = .true. ; if (present(east_halo )) east_halo_opt  = east_halo
@@ -280,6 +287,8 @@ contains
       end if
     end if
 
+    call perf_stop('fill_halo_3d')
+
   end subroutine fill_halo_3d
 
   subroutine fill_halo_4d(field, i4, west_halo, east_halo, south_halo, north_halo)
@@ -295,6 +304,8 @@ contains
     integer t1, t2, t3, i, j, js, je, nx, mx, hx, hy, ierr
     integer send_req, recv_req
     real(r8) tmp(size(field%d,1),field%halo(1)%lat_hw,size(field%d,3))
+
+    call perf_start('fill_halo_4d')
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
     east_halo_opt  = .true. ; if (present(east_halo )) east_halo_opt  = east_halo
@@ -397,6 +408,8 @@ contains
         end do
       end if
     end if
+
+    call perf_stop('fill_halo_4d')
 
   end subroutine fill_halo_4d
 
