@@ -55,7 +55,9 @@ contains
 
     integer ierr
 
+#ifdef HAS_GPTL
     ierr = gptlstart(name)
+#endif
 
   end subroutine perf_start
 
@@ -65,7 +67,9 @@ contains
 
     integer ierr
 
+#ifdef HAS_GPTL
     ierr = gptlstop(name)
+#endif
 
   end subroutine perf_stop
 
