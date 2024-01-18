@@ -152,25 +152,19 @@ contains
       proc%ngb(i)%orient = i
       select case (proc%ngb(i)%orient)
       case (west, east)
-        call blocks(1)%filter_halo(i)%init(blocks(1)%filter_mesh, proc%ngb(i)%orient, dtype,   &
-                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
-                                    jds=proc%jds, jde=proc%jde)
+        call blocks(1)%filter_halo(i)%init(blocks(1)%filter_mesh, proc%ngb(i)%orient, dtype, &
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id)
         call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
-                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
-                                    jds=proc%jds, jde=proc%jde)
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id)
       case (south, north)
-        lon_hw = 0 ! min(blocks(1)%filter_mesh%lon_hw, proc%ngb(i)%lon_hw)
-        call blocks(1)%filter_halo(i)%init(blocks(1)%filter_mesh, proc%ngb(i)%orient, dtype,   &
-                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
-                                    ids=proc%ids, ide=proc%ide, lon_hw=lon_hw,   &
-                                    at_south_pole=proc%at_south_pole,            &
-                                    at_north_pole=proc%at_north_pole)
+        lon_hw = 0 ! We don't need diagonal halo for arrays on the filter_mesh.
+        call blocks(1)%filter_halo(i)%init(blocks(1)%filter_mesh, proc%ngb(i)%orient, dtype,    &
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, lon_hw=lon_hw, &
+                                    at_south_pole=proc%at_south_pole, at_north_pole=proc%at_north_pole)
         lon_hw = min(blocks(1)%mesh%lon_hw, proc%ngb(i)%lon_hw)
-        call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,   &
-                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, &
-                                    ids=proc%ids, ide=proc%ide, lon_hw=lon_hw,   &
-                                    at_south_pole=proc%at_south_pole,            &
-                                    at_north_pole=proc%at_north_pole)
+        call blocks(1)%halo(i)%init(blocks(1)%mesh, proc%ngb(i)%orient, dtype,                  &
+                                    host_id=proc%id, ngb_proc_id=proc%ngb(i)%id, lon_hw=lon_hw, &
+                                    at_south_pole=proc%at_south_pole, at_north_pole=proc%at_north_pole)
       end select
     end do
 

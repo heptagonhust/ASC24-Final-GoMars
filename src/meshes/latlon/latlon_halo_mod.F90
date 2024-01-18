@@ -56,8 +56,7 @@ module latlon_halo_mod
 contains
 
   subroutine latlon_halo_init(this, mesh, orient, dtype, host_id, ngb_proc_id, iblk, &
-                       lon_hw, ids, ide, &
-                       lat_hw, jds, jde, at_south_pole, at_north_pole)
+                              lon_hw, lat_hw, at_south_pole, at_north_pole)
 
     class(latlon_halo_type), intent(out) :: this
     type(latlon_mesh_type), intent(in) :: mesh
@@ -67,11 +66,7 @@ contains
     integer, intent(in), optional :: ngb_proc_id
     integer, intent(in), optional :: iblk
     integer, intent(in), optional :: lon_hw
-    integer, intent(in), optional :: ids
-    integer, intent(in), optional :: ide
     integer, intent(in), optional :: lat_hw
-    integer, intent(in), optional :: jds
-    integer, intent(in), optional :: jde
     logical, intent(in), optional :: at_south_pole
     logical, intent(in), optional :: at_north_pole
 
@@ -105,30 +100,32 @@ contains
     this%lat_hw = mesh%lat_hw; if (present(lat_hw)) this%lat_hw = lat_hw
     ! Calculate the start and end indices of halo for MPI.
     ! NOTE: MPI array index starts from zero.
-    if (present(ids) .and. present(ide)) then
-      full_ids = ids - (mesh%full_ids - mesh%lon_hw)
-      full_ide = ide - (mesh%full_ids - mesh%lon_hw)
-    else if (orient == west) then
+    select case (orient)
+    case (south, north)
+      full_ids = mesh%lon_hw
+      full_ide = mesh%full_nlon + mesh%lon_hw - 1
+    case (west)
       full_ids = 0
       full_ide = mesh%lon_hw - 1
-    else if (orient == east) then
+    case (east)
       full_ids = mesh%full_nlon + mesh%lon_hw
       full_ide = full_ids + mesh%lon_hw - 1
-    end if
+    end select
     half_ids = full_ids
     half_ide = full_ide
-    if (present(jds) .and. present(jde)) then
-      full_jds = jds - (mesh%full_jds - mesh%lat_hw)
-      full_jde = jde - (mesh%full_jds - mesh%lat_hw)
-    else if (orient == south) then
+    select case (orient)
+    case (west, east)
+      full_jds = mesh%lat_hw
+      full_jde = mesh%full_nlat + mesh%lat_hw - 1
+    case (south)
       full_jds = 0
       full_jde = mesh%lat_hw - 1
-    else if (orient == north) then
+    case (north)
       full_jds = mesh%full_nlat + mesh%lat_hw
       full_jde = full_jds + mesh%lat_hw - 1
-    end if
+    end select
     half_jds = merge(full_jds - 1, full_jds, mesh%has_north_pole() .and. orient == north)
-    half_jde = merge(full_jde - 1, full_jde, mesh%has_north_pole() .and. orient == north)
+    half_jde = merge(full_jde - 1, full_jde, mesh%has_north_pole() .and. orient /= south)
 
     !                          wx                          nx                          wx
     !                          |                           |                           |
