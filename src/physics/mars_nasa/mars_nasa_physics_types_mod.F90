@@ -39,7 +39,7 @@ module mars_nasa_physics_types_mod
     real(r8), allocatable, dimension(    :,:  ) :: ro_dst
     ! Cloud particle median radius
     real(r8), allocatable, dimension(    :,:  ) :: ro_cld
-    ! delta-Eddington optical thickness on the surface (???)
+    ! delta-Eddington optical thickness on the surface (1)
     real(r8), allocatable, dimension(:,:,:    ) :: detau
     real(r8), allocatable, dimension(:,:,:,:  ) :: tau_gas_vis
     real(r8), allocatable, dimension(:,:,:,:  ) :: tau_dst_vis
@@ -51,6 +51,9 @@ module mars_nasa_physics_types_mod
     real(r8), allocatable, dimension(    :,  :) :: q_sfc
     ! Intermediate variable ρ u* cp ch (???)
     real(r8), allocatable, dimension(    :    ) :: rhouch
+    ! Eddy mixing coefficients in vertical (???)
+    real(r8), allocatable, dimension(    :,:  ) :: eddy_km
+    real(r8), allocatable, dimension(    :,:  ) :: eddy_kh
     ! Heat exchange between atmosphere and surface (W m-2)
     real(r8), allocatable, dimension(    :    ) :: heat_sfc
     ! Soil conductivity (???)
@@ -110,6 +113,8 @@ contains
     allocate(this%co2ice       (                  mesh%ncol          ))
     allocate(this%q_sfc        (                  mesh%ncol,         ntracers))
     allocate(this%rhouch       (                  mesh%ncol          ))
+    allocate(this%eddy_km      (                  mesh%ncol,mesh%nlev))
+    allocate(this%eddy_kh      (                  mesh%ncol,mesh%nlev))
     allocate(this%heat_sfc     (                  mesh%ncol          ))
     allocate(this%soil_cond    (                  mesh%ncol,nlev_soil))
     allocate(this%soil_cond_lev(                  mesh%ncol,nlev_soil+1))
@@ -136,6 +141,8 @@ contains
     if (allocated(this%co2ice       )) deallocate(this%co2ice       )
     if (allocated(this%q_sfc        )) deallocate(this%q_sfc        )
     if (allocated(this%rhouch       )) deallocate(this%rhouch       )
+    if (allocated(this%eddy_km      )) deallocate(this%eddy_km      )
+    if (allocated(this%eddy_kh      )) deallocate(this%eddy_kh      )
     if (allocated(this%heat_sfc     )) deallocate(this%heat_sfc     )
     if (allocated(this%soil_cond    )) deallocate(this%soil_cond    )
     if (allocated(this%soil_cond_lev)) deallocate(this%soil_cond_lev)

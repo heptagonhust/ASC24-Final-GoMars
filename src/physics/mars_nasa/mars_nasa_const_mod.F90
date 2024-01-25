@@ -20,6 +20,10 @@ module mars_nasa_const_mod
   real(r8), parameter :: emis_gnd_15um  = 1.0_r8
   ! A radiation code conversion factor
   real(r8), parameter :: cmk            = 3.51e+22_r8
+  ! Mixing length constant (m)
+  real(r8), parameter :: rl0            = 150.0_r8
+  ! Critical Richardson number
+  real(r8), parameter :: ric            = 0.195_r8
 
   real(r8) :: ice_thresh_kgm2
 

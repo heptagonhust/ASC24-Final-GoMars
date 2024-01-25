@@ -112,12 +112,12 @@ contains
 
   end function virtual_potential_temperature
 
-  pure elemental real(r8) function dry_air_density(pt, p) result(res)
+  pure elemental real(r8) function dry_air_density(t, p) result(res)
 
-    real(r8), intent(in) :: pt
-    real(r8), intent(in) :: p
+    real(r8), intent(in) :: t   ! Temperature (K)
+    real(r8), intent(in) :: p   ! Full pressure (Pa)
 
-    res = p0 / rd / pt * (p / p0)**cvd_o_cpd
+    res = p / rd / t
 
   end function dry_air_density
 

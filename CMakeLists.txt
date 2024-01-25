@@ -292,6 +292,8 @@ target_sources(gmcore PRIVATE
   src/physics/mars_nasa/mars_nasa_solar_mod.F90
   src/physics/mars_nasa/mars_nasa_rad_kcoef_mod.F90
   src/physics/mars_nasa/mars_nasa_rad_mod.F90
+  src/physics/mars_nasa/mars_nasa_sfc_mod.F90
+  src/physics/mars_nasa/mars_nasa_pbl_mod.F90
   src/physics/mars_nasa/mars_nasa_lsm_mod.F90
   src/physics/mars_nasa/mars_nasa_mp_mod.F90
   src/physics/mars_nasa/mars_nasa_physics_output_mod.F90

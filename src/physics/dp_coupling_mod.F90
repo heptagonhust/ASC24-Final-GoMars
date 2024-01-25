@@ -87,6 +87,7 @@ contains
             pstate%omg   (icol,k)   = aux%omg%d(i,j,k)
             pstate%z     (icol,k)   = dstate%gz%d(i,j,k) / g
             pstate%dz    (icol,k)   = (dstate%gz_lev%d(i,j,k+1) - dstate%gz_lev%d(i,j,k)) / g
+            pstate%rho   (icol,k)   = dry_air_density(pstate%t(icol,k), pstate%p(icol,k))
             icol = icol + 1
           end do
         end do

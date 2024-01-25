@@ -200,19 +200,22 @@ contains
 
   subroutine calc_fdns_dir(state)
 
+    ! Calculate direct solar flux at surface.
+
     type(mars_nasa_state_type), intent(inout) :: state
 
     integer icol, is, ig
     real(r8) c
 
     associate (mesh     => state%mesh    , &
-               cosz     => state%cosz    , &
-               detau    => state%detau   , &
+               cosz     => state%cosz    , & ! in
+               detau    => state%detau   , & ! in
                fdns_dir => state%fdns_dir)
     do icol = 1, mesh%ncol
-      if (cosz(icol) >= 1.0e-5_r8) then
+      fdns_dir(icol) = 0
+      if (cosz(icol) > 0) then
         do is = 1, spec_vis%n
-          c = cosz(icol) * sol_flx_spec_mars(is)
+          c = cosz(icol) * fsol_spec_mars(is)
           do ig = 1, ngauss - 1
             if (detau(is,ig,icol) <= 5) then
               fdns_dir(icol) = fdns_dir(icol) + c * exp(-detau(is,ig,icol) / cosz(icol)) * gwgt(ig) * (1 - f0_vis(is))
@@ -223,8 +226,6 @@ contains
             fdns_dir(icol) = fdns_dir(icol) + c * exp(-detau(is,ig,icol) / cosz(icol)) * f0_vis(is)
           end if
         end do
-      else
-        fdns_dir(icol) = 0
       end if
     end do
     end associate

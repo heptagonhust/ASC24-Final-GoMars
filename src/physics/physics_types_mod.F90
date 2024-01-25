@@ -67,6 +67,8 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: z0
     ! u* in similarity theory (m s-1)
     real(r8), allocatable, dimension(:    ) :: ustar
+    ! Temperature scale (K)
+    real(r8), allocatable, dimension(:    ) :: tstar
     ! w* in similarity theory (m s-1)
     real(r8), allocatable, dimension(:    ) :: wstar
     ! Similarity function for momentum
@@ -162,6 +164,7 @@ contains
     allocate(this%wsp_bot   (mesh%ncol                   ))
     allocate(this%z0        (mesh%ncol                   ))
     allocate(this%ustar     (mesh%ncol                   ))
+    allocate(this%tstar     (mesh%ncol                   ))
     allocate(this%wstar     (mesh%ncol                   ))
     allocate(this%psim      (mesh%ncol                   ))
     allocate(this%psih      (mesh%ncol                   ))
@@ -207,6 +210,7 @@ contains
     if (allocated(this%wsp_bot  )) deallocate(this%wsp_bot  )
     if (allocated(this%z0       )) deallocate(this%z0       )
     if (allocated(this%ustar    )) deallocate(this%ustar    )
+    if (allocated(this%tstar    )) deallocate(this%tstar    )
     if (allocated(this%wstar    )) deallocate(this%wstar    )
     if (allocated(this%psim     )) deallocate(this%psim     )
     if (allocated(this%psih     )) deallocate(this%psih     )
