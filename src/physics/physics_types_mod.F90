@@ -71,6 +71,13 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: tstar
     ! w* in similarity theory (m s-1)
     real(r8), allocatable, dimension(:    ) :: wstar
+    ! Surface drag coefficient for momentum
+    real(r8), allocatable, dimension(:    ) :: cdm
+    ! Surface drag coefficient for heat
+    real(r8), allocatable, dimension(:    ) :: cdh
+    ! Wind stress (N m-2)
+    real(r8), allocatable, dimension(:    ) :: taux
+    real(r8), allocatable, dimension(:    ) :: tauy
     ! Similarity function for momentum
     real(r8), allocatable, dimension(:    ) :: psim
     ! Similarity function for heat
@@ -166,6 +173,10 @@ contains
     allocate(this%ustar     (mesh%ncol                   ))
     allocate(this%tstar     (mesh%ncol                   ))
     allocate(this%wstar     (mesh%ncol                   ))
+    allocate(this%cdm       (mesh%ncol                   ))
+    allocate(this%cdh       (mesh%ncol                   ))
+    allocate(this%taux      (mesh%ncol                   ))
+    allocate(this%tauy      (mesh%ncol                   ))
     allocate(this%psim      (mesh%ncol                   ))
     allocate(this%psih      (mesh%ncol                   ))
     allocate(this%fm        (mesh%ncol                   ))
@@ -212,6 +223,10 @@ contains
     if (allocated(this%ustar    )) deallocate(this%ustar    )
     if (allocated(this%tstar    )) deallocate(this%tstar    )
     if (allocated(this%wstar    )) deallocate(this%wstar    )
+    if (allocated(this%cdm      )) deallocate(this%cdm      )
+    if (allocated(this%cdh      )) deallocate(this%cdh      )
+    if (allocated(this%taux     )) deallocate(this%taux     )
+    if (allocated(this%tauy     )) deallocate(this%tauy     )
     if (allocated(this%psim     )) deallocate(this%psim     )
     if (allocated(this%psih     )) deallocate(this%psih     )
     if (allocated(this%fm       )) deallocate(this%fm       )

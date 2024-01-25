@@ -87,7 +87,9 @@ contains
     ! Create mesh objects.
     allocate(mesh(nblk))
     do iblk = 1, nblk
-      call mesh(iblk)%init(ncol(iblk), nlev, lon(:,iblk), lat(:,iblk), area(:,iblk), ptop=ptop)
+      call mesh(iblk)%init(ncol(iblk), nlev, lon(:,iblk), lat(:,iblk), &
+                           blocks(iblk)%mesh%full_lev, blocks(iblk)%mesh%full_dlev, &
+                           area(:,iblk), ptop=ptop)
     end do
     deallocate(ncol, lon, lat, area)
 

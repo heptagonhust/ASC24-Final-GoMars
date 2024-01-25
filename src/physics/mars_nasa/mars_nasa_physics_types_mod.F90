@@ -54,6 +54,8 @@ module mars_nasa_physics_types_mod
     ! Eddy mixing coefficients in vertical (???)
     real(r8), allocatable, dimension(    :,:  ) :: eddy_km
     real(r8), allocatable, dimension(    :,:  ) :: eddy_kh
+    ! Saved square of wind shear (s-2)
+    real(r8), allocatable, dimension(    :,:  ) :: saved_shear2
     ! Heat exchange between atmosphere and surface (W m-2)
     real(r8), allocatable, dimension(    :    ) :: heat_sfc
     ! Soil conductivity (???)
@@ -113,8 +115,9 @@ contains
     allocate(this%co2ice       (                  mesh%ncol          ))
     allocate(this%q_sfc        (                  mesh%ncol,         ntracers))
     allocate(this%rhouch       (                  mesh%ncol          ))
-    allocate(this%eddy_km      (                  mesh%ncol,mesh%nlev))
-    allocate(this%eddy_kh      (                  mesh%ncol,mesh%nlev))
+    allocate(this%eddy_km      (                  mesh%ncol,mesh%nlev+1))
+    allocate(this%eddy_kh      (                  mesh%ncol,mesh%nlev+1))
+    allocate(this%saved_shear2 (                  mesh%ncol,mesh%nlev+1))
     allocate(this%heat_sfc     (                  mesh%ncol          ))
     allocate(this%soil_cond    (                  mesh%ncol,nlev_soil))
     allocate(this%soil_cond_lev(                  mesh%ncol,nlev_soil+1))
@@ -143,6 +146,7 @@ contains
     if (allocated(this%rhouch       )) deallocate(this%rhouch       )
     if (allocated(this%eddy_km      )) deallocate(this%eddy_km      )
     if (allocated(this%eddy_kh      )) deallocate(this%eddy_kh      )
+    if (allocated(this%saved_shear2 )) deallocate(this%saved_shear2 )
     if (allocated(this%heat_sfc     )) deallocate(this%heat_sfc     )
     if (allocated(this%soil_cond    )) deallocate(this%soil_cond    )
     if (allocated(this%soil_cond_lev)) deallocate(this%soil_cond_lev)
