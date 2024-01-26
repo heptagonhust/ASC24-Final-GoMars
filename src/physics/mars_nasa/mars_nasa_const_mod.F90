@@ -24,6 +24,8 @@ module mars_nasa_const_mod
   real(r8), parameter :: rl0            = 150.0_r8
   ! Critical Richardson number above which turbulence is suppressed
   real(r8), parameter :: ric            = 0.195_r8
+  ! PBL vertical mixing implicit coefficient
+  real(r8), parameter :: pbl_beta       = 0.55_r8
 
   real(r8) :: ice_thresh_kgm2
 

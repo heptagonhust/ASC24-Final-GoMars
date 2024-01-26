@@ -37,29 +37,49 @@ contains
     type(mars_nasa_tend_type), intent(inout) :: tend
     real(r8), intent(in) :: dt
 
-    real(r8) alpha
-    integer icol
+    real(r8) alpha, c1, c2
+    real(r8) c(state%mesh%nlev+1)
+    real(r8) A(state%mesh%nlev,3)
+    real(r8) b(state%mesh%nlev)
+    integer nlev, icol, k
 
     call calc_eddy_coef(state, dt)
     call mars_nasa_sfc_run(state)
 
-    associate (mesh   => state%mesh  , &
-               u      => state%u     , & ! in
-               v      => state%v     , & ! in
-               rho    => state%rho   , & ! in
-               ustar  => state%ustar , & ! in
-               tstar  => state%tstar , & ! in
-               cdh    => state%cdh   , & ! in
-               taux   => state%taux  , & ! out
-               tauy   => state%tauy  , & ! out
-               hflx   => state%hflx  , & ! out
-               rhouch => state%rhouch)   ! out
+    associate (mesh   => state%mesh   , &
+               beta   => pbl_beta     , &
+               dz     => state%dz     , & ! in
+               u      => state%u      , & ! in
+               v      => state%v      , & ! in
+               rho    => state%rho    , & ! in
+               ustar  => state%ustar  , & ! in
+               tstar  => state%tstar  , & ! in
+               cdh    => state%cdh    , & ! in
+               km     => state%eddy_km, & ! in
+               kh     => state%eddy_kh, & ! in
+               taux   => state%taux   , & ! out
+               tauy   => state%tauy   , & ! out
+               hflx   => state%hflx   , & ! out
+               rhouch => state%rhouch )   ! out
+    nlev = mesh%nlev
     do icol = 1, mesh%ncol
-      alpha = atan2(v(icol,mesh%nlev), u(icol,mesh%nlev))
-      taux  (icol) =  rho(icol,mesh%nlev) * ustar(icol) * ustar(icol) * cos(alpha)
-      tauy  (icol) =  rho(icol,mesh%nlev) * ustar(icol) * ustar(icol) * sin(alpha)
-      hflx  (icol) = -rho(icol,mesh%nlev) * ustar(icol) * tstar(icol) * cpd
-      rhouch(icol) =  rho(icol,mesh%nlev) * ustar(icol) * cdh  (icol) * cpd
+      alpha = atan2(v(icol,nlev), u(icol,nlev))
+      taux  (icol) =  rho(icol,nlev) * ustar(icol) * ustar(icol) * cos(alpha)
+      tauy  (icol) =  rho(icol,nlev) * ustar(icol) * ustar(icol) * sin(alpha)
+      hflx  (icol) = -rho(icol,nlev) * ustar(icol) * tstar(icol) * cpd
+      rhouch(icol) =  rho(icol,nlev) * ustar(icol) * cdh  (icol) * cpd
+      ! U
+      do k = 2, mesh%nlev ! Interface levels excluding top and bottom
+        c(k) = 2 * dt * km(icol,k) / (dz(icol,k-1) + dz(icol,k))
+      end do
+      do k = 1, mesh%nlev
+        A(k,1) = -beta / dz(icol,k) * c(k  )
+        A(k,3) = -beta / dz(icol,k) * c(k+1)
+        A(k,2) = 1 - A(k,1) - A(k,3)
+        c1 = (1 - beta) / dz(icol,k) * c(k  )
+        c2 = (1 - beta) / dz(icol,k) * c(k+1)
+        b(k) = c1 * u(icol,k-1) + (1 - c1 - c2) * u(icol,k) + c2 * u(icol,k+1)
+      end do
     end do
     end associate
 
@@ -74,14 +94,14 @@ contains
     integer icol, k
 
     associate (mesh         => state%mesh        , &
-               z            => state%z           , &
-               z_lev        => state%z_lev       , &
-               pt           => state%pt          , &
-               u            => state%u           , &
-               v            => state%v           , &
-               saved_shear2 => state%saved_shear2, &
-               km           => state%eddy_km     , &
-               kh           => state%eddy_kh     )
+               z            => state%z           , & ! in
+               z_lev        => state%z_lev       , & ! in
+               pt           => state%pt          , & ! in
+               u            => state%u           , & ! in
+               v            => state%v           , & ! in
+               saved_shear2 => state%saved_shear2, & ! inout
+               km           => state%eddy_km     , & ! out
+               kh           => state%eddy_kh     )   ! out
     do k = 2, mesh%nlev ! Interfaces excluding top and bottom.
       do icol = 1, mesh%ncol
         ! Calculate mixing length and beta (volume expansion coefficient).

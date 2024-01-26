@@ -82,9 +82,9 @@ module physics_types_mod
     real(r8), allocatable, dimension(:    ) :: psim
     ! Similarity function for heat
     real(r8), allocatable, dimension(:    ) :: psih
-    ! Integrated function for momentum
+    ! Integrated function or stability function for momentum
     real(r8), allocatable, dimension(:    ) :: fm
-    ! Integrated function for heat
+    ! Integrated function or stability function for heat
     real(r8), allocatable, dimension(:    ) :: fh
     ! PBL height (m)
     real(r8), allocatable, dimension(:    ) :: pblh

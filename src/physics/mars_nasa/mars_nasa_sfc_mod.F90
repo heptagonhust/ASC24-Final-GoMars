@@ -28,7 +28,7 @@ contains
 
     type(mars_nasa_state_type), intent(inout) :: state
 
-    real(r8) dpt, rib, fh, fm, cdh, cdm, lnz
+    real(r8) dpt, rib, lnz
     integer icol, nlev
 
     associate (mesh    => state%mesh   , &
@@ -37,6 +37,10 @@ contains
                t_sfc   => state%t_sfc  , & ! in
                wsp_bot => state%wsp_bot, & ! in
                z0      => state%z0     , & ! in
+               fm      => state%fm     , & ! out
+               fh      => state%fh     , & ! out
+               cdm     => state%cdm    , & ! out
+               cdh     => state%cdh    , & ! out
                ustar   => state%ustar  , & ! out
                tstar   => state%tstar  )   ! out
     nlev = mesh%nlev
@@ -47,18 +51,18 @@ contains
       rib = g * z(icol,nlev) * dpt / (pt(icol,nlev) * wsp_bot(icol)**2 + 1.0e-9_r8)
       ! Calculate stability functions (m for momentum, h for heat).
       if (rib >= 0) then
-        fh = 1.0_r8 / (1 + (15 * rib / sqrt(1 + 5 * rib)))
-        fm = 1.0_r8 / (1 + (10 * rib / sqrt(1 + 5 * rib)))
+        fm(icol) = 1.0_r8 / (1 + (10 * rib / sqrt(1 + 5 * rib)))
+        fh(icol) = 1.0_r8 / (1 + (15 * rib / sqrt(1 + 5 * rib)))
       else
-        fh = sqrt(1 - 64 * rib)
-        fm = sqrt(1 - 16 * rib)
+        fm(icol) = sqrt(1 - 16 * rib)
+        fh(icol) = sqrt(1 - 64 * rib)
       end if
       lnz = log(z(icol,nlev) / z0(icol))
       ! Calculate drag coefficients.
-      cdm = fm * (ka / lnz)**2
-      cdh = sqrt(fh) * ka / lnz
-      ustar = sqrt(cdm) * wsp_bot(icol)
-      tstar = cdh * dpt
+      cdm(icol) = fm(icol) * (ka / lnz)**2
+      cdh(icol) = sqrt(fh(icol)) * ka / lnz
+      ustar = sqrt(cdm(icol)) * wsp_bot(icol)
+      tstar = cdh(icol) * dpt
     end do
     end associate
 
