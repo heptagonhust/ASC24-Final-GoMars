@@ -241,7 +241,6 @@ contains
       end if
       call dstate%c2a()
       call calc_div(block, dstate)
-      if (nonhydrostatic) call interp_run(dstate%gz_lev, dstate%gz)
       end associate
     end do
 

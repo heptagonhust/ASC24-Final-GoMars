@@ -89,7 +89,7 @@ contains
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt, total_substeps)
-      if (hydrostatic   ) call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(itime))
+      if (baroclinic    ) call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic    ) call calc_rhod  (blocks(iblk), blocks(iblk)%dstate(itime))
       if (nonhydrostatic) call calc_p     (blocks(iblk), blocks(iblk)%dstate(itime))
       call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
