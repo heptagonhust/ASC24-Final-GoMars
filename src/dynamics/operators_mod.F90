@@ -94,6 +94,7 @@ contains
       if (nonhydrostatic) call calc_p     (blocks(iblk), blocks(iblk)%dstate(itime))
       call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
       call tracer_calc_qm                 (blocks(iblk))
+      if (nonhydrostatic) call fill_halo(blocks(iblk)%dstate(itime)%gz_lev)
     end do
 
   end subroutine operators_prepare_1
