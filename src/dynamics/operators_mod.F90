@@ -234,6 +234,7 @@ contains
       end do
     end do
     call interp_run(p, p_lev)
+    p_lev%d(:,:,1) = ptop
     call fill_halo(p_lev)
     end associate
 
