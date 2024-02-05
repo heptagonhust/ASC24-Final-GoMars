@@ -33,7 +33,7 @@ contains
     type(dstate_type), intent(in) :: dstate
     type(dtend_type), intent(inout) :: dtend
 
-    real(r8) dph1, dph2, dgz1, dgz2, dpp1, dpp2, dp1, dp2, L, tmp
+    real(r8) dpk1, dpk2, dgz1, dgz2, dpp1, dpp2, dph1, dph2, L, tmp
     integer i, j, k
 
     !                    o
@@ -79,11 +79,11 @@ contains
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
             L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i+1,j,k))
-            dph1 = pkh_lev%d(i+1,j,k+1) - pkh_lev%d(i  ,j,k  ) ! 2 - 4
-            dph2 = pkh_lev%d(i  ,j,k+1) - pkh_lev%d(i+1,j,k  ) ! 1 - 3
+            dpk1 = pkh_lev%d(i+1,j,k+1) - pkh_lev%d(i  ,j,k  ) ! 2 - 4
+            dpk2 = pkh_lev%d(i  ,j,k+1) - pkh_lev%d(i+1,j,k  ) ! 1 - 3
             dgz1 = gz_lev %d(i  ,j,k+1) - gz_lev %d(i+1,j,k  ) ! 1 - 3
             dgz2 = gz_lev %d(i  ,j,k  ) - gz_lev %d(i+1,j,k+1) ! 4 - 2
-            tmp = (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lon(j) / (dph1 + dph2) / L
+            tmp = (dpk1 * dgz1 + dpk2 * dgz2) / mesh%de_lon(j) / (dpk1 + dpk2) / L
             du%d(i,j,k) = du%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
             dtend%dudt_pgf%d(i,j,k) = tmp
@@ -106,11 +106,11 @@ contains
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i,j+1,k))
-            dph1 = pkh_lev%d(i,j+1,k+1) - pkh_lev%d(i,j  ,k  ) ! 2 - 4
-            dph2 = pkh_lev%d(i,j  ,k+1) - pkh_lev%d(i,j+1,k  ) ! 1 - 3
+            dpk1 = pkh_lev%d(i,j+1,k+1) - pkh_lev%d(i,j  ,k  ) ! 2 - 4
+            dpk2 = pkh_lev%d(i,j  ,k+1) - pkh_lev%d(i,j+1,k  ) ! 1 - 3
             dgz1 = gz_lev %d(i,j  ,k+1) - gz_lev %d(i,j+1,k  ) ! 1 - 3
             dgz2 = gz_lev %d(i,j  ,k  ) - gz_lev %d(i,j+1,k+1) ! 4 - 2
-            tmp = (dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2) / L
+            tmp = (dpk1 * dgz1 + dpk2 * dgz2) / mesh%de_lat(j) / (dpk1 + dpk2) / L
             dv%d(i,j,k) = dv%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
             dtend%dvdt_pgf%d(i,j,k) = tmp
@@ -120,44 +120,72 @@ contains
       end do
     else if (nonhydrostatic) then
       do k = mesh%full_kds, mesh%full_kde
+        !
+        !   4             3
+        ! i,j,k        i+1,j,k
+        !   o-------------o
+        !   |             |
+        !   |             |
+        !   |    i,j,k    |
+        !   |             |
+        !   |             |
+        !   o-------------o
+        ! i,j,k+1      i+1,j,k+1  --> east
+        !   1             2
+        !
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
+            L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i+1,j,k))
             dpp1 = p_lev  %d(i+1,j,k+1) - p_lev  %d(i  ,j,k  ) - ( &
                    ph_lev %d(i+1,j,k+1) - ph_lev %d(i  ,j,k  )) ! 2 - 4
             dpp2 = p_lev  %d(i  ,j,k+1) - p_lev  %d(i+1,j,k  ) - ( &
                    ph_lev %d(i  ,j,k+1) - ph_lev %d(i+1,j,k  )) ! 1 - 3
-            dph1 = pkh_lev%d(i+1,j,k+1) - pkh_lev%d(i  ,j,k  )  ! 2 - 4
-            dph2 = pkh_lev%d(i  ,j,k+1) - pkh_lev%d(i+1,j,k  )  ! 1 - 3
-            dp1  = ph_lev %d(i+1,j,k+1) - ph_lev %d(i  ,j,k  )  ! 2 - 4
-            dp2  = ph_lev %d(i  ,j,k+1) - ph_lev %d(i+1,j,k  )  ! 1 - 3
+            dpk1 = pkh_lev%d(i+1,j,k+1) - pkh_lev%d(i  ,j,k  )  ! 2 - 4
+            dpk2 = pkh_lev%d(i  ,j,k+1) - pkh_lev%d(i+1,j,k  )  ! 1 - 3
+            dph1 = ph_lev %d(i+1,j,k+1) - ph_lev %d(i  ,j,k  )  ! 2 - 4
+            dph2 = ph_lev %d(i  ,j,k+1) - ph_lev %d(i+1,j,k  )  ! 1 - 3
             dgz1 = gz_lev %d(i  ,j,k+1) - gz_lev %d(i+1,j,k  )  ! 1 - 3
             dgz2 = gz_lev %d(i  ,j,k  ) - gz_lev %d(i+1,j,k+1)  ! 4 - 2
             tmp = (                                         &
-              (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
-              (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part
-            ) / mesh%de_lon(j)
+              (dpk1 * dgz1 + dpk2 * dgz2) / (dpk1 + dpk2) + &
+              (dpp1 * dgz1 + dpp2 * dgz2) / (dph1 + dph2)   & ! Nonhydrostatic part
+            ) / mesh%de_lon(j) / L
             du%d(i,j,k) = du%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
             dtend%dudt_pgf%d(i,j,k) = tmp
 #endif
           end do
         end do
+        !
+        !   4             3
+        ! i,j,k        i,j+1,k
+        !   o-------------o
+        !   |             |
+        !   |             |
+        !   |    i,j,k    |
+        !   |             |
+        !   |             |
+        !   o-------------o
+        ! i,j,k+1      i,j+1,k+1  --> north
+        !   1             2
+        !
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
+            L = 1 + 0.5_r8 * (qm%d(i,j,k) + qm%d(i,j+1,k))
             dpp1 = p_lev  %d(i,j+1,k+1) - p_lev  %d(i,j  ,k  ) - ( &
                    ph_lev %d(i,j+1,k+1) - ph_lev %d(i,j  ,k  )) ! 2 - 4
             dpp2 = p_lev  %d(i,j  ,k+1) - p_lev  %d(i,j+1,k  ) - ( &
                    ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j  ,k  )) ! 1 - 3
-            dph1 = pkh_lev%d(i,j+1,k+1) - pkh_lev%d(i,j  ,k  )  ! 2 - 4
-            dph2 = pkh_lev%d(i,j  ,k+1) - pkh_lev%d(i,j+1,k  )  ! 1 - 3
-            dp1  = ph_lev %d(i,j+1,k+1) - ph_lev %d(i,j  ,k  )  ! 2 - 4
-            dp2  = ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j+1,k  )  ! 1 - 3
+            dpk1 = pkh_lev%d(i,j+1,k+1) - pkh_lev%d(i,j  ,k  )  ! 2 - 4
+            dpk2 = pkh_lev%d(i,j  ,k+1) - pkh_lev%d(i,j+1,k  )  ! 1 - 3
+            dph1 = ph_lev %d(i,j+1,k+1) - ph_lev %d(i,j  ,k  )  ! 2 - 4
+            dph2 = ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j+1,k  )  ! 1 - 3
             dgz1 = gz_lev %d(i,j  ,k+1) - gz_lev %d(i,j+1,k  )  ! 1 - 3
             dgz2 = gz_lev %d(i,j  ,k  ) - gz_lev %d(i,j+1,k+1)  ! 4 - 2
             tmp = (                                         &
-              (dph1 * dgz1 + dph2 * dgz2) / (dph1 + dph2) + &
-              (dpp1 * dgz1 + dpp2 * dgz2) / (dp1  + dp2 )   & ! Nonhydrostatic part
-            ) / mesh%de_lat(j)
+              (dpk1 * dgz1 + dpk2 * dgz2) / (dpk1 + dpk2) + &
+              (dpp1 * dgz1 + dpp2 * dgz2) / (dph1 + dph2)   & ! Nonhydrostatic part
+            ) / mesh%de_lat(j) / L
             dv%d(i,j,k) = dv%d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
             dtend%dvdt_pgf%d(i,j,k) = tmp

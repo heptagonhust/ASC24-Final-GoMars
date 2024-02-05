@@ -129,16 +129,16 @@ contains
     integer i, j, k
 
     associate (mesh   => block%mesh            , &
-               p      => dstate%p              , &
-               gz     => dstate%gz             , &
-               rhod   => dstate%rhod           , &
-               p_lev  => dstate%p_lev          , &
-               dmg    => dstate%dmg            , &
-               pro    => ref_profiles(block%id), &
-               p_ptb  => block%aux%p_ptb       , &
-               gz_ptb => block%aux%gz_ptb      , &
-               dp_ptb => block%aux%dp_ptb      , &
-               ad_ptb => block%aux%ad_ptb      )
+               p      => dstate%p              , & ! in
+               gz     => dstate%gz             , & ! in
+               rhod   => dstate%rhod           , & ! in
+               p_lev  => dstate%p_lev          , & ! in
+               dmg    => dstate%dmg            , & ! in
+               pro    => ref_profiles(block%id), & ! in
+               p_ptb  => block%aux%p_ptb       , & ! out
+               gz_ptb => block%aux%gz_ptb      , & ! out
+               dp_ptb => block%aux%dp_ptb      , & ! out
+               ad_ptb => block%aux%ad_ptb      )   ! out
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1

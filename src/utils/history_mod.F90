@@ -278,6 +278,8 @@ contains
 
   subroutine history_setup_h0_nonhydrostatic()
 
+    integer k
+
     call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, ngroup=output_ngroup)
     ! Dimensions
     call fiona_add_att('h0', 'time_step_size', dt)
@@ -308,6 +310,32 @@ contains
     call fiona_add_var('h0', 'w_lev'  , long_name='Vertical speed'              , units='m s-1' , dim_names= lev_dims_3d)
     call fiona_add_var('h0', 'p_lev'  , long_name='Pressure'                    , units='Pa'    , dim_names= lev_dims_3d)
     call fiona_add_var('h0', 'rhod'   , long_name='Dry-air density'             , units='kg m-3', dim_names=cell_dims_3d)
+
+    if (idx_qv > 0) then
+      call fiona_add_var('h0', 'qv', long_name='Water vapor mixing ratio', units='kg kg-1', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_qc > 0) then
+      call fiona_add_var('h0', 'qc', long_name='Cloud water mixing ratio', units='kg kg-1', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_nc > 0) then
+      call fiona_add_var('h0', 'nc', long_name='Cloud water number concentration', units='m-3', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_qi > 0) then
+      call fiona_add_var('h0', 'qi', long_name='Cloud ice mixing ratio', units='kg kg-1', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+    if (idx_ni > 0) then
+      call fiona_add_var('h0', 'ni', long_name='Cloud ice number concentration', units='m-3', dim_names=cell_dims_3d, dtype=output_h0_dtype)
+    end if
+
+    do k = 1, blocks(1)%accum_list%size
+      select type (accum => blocks(1)%accum_list%value_at(k))
+      type is (accum_type)
+        if (.not. accum%active) cycle
+        call fiona_add_var('h0', accum%name, accum%units, accum%long_name, dim_names=cell_dims_3d, dtype=output_h0_dtype)
+      end select
+    end do
+
+    call physics_add_output()
 
   end subroutine history_setup_h0_nonhydrostatic
 
@@ -634,7 +662,7 @@ contains
 
     integer, intent(in) :: itime
 
-    integer iblk, is, ie, js, je, ks, ke
+    integer iblk, is, ie, js, je, ks, ke, k
     integer start(3), count(3)
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%full_nlon))
@@ -645,10 +673,12 @@ contains
     call fiona_output('h0', 'ilev', global_mesh%half_lev(1:global_mesh%half_nlev))
 
     do iblk = 1, size(blocks)
-      associate (mesh   => blocks(iblk)%mesh         , &
-                 dstate => blocks(iblk)%dstate(itime), &
-                 aux    => blocks(iblk)%aux          , &
-                 static => blocks(iblk)%static)
+      associate (mesh       => blocks(iblk)%mesh         , &
+                 dstate     => blocks(iblk)%dstate(itime), &
+                 aux        => blocks(iblk)%aux          , &
+                 static     => blocks(iblk)%static       , &
+                 q          => tracers(iblk)%q           , &
+                 accum_list => blocks(iblk)%accum_list   )
       is = mesh%full_ids; ie = mesh%full_ide
       js = mesh%full_jds; je = mesh%full_jde
       ks = mesh%full_kds; ke = mesh%full_kde
@@ -664,6 +694,28 @@ contains
       call fiona_output('h0', 't'       , dstate%t      %d(is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'div'     , aux%div       %d(is:ie,js:je,ks:ke)     , start=start, count=count)
       call fiona_output('h0', 'rhod'    , dstate%rhod   %d(is:ie,js:je,ks:ke)     , start=start, count=count)
+      if (idx_qv > 0) then
+        call fiona_output('h0', 'qv'    , q%d(is:ie,js:je,ks:ke,idx_qv), start=start, count=count)
+      end if
+      if (idx_qc > 0) then
+        call fiona_output('h0', 'qc'    , q%d(is:ie,js:je,ks:ke,idx_qc), start=start, count=count)
+      end if
+      if (idx_nc > 0) then
+        call fiona_output('h0', 'nc'    , q%d(is:ie,js:je,ks:ke,idx_nc), start=start, count=count)
+      end if
+      if (idx_qi > 0) then
+        call fiona_output('h0', 'qi'    , q%d(is:ie,js:je,ks:ke,idx_qi), start=start, count=count)
+      end if
+      if (idx_ni > 0) then
+        call fiona_output('h0', 'ni'    , q%d(is:ie,js:je,ks:ke,idx_ni), start=start, count=count)
+      end if
+      do k = 1, accum_list%size
+        select type (accum => accum_list%value_at(k))
+        type is (accum_type)
+          if (.not. accum%active) cycle
+          call fiona_output('h0', accum%name, accum%array(:,:,:,1), start=start, count=count)
+        end select
+      end do
 
       is = mesh%half_ids; ie = mesh%half_ide
       js = mesh%full_jds; je = mesh%full_jde
@@ -698,6 +750,7 @@ contains
       call fiona_output('h0', 'te' , dstate %te)
       call fiona_output('h0', 'tpe', dstate %tpe)
       end associate
+      call physics_output(blocks(iblk))
     end do
 
   end subroutine history_write_h0_nonhydrostatic

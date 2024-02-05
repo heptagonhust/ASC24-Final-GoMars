@@ -24,7 +24,6 @@ module operators_mod
   public calc_mg
   public calc_ph
   public calc_p
-  public calc_linearized_p
   public calc_omg
   public calc_dmg
   public calc_t
@@ -241,42 +240,6 @@ contains
     call perf_stop('calc_p')
 
   end subroutine calc_p
-
-  subroutine calc_linearized_p(block, old_dstate, new_dstate)
-
-    type(block_type), intent(in) :: block
-    type(dstate_type), intent(in) :: old_dstate
-    type(dstate_type), intent(inout) :: new_dstate
-
-    integer i, j, k
-
-    associate (mesh       => block%mesh       , &
-               old_dmg    => old_dstate%dmg   , & ! in
-               new_dmg    => new_dstate%dmg   , & ! in
-               old_p      => old_dstate%p     , & ! in
-               new_p      => new_dstate%p     , & ! out
-               new_p_lev  => new_dstate%p_lev , & ! out
-               old_gz_lev => old_dstate%gz_lev, & ! in
-               new_gz_lev => new_dstate%gz_lev, & ! in
-               old_pt     => old_dstate%pt    , & ! in
-               new_pt     => new_dstate%pt    )   ! in
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_ids, mesh%full_ide + 1
-          new_p%d(i,j,k) = old_p%d(i,j,k) * (1.0_r8 + cpd_o_cvd * ( &
-            (new_dmg%d(i,j,k) * new_pt%d(i,j,k)) /                  &
-            (old_dmg%d(i,j,k) * old_pt%d(i,j,k)) -                  &
-            (new_gz_lev%d(i,j,k+1) - new_gz_lev%d(i,j,k)) /         &
-            (old_gz_lev%d(i,j,k+1) - old_gz_lev%d(i,j,k))           &
-          ))
-        end do
-      end do
-    end do
-    call interp_run(new_p, new_p_lev)
-    call fill_halo(new_p_lev)
-    end associate
-
-  end subroutine calc_linearized_p
 
   subroutine calc_omg(block, dstate)
 
