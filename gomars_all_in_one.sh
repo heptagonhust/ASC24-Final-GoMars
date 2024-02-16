@@ -34,5 +34,5 @@ cd ../../
 ./build_netcdf.sh
 
 # build gmcore
-cd ..
-./build_gomars.sh
+cd $current_dir
+./build_gmcore.sh

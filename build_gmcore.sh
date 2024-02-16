@@ -12,7 +12,7 @@ spack load intel-oneapi-mpi@2021.11.0
 
 export CC=mpiicx
 # export CXX=mpiicpx
-export FC=mpiifort
+export FC=mpiifx
 # can also be mpiifx
 
 # spack load netcdf-c
