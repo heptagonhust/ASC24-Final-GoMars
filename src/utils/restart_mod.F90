@@ -115,20 +115,22 @@ contains
       call fiona_add_dim('r0', 'ilev'     , size=global_mesh%half_nlev, add_var=.true.)
       call fiona_add_var('r0', 'u'        , long_name='U wind component'            , units='m s-1'     , dim_names=lon_dims_3d , dtype='r8')
       call fiona_add_var('r0', 'v'        , long_name='V wind component'            , units='m s-1'     , dim_names=lat_dims_3d , dtype='r8')
+      call fiona_add_var('r0', 'mfx_lon'  , long_name='Zonal mass flux'             , units='Pa m s-1'  , dim_names=lon_dims_3d , dtype='r8')
+      call fiona_add_var('r0', 'mfy_lat'  , long_name='Meridional mass flux'        , units='Pa m s-1'  , dim_names=lat_dims_3d , dtype='r8')
       call fiona_add_var('r0', 'mgs'      , long_name='Surface dry-air weight'      , units='Pa'        , dim_names=cell_dims_2d, dtype='r8')
       call fiona_add_var('r0', 'pt'       , long_name='Potential temperature'       , units='K'         , dim_names=cell_dims_3d, dtype='r8')
       if (nonhydrostatic) then
         call fiona_add_var('r0', 'gz_lev' , long_name='Geopotential height'         , units='m2 s-2'    , dim_names=lev_dims_3d , dtype='r8')
         call fiona_add_var('r0', 'w'      , long_name='Vertical velocity'           , units='m s-1'     , dim_names=lev_dims_3d , dtype='r8')
       end if
+      call fiona_add_var('r0', 'we_lev'   , long_name='Vertical coordinate velocity', units='s-1'       , dim_names=lev_dims_3d , dtype='r8')
     else
       call fiona_add_var('r0', 'u'        , long_name='U wind component'            , units='m s-1'     , dim_names=lon_dims_2d , dtype='r8')
       call fiona_add_var('r0', 'v'        , long_name='V wind component'            , units='m s-1'     , dim_names=lat_dims_2d , dtype='r8')
+      call fiona_add_var('r0', 'mfx_lon'  , long_name='Zonal mass flux'             , units='Pa m s-1'  , dim_names=lon_dims_2d , dtype='r8')
+      call fiona_add_var('r0', 'mfy_lat'  , long_name='Meridional mass flux'        , units='Pa m s-1'  , dim_names=lat_dims_2d , dtype='r8')
       call fiona_add_var('r0', 'gz'       , long_name='Geopotential height'         , units='m2 s-2'    , dim_names=cell_dims_2d, dtype='r8')
     end if
-    call fiona_add_var('r0', 'mfx_lon'    , long_name='Zonal mass flux'             , units='Pa m s-1'  , dim_names= lon_dims_3d, dtype='r8')
-    call fiona_add_var('r0', 'mfy_lat'    , long_name='Meridional mass flux'        , units='Pa m s-1'  , dim_names= lat_dims_3d, dtype='r8')
-    call fiona_add_var('r0', 'we_lev'     , long_name='Vertical coordinate velocity', units='s-1'       , dim_names= lev_dims_3d, dtype='r8')
     call fiona_add_var('r0', 'gzs'        , long_name='surface geopotential height' , units='m2 s-2'    , dim_names=cell_dims_2d, dtype='r8')
 
     if (allocated(blocks(1)%adv_batches)) then
@@ -276,32 +278,34 @@ contains
       deallocate(tmp)
       ! ------------------------------------------------------------------------
       ! Location lev edge
-      is = mesh%full_ids; ie = mesh%full_ide
-      js = mesh%full_jds; je = mesh%full_jde
-      ks = mesh%half_kds; ke = mesh%half_kde
-      start = [is,js,ks]
-      count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
-      allocate(tmp(is:ie,js:je,ks:ke))
-      tmp = we_lev  %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'we_lev', tmp, start=start, count=count)
-      if (nonhydrostatic) then
-        tmp = gz_lev%d(is:ie,js:je,ks:ke); call fiona_output('r0', 'gz_lev', tmp, start=start, count=count)
-        tmp = w_lev %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'w_lev' , tmp, start=start, count=count)
+      if (baroclinic) then
+        is = mesh%full_ids; ie = mesh%full_ide
+        js = mesh%full_jds; je = mesh%full_jde
+        ks = mesh%half_kds; ke = mesh%half_kde
+        start = [is,js,ks]
+        count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
+        allocate(tmp(is:ie,js:je,ks:ke))
+        tmp = we_lev  %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'we_lev', tmp, start=start, count=count)
+        if (nonhydrostatic) then
+          tmp = gz_lev%d(is:ie,js:je,ks:ke); call fiona_output('r0', 'gz_lev', tmp, start=start, count=count)
+          tmp = w_lev %d(is:ie,js:je,ks:ke); call fiona_output('r0', 'w_lev' , tmp, start=start, count=count)
+        end if
+        if (allocated(blocks(1)%adv_batches)) then
+          do m = 1, size(blocks(1)%adv_batches)
+            associate (adv_batch => blocks(iblk)%adv_batches(m))
+            tag = adv_batch%name
+            if (adv_batch%step == -1) then
+              tmp = adv_batch%mz0%d(is:ie,js:je,ks:ke)
+              call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
+            else if (adv_batch%step >= 1) then
+              tmp = adv_batch%mz%d(is:ie,js:je,ks:ke)
+              call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
+            end if
+            end associate
+          end do
+        end if
+        deallocate(tmp)
       end if
-      if (allocated(blocks(1)%adv_batches)) then
-        do m = 1, size(blocks(1)%adv_batches)
-          associate (adv_batch => blocks(iblk)%adv_batches(m))
-          tag = adv_batch%name
-          if (adv_batch%step == -1) then
-            tmp = adv_batch%mz0%d(is:ie,js:je,ks:ke)
-            call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
-          else if (adv_batch%step >= 1) then
-            tmp = adv_batch%mz%d(is:ie,js:je,ks:ke)
-            call fiona_output('r0', trim(tag)//'_accum_mz', tmp, start=start, count=count)
-          end if
-          end associate
-        end do
-      end if
-      deallocate(tmp)
       end associate
     end do
 
@@ -477,34 +481,36 @@ contains
       deallocate(tmp)
       ! ------------------------------------------------------------------------
       ! Location lev edge
-      is = mesh%full_ids; ie = mesh%full_ide
-      js = mesh%full_jds; je = mesh%full_jde
-      ks = mesh%half_kds; ke = mesh%half_kde
-      start = [is,js,ks]
-      count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
-      allocate(tmp(is:ie,js:je,ks:ke))
-      call fiona_input('r0', 'we_lev', tmp, start=start, count=count); we_lev%d(is:ie,js:je,ks:ke) = tmp
-      if (nonhydrostatic) then
-        call fiona_input('r0', 'gz_lev', tmp, start=start, count=count); gz_lev%d(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(gz_lev)
-        call fiona_input('r0', 'w_lev' , tmp, start=start, count=count); w_lev %d(is:ie,js:je,ks:ke) = tmp
-        call fill_halo(w_lev)
+      if (baroclinic) then
+        is = mesh%full_ids; ie = mesh%full_ide
+        js = mesh%full_jds; je = mesh%full_jde
+        ks = mesh%half_kds; ke = mesh%half_kde
+        start = [is,js,ks]
+        count = [mesh%full_nlon,mesh%full_nlat,mesh%half_nlev]
+        allocate(tmp(is:ie,js:je,ks:ke))
+        call fiona_input('r0', 'we_lev', tmp, start=start, count=count); we_lev%d(is:ie,js:je,ks:ke) = tmp
+        if (nonhydrostatic) then
+          call fiona_input('r0', 'gz_lev', tmp, start=start, count=count); gz_lev%d(is:ie,js:je,ks:ke) = tmp
+          call fill_halo(gz_lev)
+          call fiona_input('r0', 'w_lev' , tmp, start=start, count=count); w_lev %d(is:ie,js:je,ks:ke) = tmp
+          call fill_halo(w_lev)
+        end if
+        if (allocated(blocks(1)%adv_batches)) then
+          do m = 1, size(blocks(1)%adv_batches)
+            associate (adv_batch => block%adv_batches(m))
+            tag = adv_batch%name
+            if (adv_batch%step == -1) then
+              call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz0%d(is:ie,js:je,ks:ke), start=start, count=count)
+              call fill_halo(adv_batch%mz0)
+            else if (adv_batch%step >= 1) then
+              call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz%d(is:ie,js:je,ks:ke), start=start, count=count)
+              call fill_halo(adv_batch%mz)
+            end if
+            end associate
+          end do
+        end if
+        deallocate(tmp)
       end if
-      if (allocated(blocks(1)%adv_batches)) then
-        do m = 1, size(blocks(1)%adv_batches)
-          associate (adv_batch => block%adv_batches(m))
-          tag = adv_batch%name
-          if (adv_batch%step == -1) then
-            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz0%d(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(adv_batch%mz0)
-          else if (adv_batch%step >= 1) then
-            call fiona_input('r0', trim(tag)//'_accum_mz', adv_batch%mz%d(is:ie,js:je,ks:ke), start=start, count=count)
-            call fill_halo(adv_batch%mz)
-          end if
-          end associate
-        end do
-      end if
-      deallocate(tmp)
       end associate
     end do
 
