@@ -7,7 +7,7 @@ if [ ! -d "$current_dir/gmcore" ]; then
 fi
 
 # pull libs and data
-cd gmcore
+pushd gmcore
 if [ ! -d "$current_dir/gmcore/data" ]; then
     ./pull_libs.py
     ./pull_data.py -p earth
@@ -20,19 +20,23 @@ target_dir="$current_dir/netcdf"
 if [ ! -d "$target_dir" ]; then
     mkdir -p "$target_dir"
     echo "created: $target_dir"
-    cd netcdf
+    pushd netcdf
     wget https://downloads.unidata.ucar.edu/netcdf-c/4.9.2/netcdf-c-4.9.2.tar.gz
     wget https://downloads.unidata.ucar.edu/netcdf-fortran/4.6.1/netcdf-fortran-4.6.1.tar.gz
-    tar -zxvf netcdf-c-4.9.2.tar.gz && tar -zxvf netcdf-fortran-4.6.1.tar.gz
+    tar -zxvf netcdf-c-4.9.2.tar.gz
+    tar -zxvf netcdf-fortran-4.6.1.tar.gz
+    popd
+    popd
+    # build netcdf
+    # build netcdf-c && netcdf-fortran
+    # cd ../../
+    ./build_netcdf.sh
 else
     echo "existed: $target_dir"
+    popd
 fi
 
-# build netcdf
-# build netcdf-c && netcdf-fortran
-cd ../../
-./build_netcdf.sh
+
 
 # build gmcore
-cd ..
-./build_gomars.sh
+./build_gmcore.sh
