@@ -1,0 +1,327 @@
+======================================================================
+Tag: clubb_release_b76a124_20200220_c20200320
+Tag creator: cacraig, Brian Griffin
+Date created: March 20, 2020
+
+Commands issued:
+  git clone https://github.com/larson-group/clubb_release
+  cd clubb_release
+  git checkout b76a124
+  
+CAM's mods applied to checked out code:
+---------------------------------
+
+diff -r /home/cacraig/clubb_release/src/CLUBB_core/variables_prognostic_module.F90 /home/cacraig/cam6_2_017_clubb/src/physics/clubb_old/variables_prognostic_module.F90
+178c178
+<   type(pdf_parameter), allocatable, public, save :: &
+---
+>   type(pdf_parameter), public, save :: &
+317,318d316
+<     allocate( pdf_params )
+<     allocate( pdf_params_frz )
+492,495d489
+<
+<       ! Variable for pdf closure scheme
+<       deallocate( pdf_params )
+<       deallocate( pdf_params_frz )
+
+NOTE - the following change was reapplied (no difference from the last CESM tag)
+**** error_code.F90
+79c79
+<         write(err_header,'(A7,I7,A20)') "Process ", getpid(), " -- CLUBB -- ERROR: "
+---
+>         write(err_header,'(A20)') " -- CLUBB -- ERROR: "
+
+======================================================================
+Tag: clubb_ncar_backwards_compat_20181205_c20191001
+Tag creator: cacraig, nusbaume
+Date created: Oct 1, 2019
+
+Commands issued:
+  git clone https://github.com/larson-group/clubb_release
+  cd clubb_release
+  git checkout ncar_backwards_compat_20181205
+  cd ~/clubb_release/src/CLUBB_core
+  
+  commit everything in this directory, adding in the ChangeLog from CAM's vendor tags repo
+  
+CAM's mods applied to checked out code:
+---------------------------------
+
+diff -r ./clubb_api_module.F90 /glade/u/home/cacraig/subcol_SILHS_UWM_cleanup-TRUNK/components/cam/src/physics/clubb/clubb_api_module.F90
+144c144,153
+<     l_rcm_supersat_adj
+---
+>     l_rcm_supersat_adj, &
+>     l_damp_wp3_Skw_squared, &
+>     l_predict_upwp_vpwp, &
+>     l_min_wp2_from_corr_wx, &
+>     l_min_xp2_from_corr_wx, &
+>     l_upwind_xpyp_ta, &
+>     l_vert_avg_closure, &
+>     l_trapezoidal_rule_zt, &
+>     l_trapezoidal_rule_zm, &
+>     l_call_pdf_closure_twice
+282c291,295
+<         iup2_vp2_factor, iSkw_max_mag
+---
+>         iup2_vp2_factor, iSkw_max_mag,     l_damp_wp3_Skw_squared, &
+>         l_predict_upwp_vpwp, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &    
+>         l_upwind_xpyp_ta, l_vert_avg_closure, l_trapezoidal_rule_zt, &
+>         l_trapezoidal_rule_zm, l_call_pdf_closure_twice
+> 
+diff -r ./model_flags.F90 /glade/u/home/cacraig/subcol_SILHS_UWM_cleanup-TRUNK/components/cam/src/physics/clubb/model_flags.F90
+172c172
+<   logical, private :: &
+---
+>   logical, public :: &
+
+
+**** error_code.F90
+79c79
+<         write(err_header,'(A7,I7,A20)') "Process ", getpid(), " -- CLUBB -- ERROR: "
+---
+>         write(err_header,'(A20)') " -- CLUBB -- ERROR: "
+
+======================================================================
+Tag: clubb_ncar_backwards_compat_20181205_c20190528
+Tag creator: cacraig
+Date created: May 28, 2019
+
+Summary of Change:
+  Removed getpid() from error_code.F90 as not all systems have this available
+
+Reason for Change:
+  hobart testing had a link error tryiing to getpid().  Removed this from the diagnostice write
+
+Mods applied to checked out code:
+---------------------------------
+**** error_code.F90
+79c79
+<         write(err_header,'(A7,I7,A20)') "Process ", getpid(), " -- CLUBB -- ERROR: "
+---
+>         write(err_header,'(A20)') " -- CLUBB -- ERROR: "
+
+
+Status:
+M       error_code.F90
+
+======================================================================
+======================================================================
+Tag: clubb_ncar_backwards_compat_20181205
+Tag creator: cacraig
+Date created: April 29, 2019
+Command(s) issued:
+  git clone https://github.com/larson-group/clubb_release
+  cd clubb_release
+  git checkout ncar_backwards_compat_20181205
+
+  svn co https://svn-ccsm-models.cgd.ucar.edu/clubb_core/vendor_trunk vendor_trunk-CLUBB
+  cd vendor_trunk
+  cp ~/clubb_release/src/CLUBB_core/* .
+
+  
+Mods applied to checked out code:
+---------------------------------
+
+diff -r ./clubb_api_module.F90 /glade/u/home/cacraig/subcol_SILHS_UWM_cleanup-TRUNK/components/cam/src/physics/clubb/clubb_api_module.F90
+144c144,153
+<     l_rcm_supersat_adj
+---
+>     l_rcm_supersat_adj, &
+>     l_damp_wp3_Skw_squared, &
+>     l_predict_upwp_vpwp, &
+>     l_min_wp2_from_corr_wx, &
+>     l_min_xp2_from_corr_wx, &
+>     l_upwind_xpyp_ta, &
+>     l_vert_avg_closure, &
+>     l_trapezoidal_rule_zt, &
+>     l_trapezoidal_rule_zm, &
+>     l_call_pdf_closure_twice
+282c291,295
+<         iup2_vp2_factor, iSkw_max_mag
+---
+>         iup2_vp2_factor, iSkw_max_mag,     l_damp_wp3_Skw_squared, &
+>         l_predict_upwp_vpwp, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &    
+>         l_upwind_xpyp_ta, l_vert_avg_closure, l_trapezoidal_rule_zt, &
+>         l_trapezoidal_rule_zm, l_call_pdf_closure_twice
+> 
+diff -r ./model_flags.F90 /glade/u/home/cacraig/subcol_SILHS_UWM_cleanup-TRUNK/components/cam/src/physics/clubb/model_flags.F90
+172c172
+<   logical, private :: &
+---
+>   logical, public :: &
+
+
+Status:
+A       LY93_pdf.F90
+M       Nc_Ncn_eqns.F90
+M       Skx_module.F90
+M       T_in_K_module.F90
+A       adg1_adg2_3d_luhar_pdf.F90
+M       advance_clubb_core_module.F90
+M       advance_helper_module.F90
+M       advance_windm_edsclrm_module.F90
+M       advance_wp2_wp3_module.F90
+M       advance_xm_wpxp_module.F90
+M       advance_xp2_xpyp_module.F90
+A       advance_xp3_module.F90
+D       anl_erf.F90
+M       array_index.F90
+M       calc_roots.F90
+M       calendar.F90
+M       clip_explicit.F90
+M       clip_semi_implicit.F90
+M       clubb_api_module.F90
+M       clubb_precision.F90
+M       constants_clubb.F90
+M       corr_varnce_module.F90
+M       csr_matrix_module.F90
+M       diagnose_correlations_module.F90
+M       diffusion.F90
+M       endian.F90
+M       error_code.F90
+M       file_functions.F90
+M       fill_holes.F90
+M       gmres_cache.F90
+M       gmres_wrap.F90
+M       grid_class.F90
+M       hydromet_pdf_parameter_module.F90
+M       index_mapping.F90
+M       input_names.F90
+M       input_reader.F90
+M       interpolation.F90
+M       lapack_wrap.F90
+M       matrix_operations.F90
+M       mean_adv.F90
+M       mixing_length.F90
+M       model_flags.F90
+M       mono_flux_limiter.F90
+A       new_pdf.F90
+A       new_pdf_main.F90
+A       new_tsdadg_pdf.F90
+M       numerical_check.F90
+M       output_grads.F90
+M       output_netcdf.F90
+M       parameter_indices.F90
+M       parameters_model.F90
+M       parameters_tunable.F90
+M       pdf_closure_module.F90
+M       pdf_parameter_module.F90
+M       pdf_utilities.F90
+M       pos_definite_module.F90
+M       precipitation_fraction.F90
+M       recl.inc
+M       saturation.F90
+M       setup_clubb_pdf_params.F90
+M       sigma_sqd_w_module.F90
+M       sponge_layer_damping.F90
+M       stat_file_module.F90
+M       stats_clubb_utilities.F90
+M       stats_lh_sfc_module.F90
+M       stats_lh_zt_module.F90
+M       stats_rad_zm_module.F90
+M       stats_rad_zt_module.F90
+M       stats_sfc_module.F90
+M       stats_type.F90
+M       stats_type_utilities.F90
+M       stats_variables.F90
+M       stats_zm_module.F90
+M       stats_zt_module.F90
+M       surface_varnce_module.F90
+A       turbulent_adv_pdf.F90
+M       variables_diagnostic_module.F90
+M       variables_prognostic_module.F90
+
+
+======================================================================
+Tag: clubb_r8099
+Tag creator: bogensch
+Date created: May 17, 2016
+Command(s) issued:
+   svn co https://svn-ccsm-models.cgd.ucar.edu/clubb_core/vendor_trunk
+   cd vendor_trunk
+   svn merge -r8029:8099 http://carson.math.uwm.edu/repos/clubb_repos/trunk/src/CLUBB_core
+
+Status:
+M       ChangeLog
+M       advance_clubb_core_module.F90
+M       advance_helper_module.F90
+M       advance_windm_edsclrm_module.F90
+M       advance_wp2_wp3_module.F90
+M       advance_xm_wpxp_module.F90
+M       clubb_api_module.F90
+M       model_flags.F90
+M       parameter_indices.F90
+M       parameters_tunable.F90
+M       stats_variables.F90
+M       stats_zm_module.F90
+M       stats_zt_module.F90
+
+======================================================================
+Tag: clubb_r8029
+Tag creator: cacraig
+Date created: April 7, 2016
+Command(s) issued:
+   svn co https://svn-ccsm-models.cgd.ucar.edu/clubb_core/vendor_trunk clubb_r8029-TRUNK
+   cd clubb_r8029-TRUNK
+   svn merge -r7416:8029 http://carson.math.uwm.edu/repos/clubb_repos/trunk/src/CLUBB_core
+   svn resolve --accept=working Skw_module.F90
+   svn delete Skw_module.F90
+
+Status:
+M       ChangeLog
+A       Skx_module.F90
+D       Skw_module.F90
+M       advance_clubb_core_module.F90
+M       advance_helper_module.F90
+M       advance_xm_wpxp_module.F90
+A       calc_roots.F90
+M       clubb_api_module.F90
+A       code_timer_module.F90
+M       constants_clubb.F90
+M       corr_varnce_module.F90
+M       csr_matrix_module.F90
+M       endian.F90
+M       file_functions.F90
+M       gmres_cache.F90
+M       grid_class.F90
+M       hydromet_pdf_parameter_module.F90
+M       input_reader.F90
+M       interpolation.F90
+M       matrix_operations.F90
+M       model_flags.F90
+M       mt95.f90
+M       output_grads.F90
+M       output_netcdf.F90
+M       parameter_indices.F90
+M       parameters_model.F90
+M       parameters_tunable.F90
+M       pdf_closure_module.F90
+M       pdf_parameter_module.F90
+M       pdf_utilities.F90
+A       precipitation_fraction.F90
+M       saturation.F90
+M       setup_clubb_pdf_params.F90
+M       sponge_layer_damping.F90
+M       stat_file_module.F90
+M       stats_clubb_utilities.F90
+M       stats_lh_zt_module.F90
+M       stats_sfc_module.F90
+M       stats_type.F90
+M       stats_type_utilities.F90
+M       stats_variables.F90
+M       stats_zm_module.F90
+M       stats_zt_module.F90
+M       variables_diagnostic_module.F90
+M       variables_prognostic_module.F90
+
+======================================================================
+Tag: clubb_r7416
+Tag creator: cacraig
+Date created: April 7, 2016
+Command(s) issued:
+   svn co -r7416 http://carson.math.uwm.edu/repos/clubb_repos/trunk/src/CLUBB_core clubb_r7416
+   svn import clubb_r7416 http://svn-ccsm-models.cgd.ucar.edu/clubb_core_vendor_trunk -m"Initial checkout of revision 7416
+
+======================================================================
