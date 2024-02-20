@@ -32,10 +32,10 @@
 *.app
 *.nc
 
-gmcore/
-# gmcore/netcdf/
-# gmcore/lib/*
-# gmcore/build/*
-# gmcore/run/*
+# gmcore/
+gmcore/netcdf/
+gmcore/lib/*
+gmcore/build/*
+gmcore/run/*
 *.vscode*
 # *.xml
