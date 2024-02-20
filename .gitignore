@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+*.nc
+
+gmcore/
+# gmcore/netcdf/
+# gmcore/lib/*
+# gmcore/build/*
+# gmcore/run/*
+*.vscode*
+# *.xml
