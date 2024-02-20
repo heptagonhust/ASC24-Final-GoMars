@@ -27,11 +27,11 @@ module latlon_decomp_mod
 
 contains
 
-  subroutine latlon_decomp_run(proc_layout, nproc_lon, nproc_lat, ierr)
+  subroutine latlon_decomp_run(proc_layout, nproc_x, nproc_y, ierr)
 
     character(*), intent(in) :: proc_layout
-    integer, intent(inout) :: nproc_lon(:)
-    integer, intent(inout) :: nproc_lat(:)
+    integer, intent(inout) :: nproc_x(:)
+    integer, intent(inout) :: nproc_y(:)
     integer, intent(out) :: ierr
 
     integer np, tmp_comm, tmp_id(1), i, j, n, ip, global_ig, local_ig
@@ -50,36 +50,40 @@ contains
     proc%decomp_type = decomp_2d_simple
     proc%decomp_loc  = decomp_normal_region
 
-    if (nproc_lon(1) * nproc_lat(1) /= proc%np) then
+    if (nproc_x(1) * nproc_y(1) /= proc%np) then
       ! User does not set process dimensions in the namelist, so we set them here.
-      if (proc%np < nlon / 2) then
-        nproc_lat(1) = proc%np
-      else
-        nproc_lat(1) = nlat / 3
+      nproc_y(1) = min(proc%np, nlat / 3)
+      if (mod(proc%np, nproc_y(1)) /= 0) then
+        if (mod(proc%np, 2) == 0) then
+          nproc_x(1) = 2
+        else
+          ierr = 3
+          return
+        end if
+        nproc_y(1) = proc%np / nproc_x(1)
       end if
-      if (mod(proc%np, nproc_lat(1)) /= 0) then
-        ierr = 3
-        return
-      end if
-      nproc_lon(1) = proc%np / nproc_lat(1)
+      nproc_x(1) = proc%np / nproc_y(1)
+    end if
+    if (proc%is_root()) then
+      call log_notice('Process layout is ' // to_str(nproc_x(1)) // 'x' // to_str(nproc_y(1)) // '.')
     end if
 
-    if (nproc_lon(1) * nproc_lat(1) == proc%np) then
+    if (nproc_x(1) * nproc_y(1) == proc%np) then
       ! Check if process topology in namelist is compatible with MPI runtime.
       np = 0
       do i = 1, 1
-        np = np + nproc_lon(i) * nproc_lat(i)
+        np = np + nproc_x(i) * nproc_y(i)
       end do
       if (proc%np /= np .and. proc%is_root()) then
-        nproc_lat(1) = proc%np
+        nproc_y(1) = proc%np
       end if
       ! Set the process topology into proc object.
       np = 0
       do i = 1, 1
-        np = np + nproc_lon(i) * nproc_lat(i)
+        np = np + nproc_x(i) * nproc_y(i)
         if (proc%id + 1 <= np) then
-          proc%cart_dims(cart_dim_lon) = nproc_lon(i)
-          proc%cart_dims(cart_dim_lat) = nproc_lat(i)
+          proc%cart_dims(cart_dim_lon) = nproc_x(i)
+          proc%cart_dims(cart_dim_lat) = nproc_y(i)
           proc%idom = i
           exit
         end if
@@ -88,12 +92,9 @@ contains
       proc%cart_dims = [merge(1, proc%np, cart_dim_lon == 1), merge(proc%np, 1, cart_dim_lat == 2)]
       proc%idom = 1
     end if
-    if (proc%is_root()) then
-      call log_notice('Process layout is ' // to_str(nproc_lon(1)) // 'x' // to_str(nproc_lat(1)) // '.')
-    end if
     ! Check decomposition dimensions.
     if (proc%cart_dims(cart_dim_lon) /= 1 .and. mod(proc%cart_dims(cart_dim_lon), 2) /= 0) then
-      ierr = 1 ! nproc_lon should be an even number!
+      ierr = 1 ! nproc_x should be an even number!
       return
     end if
     ! Set MPI process topology.
