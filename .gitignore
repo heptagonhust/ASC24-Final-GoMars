@@ -38,4 +38,5 @@ gmcore/lib/*
 gmcore/build/*
 gmcore/run/*
 *.vscode*
+*.pdf
 # *.xml
