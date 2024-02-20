@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p GPU_nodes
 #SBATCH -N 2
-#SBATCH -n 60
+#SBATCH -n 30
 #SBATCH --output=./output/gomars_test.%j.out
 base_dir="$(pwd)"
 
@@ -29,8 +29,6 @@ echo "====="
 # mpirun build/gmcore_adv_driver.exe ./run/GMCORE-TESTBED/adv_mv.360x180/namelist 
 # mpirun ./build/gmcore_driver.exe ./run/GMCORE-TESTBED/mz.1440x720/namelist
 mpirun ./build/gmcore_driver.exe ./run/GMCORE-TESTBED/mz.360x180/namelist
-# mpirun ./build/gmcore_driver.exe ./run/GMCORE-TESTBED/mz.180x90/namelist
-
 # export LD_LIBRARY_PATH=/opt/spack/opt/spack/linux-ubuntu20.04-icelake/gcc-9.4.0/hdf5-1.14.3-fxhrrhv46hbchtxp255okz3r2dotzmng/lib:$LD_LIBRARY_PATH
 # mpirun ./build/gmcore_driver.exe ./run/GMCORE-TESTBED/mz.3600x1800/namelist
 # mpirun ./build/gmcore_swm_driver.exe ./run/GMCORE-TESTBED/swm_mz.1440x720/namelist
