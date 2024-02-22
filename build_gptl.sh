@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 spack load cmake@3.24.4
 spack load intel-oneapi-compilers@2024.0.1
