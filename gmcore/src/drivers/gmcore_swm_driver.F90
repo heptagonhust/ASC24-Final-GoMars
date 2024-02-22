@@ -15,6 +15,7 @@ program gmcore_swm_driver
   use shallow_water_waves_test_mod
   use vortex_erosion_test_mod
   use splash_test_mod
+  use perf_mod
 
   implicit none
 
@@ -76,7 +77,11 @@ program gmcore_swm_driver
     end do
   end if
 
+  call t_startf ( 'running' )
   call gmcore_run()
+
+  ! call exbdrift_ion_vels( lchnk, ncol, pbuf)
+  call t_stopf  ( 'running' )
 
   call gmcore_final()
 

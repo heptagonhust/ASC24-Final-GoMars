@@ -34,7 +34,17 @@ contains
 
     integer ierr
 
-#ifdef HAS_GPTL
+! #ifdef HAS_GPTL
+!     ierr = gptlsetoption(gptloverhead, 0)
+!     ierr = gptlsetoption(gptlpercent, 0)
+!     ierr = gptlsetoption(gptlabort_on_error, 1)
+!     ierr = gptlsetoption(gptlsync_mpi, 1)
+!     if (gptlinitialize() < 0) then
+!       stop 'Failed to initialize GPTL!'
+!     end if
+!     ierr = gptlstart('total')
+! #endif
+    write(*, '(A)') 'hello wwwww'
     ierr = gptlsetoption(gptloverhead, 0)
     ierr = gptlsetoption(gptlpercent, 0)
     ierr = gptlsetoption(gptlabort_on_error, 1)
@@ -43,8 +53,6 @@ contains
       stop 'Failed to initialize GPTL!'
     end if
     ierr = gptlstart('total')
-#endif
-
     initialized = .true.
 
   end subroutine perf_init
@@ -56,6 +64,7 @@ contains
     integer ierr
 
 #ifdef HAS_GPTL
+    ! write(*, '(A)') 'has gptl'
     ierr = gptlstart(name)
 #endif
 
@@ -77,13 +86,19 @@ contains
 
     integer ierr
 
-#ifdef HAS_GPTL
+! #ifdef HAS_GPTL
+!     ierr = gptlstop('total')
+!     ierr = gptlpr(0)
+!     if (gptlfinalize() /= 0) then
+!       stop 'Failed to call finalize GPTL!'
+!     end if
+! #endif
+    write(*, '(A)') 'hello genshin'
     ierr = gptlstop('total')
     ierr = gptlpr(0)
     if (gptlfinalize() /= 0) then
       stop 'Failed to call finalize GPTL!'
     end if
-#endif
 
   end subroutine perf_final
 
