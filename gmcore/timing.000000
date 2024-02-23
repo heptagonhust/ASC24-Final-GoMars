@@ -7,20 +7,20 @@ ENABLE_NESTEDOMP was false
 Autoprofiling capability was enabled with backtrace
 Underlying timing routine was gettimeofday.
 GPTLget_overhead: using hash entry 34=calc_coriolis for getentry estimate
-Total overhead of 1 GPTL start or GPTLstop call=1.29e-07 seconds
+Total overhead of 1 GPTL start or GPTLstop call=1.17e-07 seconds
 Components are as follows:
 Fortran layer:             0.0e+00 =   0.0% of total
-Get thread number:         2.4e-08 =  18.6% of total
-Generate hash index:       2.4e-08 =  18.6% of total
-Find hashtable entry:      2.2e-08 =  17.1% of total
-Underlying timing routine: 5.6e-08 =  43.4% of total
-Misc start/stop functions: 3.0e-09 =   2.3% of total
+Get thread number:         1.7e-08 =  14.5% of total
+Generate hash index:       1.8e-08 =  15.4% of total
+Find hashtable entry:      2.3e-08 =  19.7% of total
+Underlying timing routine: 5.7e-08 =  48.7% of total
+Misc start/stop functions: 2.0e-09 =   1.7% of total
 
-Overhead of backtrace (invoked once per auto-instrumented start entry)=7.457e-06 seconds
+Overhead of backtrace (invoked once per auto-instrumented start entry)=7.161e-06 seconds
 NOTE: If GPTL is called from C not Fortran, the 'Fortran layer' overhead is zero
 NOTE: For calls to GPTLstart_handle()/GPTLstop_handle(), the 'Generate hash index' overhead is zero
 NOTE: For auto-instrumented calls, the cost of generating the hash index plus finding
-      the hashtable entry is 1.0e-09 not the 4.6e-08 portion taken by GPTLstart
+      the hashtable entry is 0.0e+00 not the 4.1e-08 portion taken by GPTLstart
 NOTE: Each hash collision roughly doubles the 'Find hashtable entry' cost of that timer
 
 If overhead stats are printed, they are the columns labeled self_OH and parent_OH
@@ -44,40 +44,47 @@ A '!' in column 1 means the timer is currently ON and the printed timings are on
 valid as of the previous GPTLstop. '!' overrides '*' if the region had multiple
 parents and was currently ON.
 
-Process size=3369.289062 MB rss=105.242188 MB
+Process size=3367.281250 MB rss=105.343750 MB
 
 Stats for thread 0:
-                         Called  Recurse     Wall      max      min AVG_MPI_BYTES
-  total                       1     -     164.688  164.688  164.688       -      
-    sync_Allgather            4     -    1.57e-04 5.00e-05 2.40e-05       -      
-    MPI_Allgather             4     -    1.44e-04 4.90e-05 2.50e-05    1.520e+02 
-    running                   1     -     164.496  164.496  164.496       -      
-*     sync_Allreduce      91638     -       8.067    0.010 5.00e-06       -      
-*     MPI_Allreduce       91638     -       0.552 3.99e-03 1.00e-06    1.605e+01 
-*     fill_halo_2d            3     -    1.98e-04 1.36e-04 2.10e-05       -      
-*     fill_halo_3d       756012     -      83.265 9.23e-03 4.00e-06       -      
-*       MPI_Sendrecv    1.4e+06     -       8.583 3.84e-03 1.00e-06    3.024e+03 
-*       MPI_Isend       1.1e+06     -      22.126 1.77e-03 2.00e-06    6.149e+04 
-*       MPI_Irecv       1.1e+06     -       0.350 1.35e-03 0.00e+00    6.149e+04 
-*       MPI_Wait        2.2e+06     -      49.893 9.11e-03 0.00e+00       -      
-      calc_div               52     -    8.09e-04 3.00e-05 9.00e-06       -      
-      calc_dmg            54001     -      23.549 6.70e-03 1.96e-04       -      
-      calc_mf             54001     -      19.256 9.33e-03 1.45e-04       -      
-      calc_ke             54001     -       0.748 1.38e-03 7.00e-06       -      
-      calc_pv             54001     -      10.682 2.85e-03 6.60e-05       -      
-        calc_vor          54001     -       0.482 1.35e-03 4.00e-06       -      
-      interp_pv_upwind    54001     -      38.112 8.41e-03 5.51e-04       -      
-      MPI_Barrier          1132     -       0.121 5.99e-03 0.00e+00       -      
-      sync_Bcast           3719     -       1.136    0.012 6.00e-06       -      
-      MPI_Bcast            3719     -       0.022 3.03e-03 0.00e+00    5.053e+02 
-      sync_Gatherv         1020     -    1.04e-04 1.00e-06 0.00e+00       -      
-      MPI_Gatherv          1020     -    1.13e-03 9.00e-06 0.00e+00       -      
-      calc_grad_mf        54000     -       0.536 1.36e-03 5.00e-06       -      
-      calc_coriolis       54000     -       1.388 1.38e-03 1.30e-05       -      
-      calc_grad_ke        54000     -       0.547 1.37e-03 5.00e-06       -      
-      filter_run_3d      162000     -       5.526 1.40e-03 1.40e-05       -      
-Overhead sum =      1.87 wallclock seconds
-Total calls  = 7.322e+06
+                                 Called  Recurse     Wall      max      min AVG_MPI_BYTES
+  total                               1     -     162.177  162.177  162.177       -      
+    sync_Allgather                    4     -    1.81e-04 4.90e-05 4.30e-05       -      
+    MPI_Allgather                     4     -    1.26e-04 5.20e-05 1.30e-05    1.520e+02 
+    gmcore_inits                      1     -       0.081    0.081    0.081       -      
+    gmcore_run                        1     -     161.992  161.992  161.992       -      
+      aaagmcore_run_inits             1     -       0.084    0.084    0.084       -      
+*       fill_halo_2d                  3     -    1.77e-04 1.05e-04 2.10e-05       -      
+      aaagmcore_main_loop             1     -     161.909  161.909  161.909       -      
+*       sync_Allreduce            91638     -       8.106 5.74e-03 5.00e-06       -      
+*       MPI_Allreduce             91638     -       0.544 3.62e-03 1.00e-06    1.605e+01 
+*       calc_div                     52     -    8.24e-04 2.70e-05 8.00e-06       -      
+*       MPI_Barrier                1132     -       0.137    0.011 0.00e+00       -      
+*       sync_Bcast                 3719     -       1.322    0.026 7.00e-06       -      
+*       MPI_Bcast                  3719     -       0.027    0.011 0.00e+00    5.053e+02 
+*       sync_Gatherv               1020     -    1.03e-04 1.00e-06 0.00e+00       -      
+*       MPI_Gatherv                1020     -    1.11e-03 4.00e-06 0.00e+00       -      
+        aaagmcore_dynamic_core    18000     -     147.287    0.017 7.24e-03       -      
+*         fill_halo_3d           756012     -      80.571 9.03e-03 6.00e-06       -      
+*           MPI_Sendrecv        1.4e+06     -       8.474 1.37e-03 1.00e-06    3.024e+03 
+*           MPI_Isend           1.1e+06     -      22.169 1.40e-03 1.00e-06    6.149e+04 
+*           MPI_Irecv           1.1e+06     -       0.334 3.50e-05 0.00e+00    6.149e+04 
+*           MPI_Wait            2.2e+06     -      47.249 8.55e-03 0.00e+00       -      
+*         calc_dmg                54001     -      21.681 5.07e-03 1.94e-04       -      
+*         calc_mf                 54001     -      18.952 5.56e-03 1.43e-04       -      
+*         calc_ke                 54001     -       0.734 1.31e-03 7.00e-06       -      
+*         calc_pv                 54001     -      10.792 2.97e-03 6.60e-05       -      
+            calc_vor              54001     -       0.509 1.36e-03 5.00e-06       -      
+*         interp_pv_upwind        54001     -      37.867 4.68e-03 5.76e-04       -      
+          calc_grad_mf            54000     -       0.555 1.37e-03 6.00e-06       -      
+          calc_coriolis           54000     -       1.383 1.35e-03 1.80e-05       -      
+          calc_grad_ke            54000     -       0.521 1.35e-03 6.00e-06       -      
+          filter_run_3d          162000     -       5.551 1.40e-03 2.20e-05       -      
+          damp_run                18000     -       0.012 2.20e-05 0.00e+00       -      
+        aaagmcore_adv_run         18000     -       0.036 2.20e-05 1.00e-06       -      
+        aaagmcore_physic_run      18000     -    6.38e-03 1.10e-05 0.00e+00       -      
+Overhead sum =      1.72 wallclock seconds
+Total calls  = 7.394e+06
 thread 0 long name translations (empty when no auto-instrumentation):
 
 Multiple parent info for thread 0:
@@ -87,20 +94,22 @@ Count next to each parent is the number of times it called the child.
 Count next to child is total number of times it was called by the listed parents.
 
        1 total
-   91637 running
+      37 aaagmcore_run_inits
+   91600 aaagmcore_main_loop
    91638   sync_Allreduce
 
        1 total
-   91637 running
+      37 aaagmcore_run_inits
+   91600 aaagmcore_main_loop
    91638   MPI_Allreduce
 
-       2 total
+       2 gmcore_inits
        6 fill_halo_2d
  1.4e+06 fill_halo_3d
  1.4e+06   MPI_Sendrecv
 
        1 total
-       2 running
+       2 aaagmcore_run_inits
        3   fill_halo_2d
 
        6 fill_halo_2d
@@ -120,21 +129,66 @@ Count next to child is total number of times it was called by the listed parents
   108002 calc_mf
    54001 calc_pv
   108002 interp_pv_upwind
-  324001 running
+       1 aaagmcore_run_inits
+  324000 aaagmcore_dynamic_core
   756012   fill_halo_3d
 
+       2 aaagmcore_run_inits
+      50 aaagmcore_main_loop
+      52   calc_div
 
-Total GPTL memory usage = 24.432 KB
+       1 aaagmcore_run_inits
+   54000 aaagmcore_dynamic_core
+   54001   calc_dmg
+
+       1 aaagmcore_run_inits
+   54000 aaagmcore_dynamic_core
+   54001   calc_mf
+
+       1 aaagmcore_run_inits
+   54000 aaagmcore_dynamic_core
+   54001   calc_ke
+
+       1 aaagmcore_run_inits
+   54000 aaagmcore_dynamic_core
+   54001   calc_pv
+
+       1 aaagmcore_run_inits
+   54000 aaagmcore_dynamic_core
+   54001   interp_pv_upwind
+
+      32 aaagmcore_run_inits
+    1100 aaagmcore_main_loop
+    1132   MPI_Barrier
+
+      19 aaagmcore_run_inits
+    3700 aaagmcore_main_loop
+    3719   sync_Bcast
+
+      19 aaagmcore_run_inits
+    3700 aaagmcore_main_loop
+    3719   MPI_Bcast
+
+      20 aaagmcore_run_inits
+    1000 aaagmcore_main_loop
+    1020   sync_Gatherv
+
+      20 aaagmcore_run_inits
+    1000 aaagmcore_main_loop
+    1020   MPI_Gatherv
+
+
+Total GPTL memory usage = 26.28 KB
 Components:
-Hashmem                 = 16.592 KB
-Regionmem               = 6.272 KB (papimem portion = 0 KB)
-Parent/child arrays     = 0.544 KB
+Hashmem                 = 16.648 KB
+Regionmem               = 7.84 KB (papimem portion = 0 KB)
+Parent/child arrays     = 0.768 KB
 Callstackmem            = 1.024 KB
 
 Thread mapping:
 GPTLthreadid[0] = 0
-      = 6.272 KB (papimem portion = 0 KB)
-Parent/child arrays     = 0.608 KB
+         = 7.84 KB (papimem portion = 0 KB)
+Parent/child arrays     = 0.832 KB
 Callstackmem            = 1.024 KB
 
 Thread mapping:

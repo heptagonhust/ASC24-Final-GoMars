@@ -20,6 +20,7 @@ program gmcore_adv_driver
   use deform_test_mod
   use moving_vortices_test_mod
   use dcmip12_test_mod
+  use perf_mod
 
   implicit none
 
@@ -48,6 +49,7 @@ program gmcore_adv_driver
   call gmcore_init_stage0()
 
   call gmcore_init_stage1(namelist_path)
+  call t_startf ( 'gmcore_inits' )
 
   select case (test_case)
   case ('solid_rotation')
@@ -92,22 +94,34 @@ program gmcore_adv_driver
   call history_setup_h0_adv(blocks)
   call output(old)
   call diagnose(old)
+
+  call t_stopf ( 'gmcore_inits' )
+
   if (proc%is_root()) call log_print_diag(curr_time%isoformat())
 
+  call t_startf ( 'run_not_gmcore' )
   time1 = MPI_WTIME()
   do while (.not. time_is_finished())
+    call t_startf ( 'loop_seg_1' )
     call set_uv(elapsed_seconds + dt_adv, new)
     call time_advance(dt_adv)
     call adv_accum_wind(old)
+    call t_stopf ( 'loop_seg_1' )
+
+    call t_startf ( 'adv_run' )
     call adv_run(old)
+    call t_stopf ( 'adv_run' )
     call diagnose(old)
     if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call output(old)
   end do
   time2 = MPI_WTIME()
   if (proc%is_root()) call log_notice('Total time cost ' // to_str(time2 - time1, 5) // ' seconds.')
+  call t_stopf ( 'run_not_gmcore' )
 
+  ! call t_startf ( 'gmcore_final' )
   call gmcore_final()
+  ! call t_stopf ( 'gmcore_final' )
 
 contains
 

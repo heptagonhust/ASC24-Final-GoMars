@@ -35,10 +35,13 @@ program gmcore_swm_driver
     call log_error('You should give a namelist file path!')
   end if
 
+
+
   call parse_namelist(namelist_path)
 
   call gmcore_init_stage0()
 
+  call t_startf ( 'gmcore_inits' )
   call gmcore_init_stage1(namelist_path)
 
   select case (test_case)
@@ -47,6 +50,8 @@ program gmcore_swm_driver
   end select
 
   call gmcore_init_stage2(namelist_path)
+
+  call t_stopf  ( 'gmcore_inits' )
 
   if (restart) then
     call restart_read()
@@ -77,12 +82,13 @@ program gmcore_swm_driver
     end do
   end if
 
-  call t_startf ( 'running' )
+  call t_startf ( 'gmcore_run' )
   call gmcore_run()
-
   ! call exbdrift_ion_vels( lchnk, ncol, pbuf)
-  call t_stopf  ( 'running' )
+  call t_stopf  ( 'gmcore_run' )
 
+  ! call t_startf ( 'gmcore_final' )
   call gmcore_final()
+  ! call t_startf ( 'gmcore_final' )
 
 end program gmcore_swm_driver

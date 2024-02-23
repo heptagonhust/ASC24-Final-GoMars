@@ -224,6 +224,8 @@ contains
   subroutine gmcore_run()
 
     integer i, j, m, iblk, itime
+    ! perf_start()
+    call t_startf ( 'aaagmcore_run_inits' )
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &
@@ -252,9 +254,14 @@ contains
     if (proc%is_root()) call log_print_diag(curr_time%isoformat())
     call output(old)
 
+    call t_stopf ( 'aaagmcore_run_inits' )
+
+    call t_startf ( 'aaagmcore_main_loop' )
+
     model_main_loop: do while (.not. time_is_finished())
       ! ------------------------------------------------------------------------
       !                              Dynamical Core
+      call t_startf ( 'aaagmcore_dynamic_core' )
       do iblk = 1, size(blocks)
         call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
         call damp_run(blocks(iblk), blocks(iblk)%dstate(new), dt_dyn)
@@ -265,11 +272,15 @@ contains
       ! Advance to n+1 time level.
       ! NOTE: Time indices are swapped, e.g. new <=> old.
       call time_advance(dt_dyn)
+      call t_stopf ( 'aaagmcore_dynamic_core' )
       ! ------------------------------------------------------------------------
       !                            Tracer Advection
+      call t_startf ( 'aaagmcore_adv_run' )
       call adv_run(old)
+      call t_stopf ( 'aaagmcore_adv_run' )
       ! ------------------------------------------------------------------------
       !                                Physics
+      call t_startf ( 'aaagmcore_physic_run' )
       call test_forcing_run(dt_dyn, old)
       if (baroclinic) then
         do iblk = 1, size(blocks)
@@ -277,12 +288,15 @@ contains
           if (pdc_type == 3) call physics_update(blocks(iblk), old, dt_phys)
         end do
       end if
+      call t_stopf ( 'aaagmcore_physic_run' )
       ! ------------------------------------------------------------------------
       call diagnose(blocks, old)
       if (proc%is_root() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call blocks(1)%accum(old)
       call output(old)
     end do model_main_loop
+
+    call t_stopf ( 'aaagmcore_main_loop' )
 
   end subroutine gmcore_run
 

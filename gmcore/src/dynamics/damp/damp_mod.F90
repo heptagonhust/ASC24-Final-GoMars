@@ -16,6 +16,7 @@ module damp_mod
   use vor_damp_mod
   use smag_damp_mod
   use laplace_damp_mod
+  use perf_mod
 
   implicit none
 
@@ -55,6 +56,7 @@ contains
 
     ! This nudging of polar v helps to keep the flow neat around the poles.
     ! NOTE: DO NOT REMOVE IT!
+    call t_startf ( 'damp_run' )
     do j = block%mesh%half_jms, block%mesh%half_jme
       if (block%mesh%is_south_pole(j)) then
         dstate%v_lat%d(:,j,:) = 0.8_r8 * dstate%v_lat%d(:,j,:) + 0.2_r8 * dstate%v_lat%d(:,j+1,:)
@@ -78,6 +80,7 @@ contains
         call smag_damp_run(block, dstate, dt / smag_damp_cycles)
       end do
     end if
+    call t_stopf ( 'damp_run' )
 
   end subroutine damp_run
 

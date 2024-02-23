@@ -28,6 +28,7 @@ program gmcore_driver
   use mars_cold_run_mod
   use tropical_cyclone_test_mod
   use prepare_mod
+  use perf_mod
 
   implicit none
 
@@ -61,6 +62,7 @@ program gmcore_driver
   end select
 
   call gmcore_init_stage1(namelist_path)
+  call t_startf ( 'gmcore_inits' )
 
   if (initial_file == 'N/A' .and. test_case == 'N/A' .and. .not. restart) then
     call prepare_topo()
@@ -113,9 +115,14 @@ program gmcore_driver
   end if
 
   call gmcore_init_stage3()
+  call t_stopf ( 'gmcore_inits' )
 
+  call t_startf ( 'gmcore_run' )
   call gmcore_run()
+  call t_stopf  ( 'gmcore_run' )
 
+  ! call t_startf ( 'gmcore_final' )
   call gmcore_final()
+  ! call t_stopf  ( 'gmcore_final' )
 
 end program gmcore_driver

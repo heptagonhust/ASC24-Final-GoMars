@@ -23,7 +23,7 @@ echo "====="
 echo "cat $0"
 cat $0
 echo "====="
-
+ 
 
 # mpirun ./cpu_bind.sh ./bind_test.sh
 # mpirun build/gmcore_adv_driver.exe ./run/GMCORE-TESTBED/adv_mv.360x180/namelist 
