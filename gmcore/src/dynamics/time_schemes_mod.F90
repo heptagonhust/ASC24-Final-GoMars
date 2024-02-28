@@ -27,6 +27,7 @@ module time_schemes_mod
   use latlon_parallel_mod
   use process_mod, only: proc
   use filter_mod
+  use perf_mod
 
   implicit none
 
@@ -156,6 +157,9 @@ contains
 
     integer i, j, k
 
+    call t_startf ('update_state')
+
+
     associate (mesh       => block%mesh, &
                dmgsdt     => dtend%dmgs, &
                dgzdt      => dtend%dgz , &
@@ -247,6 +251,8 @@ contains
       call fill_halo(new_state%v_lat)
     end if
     end associate
+
+    call t_stopf ('update_state')
 
   end subroutine update_state
 

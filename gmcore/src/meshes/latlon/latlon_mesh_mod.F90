@@ -150,6 +150,11 @@ contains
 
     call this%clear(keep_lev)
 
+
+    write(*, *) "Nlon:", nlon
+    write(*, *) "Nlat:", nlat
+    write(*, *) "Nlev:", nlev
+
     this%full_nlon = nlon
     this%half_nlon = nlon
     this%full_ids  = 1

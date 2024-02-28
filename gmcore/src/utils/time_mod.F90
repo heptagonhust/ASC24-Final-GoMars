@@ -5,6 +5,7 @@ module time_mod
   use container
   use flogger
   use const_mod
+  use perf_mod
   use namelist_mod, start_time_array => start_time, end_time_array => end_time
 
   implicit none
@@ -156,6 +157,7 @@ contains
 
     type(hash_table_iterator_type) iter
 
+    call t_startf ( 'time_advance' )
     ! Update alerts.
     iter = hash_table_iterator(alerts)
     do while (.not. iter%ended())
@@ -180,6 +182,8 @@ contains
       curr_time = curr_time + dt
     end if
     curr_time_str = curr_time%isoformat()
+
+    call t_stopf ( 'time_advance' )
 
   end subroutine time_advance
 

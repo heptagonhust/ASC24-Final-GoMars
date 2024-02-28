@@ -137,6 +137,7 @@ contains
 
     call global_mesh%init_global(nlon, nlat, nlev, lon_hw=lon_hw, lat_hw=lat_hw)
     call process_create_blocks()
+    ! print *, "Size of blocks array:", size(blocks)
     associate (mesh => blocks(1)%mesh)
     min_lon = mesh%full_lon_deg(mesh%full_ims)
     max_lon = mesh%full_lon_deg(mesh%full_ime)
@@ -197,6 +198,8 @@ contains
     call time_add_alert('print', seconds=seconds)
 
     if (proc%is_root()) call print_namelist()
+
+    print *, "Size of blocks array:", size(blocks)
 
     do iblk = 1, size(blocks)
       blocks(iblk)%mesh%full_lev  = global_mesh%full_lev
@@ -263,8 +266,11 @@ contains
       !                              Dynamical Core
       call t_startf ( 'aaagmcore_dynamic_core' )
       do iblk = 1, size(blocks)
+        call t_startf ( 'time_integrator' )
         call time_integrator(operators, blocks(iblk), old, new, dt_dyn)
+        call t_stopf ( 'time_integrator' )
         call damp_run(blocks(iblk), blocks(iblk)%dstate(new), dt_dyn)
+        ! call t_stopf ( 'aaagmcore_damp_run' )
         if (pdc_type == 1) call physics_update_dynamics(blocks(iblk), new, dt_dyn)
         call blocks(iblk)%dstate(new)%c2a()
       end do
@@ -490,6 +496,8 @@ contains
 
     integer i, j, k
 
+    call t_startf ('space_operators')
+
     call dtend1%reset_flags()
 
     associate (mesh => block%mesh)
@@ -610,6 +618,9 @@ contains
       end if
     end select
     end associate
+
+
+    call t_stopf ('space_operators')
 
   end subroutine space_operators
 

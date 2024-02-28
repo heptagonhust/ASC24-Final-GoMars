@@ -82,6 +82,8 @@ program gmcore_swm_driver
     end do
   end if
 
+    ! print *, "Size of blocks array:", size(blocks)
+
   call t_startf ( 'gmcore_run' )
   call gmcore_run()
   ! call exbdrift_ion_vels( lchnk, ncol, pbuf)

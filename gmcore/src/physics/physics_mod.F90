@@ -19,6 +19,7 @@ module physics_mod
   use dp_coupling_mod
   use latlon_parallel_mod
   use simple_physics_driver_mod
+  use perf_mod
 #ifdef HAS_CAM
   use cam_physics_driver_mod
 #endif
@@ -219,7 +220,7 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
-
+    call t_startf ( 'physics_update_dynamics' )
     associate (mesh  => block%mesh               , &
                dudt  => block%aux%dudt_phys      , & ! in
                dvdt  => block%aux%dvdt_phys      , & ! in
@@ -254,6 +255,7 @@ contains
     end do
     call fill_halo(pt)
     end associate
+    call t_stopf ( 'physics_update_dynamics' )
 
   end subroutine physics_update_dynamics
 
