@@ -1,7 +1,7 @@
 #!/bin/bash
 
 spack load cmake@3.24.4
-spack load intel-oneapi-compilers@2024.0.1
+spack load intel-oneapi-compilers@2024.0.1/xbteted
 spack load intel-oneapi-mkl@2024.0.0
 spack load intel-oneapi-mpi@2021.11.0
 # spack load libxml2
@@ -13,13 +13,13 @@ export FC=mpiifort
 export F77=mpiifort
 
 current_dir=$(pwd)
-target_dir="$current_dir/gmcore/gptl"
+target_dir="$current_dir/gmcore_main/gptl"
 
 if [ ! -d "$target_dir" ]; then
     mkdir -p "$target_dir"
 fi
 
-pushd gmcore
+pushd gmcore_main
 pushd gptl
 CDIR=$(pwd)
 wget https://github.com/jmrosinski/GPTL/releases/download/v8.1.1/gptl-8.1.1.tar.gz

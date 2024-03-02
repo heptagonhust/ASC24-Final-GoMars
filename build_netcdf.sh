@@ -1,10 +1,10 @@
 #!/bin/bash
 
 spack load cmake@3.24.4
-spack load intel-oneapi-compilers@2024.0.1
+spack load intel-oneapi-compilers@2024.0.1/xbteted
 spack load intel-oneapi-mkl@2024.0.0
 spack load intel-oneapi-mpi@2021.11.0
-spack load libxml2
+spack load libxml2/q66mtbb
 spack load curl
 spack load hdf5/fxhrrhv
 
@@ -15,9 +15,9 @@ export F77=mpiifort
 # export H5DIR=$(spack location -i hdf5)
 export H5DIR=$(spack location -i hdf5/fxhrrhv)
 export CURLDIR=$(spack location -i curl)
-export XML2DIR=$(spack location -i libxml2)
+export XML2DIR=$(spack location -i libxml2/q66mtbb)
 
-cd ./gmcore/netcdf/
+cd ./gmcore_main/netcdf/
 
 CDIR=$(pwd)
 NCDIR=$(pwd)

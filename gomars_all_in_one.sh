@@ -2,13 +2,13 @@
 
 current_dir=$(pwd)
 
-if [ ! -d "$current_dir/gmcore" ]; then
-    git clone https://gitee.com/dongli85/GMCORE gmcore
+if [ ! -d "$current_dir/gmcore_main" ]; then
+    git clone https://gitee.com/dongli85/GMCORE gmcore_main
 fi
 
 # pull libs and data
-pushd gmcore
-if [ ! -d "$current_dir/gmcore/data" ]; then
+pushd gmcore_main
+if [ ! -d "$current_dir/gmcore_main/data" ]; then
     ./pull_libs.py
     ./pull_data.py -p earth
     ./pull_data.py -p mars

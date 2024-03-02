@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rm -rf gmcore/
+rm -rf gmcore_main/
