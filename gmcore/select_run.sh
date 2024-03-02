@@ -73,11 +73,14 @@ run_case() {
 
 
 base_dir="$(pwd)"
+node_name=$(hostname)
 
-export UCX_RC_PATH_MTU=2048
-export I_MPI_HYDRA_RMK=slurm
-export I_MPI_PIN=off
-export OMP_NUM_THREADS=1
+if [ $node_name != "hustcpu02" ]; then
+    export UCX_RC_PATH_MTU=2048
+    export I_MPI_HYDRA_RMK=slurm
+    export I_MPI_PIN=off
+    export OMP_NUM_THREADS=1
+fi
 # export I_MPI_STACKSIZE=8388608
 # export KMP_STACKSIZE=83886080
 input="$1"
