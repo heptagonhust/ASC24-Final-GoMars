@@ -9,6 +9,8 @@ spack load intel-oneapi-compilers@2024.0.1
 spack load intel-oneapi-mkl@2024.0.0
 
 spack load intel-oneapi-mpi@2021.11.0
+# spack load hdf5 ~shared
+spack load hdf5/fxhrrhv
 
 export CC=mpiicx
 # export CXX=mpiicpx
@@ -21,12 +23,12 @@ export FC=mpiifx
 # export NETCDF_ROOT=$(spack location -i netcdf-fortran)
 current_dir=$(pwd)
 export NETCDF_ROOT=$current_dir/netcdf
-# export GPTL_ROOT=/opt/spack/opt/spack/linux-ubuntu20.04-icelake/gcc-9.4.0/gptl-8.1.1-3hh72awwp2aabzqetd6yloj7xtjvuhu6
+# export GPTL_ROOT=/opt/spack/opt/spac k/linux-ubuntu20.04-icelake/gcc-9.4.0/gptl-8.1.1-3hh72awwp2aabzqetd6yloj7xtjvuhu6
 export GPTL_ROOT=$current_dir/gptl
 # export NETCDF_ROOT=$(spack location -i netcdf-fortran)
 # export NETCDF_ROOT=/data/asc24caeporo/xyw/finalasc/raw/netcdf/testf
 # export NETCDF_ROOT=/data/asc24caeporo/xyw/finalasc/raw/netcdf/testc
-export LD_LIBRARY_PATH=/opt/spack/opt/spack/linux-ubuntu20.04-icelake/gcc-9.4.0/hdf5-1.14.3-fxhrrhv46hbchtxp255okz3r2dotzmng/lib:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=/opt/spack/opt/spack/linux-ubuntu20.04-icelake/gcc-9.4.0/hdf5-1.14.3-fxhrrhv46hbchtxp255okz3r2dotzmng/lib:$LD_LIBRARY_PATH
 
 
 # export FC=gfortran
