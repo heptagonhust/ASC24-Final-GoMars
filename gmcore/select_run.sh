@@ -45,15 +45,14 @@ run_case() {
     prefix="./run/GMCORE-TESTBED/"
     suffix="/namelist"
     namelist_relative_path="${prefix}${case_name}/${suffix}"
-
     namelist_absolute_path=$(readlink -f ${namelist_relative_path} )
+    data_path="/data/gomars_output/${whoami}/ncdata/${case_name}"
 
-    if [ ! -d /data/gomars_output/${whoami}/ncdata/${case_name} ]; then    
-        mkdir -p /data/gomars_output/${whoami}/ncdata/${case_name}
+    if [ ! -d ${data_path} ]; then    
+        mkdir -p ${data_path}
     fi
 
     #set datapath to yours
-    data_path="/data/gomars_output/${whoami}/ncdata/${case_name}"
 
     cd ${data_path}
     if [[ $namelist_absolute_path == *"adv"* ]]; then

@@ -31,7 +31,8 @@ if [ ! -d "$target_dir" ]; then
     tar -zxvf netcdf-fortran-4.6.1.tar.gz
     popd
     popd
-    ./build_netcdf.sh
+    # ./build_netcdf.sh
+    # I copied the content of gomars_all_in_one.sh to this file and here it caused an bad recursion
 else
     echo "existed: $target_dir"
     popd
