@@ -50,7 +50,7 @@ CPPFLAGS="-I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include" \
     ./configure --prefix=${CDIR}
 
 
-make install
+make install -j64
 
 export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
 
@@ -61,4 +61,4 @@ CPPFLAGS="-I${NCDIR}/include -I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR
     LDFLAGS="-L${NCDIR}/lib -L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
     ./configure --prefix=${NFDIR}
 
-make install
+make install -j64
