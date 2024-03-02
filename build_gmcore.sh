@@ -1,4 +1,5 @@
 #!/bin/bash
+. ./env.sh
 
 cd gmcore/
 
@@ -16,7 +17,9 @@ fi
 # spack load hdf5/fxhrrhv
 # export CC=mpiicx
 # export FC=mpiifx
-. ./env.sh
+echo "CC: $CC"
+echo "FC: $FC"
+echo "F77: $F77"
 
 current_dir=$(pwd)
 export NETCDF_ROOT=$current_dir/netcdf
