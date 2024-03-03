@@ -16,6 +16,8 @@ display_help() {
 example_list=('adv_dc4.360x180' 'adv_dcmip12.360x180' 'adv_mv.360x180' 'adv_sr.360x180' 'bw.150x75' 'bw.180x90' 'bw.360x180' 'dcmip31' 'hs.128x72' 'ksp15_01' 'mz.180x90' 'mz.360x180' 'mz.1440x720' 
 'pgf.360x181' 'rh.180x90' 'rh.360x180' 'ss.180x90' 'ss.360x180' 'swm_cp.360x180' 'swm_jz.180x90' 'swm_jz.360x180' 'swm_jz.720x360' 'swm_mz.180x90' 'swm_mz.360x180' 'swm_mz.720x360' 'swm_rh.180x90'
 'swm_rh.360x180' 'swm_rh.720x360' 'swm_rh.3600x1800' 'swm_sg.360x180' 'swm_sp.360x180' 'swm_vr.180x90' 'swm_vr.360x180' 'swm_vr.512x256' 'tc.360x180')
+current_user=$(whoami)
+
 
 print_example_list() {
     local i
@@ -46,7 +48,7 @@ run_case() {
     suffix="/namelist"
     namelist_relative_path="${prefix}${case_name}/${suffix}"
     namelist_absolute_path=$(readlink -f ${namelist_relative_path} )
-    data_path="/data/gomars_output/${whoami}/ncdata/${case_name}"
+    data_path="/data/gomars_output/$current_user/ncdata/${case_name}"
 
     if [ ! -d ${data_path} ]; then    
         mkdir -p ${data_path}

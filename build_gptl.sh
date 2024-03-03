@@ -20,8 +20,10 @@ fi
 pushd gmcore
 pushd gptl
 CDIR=$(pwd)
-wget https://github.com/jmrosinski/GPTL/releases/download/v8.1.1/gptl-8.1.1.tar.gz
-tar -zxvf gptl-8.1.1.tar.gz
+# wget https://github.com/jmrosinski/GPTL/releases/download/v8.1.1/gptl-8.1.1.tar.gz
+# tar -zxvf gptl-8.1.1.tar.gz
+
+cp -r /data/gomars_data/gptl-8.1.1 .
 pushd gptl-8.1.1
 
 # wget https://gist.githubusercontent.com/bonfus/21dec6b966859f5f509b935f8b055a7f/raw/macros.make
