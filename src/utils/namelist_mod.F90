@@ -121,8 +121,7 @@ module namelist_mod
 
   integer         :: weno_order           = -1 ! -1, 3
   integer         :: upwind_order         = 3  ! -1, 1, 3
-  real(r8)        :: upwind_wgt           = 1.0_r8
-  real(r8)        :: upwind_wgt_pt        = 0.25_r8
+  real(r8)        :: upwind_wgt           = 0.75_r8
 
   integer         :: vert_weno_order      = -1 ! -1, 3
   integer         :: vert_upwind_order    = 3  ! -1, 1, 3
@@ -262,7 +261,6 @@ module namelist_mod
     weno_order                , &
     upwind_order              , &
     upwind_wgt                , &
-    upwind_wgt_pt             , &
     vert_weno_order           , &
     vert_upwind_order         , &
     vert_upwind_wgt           , &
@@ -404,6 +402,7 @@ contains
       write(*, *) 'dt_dyn              = ', to_str(dt_dyn , 2)
       write(*, *) 'dt_adv              = ', to_str(dt_adv , 2)
       write(*, *) 'dt_phys             = ', to_str(dt_phys, 2)
+      write(*, *) 'time_scheme         = ', trim(time_scheme)
       write(*, *) 'pdc_type            = ', to_str(pdc_type)
       write(*, *) 'max_wave_speed      = ', to_str(max_wave_speed, 2)
       write(*, *) 'max_cfl             = ', to_str(max_cfl, 2)
@@ -429,8 +428,10 @@ contains
       write(*, *) 'upwind_order_pv     = ', to_str(upwind_order_pv)
       write(*, *) 'upwind_wgt_pv       = ', to_str(upwind_wgt_pv, 2)
     end if
-      write(*, *) 'time_scheme         = ', trim(time_scheme)
+    if (pt_adv_scheme == 'upwind' .or. nh_adv_scheme == 'upwind') then
       write(*, *) 'upwind_order        = ', to_str(upwind_order)
+      write(*, *) 'upwind_wgt          = ', to_str(upwind_wgt, 4)
+    end if
       write(*, *) 'use_topo_smooth     = ', to_str(use_topo_smooth)
     if (use_topo_smooth) then
       write(*, *) 'topo_max_slope      = ', topo_max_slope

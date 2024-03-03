@@ -10,6 +10,7 @@
 module upwind_mod
 
   use const_mod
+  use namelist_mod
   use adv_batch_mod
   use latlon_field_types_mod
 
@@ -42,18 +43,34 @@ contains
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
-      do k = ks, ke
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            mfx%d(i,j,k) = upwind3(sign(1.0_r8, u%d(i,j,k)), 0.75_r8, m%d(i-1:i+2,j,k)) * u%d(i,j,k)
+      select case (upwind_order)
+      case (3)
+        do k = ks, ke
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%half_ids, mesh%half_ide
+              mfx%d(i,j,k) = upwind3(sign(1.0_r8, u%d(i,j,k)), upwind_wgt, m%d(i-1:i+2,j,k)) * u%d(i,j,k)
+            end do
+          end do
+          do j = mesh%half_jds, mesh%half_jde
+            do i = mesh%full_ids, mesh%full_ide
+              mfy%d(i,j,k) = upwind3(sign(1.0_r8, v%d(i,j,k)), upwind_wgt, m%d(i,j-1:j+2,k)) * v%d(i,j,k)
+            end do
           end do
         end do
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            mfy%d(i,j,k) = upwind3(sign(1.0_r8, v%d(i,j,k)), 0.75_r8, m%d(i,j-1:j+2,k)) * v%d(i,j,k)
+      case (5)
+        do k = ks, ke
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%half_ids, mesh%half_ide
+              mfx%d(i,j,k) = upwind5(sign(1.0_r8, u%d(i,j,k)), upwind_wgt, m%d(i-2:i+3,j,k)) * u%d(i,j,k)
+            end do
+          end do
+          do j = mesh%half_jds, mesh%half_jde
+            do i = mesh%full_ids, mesh%full_ide
+              mfy%d(i,j,k) = upwind5(sign(1.0_r8, v%d(i,j,k)), upwind_wgt, m%d(i,j-2:j+3,k)) * v%d(i,j,k)
+            end do
           end do
         end do
-      end do
+      end select
     end select
     end associate
 
@@ -76,18 +93,34 @@ contains
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
-      do k = ks, ke
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            qmfx%d(i,j,k) = upwind3(sign(1.0_r8, mfx%d(i,j,k)), 0.75_r8, q%d(i-1:i+2,j,k)) * mfx%d(i,j,k)
+      select case (upwind_order)
+      case (3)
+        do k = ks, ke
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%half_ids, mesh%half_ide
+              qmfx%d(i,j,k) = upwind3(sign(1.0_r8, mfx%d(i,j,k)), upwind_wgt, q%d(i-1:i+2,j,k)) * mfx%d(i,j,k)
+            end do
+          end do
+          do j = mesh%half_jds, mesh%half_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qmfy%d(i,j,k) = upwind3(sign(1.0_r8, mfy%d(i,j,k)), upwind_wgt, q%d(i,j-1:j+2,k)) * mfy%d(i,j,k)
+            end do
           end do
         end do
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            qmfy%d(i,j,k) = upwind3(sign(1.0_r8, mfy%d(i,j,k)), 0.75_r8, q%d(i,j-1:j+2,k)) * mfy%d(i,j,k)
+      case (5)
+        do k = ks, ke
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%half_ids, mesh%half_ide
+              qmfx%d(i,j,k) = upwind5(sign(1.0_r8, mfx%d(i,j,k)), upwind_wgt, q%d(i-2:i+3,j,k)) * mfx%d(i,j,k)
+            end do
+          end do
+          do j = mesh%half_jds, mesh%half_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qmfy%d(i,j,k) = upwind5(sign(1.0_r8, mfy%d(i,j,k)), upwind_wgt, q%d(i,j-2:j+3,k)) * mfy%d(i,j,k)
+            end do
           end do
         end do
-      end do
+      end select
     end select
     end associate
 
@@ -106,21 +139,43 @@ contains
                we   => batch%we)   ! in
     select case (batch%loc)
     case ('cell')
-      do k = mesh%half_kds + 1, mesh%half_kde - 1
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            qmfz%d(i,j,k) = upwind3(sign(1.0_r8, we%d(i,j,k)), 0.75_r8, q%d(i,j,k-2:k+1)) * we%d(i,j,k)
+      select case (upwind_order)
+      case (3)
+        do k = mesh%half_kds + 1, mesh%half_kde - 1
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qmfz%d(i,j,k) = upwind3(sign(1.0_r8, we%d(i,j,k)), upwind_wgt, q%d(i,j,k-2:k+1)) * we%d(i,j,k)
+            end do
           end do
         end do
-      end do
+      case (5)
+        do k = mesh%half_kds + 1, mesh%half_kde - 1
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qmfz%d(i,j,k) = upwind5(sign(1.0_r8, we%d(i,j,k)), upwind_wgt, q%d(i,j,k-3:k+2)) * we%d(i,j,k)
+            end do
+          end do
+        end do
+      end select
     case ('lev')
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde
-          do i = mesh%full_ids, mesh%full_ide
-            qmfz%d(i,j,k) = upwind3(sign(1.0_r8, we%d(i,j,k)), 0.75_r8, q%d(i,j,k-1:k+2)) * we%d(i,j,k)
+      select case (upwind_order)
+      case (3)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qmfz%d(i,j,k) = upwind3(sign(1.0_r8, we%d(i,j,k)), upwind_wgt, q%d(i,j,k-1:k+2)) * we%d(i,j,k)
+            end do
           end do
         end do
-      end do
+      case (5)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds, mesh%full_jde
+            do i = mesh%full_ids, mesh%full_ide
+              qmfz%d(i,j,k) = upwind5(sign(1.0_r8, we%d(i,j,k)), upwind_wgt, q%d(i,j,k-2:k+3)) * we%d(i,j,k)
+            end do
+          end do
+        end do
+      end select
     end select
     end associate
 
