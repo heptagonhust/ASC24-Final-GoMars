@@ -375,12 +375,12 @@ contains
     do k = mesh%half_kds + 1, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          new_p_lev%d(i,j,k) = new_p_lev%d(i,j,k-1) + (                &
-            ((new_w_lev%d(i,j,k-1) - old_w_lev%d(i,j,k-1)) / dt -      &
-             adv_w_lev%d(i,j,k-1) / g + 1) * (1 + qm_lev%d(i,j,k-1)) + &
-            ((new_w_lev%d(i,j,k  ) - old_w_lev%d(i,j,k  )) / dt -      &
-             adv_w_lev%d(i,j,k  ) / g + 1) * (1 + qm_lev%d(i,j,k  ))   &
-          ) * 0.5_r8 * new_dmg%d(i,j,k-1)
+          new_p_lev%d(i,j,k) = new_p_lev%d(i,j,k-1) + (            &
+            ((new_w_lev%d(i,j,k-1) - old_w_lev%d(i,j,k-1)) / dt -  &
+             adv_w_lev%d(i,j,k-1) + g) * (1 + qm_lev%d(i,j,k-1)) + &
+            ((new_w_lev%d(i,j,k  ) - old_w_lev%d(i,j,k  )) / dt -  &
+             adv_w_lev%d(i,j,k  ) + g) * (1 + qm_lev%d(i,j,k  ))   &
+          ) * 0.5_r8 / g * new_dmg%d(i,j,k-1)
         end do
       end do
     end do
