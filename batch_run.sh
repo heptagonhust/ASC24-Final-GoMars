@@ -1,4 +1,9 @@
 #!/bin/bash
+#SBATCH -N 3
+#SBATCH -n 80
+#SBATCH --output=./output/%j.out
+
+
 if [  $(hostname) != "hustcpu02" ]; then
 	export UCX_RC_PATH_MTU=2048
 	export I_MPI_HYDRA_RMK=slurm
@@ -46,7 +51,7 @@ run ( ) {
 	fi
 	# echo \$1:$1 \$2:$2 \$3:$3
 	# echo exe_absolute_path:$exe_absolute_path namelist_absolute_path:$namelist_absolute_path
-	srun -N $2 -n $3 $exe_absolute_path $namelist_absolute_path
+	mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
 }
 
 
