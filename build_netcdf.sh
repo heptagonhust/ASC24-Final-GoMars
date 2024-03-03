@@ -25,10 +25,12 @@ if [ ! -d "$target_dir" ]; then
     mkdir "$target_dir"
     echo "created: $target_dir"
     pushd netcdf
-    wget https://downloads.unidata.ucar.edu/netcdf-c/4.9.2/netcdf-c-4.9.2.tar.gz
-    wget https://downloads.unidata.ucar.edu/netcdf-fortran/4.6.1/netcdf-fortran-4.6.1.tar.gz
-    tar -zxvf netcdf-c-4.9.2.tar.gz
-    tar -zxvf netcdf-fortran-4.6.1.tar.gz
+    # wget https://downloads.unidata.ucar.edu/netcdf-c/4.9.2/netcdf-c-4.9.2.tar.gz
+    # wget https://downloads.unidata.ucar.edu/netcdf-fortran/4.6.1/netcdf-fortran-4.6.1.tar.gz
+    # tar -zxvf netcdf-c-4.9.2.tar.gz
+    # tar -zxvf netcdf-fortran-4.6.1.tar.gz
+    cp -r /data/gomars_data/netcdf/netcdf-c-4.9.2/ .
+    cp -r /data/gomars_data/netcdf/netcdf-fortran-4.6.1/ .
     popd
     popd
     # ./build_netcdf.sh
