@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 3
 #SBATCH -n 80
-#SBATCH --output=./output/%j.out
+#SBATCH --output=./output/slurm-%j.out
 
 
 if [  $(hostname) != "hustcpu02" ]; then
