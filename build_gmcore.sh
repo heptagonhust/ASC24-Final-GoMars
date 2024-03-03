@@ -1,5 +1,5 @@
 #!/bin/bash
-. ./env.sh
+source ./env.sh
 
 cd gmcore/
 

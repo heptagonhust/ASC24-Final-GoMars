@@ -12,7 +12,7 @@
 # export FC=mpiifort
 # export F77=mpiifort
 
-. ./env.sh
+source ./env.sh
 
 # export H5DIR=$(spack location -i hdf5 ~shared)
 export H5DIR=$(spack location -i hdf5/fxhrrhv)

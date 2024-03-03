@@ -8,7 +8,7 @@
 # export CC=mpiicx
 # export FC=mpiifort
 # export F77=mpiifort
-. ./env.sh
+source ./env.sh
 
 current_dir=$(pwd)
 target_dir="$current_dir/gmcore/gptl"

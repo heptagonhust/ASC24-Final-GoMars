@@ -46,8 +46,7 @@ run ( ) {
 	fi
 	# echo \$1:$1 \$2:$2 \$3:$3
 	# echo exe_absolute_path:$exe_absolute_path namelist_absolute_path:$namelist_absolute_path
-	echo "srun -N $2 -n $3 $exe_absolute_path $namelist_absolute_path"
-	echo $(pwd)
+	srun -N $2 -n $3 $exe_absolute_path $namelist_absolute_path
 }
 
 
