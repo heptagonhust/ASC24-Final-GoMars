@@ -23,7 +23,6 @@ module operators_mod
   public operators_prepare
   public calc_mg
   public calc_ph
-  public calc_p
   public calc_omg
   public calc_dmg
   public calc_t
@@ -71,6 +70,8 @@ contains
 
   end subroutine operators_init
 
+  ! First time call before main model loop.
+
   subroutine operators_prepare_1(blocks, itime, dt)
 
     type(block_type), intent(inout) :: blocks(:)
@@ -83,6 +84,11 @@ contains
       if (baroclinic    ) call calc_mg    (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_dmg                       (blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic    ) call calc_ph    (blocks(iblk), blocks(iblk)%dstate(itime))
+      if (nonhydrostatic) then
+        ! Set pressure to hydrostatic pressure in the initial condition.
+        blocks(iblk)%dstate(itime)%p    %d = blocks(iblk)%dstate(itime)%ph    %d
+        blocks(iblk)%dstate(itime)%p_lev%d = blocks(iblk)%dstate(itime)%ph_lev%d
+      end if
       if (baroclinic    ) call calc_t     (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
@@ -90,7 +96,6 @@ contains
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt, total_substeps)
       if (baroclinic    ) call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(itime))
       if (baroclinic    ) call calc_rhod  (blocks(iblk), blocks(iblk)%dstate(itime))
-      if (nonhydrostatic) call calc_p     (blocks(iblk), blocks(iblk)%dstate(itime))
       call pgf_prepare                    (blocks(iblk), blocks(iblk)%dstate(itime))
       call tracer_calc_qm                 (blocks(iblk))
       if (nonhydrostatic) call fill_halo(blocks(iblk)%dstate(itime)%gz_lev)
@@ -127,7 +132,7 @@ contains
     case (backward_pass)
       if (baroclinic    ) call calc_t     (block, dstate)
       if (hydrostatic   ) call calc_gz_lev(block, dstate)
-      if (hydrostatic   ) call calc_rhod  (block, dstate)
+      if (baroclinic    ) call calc_rhod  (block, dstate)
       call pgf_prepare                    (block, dstate)
     end select
 
@@ -210,37 +215,6 @@ contains
 
   end subroutine calc_ph
 
-  subroutine calc_p(block, dstate)
-
-    type(block_type), intent(in) :: block
-    type(dstate_type), intent(inout) :: dstate
-
-    real(r8), parameter :: p0 = 1.0e5_r8
-    integer i, j, k
-
-    call perf_start('calc_p')
-
-    associate (mesh  => block%mesh  , & ! in
-               rhod  => dstate%rhod , & ! in
-               pt    => dstate%pt   , & ! in
-               p     => dstate%p    , & ! out
-               p_lev => dstate%p_lev)   ! out
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_ids, mesh%full_ide + 1
-          p%d(i,j,k) = p0 * (Rd * pt%d(i,j,k) * rhod%d(i,j,k) / p0)**cpd_o_cvd
-        end do
-      end do
-    end do
-    call interp_run(p, p_lev)
-    p_lev%d(:,:,1) = ptop
-    call fill_halo(p_lev)
-    end associate
-
-    call perf_stop('calc_p')
-
-  end subroutine calc_p
-
   subroutine calc_omg(block, dstate)
 
     type(block_type), intent(inout) :: block
@@ -287,7 +261,7 @@ contains
 
     associate (mesh => block%mesh         , &
                pt   => dstate%pt          , & ! in
-               ph   => dstate%ph          , & ! in
+               p    => dstate%p           , & ! in
                q    => tracers(block%id)%q, & ! in
                t    => dstate%t           , & ! out
                tv   => dstate%tv          )   ! out
@@ -295,8 +269,8 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
-            t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), q%d(i,j,k,idx_qv))
-            tv%d(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt%d(i,j,k), ph%d(i,j,k)**rd_o_cpd, q%d(i,j,k,idx_qv))
+            t%d(i,j,k) = temperature(pt%d(i,j,k), p%d(i,j,k), q%d(i,j,k,idx_qv))
+            tv%d(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt%d(i,j,k), p%d(i,j,k)**rd_o_cpd, q%d(i,j,k,idx_qv))
           end do
         end do
       end do
@@ -304,7 +278,7 @@ contains
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
-            t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), 0.0_r8)
+            t%d(i,j,k) = temperature(pt%d(i,j,k), p%d(i,j,k), 0.0_r8)
             tv%d(i,j,k) = t%d(i,j,k)
           end do
         end do

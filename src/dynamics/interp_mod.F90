@@ -384,6 +384,14 @@ contains
           end do
         end do
       end do
+    case ('lev>cell')
+      do k = x%mesh%full_kds, x%mesh%full_kde
+        do j = x%mesh%full_jds, x%mesh%full_jde
+          do i = x%mesh%full_ids, x%mesh%full_ide
+            y%d(i,j,k) = (x%d(i,j,k) + x%d(i,j,k+1)) * 0.5_r8
+          end do
+        end do
+      end do
     end select
 
   end subroutine average_run_3d

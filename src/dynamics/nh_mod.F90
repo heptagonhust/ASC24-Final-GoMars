@@ -15,6 +15,7 @@ module nh_mod
   use latlon_field_types_mod
   use latlon_parallel_mod
   use process_mod
+  use perf_mod
   use interp_mod
   use math_mod
   use adv_mod
@@ -42,9 +43,8 @@ contains
     call calc_adv_lev(block, star_dstate%w_lev , block%aux%adv_w_lev , star_dstate%dmg_lev, dt)
     call calc_adv_lev(block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
     call implicit_w_solver(block, old_dstate, star_dstate, new_dstate, dt)
-    call calc_rhod(block, new_dstate)
-    call calc_p(block, new_dstate)
-    call interp_run(new_dstate%gz_lev, new_dstate%gz)
+    call calc_p(block, old_dstate, new_dstate, dt)
+    call average_run(new_dstate%gz_lev, new_dstate%gz)
     call fill_halo(new_dstate%gz, west_halo=.false., south_halo=.false.)
 
   end subroutine nh_solve
@@ -332,5 +332,63 @@ contains
     end do
 
   end subroutine rayleigh_damp_w
+
+  subroutine calc_p(block, old_dstate, new_dstate, dt)
+
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(in) :: old_dstate
+    type(dstate_type), intent(inout) :: new_dstate
+    real(r8), intent(in) :: dt
+
+    integer i, j, k
+
+    call perf_start('calc_p')
+
+    associate (mesh       => block%mesh              , & ! in
+               old_p      => old_dstate%p            , & ! in
+               new_p      => new_dstate%p            , & ! out
+               new_p_lev  => new_dstate%p_lev        , & ! out
+               old_pt     => old_dstate%pt           , & ! in
+               new_pt     => new_dstate%pt           , & ! in
+               old_dmg    => old_dstate%dmg          , & ! in
+               new_dmg    => new_dstate%dmg          , & ! in
+               old_gz_lev => old_dstate%gz_lev       , & ! in
+               new_gz_lev => new_dstate%gz_lev       , & ! in
+               old_w_lev  => old_dstate%w_lev        , & ! in
+               new_w_lev  => new_dstate%w_lev        , & ! in
+               adv_w_lev  => block%aux%adv_w_lev     , & ! in
+               qm_lev     => tracers(block%id)%qm_lev)   ! in
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
+          new_p%d(i,j,k) = old_p%d(i,j,k) + cpd_o_cvd * old_p%d(i,j,k) * (                                &
+            (new_dmg%d(i,j,k) * new_pt%d(i,j,k)) / (old_dmg%d(i,j,k) * old_pt%d(i,j,k)) -                 &
+            (new_gz_lev%d(i,j,k) - new_gz_lev%d(i,j,k+1)) / (old_gz_lev%d(i,j,k) - old_gz_lev%d(i,j,k+1)) &
+          )
+          ! Do 3D divergence damping?
+          new_p%d(i,j,k) = new_p%d(i,j,k) + 0.12_r8 * (new_p%d(i,j,k) - old_p%d(i,j,k))
+        end do
+      end do
+    end do
+    ! Calculate half level pressure from w equation.
+    new_p_lev%d(:,:,1) = ptop
+    do k = mesh%half_kds + 1, mesh%half_kde
+      do j = mesh%full_jds, mesh%full_jde
+        do i = mesh%full_ids, mesh%full_ide
+          new_p_lev%d(i,j,k) = new_p_lev%d(i,j,k-1) + (                &
+            ((new_w_lev%d(i,j,k-1) - old_w_lev%d(i,j,k-1)) / dt -      &
+             adv_w_lev%d(i,j,k-1) / g + 1) * (1 + qm_lev%d(i,j,k-1)) + &
+            ((new_w_lev%d(i,j,k  ) - old_w_lev%d(i,j,k  )) / dt -      &
+             adv_w_lev%d(i,j,k  ) / g + 1) * (1 + qm_lev%d(i,j,k  ))   &
+          ) * 0.5_r8 * new_dmg%d(i,j,k-1)
+        end do
+      end do
+    end do
+    call fill_halo(new_p_lev)
+    end associate
+
+    call perf_stop('calc_p')
+
+  end subroutine calc_p
 
 end module nh_mod

@@ -286,6 +286,8 @@ contains
       kde = f%mesh%half_kde
       kms = f%mesh%half_kms
       kme = f%mesh%half_kme
+    case default
+      stop 'Unhandled branch in adv_fill_vhalo!'
     end select
 
     ! Set upper and lower boundary conditions.

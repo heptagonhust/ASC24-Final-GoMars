@@ -200,14 +200,16 @@ contains
 
   subroutine tridiag_thomas(a, b, c, d, x)
 
-    real(r8), intent(inout) :: a(:)
-    real(r8), intent(inout) :: b(:)
-    real(r8), intent(inout) :: c(:)
-    real(r8), intent(inout) :: d(:)
+    real(r8), intent(in ) :: a(:)
+    real(r8), intent(in ) :: b(:)
+    real(r8), intent(in ) :: c(:)
+    real(r8), intent(in ) :: d(:)
     real(r8), intent(out) :: x(:)
 
-    real(r8) denominator
+    real(r8) gam(size(x)-1), rho(size(x))
     integer n, i
+
+    n = size(x)
     !  _                                                _   _      _     _      _
     ! |  b(1)  c(1)                                      | | x(1  ) |   | d(1  ) |
     ! |  a(2)  b(2)  c(2)                                | | x(2  ) |   | d(2  ) |
@@ -216,20 +218,28 @@ contains
     ! |                ...  ...  ...                     | | ...    |   | ...    |
     ! |                          a(n-1)  b(n-1)  c(n-1)  | | x(n-1) |   | d(n-1) |
     ! |_                                 a(n  )  b(n  ) _| |_x(n  )_|   |_d(n  )_|
-
-    n = size(x)
-
-    c(1) = c(1) / b(1)
-    d(1) = d(1) / b(1)
+    ! Turn matrix into upper diagonal form
+    !  _                                                _   _      _     _      _
+    ! |  1     𝛾(1)                                      | | x(1  ) |   | 𝜌(1  ) |
+    ! |  0     1     𝛾(2)                                | | x(2  ) |   | 𝜌(2  ) |
+    ! |        0     1     𝛾(3)                          | | x(3  ) |   | 𝜌(3  ) |
+    ! |              0  ...  ...  ...                    | | ...    | = | ...    |
+    ! |                     ...  ...                     | | ...    |   | ...    |
+    ! |                                     1     𝛾(n-1) | | x(n-1) |   | 𝜌(n-1) |
+    ! |_                                    0     1     _| |_x(n  )_|   |_𝜌(n  )_|
+    gam(1) = c(1) / b(1)
+    do i = 2, n - 1
+      gam(i) = c(i) / (b(i) - a(i) * gam(i-1))
+    end do
+    rho(1) = d(1) / b(1)
     do i = 2, n
-      denominator = b(i) - a(i) * c(i-1)
-      c(i) = c(i) / denominator
-      d(i) = (d(i) - a(i) * d(i - 1)) / denominator
+      rho(i) = (d(i) - a(i) * rho(i-1)) / (b(i) - a(i) * gam(i-1))
     end do
 
-    x(n) = d(n)
+    ! Solve the final equations.
+    x(n) = rho(n)
     do i = n - 1, 1, -1
-      x(i) = d(i) - c(i) * x(i+1)
+      x(i) = rho(i) - gam(i) * x(i+1)
     end do
 
   end subroutine tridiag_thomas

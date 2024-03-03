@@ -152,7 +152,7 @@ module dynamics_types_mod
     type(latlon_field3d_type) pv                ! Potential vorticity
     type(latlon_field3d_type) div               ! Divergence (s-1)
     type(latlon_field3d_type) div2              ! Laplacian of divergence (s-1)
-    type(latlon_field3d_type) dmf
+    type(latlon_field3d_type) dmf               ! Mass flux divergence on full level (Pa s-1)
     type(latlon_field3d_type) omg               ! Vertical pressure velocity (Pa s-1)
     ! Tendencies from physics
     type(latlon_field3d_type) dudt_phys

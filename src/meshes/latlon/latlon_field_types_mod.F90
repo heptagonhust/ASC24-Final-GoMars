@@ -191,10 +191,20 @@ contains
 
     if (this%initialized .and. .not. (this%full_lon .eqv. other%full_lon .and. this%full_lat .eqv. other%full_lat)) then
       call log_error('latlon_field2d_link: cannot link fields with different loc!', __FILE__, __LINE__)
+    else
+      this%name            = other%name
+      this%long_name       = other%long_name
+      this%units           = other%units
+      this%loc             = other%loc
+      this%mesh            => other%mesh
+      this%halo            => other%halo
+      this%halo_cross_pole = other%halo_cross_pole
+      this%full_lon        = other%full_lon
+      this%full_lat        = other%full_lat
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     select case (this%loc)
-    case ('cell')
+    case ('cell', 'lev')
       is = this%mesh%full_ims; ie = this%mesh%full_ime
       js = this%mesh%full_jms; je = this%mesh%full_jme
     case ('lon')
@@ -206,6 +216,8 @@ contains
     case ('vtx')
       is = this%mesh%half_ims; ie = this%mesh%half_ime
       js = this%mesh%half_jms; je = this%mesh%half_jme
+    case default
+      stop 'Unhandled branch in latlon_field2d_link_3d!'
     end select
     ! Use a temporary array pointer to fix compile error.
     tmp => other%d(:,:,i3)
@@ -375,6 +387,8 @@ contains
       is = this%mesh%half_ims; ie = this%mesh%half_ime
       js = this%mesh%half_jms; je = this%mesh%half_jme
       ks = this%mesh%full_kms; ke = this%mesh%full_kme
+    case default
+      stop 'Unhandled branch in latlon_field3d_link_4d!'
     end select
     ! Use a temporary array pointer to fix compile error.
     tmp => other%d(:,:,:,i4)

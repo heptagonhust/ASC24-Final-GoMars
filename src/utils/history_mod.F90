@@ -447,7 +447,7 @@ contains
     call fiona_add_var('h1', 'dmgsdt'       , long_name='Surface hydrostatic pressure tendency'         , units='', dim_names=cell_dims_2d)
     call fiona_add_var('h1', 'dptdt'        , long_name='Potential temperature tendency'                , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'we_lev'       , long_name='Vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
-    call fiona_add_var('h1', 'dmf'          , long_name='Divergence flux'                               , units='', dim_names=cell_dims_3d)
+    call fiona_add_var('h1', 'dmf'          , long_name='Mass flux divergence'                          , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'u_lon'        , long_name='U wind component'                              , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'v_lat'        , long_name='V wind component'                              , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'mfx_lon'      , long_name='Normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)

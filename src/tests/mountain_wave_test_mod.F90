@@ -83,11 +83,6 @@ contains
       end do
     end do
     call fill_halo(pt)
-
-    if (nonhydrostatic) then
-      ! FIXME: Calculate tv.
-      call calc_gz_lev(block, block%dstate(1))
-    end if
     end associate
 
   end subroutine mountain_wave_test_set_ic
