@@ -32,9 +32,9 @@ run_case() {
     spack load hdf5/fxhrrhv
 
     # ulimit -s unlimit
-    edexample_list=('adv_dc4.360x180' 'adv_dcmip12.360x180' 'adv_mv.360x180' 'adv_sr.360x180' 'bw.150x75' 'bw.180x90' 'bw.360x180' 'dcmip31' 'hs.128x72' 'ksp15_01' 'mz.180x90' 'mz.360x180' 'mz.1440x720' 
-    'pgf.360x181' 'rh.180x90' 'rh.360x180' 'ss.180x90' 'ss.360x180' 'swm_cp.360x180' 'swm_jz.180x90' 'swm_jz.360x180' 'swm_jz.720x360' 'swm_mz.180x90' 'swm_mz.360x180' 'swm_mz.720x360' 'swm_rh.180x90'
-    'swm_rh.360x180' 'swm_rh.720x360' 'swm_rh.3600x1800' 'swm_sg.360x180' 'swm_sp.360x180' 'swm_vr.180x90' 'swm_vr.360x180' 'swm_vr.512x256' 'tc.360x180')
+    # edexample_list=('adv_dc4.360x180' 'adv_dcmip12.360x180' 'adv_mv.360x180' 'adv_sr.360x180' 'bw.150x75' 'bw.180x90' 'bw.360x180' 'dcmip31' 'hs.128x72' 'ksp15_01' 'mz.180x90' 'mz.360x180' 'mz.1440x720' 
+    # 'pgf.360x181' 'rh.180x90' 'rh.360x180' 'ss.180x90' 'ss.360x180' 'swm_cp.360x180' 'swm_jz.180x90' 'swm_jz.360x180' 'swm_jz.720x360' 'swm_mz.180x90' 'swm_mz.360x180' 'swm_mz.720x360' 'swm_rh.180x90'
+    # 'swm_rh.360x180' 'swm_rh.720x360' 'swm_rh.3600x1800' 'swm_sg.360x180' 'swm_sp.360x180' 'swm_vr.180x90' 'swm_vr.360x180' 'swm_vr.512x256' 'tc.360x180')
 
     
 
@@ -98,7 +98,7 @@ elif [ "$input" == "-c" ]; then
         echo "Usage: $0 -c case_name"
         exit 1
     fi
-    run_case $2
+    run_case $2 
 else
     display_help
 fi
