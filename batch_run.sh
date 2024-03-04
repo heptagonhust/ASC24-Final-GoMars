@@ -4,6 +4,11 @@
 #SBATCH --output=./output/slurm-%j.out
 
 
+echo "******batch_run.sh*******"
+cat $0
+echo "******batch_run.sh*******"
+
+
 if [  $(hostname) != "hustcpu02" ]; then
 	export UCX_RC_PATH_MTU=2048
 	export I_MPI_HYDRA_RMK=slurm
@@ -38,7 +43,7 @@ run ( ) {
 		mkdir -p ${data_path}
 	fi
 
-	cd ${data_path}
+	pushd ${data_path}
 	if [[ $namelist_absolute_path == *"adv"* ]]; then
 		echo "adv case"
 		exe_absolute_path=$adv_exe_absolute_path
@@ -49,9 +54,9 @@ run ( ) {
 		echo "normal case"
 		exe_absolute_path=$normal_exe_absolute_path
 	fi
-	# echo \$1:$1 \$2:$2 \$3:$3
-	# echo exe_absolute_path:$exe_absolute_path namelist_absolute_path:$namelist_absolute_path
+	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	popd
 }
 
 
@@ -60,13 +65,16 @@ if [ -z $1 ]; then
 	exit 1
 fi
 
+cmd_array=()
+
 while IFS= read -r cmd
 do
-	pushd ./gmcore
-	case_name=$(echo $cmd | cut -d' ' -f1)
-	node=$(echo $cmd | cut -d' ' -f2)
-	proc=$(echo $cmd | cut -d' ' -f3)
-	run $case_name $node $proc
-	popd
+	cmd_array+=("$cmd")
 done < $1
 
+for cmd in "${cmd_array[@]}"
+do
+	pushd ./gmcore
+	run $cmd
+	popd
+done
