@@ -376,7 +376,17 @@ if (HAS_RRTMGP AND HAS_NOAHMP)
   add_definitions(-DHAS_WRF)
 endif ()
 
+find_package(OpenMP)
+
+if(OpenMP_Fortran_FOUND)
+  # 如果找到了OpenMP，为Fortran编译器设置OpenMP编译选项
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+  list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
+endif()
+
 target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
+
+
 if (USE_CAM AND HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)
   message(STATUS "GPTL, PIO, LAPACK, ESMF, and MCT are found. Building CAM physics and chemistry.")
   include_directories(src/physics/cam/include)
