@@ -35,6 +35,7 @@ module adv_batch_mod
   use allocator_mod
   use latlon_mesh_mod
   use latlon_field_types_mod
+  use latlon_operators_mod
   use latlon_parallel_mod
   use vert_coord_mod
 
@@ -82,12 +83,12 @@ module adv_batch_mod
     type(latlon_field3d_type) qx
     type(latlon_field3d_type) qy
   contains
-    procedure :: init          => adv_batch_init
-    procedure :: clear         => adv_batch_clear
-    procedure :: copy_old_m    => adv_batch_copy_old_m
-    procedure :: set_wind      => adv_batch_set_wind
-    procedure :: accum_wind    => adv_batch_accum_wind
-    procedure :: prepare       => adv_batch_prepare
+    procedure :: init       => adv_batch_init
+    procedure :: clear      => adv_batch_clear
+    procedure :: copy_old_m => adv_batch_copy_old_m
+    procedure :: set_wind   => adv_batch_set_wind
+    procedure :: accum_wind => adv_batch_accum_wind
+    procedure :: prepare    => adv_batch_prepare
     final :: adv_batch_final
   end type adv_batch_type
 
@@ -127,176 +128,176 @@ contains
         name      = trim(this%name) // '_old_m'
         long_name = 'Saved dry-air weight'
         units     = 'Pa'
-        call this%old_m%init(batch_name, long_name, units, 'cell', mesh, halo)
+        call this%old_m%init(name, long_name, units, 'cell', mesh, halo)
 
         name      = trim(this%name) // '_mfx'
         long_name = 'Mass flux in x direction'
         units     = 'Pa m s-1'
-        call this%mfx%init(batch_name, long_name, units, 'lon', mesh, halo)
+        call this%mfx%init(name, long_name, units, 'lon', mesh, halo)
 
         name      = trim(this%name) // '_mfy'
         long_name = 'Mass flux in y direction'
         units     = 'Pa m s-1'
-        call this%mfy%init(batch_name, long_name, units, 'lat', mesh, halo)
+        call this%mfy%init(name, long_name, units, 'lat', mesh, halo)
 
         name      = trim(this%name) // '_mz'
         long_name = 'Dry-air weight on half level'
         units     = 'Pa'
-        call this%mz%init(batch_name, long_name, units, 'lev', mesh, halo)
+        call this%mz%init(name, long_name, units, 'lev', mesh, halo)
 
         name      = trim(this%name) // '_u'
         long_name = 'U wind component for advection of ' // trim(this%name)
         units     = 'm s-1'
-        call this%u%init(batch_name, long_name, units, 'lon', mesh, halo)
+        call this%u%init(name, long_name, units, 'lon', mesh, halo)
 
         name      = trim(this%name) // '_v'
         long_name = 'V wind component for advection of ' // trim(this%name)
         units     = 'm s-1'
-        call this%v%init(batch_name, long_name, units, 'lat', mesh, halo)
+        call this%v%init(name, long_name, units, 'lat', mesh, halo)
 
         name      = trim(this%name) // '_we'
         long_name = 'Vertical mass flux for advection of ' // trim(this%name)
         units     = 'Pa s-1'
-        call this%we%init(batch_name, long_name, units, 'lev', mesh, halo)
+        call this%we%init(name, long_name, units, 'lev', mesh, halo)
 
         name      = trim(this%name) // '_mfx0'
         long_name = 'Mass flux in x direction'
         units     = 'Pa m s-1'
-        call this%mfx0%init(batch_name, long_name, units, 'lon', mesh, halo)
+        call this%mfx0%init(name, long_name, units, 'lon', mesh, halo)
 
         name      = trim(this%name) // '_mfy0'
         long_name = 'Mass flux in y direction'
         units     = 'Pa m s-1'
-        call this%mfy0%init(batch_name, long_name, units, 'lat', mesh, halo)
+        call this%mfy0%init(name, long_name, units, 'lat', mesh, halo)
 
         name      = trim(this%name) // '_mx0'
         long_name = ''
         units     = ''
-        call this%mx0%init(batch_name, long_name, units, 'lon', mesh, halo)
+        call this%mx0%init(name, long_name, units, 'lon', mesh, halo)
 
         name      = trim(this%name) // '_my0'
         long_name = ''
         units     = ''
-        call this%my0%init(batch_name, long_name, units, 'lat', mesh, halo)
+        call this%my0%init(name, long_name, units, 'lat', mesh, halo)
 
         name      = trim(this%name) // '_mz0'
         long_name = ''
         units     = ''
-        call this%mz0%init(batch_name, long_name, units, 'lev', mesh, halo)
+        call this%mz0%init(name, long_name, units, 'lev', mesh, halo)
 
         name      = trim(this%name) // '_dmf'
         long_name = ''
         units     = ''
-        call this%dmf%init(batch_name, long_name, units, 'cell', filter_mesh, filter_halo)
+        call this%dmf%init(name, long_name, units, 'cell', filter_mesh, filter_halo)
 
         name      = trim(this%name) // '_dmgs'
         long_name = ''
         units     = ''
-        call this%dmgs%init(batch_name, long_name, units, 'cell', mesh, halo)
+        call this%dmgs%init(name, long_name, units, 'cell', mesh, halo)
       end if
       name        = trim(this%name) // '_qmf_lon'
       long_name   = 'Tracer mass flux in x direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lon%init(batch_name, long_name, units, 'lon', mesh, halo)
+      call this%qmf_lon%init(name, long_name, units, 'lon', mesh, halo)
 
       name        = trim(this%name) // '_qmf_lat'
       long_name   = 'Tracer mass flux in y direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lat%init(batch_name, long_name, units, 'lat', mesh, halo)
+      call this%qmf_lat%init(name, long_name, units, 'lat', mesh, halo)
 
       name        = trim(this%name) // '_qmf_lev'
       long_name   = 'Tracer mass flux in z direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lev%init(batch_name, long_name, units, 'lev', mesh, halo)
+      call this%qmf_lev%init(name, long_name, units, 'lev', mesh, halo)
       select case (this%scheme)
       case ('ffsl')
         name      = trim(this%name) // '_cflx'
         long_name = 'CFL number in x direction'
         units     = ''
-        call this%cflx%init(batch_name, long_name, units, 'lon', mesh, halo)
+        call this%cflx%init(name, long_name, units, 'lon', mesh, halo)
 
         name      = trim(this%name) // '_cfly'
         long_name = 'CFL number in y direction'
         units     = ''
-        call this%cfly%init(batch_name, long_name, units, 'lat', mesh, halo)
+        call this%cfly%init(name, long_name, units, 'lat', mesh, halo)
 
         name      = trim(this%name) // '_cflz'
         long_name = 'CFL number in z direction'
         units     = ''
-        call this%cflz%init(batch_name, long_name, units, 'lev', mesh, halo)
+        call this%cflz%init(name, long_name, units, 'lev', mesh, halo)
 
         name      = trim(this%name) // '_divx'
         long_name = 'Horizontal mass flux divergence in x direction'
         units     = 's-1'
-        call this%divx%init(batch_name, long_name, units, 'lon', mesh, halo)
+        call this%divx%init(name, long_name, units, 'lon', mesh, halo)
 
         name      = trim(this%name) // '_divy'
         long_name = 'Horizontal mass flux divergence in y direction'
         units     = 's-1'
-        call this%divy%init(batch_name, long_name, units, 'lat', mesh, halo)
+        call this%divy%init(name, long_name, units, 'lat', mesh, halo)
 
         name      = trim(this%name) // '_qx'
         long_name = 'Tracer mass after advection in x direction'
         units     = 'kg kg-1'
-        call this%qx%init(batch_name, long_name, units, 'cell', filter_mesh, filter_halo, halo_cross_pole=.true.)
+        call this%qx%init(name, long_name, units, 'cell', filter_mesh, filter_halo, halo_cross_pole=.true.)
 
         name      = trim(this%name) // '_qy'
         long_name = 'Tracer mass after advection in y direction'
         units     = 'kg kg-1'
-        call this%qy%init(batch_name, long_name, units, 'cell', filter_mesh, filter_halo)
+        call this%qy%init(name, long_name, units, 'cell', filter_mesh, filter_halo)
       end select
     case ('lev')
       ! Only for nonhydrostatic dynamic calculation.
       name        = trim(this%name) // '_qmf_lon'
       long_name   = 'Tracer mass flux in x direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lon%init(batch_name, long_name, units, 'lev_lon', mesh, halo)
+      call this%qmf_lon%init(name, long_name, units, 'lev_lon', mesh, halo)
 
       name        = trim(this%name) // '_qmf_lat'
       long_name   = 'Tracer mass flux in y direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lat%init(batch_name, long_name, units, 'lev_lat', mesh, halo)
+      call this%qmf_lat%init(name, long_name, units, 'lev_lat', mesh, halo)
 
       name        = trim(this%name) // '_qmf_lev'
       long_name   = 'Tracer mass flux in z direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lev%init(batch_name, long_name, units, 'cell', mesh, halo)
+      call this%qmf_lev%init(name, long_name, units, 'cell', mesh, halo)
       select case (this%scheme)
       case ('ffsl')
         name      = trim(this%name) // '_cflx'
         long_name = 'CFL number in x direction'
         units     = ''
-        call this%cflx%init(batch_name, long_name, units, 'lev_lon', mesh, halo)
+        call this%cflx%init(name, long_name, units, 'lev_lon', mesh, halo)
 
         name      = trim(this%name) // '_cfly'
         long_name = 'CFL number in y direction'
         units     = ''
-        call this%cfly%init(batch_name, long_name, units, 'lev_lat', mesh, halo)
+        call this%cfly%init(name, long_name, units, 'lev_lat', mesh, halo)
 
         name      = trim(this%name) // '_cflz'
         long_name = 'CFL number in z direction'
         units     = ''
-        call this%cflz%init(batch_name, long_name, units, 'cell', mesh, halo)
+        call this%cflz%init(name, long_name, units, 'cell', mesh, halo)
 
         name      = trim(this%name) // '_divx'
         long_name = 'Horizontal mass flux divergence in x direction'
         units     = 's-1'
-        call this%divx%init(batch_name, long_name, units, 'lev_lon', mesh, halo)
+        call this%divx%init(name, long_name, units, 'lev_lon', mesh, halo)
 
         name      = trim(this%name) // '_divy'
         long_name = 'Horizontal mass flux divergence in y direction'
         units     = 's-1'
-        call this%divy%init(batch_name, long_name, units, 'lev_lat', mesh, halo)
+        call this%divy%init(name, long_name, units, 'lev_lat', mesh, halo)
 
         name      = trim(this%name) // '_qx'
         long_name = 'Tracer mass after advection in x direction'
         units     = 'kg kg-1'
-        call this%qx%init(batch_name, long_name, units, 'lev', filter_mesh, filter_halo, halo_cross_pole=.true.)
+        call this%qx%init(name, long_name, units, 'lev', filter_mesh, filter_halo, halo_cross_pole=.true.)
 
         name      = trim(this%name) // '_qy'
         long_name = 'Tracer mass after advection in y direction'
         units     = 'kg kg-1'
-        call this%qy%init(batch_name, long_name, units, 'lev', filter_mesh, filter_halo)
+        call this%qy%init(name, long_name, units, 'lev', filter_mesh, filter_halo)
       end select
     case default
       call log_error('Invalid grid location ' // trim(batch_loc) // '!', __FILE__, __LINE__)
@@ -392,8 +393,6 @@ contains
     type(latlon_field3d_type), intent(in) :: mfx_lon
     type(latlon_field3d_type), intent(in) :: mfy_lat
 
-    real(r8) work(this%u%mesh%full_ids:this%u%mesh%full_ide,this%u%mesh%full_nlev)
-    real(r8) pole(this%u%mesh%full_nlev)
     integer i, j, k
 
     if (this%step == -1) then
@@ -460,49 +459,8 @@ contains
         end do
       end do
       ! Diagnose horizontal mass flux divergence.
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%full_ids, mesh%full_ide
-            dmf%d(i,j,k) = ((                     &
-              mfx%d(i,j,k) - mfx%d(i-1,j,k)       &
-            ) * mesh%le_lon(j) + (                &
-              mfy%d(i,j  ,k) * mesh%le_lat(j  ) - &
-              mfy%d(i,j-1,k) * mesh%le_lat(j-1)   &
-            )) / mesh%area_cell(j)
-          end do
-        end do
-      end do
-      if (mesh%has_south_pole()) then
-        j = mesh%full_jds
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = mfy%d(i,j,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            dmf%d(i,j,k) = pole(k)
-          end do
-        end do
-      end if
-      if (mesh%has_north_pole()) then
-        j = mesh%full_jde
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            work(i,k) = -mfy%d(i,j-1,k)
-          end do
-        end do
-        call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-        do k = mesh%full_kds, mesh%full_kde
-          do i = mesh%full_ids, mesh%full_ide
-            dmf%d(i,j,k) = pole(k)
-          end do
-        end do
-      end if
-      ! Diagnose surface dry air pressure tendency.
+      call div_operator(mfx, mfy, dmf)
+      ! Diagnose surface hydrostatic pressure tendency.
       dmgs%d = 0
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde

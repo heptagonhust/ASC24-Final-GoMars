@@ -45,6 +45,9 @@ module latlon_field_types_mod
     character(field_long_name_len) :: long_name = 'N/A'
     character(field_units_len    ) :: units     = 'N/A'
     character(field_loc_len      ) :: loc       = 'N/A'
+    integer :: nlon             = 0
+    integer :: nlat             = 0
+    integer :: nlev             = 0
     logical :: full_lon         = .true.
     logical :: full_lat         = .true.
     logical :: full_lev         = .true.
@@ -127,6 +130,9 @@ contains
     end select
 
     this%d = 0
+    this%nlon = merge(mesh%full_nlon, mesh%half_nlon, this%full_lon)
+    this%nlat = merge(mesh%full_nlat, mesh%half_nlat, this%full_lat)
+    this%nlev = 1
     this%initialized = .true.
 
   end subroutine latlon_field2d_init
@@ -148,6 +154,9 @@ contains
     this%halo_cross_pole = .false.
     this%full_lon        = .true.
     this%full_lat        = .true.
+    this%nlon            = 0
+    this%nlat            = 0
+    this%nlev            = 0
     this%initialized     = .false.
     this%linked          = .false.
     this%restart         = .false.
@@ -172,6 +181,9 @@ contains
       this%halo_cross_pole = other%halo_cross_pole
       this%full_lon        = other%full_lon
       this%full_lat        = other%full_lat
+      this%nlon            = other%nlon
+      this%nlat            = other%nlat
+      this%nlev            = other%nlev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     this%d => other%d
@@ -201,6 +213,9 @@ contains
       this%halo_cross_pole = other%halo_cross_pole
       this%full_lon        = other%full_lon
       this%full_lat        = other%full_lat
+      this%nlon            = other%nlon
+      this%nlat            = other%nlat
+      this%nlev            = other%nlev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     select case (this%loc)
@@ -287,6 +302,9 @@ contains
     end if
 
     this%d = 0
+    this%nlon = merge(mesh%full_nlon, mesh%half_nlon, this%full_lon)
+    this%nlat = merge(mesh%full_nlat, mesh%half_nlat, this%full_lat)
+    this%nlev = merge(mesh%full_nlev, mesh%half_nlev, this%full_lev)
     this%initialized = .true.
 
   end subroutine latlon_field3d_init
@@ -309,6 +327,9 @@ contains
     this%full_lon        = .true.
     this%full_lat        = .true.
     this%full_lev        = .true.
+    this%nlon            = 0
+    this%nlat            = 0
+    this%nlev            = 0
     this%initialized     = .false.
     this%linked          = .false.
     this%restart         = .false.
@@ -334,6 +355,9 @@ contains
       this%full_lon        = other%full_lon
       this%full_lat        = other%full_lat
       this%full_lev        = other%full_lev
+      this%nlon            = other%nlon
+      this%nlat            = other%nlat
+      this%nlev            = other%nlev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     this%d => other%d
@@ -364,6 +388,9 @@ contains
       this%full_lon        = other%full_lon
       this%full_lat        = other%full_lat
       this%full_lev        = other%full_lev
+      this%nlon            = other%nlon
+      this%nlat            = other%nlat
+      this%nlev            = other%nlev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     select case (this%loc)
@@ -435,6 +462,9 @@ contains
     end select
 
     this%d = 0
+    this%nlon = merge(mesh%full_nlon, mesh%half_nlon, this%full_lon)
+    this%nlat = merge(mesh%full_nlat, mesh%half_nlat, this%full_lat)
+    this%nlev = merge(mesh%full_nlev, mesh%half_nlev, this%full_lev)
     this%linked = .false.
     this%initialized = .true.
 
@@ -455,6 +485,12 @@ contains
     this%mesh            => null()
     this%halo            => null()
     this%halo_cross_pole = .false.
+    this%full_lon        = .true.
+    this%full_lat        = .true.
+    this%full_lev        = .true.
+    this%nlon            = 0
+    this%nlat            = 0
+    this%nlev            = 0
     this%initialized     = .false.
     this%linked          = .false.
     this%restart         = .false.
@@ -480,6 +516,9 @@ contains
       this%full_lon        = other%full_lon
       this%full_lat        = other%full_lat
       this%full_lev        = other%full_lev
+      this%nlon            = other%nlon
+      this%nlat            = other%nlat
+      this%nlev            = other%nlev
     end if
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
     this%d => other%d

@@ -67,11 +67,11 @@ contains
 
     select case (ffsl_flux_type)
     case ('van_leer')
-      hflx     => hflx_van_leer
-      vflx     => vflx_van_leer
+      hflx => hflx_van_leer
+      vflx => vflx_van_leer
     case ('ppm')
-      hflx     => hflx_ppm
-      vflx     => vflx_ppm
+      hflx => hflx_ppm
+      vflx => vflx_ppm
     case default
       call log_error('Invalid ffsl_flux_type ' // trim(ffsl_flux_type) // '!', pid=proc%id)
     end select

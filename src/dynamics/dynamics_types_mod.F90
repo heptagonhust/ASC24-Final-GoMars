@@ -153,6 +153,7 @@ module dynamics_types_mod
     type(latlon_field3d_type) div               ! Divergence (s-1)
     type(latlon_field3d_type) div2              ! Laplacian of divergence (s-1)
     type(latlon_field3d_type) dmf               ! Mass flux divergence on full level (Pa s-1)
+    type(latlon_field3d_type) dmf_lev           ! Mass flux divergence on half level (Pa s-1)
     type(latlon_field3d_type) omg               ! Vertical pressure velocity (Pa s-1)
     ! Tendencies from physics
     type(latlon_field3d_type) dudt_phys
@@ -913,6 +914,13 @@ contains
     units     = 'Pa s-1'
     call this%dmf%init(name, long_name, units, 'cell', mesh, halo)
 
+    name      = 'dmf_lev'
+    long_name = 'Mass flux divergence on half level'
+    units     = 'Pa s-1'
+    if (nonhydrostatic) then
+      call this%dmf_lev%init(name, long_name, units, 'lev', mesh, halo)
+    end if
+
     name      = 'omg'
     long_name = 'Omega'
     units     = 'Pa s-1'
@@ -1060,6 +1068,7 @@ contains
     call this%div        %clear()
     call this%div2       %clear()
     call this%dmf        %clear()
+    call this%dmf_lev    %clear()
     call this%omg        %clear()
     call this%dudt_phys  %clear()
     call this%dvdt_phys  %clear()

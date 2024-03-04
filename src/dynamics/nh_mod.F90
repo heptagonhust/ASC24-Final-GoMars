@@ -13,6 +13,7 @@ module nh_mod
   use namelist_mod
   use block_mod
   use latlon_field_types_mod
+  use latlon_operators_mod
   use latlon_parallel_mod
   use process_mod
   use perf_mod
@@ -63,7 +64,8 @@ contains
                v_lev_lat   => block%aux%v_lev_lat  , & ! out
                we          => dstate%we            , & ! out
                mfx_lev_lon => block%aux%mfx_lev_lon, & ! out
-               mfy_lev_lat => block%aux%mfy_lev_lat)   ! out
+               mfy_lev_lat => block%aux%mfy_lev_lat, & ! out
+               dmf_lev     => block%aux%dmf_lev    )   ! out
     call interp_run(u_lon, u_lev_lon)
     call interp_run(v_lat, v_lev_lat)
     call interp_run(dmg_lev, mfx_lev_lon)
@@ -76,6 +78,7 @@ contains
     call fill_halo(mfx_lev_lon)
     call fill_halo(mfy_lev_lat)
     call block%adv_batch_nh%set_wind(u_lev_lon, v_lev_lat, we, mfx_lev_lon, mfy_lev_lat, dmg)
+    call div_operator(mfx_lev_lon, mfy_lev_lat, dmf_lev)
     end associate
 
   end subroutine interp_wind
@@ -88,13 +91,10 @@ contains
     type(latlon_field3d_type), intent(in   ) :: dmg_lev
     real(r8), intent(in) :: dt
 
-    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%half_kds:block%mesh%half_nlev)
-    real(r8) pole(block%mesh%half_nlev)
     integer i, j, k
 
     associate (mesh        => block%mesh                , &
-               mfx_lev_lon => block%aux%mfx_lev_lon     , & ! in
-               mfy_lev_lat => block%aux%mfy_lev_lat     , & ! in
+               dmf_lev     => block%aux%dmf_lev         , & ! in
                we          => block%adv_batch_nh%we     , & ! in
                qmf_lon     => block%adv_batch_nh%qmf_lon, &
                qmf_lat     => block%adv_batch_nh%qmf_lat, &
@@ -102,55 +102,18 @@ contains
     call adv_calc_tracer_hflx(block%adv_batch_nh, q_lev, qmf_lon, qmf_lat, dt)
     call fill_halo(qmf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(qmf_lat, west_halo=.false., east_halo=.false., north_halo=.false.)
+    call div_operator(qmf_lon, qmf_lat, dqdt_lev)
+    ! Remove horizontal mass flux divergence part.
     do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+      do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dqdt_lev%d(i,j,k) = -((                         &
-            qmf_lon%d(i,j,k) - qmf_lon%d(i-1,j,k)         &
-          ) * mesh%le_lon(j) + (                          &
-            qmf_lat%d(i,j  ,k) * mesh%le_lat(j  ) -       &
-            qmf_lat%d(i,j-1,k) * mesh%le_lat(j-1)         &
-          ) - q_lev%d(i,j,k) * ((                         &
-            mfx_lev_lon%d(i,j,k) - mfx_lev_lon%d(i-1,j,k) &
-          ) * mesh%le_lon(j) + (                          &
-            mfy_lev_lat%d(i,j  ,k) * mesh%le_lat(j  ) -   &
-            mfy_lev_lat%d(i,j-1,k) * mesh%le_lat(j-1)     &
-          ))) / mesh%area_cell(j)
+          dqdt_lev%d(i,j,k) = -dqdt_lev%d(i,j,k) + q_lev%d(i,j,k) * dmf_lev%d(i,j,k)
         end do
       end do
     end do
-    if (mesh%has_south_pole()) then
-      j = mesh%full_jds
-      do k = mesh%half_kds, mesh%half_kde
-        do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = qmf_lat%d(i,j,k) - q_lev%d(i,j,k) * mfy_lev_lat%d(i,j,k)
-        end do
-      end do
-      call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-      do k = mesh%half_kds, mesh%half_kde
-        do i = mesh%full_ids, mesh%full_ide
-          dqdt_lev%d(i,j,k) = -pole(k)
-        end do
-      end do
-    end if
-    if (mesh%has_north_pole()) then
-      j = mesh%full_jde
-      do k = mesh%half_kds, mesh%half_kde
-        do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = qmf_lat%d(i,j-1,k) - q_lev%d(i,j,k) * mfy_lev_lat%d(i,j-1,k)
-        end do
-      end do
-      call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-      do k = mesh%half_kds, mesh%half_kde
-        do i = mesh%full_ids, mesh%full_ide
-          dqdt_lev%d(i,j,k) = pole(k)
-        end do
-      end do
-    end if
     call adv_fill_vhalo(q_lev)
     call adv_calc_tracer_vflx(block%adv_batch_nh, q_lev, qmf_lev, dt)
+    ! Remove vertical mass flux divergence part.
     do k = mesh%half_kds + 1, mesh%half_kde - 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide

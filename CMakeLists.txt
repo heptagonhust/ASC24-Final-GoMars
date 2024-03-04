@@ -268,6 +268,7 @@ target_sources(gmcore PRIVATE
   src/meshes/latlon/latlon_mesh_mod.F90
   src/meshes/latlon/latlon_halo_mod.F90
   src/meshes/latlon/latlon_field_types_mod.F90
+  src/meshes/latlon/latlon_operators_mod.F90
   src/meshes/latlon/latlon_parallel_types_mod.F90
   src/meshes/latlon/latlon_parallel_zonal_mod.F90
   src/meshes/latlon/latlon_parallel_mod.F90

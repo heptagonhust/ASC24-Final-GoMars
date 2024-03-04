@@ -17,6 +17,7 @@ module adv_mod
   use time_mod
   use block_mod
   use latlon_field_types_mod
+  use latlon_operators_mod
   use latlon_parallel_mod
   use process_mod, only: proc
   use tracer_mod
@@ -165,7 +166,6 @@ contains
 
     integer iblk, i, j, k, l, m, idx
     type(latlon_field3d_type) q_old, q_new
-    real(r8), allocatable :: work(:,:), pole(:)
 
     if (.not. allocated(blocks(1)%adv_batches)) return
 
@@ -175,9 +175,8 @@ contains
       associate (block     => blocks(iblk)                  , &
                  dstate    => blocks(iblk)%dstate(itime)    , &
                  mesh      => blocks(iblk)%filter_mesh      , &
-                 m_new     => blocks(iblk)%dstate(itime)%dmg)
-      allocate(work(mesh%full_ids:mesh%full_ide,mesh%full_nlev))
-      allocate(pole(mesh%full_nlev))
+                 m_new     => blocks(iblk)%dstate(itime)%dmg, &
+                 dqdt      => blocks(iblk)%aux%ke           )   ! Borrow array.
       do m = 1, size(block%adv_batches)
         if (time_is_alerted(block%adv_batches(m)%name)) then
           if (m == 1 .and. pdc_type == 2) call physics_update_dynamics(block, itime, dt_adv)
@@ -191,56 +190,20 @@ contains
                        qmf_lon => batch%qmf_lon, & ! working array
                        qmf_lat => batch%qmf_lat, & ! working array
                        qmf_lev => batch%qmf_lev)   ! working array
-            ! Calculate tracer mass flux.
+            ! Calculate horizontal tracer mass flux.
             call adv_calc_tracer_hflx(batch, q_old, qmf_lon, qmf_lat)
             call fill_halo(qmf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
             call fill_halo(qmf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
-            ! Update tracer mixing ratio.
+            call div_operator(qmf_lon, qmf_lat, dqdt)
+            ! Update tracer mixing ratio due to horizontal advection.
             do k = mesh%full_kds, mesh%full_kde
-              do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+              do j = mesh%full_jds, mesh%full_jde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new%d(i,j,k) = (m_old%d(i,j,k) * q_old%d(i,j,k) - ( &
-                    (                                                   &
-                      qmf_lon%d(i  ,j,k) -                              &
-                      qmf_lon%d(i-1,j,k)                                &
-                    ) * mesh%le_lon(j) + (                              &
-                      qmf_lat%d(i,j  ,k) * mesh%le_lat(j  ) -           &
-                      qmf_lat%d(i,j-1,k) * mesh%le_lat(j-1)             &
-                    )                                                   &
-                  ) / mesh%area_cell(j) * dt_adv) / m_new%d(i,j,k)
+                  q_new%d(i,j,k) = (m_old%d(i,j,k) * q_old%d(i,j,k) - dt_adv * dqdt%d(i,j,k)) / m_new%d(i,j,k)
                 end do
               end do
             end do
-            if (mesh%has_south_pole()) then
-              j = mesh%full_jds
-              do k = mesh%full_kds, mesh%full_kde
-                do i = mesh%full_ids, mesh%full_ide
-                  work(i,k) = qmf_lat%d(i,j,k)
-                end do
-              end do
-              call zonal_sum(proc%zonal_circle, work, pole)
-              pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
-              do k = mesh%full_kds, mesh%full_kde
-                do i = mesh%full_ids, mesh%full_ide
-                  q_new%d(i,j,k) = (m_old%d(i,j,k) * q_old%d(i,j,k) - pole(k)) / m_new%d(i,j,k)
-                end do
-              end do
-            end if
-            if (mesh%has_north_pole()) then
-              j = mesh%full_jde
-              do k = mesh%full_kds, mesh%full_kde
-                do i = mesh%full_ids, mesh%full_ide
-                  work(i,k) = qmf_lat%d(i,j-1,k)
-                end do
-              end do
-              call zonal_sum(proc%zonal_circle, work, pole)
-              pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j) * dt_adv
-              do k = mesh%full_kds, mesh%full_kde
-                do i = mesh%full_ids, mesh%full_ide
-                  q_new%d(i,j,k) = (m_old%d(i,j,k) * q_old%d(i,j,k) + pole(k)) / m_new%d(i,j,k)
-                end do
-              end do
-            end if
+            ! Calculate vertical tracer mass flux.
             call adv_fill_vhalo(q_new)
             call adv_calc_tracer_vflx(block%adv_batches(m), q_new, qmf_lev)
             do k = mesh%full_kds, mesh%full_kde
@@ -262,7 +225,6 @@ contains
           call block%adv_batches(m)%copy_old_m(m_new)
         end if
       end do
-      deallocate(work, pole)
       call tracer_calc_qm(block)
       end associate
     end do
