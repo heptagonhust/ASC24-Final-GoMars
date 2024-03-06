@@ -181,8 +181,31 @@ contains
     logical west_halo_opt, east_halo_opt, south_halo_opt, north_halo_opt
     integer t1, t2, t3, i, j, js, je, nx, mx, hx, hy, ierr
     integer send_req, recv_req
+    integer send_req1, recv_req1, send_req2, recv_req2, send_req3, recv_req3, send_req4, recv_req4
+    integer :: reqs1(1) 
+    integer :: reqs2(2)
+    integer :: reqs3(3)  
+    integer :: reqs4(4)
+    integer :: reqs5(5) 
+    integer :: reqs6(6)
+    integer :: reqs7(7) 
+    integer :: reqs8(8)
+    integer counter
+    integer numreqs
+    integer iftest
+    integer :: status1(MPI_STATUS_SIZE*1)
+    integer :: status2(MPI_STATUS_SIZE*2)
+    integer :: status3(MPI_STATUS_SIZE*3)
+    integer :: status4(MPI_STATUS_SIZE*4)
+    integer :: status5(MPI_STATUS_SIZE*5)
+    integer :: status6(MPI_STATUS_SIZE*6)
+    integer :: status7(MPI_STATUS_SIZE*7)
+    integer :: status8(MPI_STATUS_SIZE*8)
     real(r8) tmp(size(field%d,1),field%halo(1)%lat_hw,size(field%d,3))
 
+
+
+    iftest = 1
     call perf_start('fill_halo_3d')
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
@@ -195,6 +218,8 @@ contains
     t3 = merge(1, 2, field%full_lev)
     hx = field%halo(1)%lon_hw
     hy = field%halo(1)%lat_hw
+    counter = 0
+    numreqs = 0
     if (field%full_lon) then
       nx = field%mesh%full_nlon
       mx = field%mesh%full_nlon / 2
@@ -210,17 +235,379 @@ contains
       je = field%mesh%half_jme
     end if
 
+    ! spherical_area_with_last_small_arc
+    ! swm 
+
+
+  ! omp {
+  !   #omp
+  !   for ()
+  ! }
+    ! swallow water mode
+
+  if (iftest .eq. 0) then 
+    send_req1 = MPI_REQUEST_NULL; recv_req1 = MPI_REQUEST_NULL
+    send_req2 = MPI_REQUEST_NULL; recv_req2 = MPI_REQUEST_NULL
     if (west_halo_opt) then
-      call MPI_SENDRECV(field%d, 1, field%halo(east)%send_type_3d(t1,t2,t3), field%halo(east)%proc_id, 31, &
-                        field%d, 1, field%halo(west)%recv_type_3d(t1,t2,t3), field%halo(west)%proc_id, 31, &
-                        proc%comm, MPI_STATUS_IGNORE, ierr)
+        call MPI_ISEND(field%d, 1, field%halo(east)%send_type_3d(t1,t2,t3), field%halo(east)%proc_id, 31, &
+                      proc%comm, send_req1, ierr)
+        call MPI_IRECV(field%d, 1, field%halo(west)%recv_type_3d(t1,t2,t3), field%halo(west)%proc_id, 31, &
+                      proc%comm, recv_req1, ierr)    
+        ! call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
+        ! call MPI_WAIT(recv_req1, MPI_STATUS_IGNORE, ierr)
+        ! reqs8(counter) = send_req1
+        ! counter = counter + 1   
+        ! reqs8(counter) = recv_req1
+        counter = counter + 2   
+        ! counter = counter                 
     end if
 
     if (east_halo_opt) then
-      call MPI_SENDRECV(field%d, 1, field%halo(west)%send_type_3d(t1,t2,t3), field%halo(west)%proc_id, 32, &
-                        field%d, 1, field%halo(east)%recv_type_3d(t1,t2,t3), field%halo(east)%proc_id, 32, &
-                        proc%comm, MPI_STATUS_IGNORE, ierr)
+        call MPI_ISEND(field%d, 1, field%halo(west)%send_type_3d(t1,t2,t3), field%halo(west)%proc_id, 32, &
+                      proc%comm, send_req2, ierr)
+        call MPI_IRECV(field%d, 1, field%halo(east)%recv_type_3d(t1,t2,t3), field%halo(east)%proc_id, 32, &
+                      proc%comm, recv_req2, ierr)  
+        ! reqs8(counter) = send_req2
+        ! counter = counter + 1
+        ! reqs8(counter) = recv_req2
+        counter = counter + 2   
     end if
+
+
+    ! MPIWaitall();
+
+      send_req3 = MPI_REQUEST_NULL; recv_req3 = MPI_REQUEST_NULL
+    if (south_halo_opt) then
+      if (.not. proc%at_north_pole) then
+        call MPI_ISEND(field%d, 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 33, &
+                       proc%comm, send_req3, ierr)
+        counter = counter + 1   
+      end if
+      if (.not. proc%at_south_pole) then
+        call MPI_IRECV(field%d, 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 33, &
+                       proc%comm, recv_req3, ierr)
+        counter = counter + 1   
+      end if
+      ! call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
+      ! call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+        ! reqs8(counter) = send_req3
+        ! counter = counter + 1
+        ! reqs8(counter) = recv_req3
+
+    end if
+
+
+      send_req4 = MPI_REQUEST_NULL; recv_req4 = MPI_REQUEST_NULL
+    if (north_halo_opt) then
+      if (.not. proc%at_south_pole) then
+        call MPI_ISEND(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 34, &
+                       proc%comm, send_req4, ierr)
+        counter = counter + 1   
+      end if
+      if (.not. proc%at_north_pole) then
+        call MPI_IRECV(field%d, 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 34, &
+                       proc%comm, recv_req4, ierr)
+        counter = counter + 1   
+      end if
+      ! call MPI_WAIT(send_req4, MPI_STATUS_IGNORE, ierr)
+      ! call MPI_WAIT(recv_req4, MPI_STATUS_IGNORE, ierr)
+        ! reqs8(counter) = send_req4
+        ! counter = counter + 1   
+        ! reqs8(counter) = recv_req4 
+    end if
+
+    ! call MPI_Waitall(counter - 1, reqs8, status8, ierr)
+    if (counter .eq. 0) then 
+        counter = counter + 1
+    else if (counter .eq. 1) then 
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs1(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs1(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs1(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs1(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs1(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs1(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs1(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs1(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs1, status1, ierr)
+    else if (counter .eq. 2) then 
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs2(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs2(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs2(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs2(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs2(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs2(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs2(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs2(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs2, status2, ierr)
+    else if (counter .eq. 3) then 
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs3(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs3(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs3(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs3(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs3(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs3(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs3(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs3(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs3, status3, ierr)
+    else if (counter .eq. 4) then
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs4(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs4(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs4(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs4(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs4(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs4(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs4(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs4(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs4, status4, ierr)
+    else if (counter .eq. 5) then 
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs5(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs5(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs5(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs5(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs5(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs5(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs5(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs5(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs5, status5, ierr)
+    else if (counter .eq. 6) then 
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs6(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs6(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs6(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs6(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs6(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs6(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs6(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs6(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs6, status6, ierr)
+    else if (counter .eq. 7) then 
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs7(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs7(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs7(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs7(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs7(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs7(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs7(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs7(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs7, status7, ierr)
+    else if (counter .eq. 8) then 
+      if (east_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs8(numreqs) = send_req1
+        numreqs = numreqs + 1 
+        reqs8(numreqs) = recv_req1
+      end if 
+      if (west_halo_opt) then 
+        numreqs = numreqs + 1
+        reqs8(numreqs) = send_req2
+        numreqs = numreqs + 1 
+        reqs8(numreqs) = recv_req2
+      end if 
+      if (south_halo_opt) then 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs8(numreqs) = send_req3
+        end if 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs8(numreqs) = recv_req3
+        end if
+      end if 
+      if (north_halo_opt) then 
+        if (.not. proc%at_south_pole) then 
+          numreqs = numreqs + 1
+          reqs8(numreqs) = send_req4
+        end if 
+        if (.not. proc%at_north_pole) then 
+          numreqs = numreqs + 1
+          reqs8(numreqs) = recv_req4
+        end if
+      end if 
+      call MPI_Waitall(numreqs, reqs8, status8, ierr)
+
+    end if  
+
+
+  else 
+
+      if (west_halo_opt) then
+        call MPI_SENDRECV(field%d, 1, field%halo(east)%send_type_3d(t1,t2,t3), field%halo(east)%proc_id, 31, &
+                          field%d, 1, field%halo(west)%recv_type_3d(t1,t2,t3), field%halo(west)%proc_id, 31, &
+                          proc%comm, MPI_STATUS_IGNORE, ierr)
+      end if
+
+      if (east_halo_opt) then
+        call MPI_SENDRECV(field%d, 1, field%halo(west)%send_type_3d(t1,t2,t3), field%halo(west)%proc_id, 32, &
+                          field%d, 1, field%halo(east)%recv_type_3d(t1,t2,t3), field%halo(east)%proc_id, 32, &
+                          proc%comm, MPI_STATUS_IGNORE, ierr)  
+      end if
 
     if (south_halo_opt) then
       send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
@@ -249,6 +636,46 @@ contains
       call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
       call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
     end if
+    ! if (south_halo_opt) then
+    !   send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
+    !   if (proc%at_south_pole) then
+    !     call MPI_ISEND(field%d, 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 33, &
+    !                   proc%comm, send_req, ierr)  
+    !     call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
+    !   else if (proc%at_north_pole) then
+    !     call MPI_IRECV(field%d, 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 33, &
+    !                   proc%comm, recv_req, ierr)
+    !     call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+    !   else if (.not. proc%at_north_pole .and. .not. proc%at_north_pole) then
+    !     call MPI_SENDRECV(field%d, 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 33, &
+    !                       field%d, 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 33, &
+    !                       proc%comm, MPI_STATUS_IGNORE, ierr)  
+    !   endif
+    ! end if
+
+    ! if (north_halo_opt) then
+    !   send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
+    !   if (proc%at_north_pole) then
+    !     call MPI_ISEND(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 34, &
+    !                    proc%comm, send_req, ierr)
+    !     call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
+    !   else if (proc%at_south_pole) then
+    !     call MPI_IRECV(field%d, 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 34, &
+    !                    proc%comm, recv_req, ierr)
+    !     call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+    !   else if (.not. proc%at_north_pole .and. .not. proc%at_north_pole) then
+    !     call MPI_SENDRECV(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 34, &
+    !                       field%d, 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 34, &
+    !                       proc%comm, MPI_STATUS_IGNORE, ierr)  
+    !   endif
+    ! end if
+    end if 
+
+
+
+
+    ! if (north_halo_opt .and. south_halo_opt) then
+
 
     if (south_halo_opt .and. proc%at_south_pole .and. field%halo_cross_pole) then
       call MPI_SENDRECV(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 35, &
