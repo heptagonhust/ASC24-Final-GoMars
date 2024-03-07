@@ -239,17 +239,8 @@ contains
       je = field%mesh%half_jme
     end if
 
-    ! spherical_area_with_last_small_arc
-    ! swm 
 
-
-  ! omp {
-  !   #omp
-  !   for ()
-  ! }
-    ! swallow water mode
-
-  if (iftest .eq. 1) then 
+  if (iftest .eq. 0) then 
     if (west_halo_opt) then
       call MPI_SENDRECV(field%d, 1, field%halo(east)%send_type_3d(t1,t2,t3), field%halo(east)%proc_id, 31, &
                         field%d, 1, field%halo(west)%recv_type_3d(t1,t2,t3), field%halo(west)%proc_id, 31, &
@@ -359,11 +350,6 @@ contains
                        proc%comm, recv_req3, ierr)
         counter = counter + 1
       end if
-      ! call MPI_WAIT(send_req3, MPI_STATUS_IGNORE, ierr)
-      ! call MPI_WAIT(recv_req3, MPI_STATUS_IGNORE, ierr)
-      ! call MPI_Buffer_detach(send_buffer1, send_size + 1000 ,ierr)
-      ! deallocate(send_buffer1)
-      ! call MPI_Buffer_detach(send_buffer1, send_size + 1000 ,ierr)
     end if
 
 
@@ -372,7 +358,6 @@ contains
     if (north_halo_opt) then
       ! send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
       if (.not. proc%at_south_pole) then
-        ! call MPI_BUFFER_ATTACH(send_buffer2, send_size + 1000 ,ierr)
         call t_startf('IBSEND')
         call MPI_IbSEND(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 34, &
                        proc%comm, send_req4, ierr)
@@ -384,9 +369,6 @@ contains
                        proc%comm, recv_req4, ierr)
         counter = counter + 1
       end if
-
-      ! call MPI_WAIT(send_req4, MPI_STATUS_IGNORE, ierr)
-      ! call MPI_WAIT(recv_req4, MPI_STATUS_IGNORE, ierr)
     end if
 
       ! call MPI_WAIT(send_req3, MPI_STATUS_IGNORE, ierr)
@@ -466,129 +448,10 @@ contains
           end if
         call MPI_Waitall(4, reqs4, status4, ierr)
       end if
-
-      ! if (north_halo_opt .and. south_halo_opt) then 
-      !   if (.not. proc%at_south_pole) then 
-      !     counter = counter + 1
-      !     reqs4(counter) = send_req4
-      !     counter = counter + 1
-      !     reqs4(counter) = recv_req3
-      ! ! ! !   end if 
-      ! ! ! !   if (.not.  proc%at_north_pole) then 
-      !     counter = counter + 1
-      !     reqs4(counter) = send_req3
-      !     counter = counter + 1
-      !     reqs4(counter) = recv_req4
-      ! !   end if
-      !   MPI
-      ! else if (north_halo_opt) then 
-      ! if ((recv_req3 .ne. MPI_REQUEST_NULL) .and. (send_req3 .ne. MPI_REQUEST_NULL) .and. (recv_req4 .ne. MPI_REQUEST_NULL) .and. (send_req4 .ne. MPI_REQUEST_NULL)) then 
-      !   req3 += 
-      ! else if    
-      ! if (north)
-      ! else if (south_halo_opt) then 
-      ! if (north_halo_opt .and. north_halo_opt) then
-      ! if (.not. proc%at_north_pole ) then 
-
-      ! end if 
-      ! if (send_req3 == NULL ) 
-      ! call MPI_Waitany(4, reqs4, status4, ierr)
-      ! call MPI_WAIT(send_req4, MPI_STATUS_IGNORE, ierr)
-      ! call MPI_WAIT(recv_req3, MPI_STATUS_IGNORE, ierr)
-      ! call MPI_WAIT(send_req4, MPI_STATUS_IGNORE, ierr)
-      ! call MPI_WAIT(recv_req4, MPI_STATUS_IGNORE, ierr)
-
       ! ! call MPI_WAIT(re)
       call MPI_Buffer_detach(send_buffer1, send_size * 2 + 1000 ,ierr)
       ! call MPI_Buffer_detach(send_buffer2, send_size + 1000 ,ierr)
     deallocate(send_buffer1)
-    ! deallocate(send_buffer2)
-
-    ! call MPI_TYPE_SIZE(field%halo(north)%send_type_3d(t1,t2,t3), send_size, ierr)
-    ! allocate(send_buffer1(send_size + 1000))
-
-
-    ! if (south_halo_opt) then
-    !   send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
-
-    !   if (.not. proc%at_north_pole) then
-    !     call MPI_BUFFER_ATTACH(send_buffer1, send_size + 1000 ,ierr)
-    !     call MPI_IbSEND(field%d, 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 33, &
-    !                    proc%comm, send_req, ierr)
-    !     call MPI_Buffer_detach(send_buffer1, send_size + 1000 ,ierr)
-    !   end if
-    !   if (.not. proc%at_south_pole) then
-    !     call MPI_IRECV(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 33, &
-    !                    proc%comm, send_req, ierr)
-    !   end if
-    !   call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
-    !   call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
-
-    !   ! deallocate(send_buffer1)
-    !   ! call MPI_Buffer_detach(recv_buffer, send_size + 1000 ,ierr)
-    ! end if
-
-
-    ! call MPI_TYPE_SIZE(field%halo(south)%send_type_3d(t1,t2,t3), send_size, ierr)
-    ! if (north_halo_opt) then
-    !   send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
-    !   ! allocate(send_buffer2(send_size + 1000))
-
-    !   if (.not. proc%at_south_pole) then
-    !     call MPI_BUFFER_ATTACH(send_buffer1, send_size + 1000 ,ierr)
-    !     call MPI_IbSEND(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 34, &
-    !                    proc%comm, send_req, ierr)
-    !     call MPI_Buffer_detach(send_buffer1, send_size + 1000, ierr)
-    !   end if
-    !   if (.not. proc%at_north_pole) then
-    !     call MPI_IRECV(field%d, 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 34, &
-    !                    proc%comm, recv_req, ierr)
-    !   end if
-    !   call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
-    !   call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
-
-    ! end if
-
-    !   deallocate(send_buffer1)
-      
-
-
-
-
-
-    ! if (south_halo_opt) then
-    !   send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
-    !   if (proc%at_south_pole) then
-    !     call MPI_ISEND(field%d, 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 33, &
-    !                   proc%comm, send_req, ierr)  
-    !     call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
-    !   else if (proc%at_north_pole) then
-    !     call MPI_IRECV(field%d, 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 33, &
-    !                   proc%comm, recv_req, ierr)
-    !     call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
-    !   else if (.not. proc%at_north_pole .and. .not. proc%at_north_pole) then
-    !     call MPI_SENDRECV(field%d, 1, field%halo(north)%send_type_3d(t1,t2,t3), field%halo(north)%proc_id, 33, &
-    !                       field%d, 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 33, &
-    !                       proc%comm, MPI_STATUS_IGNORE, ierr)  
-    !   endif
-    ! end if
-
-    ! if (north_halo_opt) then
-    !   send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
-    !   if (proc%at_north_pole) then
-    !     call MPI_ISEND(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 34, &
-    !                    proc%comm, send_req, ierr)
-    !     call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
-    !   else if (proc%at_south_pole) then
-    !     call MPI_IRECV(field%d, 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 34, &
-    !                    proc%comm, recv_req, ierr)
-    !     call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
-    !   else if (.not. proc%at_north_pole .and. .not. proc%at_north_pole) then
-    !     call MPI_SENDRECV(field%d, 1, field%halo(south)%send_type_3d(t1,t2,t3), field%halo(south)%proc_id, 34, &
-    !                       field%d, 1, field%halo(north)%recv_type_3d(t1,t2,t3), field%halo(north)%proc_id, 34, &
-    !                       proc%comm, MPI_STATUS_IGNORE, ierr)  
-    !   endif
-    ! end if
     end if 
 
 
