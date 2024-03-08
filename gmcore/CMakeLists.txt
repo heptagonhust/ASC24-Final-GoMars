@@ -56,8 +56,8 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   endif ()
   # FIXME: OpenMP causes sigmentation faults.
   # list(APPEND fortran_flags -fopenmp)
-# elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+# elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" )
   add_definitions(-DFC_IS_INTEL)
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND fortran_flags
@@ -71,9 +71,9 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
   else ()
     list(APPEND fortran_flags
       -no-wrap-margin
-      -O3
+      -O0
       -align array64byte
-      -qopenmp
+      # -qopenmp
       # -fp-model precise
     )
   endif ()
@@ -380,6 +380,7 @@ find_package(OpenMP)
 
 if(OpenMP_Fortran_FOUND)
   # 如果找到了OpenMP，为Fortran编译器设置OpenMP编译选项
+  message("Found OMP!")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
   list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
 endif()
