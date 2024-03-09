@@ -14,6 +14,7 @@ module operators_mod
   use adv_mod
   use interp_mod
   use filter_mod
+  use omp_lib
 
   implicit none
 
