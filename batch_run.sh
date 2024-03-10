@@ -37,7 +37,10 @@ run ( ) {
 	suffix="/namelist"
 	namelist_relative_path="${prefix}${case_name}/${suffix}"
 	namelist_absolute_path=$(readlink -f ${namelist_relative_path} )
-	data_path="/data/gomars_output/$(whoami)/ncdata/${case_name}/N${2}n${3}"
+	data_path="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/$(date +"%y-%m-%d-%T")"
+	cd ..
+	current_dir=$(pwd)
+	cd gmcore/
 
 	if [ ! -d ${data_path} ]; then    
 		mkdir -p ${data_path}
@@ -55,7 +58,8 @@ run ( ) {
 		exe_absolute_path=$normal_exe_absolute_path
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
-	mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
 	popd
 }
 
