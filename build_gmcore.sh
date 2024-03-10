@@ -25,8 +25,13 @@ current_dir=$(pwd)
 export NETCDF_ROOT=$current_dir/netcdf
 export GPTL_ROOT=$current_dir/gptl
 
+target_dir="$current_dir/build"
 
-rm -rf build
-cmake -B build
+if [ ! -d "$target_dir" ]; then
+	rm -rf build
+	cmake -B build -G Ninja 
+	echo "hello"
+fi
 cd build
-make -j8
+# make -j8
+ninja
