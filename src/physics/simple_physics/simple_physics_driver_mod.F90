@@ -1,7 +1,18 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module simple_physics_driver_mod
 
   use tracer_mod
   use simple_physics_types_mod
+  use simple_physics_objects_mod
+  use simple_physics_output_mod
 
   implicit none
 
@@ -11,15 +22,10 @@ module simple_physics_driver_mod
   public simple_physics_final
   public simple_physics_run
   public simple_physics_p2d
+  public simple_physics_add_output
+  public simple_physics_output
   public objects
 
-  type simple_physics_objects_type
-    type(physics_mesh_type), pointer :: mesh
-    type(simple_state_type) state
-    type(simple_tend_type ) tend
-  end type simple_physics_objects_type
-
-  type(simple_physics_objects_type), allocatable :: objects(:)
   real(r8) dt
 
 contains
@@ -37,13 +43,7 @@ contains
 
     call tracer_add('moist', dt_adv, 'qv', 'Water vapor', 'kg kg-1')
 
-    nblk = size(mesh)
-    allocate(objects(nblk))
-    do iblk = 1, nblk
-      objects(iblk)%mesh => mesh(iblk)
-      call objects(iblk)%state%init(objects(iblk)%mesh)
-      call objects(iblk)%tend %init(objects(iblk)%mesh)
-    end do
+    call simple_physics_objects_init(mesh)
 
     dt = dt_phys
 
@@ -51,14 +51,7 @@ contains
 
   subroutine simple_physics_final()
 
-    integer iblk
-
-    if (allocated(objects)) then
-      do iblk = 1, size(objects)
-        call objects(iblk)%state%clear()
-        call objects(iblk)%tend %clear()
-      end do
-    end if
+    call simple_physics_objects_final()
 
   end subroutine simple_physics_final
 

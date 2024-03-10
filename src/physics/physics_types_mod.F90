@@ -9,6 +9,7 @@
 
 module physics_types_mod
 
+  use flogger
   use const_mod
   use namelist_mod
   use physics_mesh_mod
@@ -149,6 +150,8 @@ contains
     call this%physics_state_clear()
 
     this%mesh => mesh
+
+    if (ntracers < 1) call log_error('ntracers is less than 1!', __FILE__, __LINE__)
 
     allocate(this%u         (mesh%ncol,mesh%nlev         ))
     allocate(this%v         (mesh%ncol,mesh%nlev         ))

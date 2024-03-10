@@ -15,7 +15,7 @@
 !
 !   20230821: Initial creation.
 !
-! Authours:
+! Authors:
 !
 !   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
 ! ==============================================================================

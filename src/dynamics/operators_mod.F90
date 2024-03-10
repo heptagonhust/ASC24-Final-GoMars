@@ -93,7 +93,7 @@ contains
       end if
       if (baroclinic    ) call calc_t     (blocks(iblk), blocks(iblk)%dstate(itime))
       call calc_mf                        (blocks(iblk), blocks(iblk)%dstate(itime), dt)
-      call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime))
+      call calc_ke                        (blocks(iblk), blocks(iblk)%dstate(itime),     total_substeps)
       call calc_pv                        (blocks(iblk), blocks(iblk)%dstate(itime))
       call interp_pv                      (blocks(iblk), blocks(iblk)%dstate(itime), dt, total_substeps)
       if (baroclinic    ) call calc_gz_lev(blocks(iblk), blocks(iblk)%dstate(itime))
@@ -117,7 +117,7 @@ contains
     ! --------------------------------------------------------------------------
     case (all_pass)
       call calc_mf                        (block, dstate, dt)
-      call calc_ke                        (block, dstate)
+      call calc_ke                        (block, dstate,     substep)
       call calc_pv                        (block, dstate)
       call interp_pv                      (block, dstate, dt, substep)
       if (baroclinic    ) call calc_t     (block, dstate)
@@ -127,7 +127,7 @@ contains
     ! --------------------------------------------------------------------------
     case (forward_pass)
       call calc_mf                        (block, dstate, dt)
-      call calc_ke                        (block, dstate)
+      call calc_ke                        (block, dstate,     substep)
       call calc_pv                        (block, dstate)
       call interp_pv                      (block, dstate, dt, substep)
     ! --------------------------------------------------------------------------
@@ -352,10 +352,11 @@ contains
 
   end subroutine calc_we_lev
 
-  subroutine calc_ke(block, dstate)
+  subroutine calc_ke(block, dstate, substep)
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
+    integer, intent(in) :: substep
 
     integer i, j, k
     real(r8) ke_vtx(4)
@@ -379,6 +380,11 @@ contains
         end do
       end do
     end do
+
+    if (substep < total_substeps) then
+      call perf_stop('calc_ke')
+      return
+    end if
 
     if (ke_scheme == 2) then
       !
@@ -793,6 +799,8 @@ contains
 
     integer i, j, k
 
+    call perf_start('interp_pv_midpoint')
+
     associate (mesh   => block%mesh      , &
                pv     => block%aux%pv    , & ! in
                pv_lon => block%aux%pv_lon, & ! out
@@ -815,6 +823,8 @@ contains
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)
     end associate
 
+    call perf_start('interp_pv_midpoint')
+
   end subroutine interp_pv_midpoint
 
   subroutine interp_pv_upwind(block, dstate, dt, substep)
@@ -827,10 +837,10 @@ contains
     real(r8) b
     integer i, j, k
 
-    ! if (substep < total_substeps) then
-    !   call interp_pv_midpoint(block, dstate, dt, substep)
-    !   return
-    ! end if
+    if (substep < total_substeps) then
+      call interp_pv_midpoint(block, dstate, dt, substep)
+      return
+    end if
 
     call perf_start('interp_pv_upwind')
 

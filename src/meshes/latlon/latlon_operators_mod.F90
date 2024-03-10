@@ -1,3 +1,24 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+! Description:
+!
+!   This module implements basic differential operators on the lat-lon meshes.
+!
+! History:
+!
+!   20240304: Initial creation.
+!
+! Authors:
+!
+!   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
+! ==============================================================================
+
 module latlon_operators_mod
 
   use const_mod

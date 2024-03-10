@@ -307,10 +307,9 @@ contains
 
     if (physics_suite == 'N/A') return
 
-    call fiona_add_var('h0', 'alb' , long_name='Surface albedo'              , units='', dim_names=dims, dtype=output_h0_dtype)
-    call fiona_add_var('h0', 'cosz', long_name='Cosine of solar zenith angle', units='', dim_names=dims, dtype=output_h0_dtype)
-
     select case (physics_suite)
+    case ('simple_physics')
+      call simple_physics_add_output('h1', output_h0_dtype)
     case ('mars_nasa')
       call mars_nasa_add_output('h0', output_h0_dtype)
     end select
@@ -335,14 +334,13 @@ contains
     count = [ie-is+1,je-js+1,ke-ks+1]
 
     select case (physics_suite)
+    case ('simple_physics')
+      call simple_physics_output('h0', block%id, start, count)
     case ('mars_nasa')
       call mars_nasa_output('h0', block%id, start, count)
       state  => mars_nasa_objects(block%id)%state
       static => mars_nasa_objects(block%id)%static
     end select
-
-    call fiona_output('h0', 'alb' , reshape(static%alb    , count(1:2)), start=start(1:2), count=count(1:2))
-    call fiona_output('h0', 'cosz', reshape(state%cosz    , count(1:2)), start=start(1:2), count=count(1:2))
 
   end subroutine physics_output
 

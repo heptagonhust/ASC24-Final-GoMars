@@ -280,6 +280,8 @@ target_sources(gmcore PRIVATE
   src/physics/physics_types_mod.F90
   src/physics/simple_physics/simple_physics_v6.f90
   src/physics/simple_physics/simple_physics_types_mod.F90
+  src/physics/simple_physics/simple_physics_objects_mod.F90
+  src/physics/simple_physics/simple_physics_output_mod.F90
   src/physics/simple_physics/simple_physics_driver_mod.F90
   src/physics/test_forcing_mod.F90
   src/physics/mars_nasa/mars_nasa_const_mod.F90

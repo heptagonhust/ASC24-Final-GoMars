@@ -6,6 +6,19 @@
 ! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
 ! WARRANTY. You may contact authors for helping or cooperation.
 ! ==============================================================================
+! Description:
+!
+!   This module implements the semi-implicit solver for the nonhydrostatic
+!   dynamical core.
+!
+! History:
+!
+!   20240303: Change calculation method of half level pressure from w equation.
+!
+! Authors:
+!
+!   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
+! ==============================================================================
 
 module nh_mod
 
