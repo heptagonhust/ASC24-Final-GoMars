@@ -37,7 +37,7 @@ run ( ) {
 	suffix="/namelist"
 	namelist_relative_path="${prefix}${case_name}/${suffix}"
 	namelist_absolute_path=$(readlink -f ${namelist_relative_path} )
-	data_path="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/$(date +"%y-%m-%d-%T")"
+	data_path="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/$(date +"%y-%m-%dT%T")"
 	cd ..
 	current_dir=$(pwd)
 	cd gmcore/
