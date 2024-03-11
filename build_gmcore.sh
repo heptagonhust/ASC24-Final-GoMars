@@ -1,15 +1,17 @@
 #!/bin/bash
 
 set -e
+cd "$(dirname $0)" || exit 1
 
 source ./env.sh
 
-cd gmcore/
+cd gmcore
 
-if [ ! -d "lib" ]; then
-	mkdir -p ./lib
-	cp -r /data/gomars_libs/gmcore_libs/* ./lib
+mkdir -p ./lib
+if [ x"$(ls -A lib)" = x"" ]; then
+  cp -r /data/gomars_libs/gmcore_libs/* ./lib
 fi
+
 ./pull_libs.py
 
 # spack load cmake@3.24.4
@@ -20,21 +22,21 @@ fi
 # spack load hdf5/fxhrrhv
 # export CC=mpiicx
 # export FC=mpiifx
+
+export H5DIR=$(spack location -i hdf5)
+export CURLDIR=$(spack location -i curl)
+export XML2DIR=$(spack location -i libxml2)
+
 echo "CC: $CC"
 echo "FC: $FC"
 echo "F77: $F77"
 
-current_dir=$(pwd)
-export NETCDF_ROOT=$current_dir/netcdf
-export GPTL_ROOT=$current_dir/gptl
+export NETCDF_ROOT="$(pwd)/netcdf"
+export GPTL_ROOT="$(pwd)/gptl"
 
-target_dir="$current_dir/build"
-
-if [ -d "$target_dir" ]; then
-  rm -rf "$target_dir"
-	cmake -B build -G Ninja 
+if [ ! -d build ]; then
+  cmake -B build -G Ninja 
 fi
-
 cd build
 # make -j8
 ninja
