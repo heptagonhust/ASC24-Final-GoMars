@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # spack load cmake@3.24.4
 # spack load intel-oneapi-compilers@2024.0.1/xbteted
 # spack load intel-oneapi-mkl@2024.0.0
@@ -66,7 +68,7 @@ export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
 
 cd  ../netcdf-fortran-4.6.1/
 
-make clean
+[ -f Makefile ] || [ -f makefile ] && make clean
 CPPFLAGS="-I${NCDIR}/include -I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include" \
     LDFLAGS="-L${NCDIR}/lib -L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
     ./configure --prefix=${NFDIR}
