@@ -1,9 +1,7 @@
 #!/bin/bash
-#SBATCH -N 1
-#SBATCH -n 16
-#SBATCH --exclude hepnode3 
+#SBATCH -N 3
+#SBATCH -n 384
 #SBATCH --exclude hepnode0
-#SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
 
@@ -19,6 +17,8 @@ if [  $(hostname) != "hepnode0" ]; then
 fi
 
 source ./env.sh
+
+message=$2
 
 run ( ) {
 	
@@ -40,7 +40,7 @@ run ( ) {
 	suffix="/namelist"
 	namelist_relative_path="${prefix}${case_name}/${suffix}"
 	namelist_absolute_path=$(readlink -f ${namelist_relative_path} )
-	data_path="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/$(date +"%y-%m-%dT%T")"
+	data_path="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")"
 	cd ..
 	current_dir=$(pwd)
 	cd gmcore/
@@ -68,7 +68,7 @@ run ( ) {
 
 
 if [ -z $1 ]; then
-	echo "Usage: $0 <case_list>"
+	echo "Usage: $0 <case_list> <message>"
 	exit 1
 fi
 
@@ -82,6 +82,6 @@ done < $1
 for cmd in "${cmd_array[@]}"
 do
 	pushd ./gmcore
-	run $cmd
+	run $cmd $2
 	popd
 done
