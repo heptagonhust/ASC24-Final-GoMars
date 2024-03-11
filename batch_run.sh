@@ -9,7 +9,7 @@ cat $0
 echo "******batch_run.sh*******"
 
 
-if [  $(hostname) != "hustcpu02" ]; then
+if [  $(hostname) != "hepnode0" ]; then
 	export UCX_RC_PATH_MTU=2048
 	export I_MPI_HYDRA_RMK=slurm
 	export OMP_NUM_THREADS=1
@@ -19,7 +19,7 @@ source ./env.sh
 
 run ( ) {
 	
-	if [ $(hostname) != "hustcpu02" ]; then
+	if [ $(hostname) != "hepnode0" ]; then
 		export UCX_RC_PATH_MTU=2048
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
