@@ -14,10 +14,15 @@
 
 source ./env.sh
 
+export CC=mpiicx
+export FC=mpiifort
+export F77=mpiifort
+
+
 # export H5DIR=$(spack location -i hdf5 ~shared)
-export H5DIR=$(spack location -i hdf5/fxhrrhv)
+export H5DIR=$(spack location -i hdf5)
 export CURLDIR=$(spack location -i curl)
-export XML2DIR=$(spack location -i libxml2/q66mtbb)
+export XML2DIR=$(spack location -i libxml2)
 
 target_dir="netcdf"
 pushd gmcore
@@ -48,7 +53,9 @@ NFDIR=$(pwd)
 
 cd netcdf-c-4.9.2/
 
-CPPFLAGS="-I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include" \
+# NMSLDIR=$(pwd)
+
+CPPFLAGS="-I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include " \
     LDFLAGS="-L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
     ./configure --prefix=${CDIR}
 
