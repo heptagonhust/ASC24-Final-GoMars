@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -e
+
 source ./env.sh
 
 cd gmcore/
@@ -27,11 +30,11 @@ export GPTL_ROOT=$current_dir/gptl
 
 target_dir="$current_dir/build"
 
-if [ ! -d "$target_dir" ]; then
-	rm -rf build
+if [ -d "$target_dir" ]; then
+  rm -rf "$target_dir"
 	cmake -B build -G Ninja 
-	echo "hello"
 fi
+
 cd build
 # make -j8
 ninja
