@@ -2,6 +2,7 @@
 #SBATCH -N 3
 #SBATCH -n 384
 #SBATCH --exclude hepnode0
+#SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
 
