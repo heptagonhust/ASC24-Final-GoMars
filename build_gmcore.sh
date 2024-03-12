@@ -26,6 +26,7 @@ fi
 export H5DIR=$(spack location -i hdf5)
 export CURLDIR=$(spack location -i curl)
 export XML2DIR=$(spack location -i libxml2)
+export OPENMP_STATIC_LIB_PATH="$(spack location -i intel-oneapi-compilers@2024.0.2)/compiler/latest/lib/libiomp5.a"
 
 echo "CC: $CC"
 echo "FC: $FC"
@@ -33,6 +34,10 @@ echo "F77: $F77"
 
 export NETCDF_ROOT="$(pwd)/netcdf"
 export GPTL_ROOT="$(pwd)/gptl"
+
+if [ x"$1" = xrebuild ]; then
+  rm -rf build
+fi
 
 if [ ! -d build ]; then
   cmake -B build -G Ninja 
