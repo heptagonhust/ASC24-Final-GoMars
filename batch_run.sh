@@ -1,6 +1,9 @@
 #!/bin/bash
-#SBATCH -N 3
-#SBATCH -n 80
+#SBATCH -N 1
+#SBATCH -n 16
+#SBATCH --exclude hepnode3 
+#SBATCH --exclude hepnode0
+#SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
 

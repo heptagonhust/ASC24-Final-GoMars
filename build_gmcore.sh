@@ -12,7 +12,7 @@ if [ x"$(ls -A lib)" = x"" ]; then
   cp -r /data/gomars_libs/gmcore_libs/* ./lib
 fi
 
-./pull_libs.py
+# ./pull_libs.py
 
 # spack load cmake@3.24.4
 # spack load intel-oneapi-compilers@2024.0.1/xbteted 
@@ -32,7 +32,7 @@ echo "FC: $FC"
 echo "F77: $F77"
 
 export NETCDF_ROOT="$(pwd)/netcdf"
-export GPTL_ROOT="$(pwd)/gptl"
+# export GPTL_ROOT="$(pwd)/gptl"
 
 if [ ! -d build ]; then
   cmake -B build -G Ninja 
