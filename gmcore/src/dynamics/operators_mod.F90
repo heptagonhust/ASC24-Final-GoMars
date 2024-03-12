@@ -891,6 +891,7 @@ contains
 
     real(r8) b
     integer i, j, k
+    integer send_south_req, recv_south_req, send_north_req, recv_north_req
 
     ! if (substep < total_substeps) then
     !   call interp_pv_midpoint(block, dstate, dt, substep)
@@ -898,6 +899,7 @@ contains
     ! end if
 
     call perf_start('interp_pv_upwind')
+
 
     associate (mesh   => block%mesh      , &
                un     => dstate%u_lon    , & ! in
@@ -917,6 +919,9 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
@@ -934,6 +939,9 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do 
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b  = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
@@ -951,16 +959,20 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
             pv_lat%d(i,j,k) = b * upwind5(sign(1.0_r8, ut%d(i,j,k)), upwind_wgt_pv, pv%d(i-3:i+2,j,k)) + &
-                              (1 - b) * 0.5_r8 * (pv%d(i-1,j,k) + pv%d(i,j,k))
+                              (1 - b) * 0.5_r8 * (pv%d(i-1,j,k) + pv%d(i,j,k))            
           end do
         end do
       end do
     end select
-    call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
+    ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
+    call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)
     end associate
 
