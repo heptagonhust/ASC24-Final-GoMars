@@ -10,11 +10,6 @@ cat $0
 echo "******batch_run.sh*******"
 
 
-if [  $(hostname) != "hepnode0" ]; then
-	export UCX_RC_PATH_MTU=2048
-	export I_MPI_HYDRA_RMK=slurm
-	export OMP_NUM_THREADS=1
-fi
 
 source ./env.sh
 
