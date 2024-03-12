@@ -56,8 +56,8 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   endif ()
   # FIXME: OpenMP causes sigmentation faults.
   # list(APPEND fortran_flags -fopenmp)
-# elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+# elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" )
   add_definitions(-DFC_IS_INTEL)
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND fortran_flags
@@ -73,7 +73,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
       -no-wrap-margin
       -O3
       -align array64byte
-      -qopenmp
+      # -qopenmp
       # -fp-model precise
     )
   endif ()
@@ -110,7 +110,23 @@ else ()
     message(FATAL_ERROR "Unable to find pkg-config library!")
   endif ()
 endif ()
-set(EXTERNAL_LIBS netcdff netcdf)
+
+if (DEFINED ENV{H5DIR})
+include_directories("$ENV{H5DIR}/include")
+link_directories("$ENV{H5DIR}/lib")
+endif ()
+if (DEFINED ENV{CURLDIR})
+include_directories("$ENV{CURLDIR}/include")
+link_directories("$ENV{CURLDIR}/lib")
+endif ()
+if (DEFINED ENV{XML2DIR})
+include_directories("$ENV{XML2DIR}/include")
+link_directories("$ENV{XML2DIR}/lib")
+endif ()
+
+set(EXTERNAL_LIBS netcdff -lhdf5_hl -lhdf5 -lm -lz -lsz -lzstd -lxml2 -lcurl)
+set(EXTERNAL_LIBS netcdf -lhdf5_hl -lhdf5 -lm -lz -lsz -lzstd -lxml2 -lcurl)
+#set(EXTERNAL_LIBS netcdff netcdf)
 
 if (DEFINED ENV{GPTL} AND (NOT DEFINED ENV{GPTL_ROOT}))
   set(ENV{GPTL_ROOT} $ENV{GPTL})
@@ -121,7 +137,8 @@ if (DEFINED ENV{GPTL_ROOT})
   set(HAS_GPTL TRUE)
   include_directories("$ENV{GPTL_ROOT}/include")
   link_directories("$ENV{GPTL_ROOT}/lib")
-  list(APPEND EXTERNAL_LIBS gptlf gptl)
+  list(APPEND EXTERNAL_LIBS gptlf -fopenmp -lm)
+  list(APPEND EXTERNAL_LIBS gptl -fopenmp -lm)
 endif ()
 
 if (DEFINED ENV{PIO} AND (NOT DEFINED ENV{PIO_ROOT}))
@@ -380,6 +397,7 @@ find_package(OpenMP)
 
 if(OpenMP_Fortran_FOUND)
   # 如果找到了OpenMP，为Fortran编译器设置OpenMP编译选项
+  message("Found OMP!")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
   list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
 endif()

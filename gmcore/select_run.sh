@@ -1,5 +1,4 @@
 #!/bin/bash
-#SBATCH -p GPU_nodes
 #SBATCH -N 2
 #SBATCH -n 60
 #SBATCH --output=./output/gomars_test.%j.out
