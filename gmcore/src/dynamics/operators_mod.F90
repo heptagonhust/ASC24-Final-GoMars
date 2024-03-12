@@ -836,8 +836,8 @@ contains
       end do
     end do
     !$omp end do
-    !$omp single
     ! lxy: todo: overlap, coz not found under.
+    !$omp single
     call fill_halo(u_lat)
     !$omp end single
     !$omp do collapse(3)
@@ -1039,7 +1039,7 @@ contains
     select case (upwind_order_pv)
     case (1)
       !$omp parallel
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1050,7 +1050,7 @@ contains
         end do
       end do
       !$omp end do
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -1064,7 +1064,7 @@ contains
       !$omp end parallel
     case (3)
       !$omp parallel
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1075,7 +1075,7 @@ contains
         end do
       end do
       !$omp end do
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -1089,7 +1089,7 @@ contains
       !$omp end parallel
     case (5)
       !$omp parallel
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1100,7 +1100,7 @@ contains
         end do
       end do
       !$omp end do
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -1145,7 +1145,7 @@ contains
     select case (coriolis_scheme)
     case (1)
       !$omp parallel 
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(tmp)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -1167,7 +1167,7 @@ contains
         end do
       end do
       !$omp end do
-      !$omp do collapse(3)
+      !$omp do collapse(3) private(tmp)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1236,7 +1236,7 @@ contains
                du   => dtend%du    , & ! out
                dv   => dtend%dv    )   ! out
     !$omp parallel 
-    !$omp do collapse(3)
+    !$omp do collapse(3) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -1249,7 +1249,7 @@ contains
       end do
     end do
     !$omp end do
-    !$omp do collapse(3)
+    !$omp do collapse(3) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1287,7 +1287,7 @@ contains
                mfy_lat => block%aux%mfy_lat, & ! in
                dmf     => block%aux%dmf    )   ! out
     !$omp parallel
-    !$omp do collapse(3)
+    !$omp do collapse(3) 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
@@ -1517,7 +1517,7 @@ contains
                du         => dtend%du            , & ! out
                dv         => dtend%dv            )   ! out
     !$omp parallel
-    !$omp do collapse(3)
+    !$omp do collapse(3) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -1533,7 +1533,7 @@ contains
       end do
     end do
     !$omp end do
-    !$omp do collapse(3)
+    !$omp do collapse(3) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
