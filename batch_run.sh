@@ -1,6 +1,9 @@
 #!/bin/bash
-#SBATCH -N 3
-#SBATCH -n 80
+#SBATCH -N 1
+#SBATCH -n 16
+#SBATCH --exclude hepnode3 
+#SBATCH --exclude hepnode0
+#SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
 
@@ -9,7 +12,7 @@ cat $0
 echo "******batch_run.sh*******"
 
 
-if [  $(hostname) != "hustcpu02" ]; then
+if [  $(hostname) != "hepnode0" ]; then
 	export UCX_RC_PATH_MTU=2048
 	export I_MPI_HYDRA_RMK=slurm
 	export OMP_NUM_THREADS=1
@@ -19,7 +22,7 @@ source ./env.sh
 
 run ( ) {
 	
-	if [ $(hostname) != "hustcpu02" ]; then
+	if [ $(hostname) != "hepnode0" ]; then
 		export UCX_RC_PATH_MTU=2048
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
