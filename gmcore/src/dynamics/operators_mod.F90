@@ -54,7 +54,7 @@ module operators_mod
     end subroutine interp_pv_interface
   end interface
 
-  procedure(interp_pv_interface), pointer :: interp_pv => null()
+  procedure(interp_pv_interface), pointer ::  interp_pv => null()
 
 contains
 
@@ -619,6 +619,7 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, l
+    integer send_south_req, recv_south_req, send_north_req, recv_north_req
 
     call perf_start('calc_dmg')
 
@@ -682,10 +683,14 @@ contains
 
     call fill_halo(dmg)
     call average_run(dmg, dmg_lon)
-    call fill_halo(dmg_lon)
+    ! call fill_halo(dmg_lon)
+    call fill_halo(dmg_lon, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     call average_run(dmg, dmg_lat)
-    call fill_halo(dmg_lat)
+    call fill_halo(dmg_lon, isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    ! call fill_halo(dmg_lat)
+    call fill_halo(dmg_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     call interp_run(dmg, dmg_vtx)
+    call fill_halo(dmg_lat, isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     end associate
 
     call perf_stop('calc_dmg')
@@ -699,6 +704,7 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
+    integer send_south_req, recv_south_req, send_north_req, recv_north_req
 
     call perf_start('calc_mf')
 
@@ -738,7 +744,8 @@ contains
         end do
       end do
     end do
-    call fill_halo(u_lat)
+    ! call fill_halo(u_lat)
+    call fill_halo(u_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -749,6 +756,9 @@ contains
         end do
       end do
     end do
+
+    call fill_halo(u_lat, isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    
     call fill_halo(v_lon)
     end associate
 

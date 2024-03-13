@@ -2,7 +2,8 @@
 #SBATCH -N 2
 #SBATCH -n 16
 #SBATCH --exclusive
-#SBATCH --exclude hepnode0
+#SBATCH -w hepnode[1-3]
+
 #SBATCH --output=./output/slurm-%j.out
 
 
