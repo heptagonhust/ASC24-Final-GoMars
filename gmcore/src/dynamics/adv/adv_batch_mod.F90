@@ -37,6 +37,7 @@ module adv_batch_mod
   use latlon_field_types_mod
   use latlon_parallel_mod
   use vert_coord_mod
+  use perf_mod
 
   implicit none
 
@@ -363,7 +364,6 @@ contains
   end subroutine adv_batch_copy_old_m
 
   subroutine adv_batch_set_wind(this, u_lon, v_lat, we_lev, mfx_lon, mfy_lat, dmg_lev)
-
     class(adv_batch_type), intent(inout) :: this
     type(latlon_field3d_type), intent(in) :: u_lon
     type(latlon_field3d_type), intent(in) :: v_lat
@@ -371,7 +371,7 @@ contains
     type(latlon_field3d_type), intent(in) :: mfx_lon
     type(latlon_field3d_type), intent(in) :: mfy_lat
     type(latlon_field3d_type), intent(in) :: dmg_lev
-
+    call perf_start('adv_batch_set_wind')
     call this%u  %link(u_lon  )
     call this%v  %link(v_lat  )
     call this%we %link(we_lev )
@@ -380,7 +380,7 @@ contains
     call this%mz %link(dmg_lev)
 
     if (this%scheme == 'ffsl') call this%prepare()
-
+    call perf_stop('adv_batch_set_wind')
   end subroutine adv_batch_set_wind
 
   subroutine adv_batch_accum_wind(this, dmg_lon, dmg_lat, dmg_lev, mfx_lon, mfy_lat)

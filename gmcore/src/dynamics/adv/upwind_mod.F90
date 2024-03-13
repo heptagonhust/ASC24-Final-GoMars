@@ -12,6 +12,8 @@ module upwind_mod
   use const_mod
   use adv_batch_mod
   use latlon_field_types_mod
+  use omp_lib
+  use perf_mod
 
   implicit none
 
@@ -34,7 +36,6 @@ contains
     real(r8), intent(in), optional :: dt
 
     integer ks, ke, i, j, k
-
     associate (mesh => m%mesh , &
                u    => batch%u, & ! in
                v    => batch%v)   ! in
@@ -56,7 +57,6 @@ contains
       end do
     end select
     end associate
-
   end subroutine upwind_calc_mass_hflx
 
   subroutine upwind_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
@@ -68,7 +68,7 @@ contains
     real(r8), intent(in), optional :: dt
 
     integer ks, ke, i, j, k
-
+    call perf_start('upwind_calc_tracer_hflx')
     associate (mesh => q%mesh   , &
                mfx  => batch%mfx, & ! in
                mfy  => batch%mfy)   ! in
@@ -90,7 +90,7 @@ contains
       end do
     end select
     end associate
-
+    call perf_stop('upwind_calc_tracer_hflx')
   end subroutine upwind_calc_tracer_hflx
 
   subroutine upwind_calc_tracer_vflx(batch, q, qmfz, dt)
@@ -101,7 +101,7 @@ contains
     real(r8), intent(in), optional :: dt
 
     integer i, j, k
-
+    call perf_start('upwind_calc_tracer_vflx')
     associate (mesh => q%mesh  , &
                we   => batch%we)   ! in
     select case (batch%loc)
@@ -123,7 +123,7 @@ contains
       end do
     end select
     end associate
-
+    call perf_stop('upwind_calc_tracer_vflx')
   end subroutine upwind_calc_tracer_vflx
 
   pure real(r8) function upwind1(dir, wgt, f) result(res)

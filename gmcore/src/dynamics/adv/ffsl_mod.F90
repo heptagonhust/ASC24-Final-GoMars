@@ -27,6 +27,8 @@ module ffsl_mod
   use adv_batch_mod
   use ppm_mod
   use limiter_mod
+  use perf_mod
+  use omp_lib
 
   implicit none
 
@@ -191,7 +193,7 @@ contains
     real(r8) work(q%mesh%full_ids:q%mesh%full_ide,q%mesh%half_nlev)
     real(r8) pole(q%mesh%half_nlev)
     real(r8) dt_opt
-
+    call perf_start('ffsl_calc_tracer_hflx')
     dt_opt = batch%dt; if (present(dt)) dt_opt = dt
 
     associate (mesh => q%mesh    , &
@@ -207,13 +209,20 @@ contains
                qmfx => qmfx      , & ! out
                qmfy => qmfy      )   ! out
     ! Run inner advective operators.
+    call perf_start('hflx')
     call hflx(batch, u, v, q, q, qmfx, qmfy)
+    call perf_stop('hflx')
+    call perf_start('fill_halo')
     call fill_halo(qmfx, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(qmfy, west_halo=.false., east_halo=.false., north_halo=.false.)
+    call perf_stop('fill_halo')
     select case (batch%loc)
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+      call perf_start('omp_123')
+
+      !$omp parallel do collapse(3)
       ! Calculate intermediate tracer density due to advective operators.
       do k = ks, ke
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -235,58 +244,96 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
+
+      call perf_stop('omp_123')
+
       ! Handle the Pole boundary conditions.
       if (mesh%has_south_pole()) then
         j = mesh%full_jds
+
+        call perf_start('omp2')
+
+        !$omp parallel 
+        !$omp do collapse(2)
         do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             work(i,k) = qmfy%d(i,j,k)
           end do
         end do
+        !$omp end do
+        !$omp master
         call zonal_sum(proc%zonal_circle, work(:,ks:ke), pole(ks:ke))
         pole(ks:ke) = pole(ks:ke) * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+        !$omp end master
+        !$omp do collapse(2)
         do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             qx%d(i,j,k) = q%d(i,j,k)
             qy%d(i,j,k) = q%d(i,j,k) - 0.5_r8 * (pole(k) - divy%d(i,j,k) * q%d(i,j,k)) * dt_opt
           end do
         end do
+        !$omp end do
+
+        call perf_stop('omp2')
+
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_jde
+
+        call perf_start('omp3')
+
+        !$omp parallel
+        !$omp do collapse(2)
         do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             work(i,k) = qmfy%d(i,j-1,k)
           end do
         end do
+        !$omp end do
+        !$omp master
         call zonal_sum(proc%zonal_circle, work(:,ks:ke), pole(ks:ke))
         pole(ks:ke) = pole(ks:ke) * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+        !$omp end master
+        !$omp do collapse(2)
         do k = ks, ke
           do i = mesh%full_ids, mesh%full_ide
             qx%d(i,j,k) = q%d(i,j,k)
             qy%d(i,j,k) = q%d(i,j,k) + 0.5_r8 * (pole(k) - divy%d(i,j,k) * q%d(i,j,k)) * dt_opt
           end do
         end do
+        !$omp end do
+
+        call perf_stop('omp3')
+
       end if
     case ('vtx')
     end select
+    call perf_start('fill_halo')
     call fill_halo(qx, west_halo=.false., east_halo=.false.)
     call fill_halo(qy, south_halo=.false., north_halo=.false.)
+    call perf_stop('fill_halo')
     ! Run outer flux form operators.
-    call hflx(batch, mfx, mfy, qy, qx, qmfx, qmfy)
-    end associate
 
+    call perf_start('hflx')
+
+    call hflx(batch, mfx, mfy, qy, qx, qmfx, qmfy)
+
+    call perf_stop('hflx')
+    
+    end associate
+    call perf_stop('ffsl_calc_tracer_hflx')
   end subroutine ffsl_calc_tracer_hflx
 
   subroutine ffsl_calc_tracer_vflx(batch, q, qmfz, dt)
-
     type(adv_batch_type     ), intent(inout) :: batch
     type(latlon_field3d_type), intent(in   ) :: q
     type(latlon_field3d_type), intent(inout) :: qmfz
     real(r8), intent(in), optional :: dt
-
+    
+    call perf_start('ffsl_calc_tracer_vflx')
     call vflx(batch, batch%we, q, qmfz)
-
+    call perf_stop('ffsl_calc_tracer_vflx')
   end subroutine ffsl_calc_tracer_vflx
 
   subroutine hflx_van_leer(batch, u, v, mx, my, mfx, mfy)
@@ -301,7 +348,7 @@ contains
 
     integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, dm
-
+    call perf_start('hflx_van_leer')
     associate (mesh => u%mesh    , &
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
@@ -309,6 +356,8 @@ contains
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+      !$omp parallel
+      !$omp  do private(iu, dm, cf, ci) collapse(2)
       do k = ks, ke
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -328,6 +377,10 @@ contains
             end if
           end do
         end do
+      end do
+      !$omp end do
+      !$omp do private(ju, dm, cf, ci) collapse(2)
+      do k = ks, ke
         ! Along y-axis
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -338,10 +391,12 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     case ('vtx')
     end select
-    end associate
-
+    end associate 
+    call perf_stop('hflx_van_leer')
   end subroutine hflx_van_leer
 
   subroutine vflx_van_leer(batch, w, m, mfz)
@@ -415,6 +470,8 @@ contains
     integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
 
+    call perf_start('hflx_ppm')
+
     associate (mesh => u%mesh    , &
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
@@ -422,6 +479,8 @@ contains
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+      !$omp parallel 
+      !$omp do private(iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = ks, ke
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -451,6 +510,11 @@ contains
             end if
           end do
         end do
+      end do
+      !$omp end do
+
+      !$omp do private(ju, ml, dm, m6, s1, s2, ds1, ds2, ds3) collapse(2)
+      do k = ks, ke
         ! Along y-axis
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -478,10 +542,13 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     case ('vtx')
     end select
     end associate
 
+    call perf_stop('hflx_ppm')
   end subroutine hflx_ppm
 
   subroutine vflx_ppm(batch, w, m, mfz)
