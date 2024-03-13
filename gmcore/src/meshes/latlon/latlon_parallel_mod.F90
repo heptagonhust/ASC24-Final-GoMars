@@ -211,7 +211,7 @@ contains
 
 
 
-    iftest = 1
+    iftest = 0
     call perf_start('fill_halo_3d')
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
@@ -684,7 +684,7 @@ contains
 
 
     iftest = 1
-    call perf_start('fill_halo_3d')
+    call perf_start('fill_halo_start_3d')
     ! PRINT *, "Hello, Fortran!"
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
@@ -1116,7 +1116,7 @@ contains
     !   end if
     ! end if
 
-    call perf_stop('fill_halo_3d')
+    call perf_stop('fill_halo_start_3d')
 
   end subroutine fill_halo_start_3d
 
@@ -1164,7 +1164,7 @@ contains
 
 
     iftest = 1
-    call perf_start('fill_halo_3d')
+    call perf_start('fill_halo_stop_3d')
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
     east_halo_opt  = .true. ; if (present(east_halo )) east_halo_opt  = east_halo
@@ -1328,7 +1328,7 @@ contains
       end if
     end if
 
-    call perf_stop('fill_halo_3d')
+    call perf_stop('fill_halo_stop_3d')
 
   end subroutine fill_halo_stop_3d
 

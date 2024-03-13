@@ -921,7 +921,7 @@ contains
           end do
         end do
       end do
-      ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
       if (debug .eq. 1) then 
         if (proc%id .eq. 1) then 
           PRINT *, "Compute Start!"
@@ -953,7 +953,7 @@ contains
           end do
         end do
       end do 
-      ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
       if (debug .eq. 1) then 
         if (proc%id .eq. 1) then 
           PRINT *, "Compute Start!"
@@ -986,7 +986,7 @@ contains
           end do
         end do
       end do
-      ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
       if (debug .eq. 1) then 
         if (proc%id .eq. 1) then 
           PRINT *, "Compute Start!"
@@ -1010,8 +1010,8 @@ contains
       call perf_stop ('small_loop')
     end select
     call perf_start ('raw_fill')
-    ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
-    call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
+    call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
     call perf_stop ('raw_fill')
     
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)

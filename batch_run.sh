@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -N 1
+#SBATCH -N 2
 #SBATCH -n 16
 #SBATCH --exclusive
 #SBATCH --exclude hepnode0
