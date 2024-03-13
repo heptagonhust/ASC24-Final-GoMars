@@ -156,12 +156,12 @@ contains
 
     integer i, j, k
 
-    associate (mesh       => block%mesh, &
-               dmgsdt     => dtend%dmgs, &
-               dgzdt      => dtend%dgz , &
-               dptdt      => dtend%dpt , &
-               dudt       => dtend%du  , &
-               dvdt       => dtend%dv  )
+    associate (mesh   => block%mesh, &
+               dmgsdt => dtend%dmgs, &
+               dgzdt  => dtend%dgz , &
+               dptdt  => dtend%dpt , &
+               dudt   => dtend%du  , &
+               dvdt   => dtend%dv  )
     if (baroclinic) then
       if (dtend%update_mgs) then
         ! ----------------------------------------------------------------------

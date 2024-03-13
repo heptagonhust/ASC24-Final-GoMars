@@ -96,24 +96,16 @@ module latlon_mesh_mod
     real(8), allocatable, dimension(:  ) :: le_lat
     real(8), allocatable, dimension(:  ) :: le_lon
   contains
-    procedure :: init_global                  => latlon_mesh_init_global
-    procedure :: init_from_parent             => latlon_mesh_init_from_parent
-    procedure :: reinit                       => latlon_mesh_reinit
-    procedure :: common_init                  => latlon_mesh_common_init
-    procedure :: has_south_pole               => latlon_mesh_has_south_pole
-    procedure :: has_north_pole               => latlon_mesh_has_north_pole
-    procedure :: is_south_pole                => latlon_mesh_is_south_pole
-    procedure :: is_north_pole                => latlon_mesh_is_north_pole
-    procedure :: is_pole                      => latlon_mesh_is_pole
-    procedure :: is_full_lat_next_to_pole     => latlon_mesh_is_full_lat_next_to_pole
-    procedure :: is_half_lat_next_to_pole     => latlon_mesh_is_half_lat_next_to_pole
-    procedure :: is_inside_with_halo_full_lat => latlon_mesh_is_inside_with_halo_full_lat
-    procedure :: is_inside_with_halo_half_lat => latlon_mesh_is_inside_with_halo_half_lat
-    procedure :: is_inside_pole_full_lat      => latlon_mesh_is_inside_pole_full_lat
-    procedure :: is_inside_pole_half_lat      => latlon_mesh_is_inside_pole_half_lat
-    procedure :: is_outside_pole_full_lat     => latlon_mesh_is_outside_pole_full_lat
-    procedure :: is_outside_pole_half_lat     => latlon_mesh_is_outside_pole_half_lat
-    procedure :: clear                        => latlon_mesh_clear
+    procedure :: init_global      => latlon_mesh_init_global
+    procedure :: init_from_parent => latlon_mesh_init_from_parent
+    procedure :: reinit           => latlon_mesh_reinit
+    procedure :: common_init      => latlon_mesh_common_init
+    procedure :: has_south_pole   => latlon_mesh_has_south_pole
+    procedure :: has_north_pole   => latlon_mesh_has_north_pole
+    procedure :: is_south_pole    => latlon_mesh_is_south_pole
+    procedure :: is_north_pole    => latlon_mesh_is_north_pole
+    procedure :: is_pole          => latlon_mesh_is_pole
+    procedure :: clear            => latlon_mesh_clear
     final :: latlon_mesh_final
   end type latlon_mesh_type
 
@@ -121,7 +113,7 @@ module latlon_mesh_mod
 
 contains
 
-  subroutine latlon_mesh_init_global(this, nlon, nlat, nlev, id, lon_hw, lat_hw, coarse_pole_decay, coarse_pole_mul, keep_lev)
+  subroutine latlon_mesh_init_global(this, nlon, nlat, nlev, id, lon_hw, lat_hw, keep_lev)
 
     class(latlon_mesh_type), intent(inout) :: this
     integer, intent(in)           :: nlon
@@ -130,12 +122,9 @@ contains
     integer, intent(in), optional :: id
     integer, intent(in), optional :: lon_hw
     integer, intent(in), optional :: lat_hw
-    real(8), intent(in), optional :: coarse_pole_decay
-    real(8), intent(in), optional :: coarse_pole_mul
     logical, intent(in), optional :: keep_lev
 
     integer nlev_opt, id_opt, lon_hw_opt, lat_hw_opt
-    real(8) coarse_pole_decay_opt, coarse_pole_mul_opt
     logical keep_lev_opt
     real(8) dlat0
     real(16) x(3), y(3), z(3)
@@ -145,8 +134,6 @@ contains
     id_opt                = -1; if (present(id               )) id_opt                = id
     lon_hw_opt            =  3; if (present(lon_hw           )) lon_hw_opt            = lon_hw
     lat_hw_opt            =  3; if (present(lat_hw           )) lat_hw_opt            = lat_hw
-    coarse_pole_decay_opt =  0; if (present(coarse_pole_decay)) coarse_pole_decay_opt = coarse_pole_decay
-    coarse_pole_mul_opt   =  0; if (present(coarse_pole_mul  )) coarse_pole_mul_opt   = coarse_pole_mul
 
     call this%clear(keep_lev)
 
@@ -193,17 +180,7 @@ contains
       this%half_lat(j) = this%start_lat + (j - 0.5d0) * dlat0
       if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0
     end do
-
-    if (coarse_pole_mul_opt /= 0) then
-      ! Calculate real dlat which is large at polar region.
-      dlat0 = this%dlon
-      do j = 1, this%half_nlat
-        this%dlat(j) = dlat0 * (1 + (coarse_pole_mul_opt - 1) * exp(-coarse_pole_decay_opt * (abs(this%half_lat(j)) - pi05)**2))
-      end do
-      this%dlat(1:this%half_nlat) = this%dlat(1:this%half_nlat) / sum(this%dlat(1:this%half_nlat)) * pi
-    else
-      this%dlat(1:this%half_nlat) = dlat0
-    end if
+    this%dlat(1:this%half_nlat) = dlat0
 
     ! Set latitudes of full merdional grids.
     this%full_lat(1) = this%start_lat
@@ -661,78 +638,6 @@ contains
     res = this%is_south_pole(j) .or. this%is_north_pole(j)
 
   end function latlon_mesh_is_pole
-
-  pure logical function latlon_mesh_is_full_lat_next_to_pole(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j == 2 .or. j == global_mesh%full_nlat - 1
-
-  end function latlon_mesh_is_full_lat_next_to_pole
-
-  pure logical function latlon_mesh_is_half_lat_next_to_pole(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j == 1 .or. j == global_mesh%half_nlat
-
-  end function latlon_mesh_is_half_lat_next_to_pole
-
-  pure logical function latlon_mesh_is_inside_with_halo_full_lat(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j >= this%full_jms .and. j <= this%full_jme
-
-  end function latlon_mesh_is_inside_with_halo_full_lat
-
-  pure logical function latlon_mesh_is_inside_with_halo_half_lat(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j >= this%half_jms .and. j <= this%half_jme
-
-  end function latlon_mesh_is_inside_with_halo_half_lat
-
-  pure logical function latlon_mesh_is_inside_pole_full_lat(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j >= 2 .and. j <= this%full_nlat - 1
-
-  end function latlon_mesh_is_inside_pole_full_lat
-
-  pure logical function latlon_mesh_is_inside_pole_half_lat(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j >= 1 .and. j <= this%half_nlat
-
-  end function latlon_mesh_is_inside_pole_half_lat
-
-  pure logical function latlon_mesh_is_outside_pole_full_lat(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j < 1 .or. j > global_mesh%full_nlat
-
-  end function latlon_mesh_is_outside_pole_full_lat
-
-  pure logical function latlon_mesh_is_outside_pole_half_lat(this, j) result(res)
-
-    class(latlon_mesh_type), intent(in) :: this
-    integer, intent(in) :: j
-
-    res = j < 1 .or. j > global_mesh%half_nlat
-
-  end function latlon_mesh_is_outside_pole_half_lat
 
   subroutine latlon_mesh_clear(this, keep_lev)
 

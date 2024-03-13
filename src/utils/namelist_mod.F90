@@ -129,9 +129,6 @@ module namelist_mod
 
   character(30)   :: time_scheme          = 'wrfrk3'
 
-  real(r8)        :: coarse_pole_mul      = 0
-  real(r8)        :: coarse_pole_decay    = 100.0
-
   ! Filter settings
   real(r8)        :: max_wave_speed       = 300
   real(r8)        :: max_cfl              = 0.5
@@ -271,8 +268,6 @@ module namelist_mod
     filter_coef_b             , &
     filter_coef_c             , &
     filter_min_width          , &
-    coarse_pole_mul           , &
-    coarse_pole_decay         , &
     physics_suite             , &
     mp_scheme                 , &
     pbl_scheme                , &
@@ -386,10 +381,6 @@ contains
       write(*, *) 'nlon                = ', to_str(nlon)
       write(*, *) 'nlat                = ', to_str(nlat)
       write(*, *) 'nlev                = ', to_str(nlev)
-    if (coarse_pole_mul /= 0) then
-      write(*, *) 'coarse_pole_mul     = ', to_str(coarse_pole_mul, 3)
-      write(*, *) 'coarse_pole_decay   = ', to_str(coarse_pole_decay, 3)
-    end if
       write(*, *) 'physics_suite       = ', trim(physics_suite)
       write(*, *) 'mp_scheme           = ', trim(mp_scheme)
       write(*, *) 'pbl_scheme          = ', trim(pbl_scheme)
