@@ -12,6 +12,7 @@ module ppm_mod
   use const_mod
   use namelist_mod
   use limiter_mod
+  use perf_mod
 
   implicit none
 
@@ -34,6 +35,7 @@ contains
 
     real(r8) dfl, dfr, fr
 
+    ! call perf_start('ppm')
     ! Calculate values at left and right cell interfaces.
     dfl = slope(fm2, fm1, f  )
     df  = slope(fm1, f  , fp1)
@@ -46,7 +48,7 @@ contains
     fr = f + sign(min(abs(df), abs(fr - f)), df)
     f6 = 6 * f - 3 * (fl + fr)
     df = fr - fl
-
+    ! call perf_stop('ppm')
   end subroutine ppm
 
 end module ppm_mod

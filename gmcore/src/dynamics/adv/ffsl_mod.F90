@@ -379,6 +379,7 @@ contains
         end do
       end do
       !$omp end do
+
       !$omp do private(ju, dm, cf, ci) collapse(2)
       do k = ks, ke
         ! Along y-axis
@@ -393,7 +394,9 @@ contains
       end do
       !$omp end do
       !$omp end parallel
+
     case ('vtx')
+
     end select
     end associate 
     call perf_stop('hflx_van_leer')
@@ -479,8 +482,8 @@ contains
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
-      !$omp parallel 
-      !$omp do private(iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
+     !$omp parallel 
+     !$omp do private(iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = ks, ke
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -495,7 +498,7 @@ contains
               s1 = 1 - cf
               s2 = 1
               ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
+              ds2 = (s2 + s1) * ds1
               ds3 = s2**3 - s1**3
               mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(iu+1:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
             else
@@ -504,16 +507,16 @@ contains
               s1 = 0
               s2 = -cf
               ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
+              ds2 = (s2 + s1) * ds1
               ds3 = s2**3 - s1**3
               mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:iu-1,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
             end if
           end do
         end do
       end do
-      !$omp end do
+     !$omp end do
 
-      !$omp do private(ju, ml, dm, m6, s1, s2, ds1, ds2, ds3) collapse(2)
+    !$omp do private(ju, ml, dm, m6, s1, s2, ds1, ds2, ds3) collapse(2)
       do k = ks, ke
         ! Along y-axis
         do j = mesh%half_jds, mesh%half_jde
@@ -526,7 +529,7 @@ contains
               s1 = 1 - cfly%d(i,j,k)
               s2 = 1
               ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
+              ds2 = (s2 + s1) * ds1
               ds3 = s2**3 - s1**3
               mfy%d(i,j,k) =  v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
             else if (cfly%d(i,j,k) < 0) then
@@ -535,15 +538,16 @@ contains
               s1 = 0
               s2 = -cfly%d(i,j,k)
               ds1 = s2    - s1
-              ds2 = s2**2 - s1**2
+              ds2 = (s2 + s1) * ds1
               ds3 = s2**3 - s1**3
               mfy%d(i,j,k) = -v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
             end if
           end do
         end do
       end do
-      !$omp end do
-      !$omp end parallel
+    !$omp end do
+    !$omp end parallel
+
     case ('vtx')
     end select
     end associate
@@ -565,6 +569,7 @@ contains
                cflz => batch%cflz)   ! in
     select case (batch%loc)
     case ('cell')
+      !$omp parallel do private(ku, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -596,7 +601,9 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     case ('lev')
+      !$omp parallel do private(ku, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -626,6 +633,7 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     end select
     end associate
 

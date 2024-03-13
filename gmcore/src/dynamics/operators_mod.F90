@@ -529,10 +529,10 @@ contains
         end do
       end do
       !$omp end do
-      !$omp single
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole / global_mesh%full_nlon
-      !$omp end single
+      !$omp end master
       !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
@@ -552,10 +552,10 @@ contains
         end do
       end do
       !$omp end do
-      !$omp single
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole / global_mesh%full_nlon
-      !$omp end single
+      !$omp end master
       !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
@@ -611,10 +611,10 @@ contains
         end do
       end do
       !$omp end do
-      !$omp single
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-      !$omp end single
+      !$omp end master
       !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
@@ -634,10 +634,10 @@ contains
         end do
       end do
       !$omp end do
-      !$omp single
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-      !$omp end single
+      !$omp end master
       !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
@@ -857,9 +857,9 @@ contains
     end do
     !$omp end do
     ! lxy: todo: overlap, coz not found under.
-    !$omp single
+    !$omp master
     call fill_halo(u_lat)
-    !$omp end single
+    !$omp end master
     !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -919,10 +919,10 @@ contains
           end do
         end do
         !$omp end do
-        !$omp single
+        !$omp master
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon / mesh%area_cell(j)
-        !$omp end single
+        !$omp end master
         !$omp do collapse(1)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
@@ -942,10 +942,10 @@ contains
           end do
         end do
         !$omp end do
-        !$omp single
+        !$omp master
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon / mesh%area_cell(j+1)
-        !$omp end single
+        !$omp end master
         !$omp do collapse(1)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
@@ -1332,10 +1332,10 @@ contains
         end do
       end do
       !$omp end do
-      !$omp single
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-      !$omp end single
+      !$omp end master
       !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
@@ -1355,10 +1355,10 @@ contains
         end do
       end do
       !$omp end do
-      !$omp single
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-      !$omp end single
+      !$omp end master
       !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
@@ -1434,10 +1434,10 @@ contains
         end do
       end do
      !$omp end do
-     !$omp single
+     !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-     !$omp end single
+     !$omp end master
      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
@@ -1459,10 +1459,10 @@ contains
         end do
       end do
      !$omp end do
-     !$omp single
+     !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-     !$omp end single
+     !$omp end master
      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
