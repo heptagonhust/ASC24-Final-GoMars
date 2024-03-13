@@ -10,7 +10,7 @@
 module latlon_mesh_mod
 
   use flogger
-  use const_mod, only: pi, pi2, pi05, radius, inf, deg
+  use const_mod, only: pi, pi2, pi05, radius, omega, inf, deg
   use sphere_geometry_mod
 
   implicit none
@@ -95,6 +95,12 @@ module latlon_mesh_mod
     real(8), allocatable, dimension(:  ) :: de_lat
     real(8), allocatable, dimension(:  ) :: le_lat
     real(8), allocatable, dimension(:  ) :: le_lon
+    ! Coriolis parameters
+    real(8), allocatable, dimension(:  ) :: f_lon
+    real(8), allocatable, dimension(:  ) :: f_lat
+    ! Weight for constructing tangential wind
+    real(8), allocatable, dimension(:,:) :: tg_wgt_lon
+    real(8), allocatable, dimension(:,:) :: tg_wgt_lat
   contains
     procedure :: init_global      => latlon_mesh_init_global
     procedure :: init_from_parent => latlon_mesh_init_from_parent
@@ -400,6 +406,23 @@ contains
       this%de_lat(j) = 2.0d0 * this%area_lat(j) / this%le_lat(j)
     end do
 
+    do j = this%full_jds, this%full_jde
+      this%f_lon(j) = 2 * omega * this%full_sin_lat(j)
+    end do
+    do j = this%half_jds, this%half_jde
+      this%f_lat(j) = 2 * omega * this%half_sin_lat(j)
+    end do
+
+    do j = this%full_jds_no_pole, this%full_jde_no_pole
+      this%tg_wgt_lon(1,j) = this%le_lat(j-1) / this%de_lon(j) * 0.25d0
+      this%tg_wgt_lon(2,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
+    end do
+
+    do j = this%half_jds, this%half_jde
+      this%tg_wgt_lat(1,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
+      this%tg_wgt_lat(2,j) = this%le_lon(j+1) / this%de_lat(j) * 0.25d0
+    end do
+
   end subroutine latlon_mesh_init_global
 
   subroutine latlon_mesh_init_from_parent(this, parent, id, ids, ide, jds, jde, keep_lev)
@@ -468,33 +491,37 @@ contains
 
     this%dlat = parent%dlat(lbound(this%dlat, 1):ubound(this%dlat, 1))
     do j = this%full_jms, this%full_jme
-      this%full_lat(j)       = parent%full_lat(j)
-      this%full_lat_deg(j)   = parent%full_lat_deg(j)
-      this%full_sin_lat(j)   = parent%full_sin_lat(j)
-      this%full_cos_lat(j)   = parent%full_cos_lat(j)
-      this%area_cell(j)      = parent%area_cell(j)
+      this%full_lat      (j) = parent%full_lat      (j)
+      this%full_lat_deg  (j) = parent%full_lat_deg  (j)
+      this%full_sin_lat  (j) = parent%full_sin_lat  (j)
+      this%full_cos_lat  (j) = parent%full_cos_lat  (j)
+      this%area_cell     (j) = parent%area_cell     (j)
       this%area_subcell(:,j) = parent%area_subcell(:,j)
-      this%area_lon_west(j)  = parent%area_lon_west(j)
-      this%area_lon_east(j)  = parent%area_lon_east(j)
+      this%area_lon_west (j) = parent%area_lon_west (j)
+      this%area_lon_east (j) = parent%area_lon_east (j)
       this%area_lon_north(j) = parent%area_lon_north(j)
       this%area_lon_south(j) = parent%area_lon_south(j)
-      this%area_lon(j)       = parent%area_lon(j)
-      this%le_lon(j)         = parent%le_lon(j)
-      this%de_lon(j)         = parent%de_lon(j)
+      this%area_lon      (j) = parent%area_lon      (j)
+      this%le_lon        (j) = parent%le_lon        (j)
+      this%de_lon        (j) = parent%de_lon        (j)
+      this%f_lon         (j) = parent%f_lon         (j)
+      this%tg_wgt_lon  (:,j) = parent%tg_wgt_lon  (:,j)
     end do
     do j = this%half_jms, this%half_jme
-      this%half_lat(j)       = parent%half_lat(j)
-      this%half_lat_deg(j)   = parent%half_lat_deg(j)
-      this%half_sin_lat(j)   = parent%half_sin_lat(j)
-      this%half_cos_lat(j)   = parent%half_cos_lat(j)
-      this%area_vtx(j)       = parent%area_vtx(j)
-      this%area_lat_west(j)  = parent%area_lat_west(j)
-      this%area_lat_east(j)  = parent%area_lat_east(j)
+      this%half_lat      (j) = parent%half_lat      (j)
+      this%half_lat_deg  (j) = parent%half_lat_deg  (j)
+      this%half_sin_lat  (j) = parent%half_sin_lat  (j)
+      this%half_cos_lat  (j) = parent%half_cos_lat  (j)
+      this%area_vtx      (j) = parent%area_vtx      (j)
+      this%area_lat_west (j) = parent%area_lat_west (j)
+      this%area_lat_east (j) = parent%area_lat_east (j)
       this%area_lat_north(j) = parent%area_lat_north(j)
       this%area_lat_south(j) = parent%area_lat_south(j)
-      this%area_lat(j)       = parent%area_lat(j)
-      this%le_lat(j)         = parent%le_lat(j)
-      this%de_lat(j)         = parent%de_lat(j)
+      this%area_lat      (j) = parent%area_lat      (j)
+      this%le_lat        (j) = parent%le_lat        (j)
+      this%de_lat        (j) = parent%de_lat        (j)
+      this%f_lat         (j) = parent%f_lat         (j)
+      this%tg_wgt_lat  (:,j) = parent%tg_wgt_lat  (:,j)
     end do
 
     this%full_lev = parent%full_lev
@@ -592,6 +619,10 @@ contains
     allocate(this%de_lat             (this%half_jms:this%half_jme)); this%de_lat              = 0
     allocate(this%le_lat             (this%half_jms:this%half_jme)); this%le_lat              = 0
     allocate(this%le_lon             (this%full_jms:this%full_jme)); this%le_lon              = 0
+    allocate(this%f_lon              (this%full_jms:this%full_jme)); this%f_lon               = inf
+    allocate(this%f_lat              (this%half_jms:this%half_jme)); this%f_lat               = inf
+    allocate(this%tg_wgt_lon       (2,this%full_jms:this%full_jme)); this%tg_wgt_lon          = inf
+    allocate(this%tg_wgt_lat       (2,this%half_jms:this%half_jme)); this%tg_wgt_lat          = inf
 
   end subroutine latlon_mesh_common_init
 
@@ -695,6 +726,10 @@ contains
     if (allocated(this%de_lat          )) deallocate(this%de_lat          )
     if (allocated(this%le_lat          )) deallocate(this%le_lat          )
     if (allocated(this%le_lon          )) deallocate(this%le_lon          )
+    if (allocated(this%f_lon           )) deallocate(this%f_lon           )
+    if (allocated(this%f_lat           )) deallocate(this%f_lat           )
+    if (allocated(this%tg_wgt_lon      )) deallocate(this%tg_wgt_lon      )
+    if (allocated(this%tg_wgt_lat      )) deallocate(this%tg_wgt_lat      )
 
   end subroutine latlon_mesh_clear
 

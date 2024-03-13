@@ -171,6 +171,16 @@ contains
         end do
       end do
     ! --------------------------------------------------------------------------
+    case ('lon>lat')
+      do k = x%mesh%full_kds, x%mesh%full_kde
+        do j = x%mesh%half_jds, x%mesh%half_jde
+          do i = x%mesh%full_ids, x%mesh%full_ide
+            y%d(i,j,k) = x%mesh%tg_wgt_lat(1,j) * (x%d(i-1,j  ,k) + x%d(i,j  ,k)) + &
+                         x%mesh%tg_wgt_lat(2,j) * (x%d(i-1,j+1,k) + x%d(i,j+1,k))
+          end do
+        end do
+      end do
+    ! --------------------------------------------------------------------------
     case ('lat>cell')
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%full_jds_no_pole, x%mesh%full_jde_no_pole
@@ -178,6 +188,16 @@ contains
             y%d(i,j,k) = (x%mesh%area_lat_south(j  ) * x%d(i,j  ,k) + &
                           x%mesh%area_lat_north(j-1) * x%d(i,j-1,k)   &
                          ) / (x%mesh%area_lat_south(j) + x%mesh%area_lat_north(j-1))
+          end do
+        end do
+      end do
+    ! --------------------------------------------------------------------------
+    case ('lat>lon')
+      do k = x%mesh%full_kds, x%mesh%full_kde
+        do j = x%mesh%full_jds_no_pole, x%mesh%full_jde_no_pole
+          do i = x%mesh%half_ids, x%mesh%half_ide
+            y%d(i,j,k) = x%mesh%tg_wgt_lon(1,j) * (x%d(i,j-1,k) + x%d(i+1,j-1,k)) + &
+                         x%mesh%tg_wgt_lon(2,j) * (x%d(i,j  ,k) + x%d(i+1,j  ,k))
           end do
         end do
       end do

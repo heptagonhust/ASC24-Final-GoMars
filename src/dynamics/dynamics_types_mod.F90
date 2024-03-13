@@ -109,12 +109,6 @@ module dynamics_types_mod
     type(latlon_field2d_type) ref_ps
     type(latlon_field2d_type) ref_ps_smth
     type(latlon_field2d_type) ref_ps_perb
-    ! Coriolis parameters
-    real(8), allocatable, dimension(:  ) :: f_lon
-    real(8), allocatable, dimension(:  ) :: f_lat
-    ! Weight for constructing tangential wind
-    real(8), allocatable, dimension(:,:) :: tg_wgt_lon
-    real(8), allocatable, dimension(:,:) :: tg_wgt_lat
   contains
     procedure :: init_stage1 => static_init_stage1
     procedure :: init_stage2 => static_init_stage2
@@ -651,70 +645,12 @@ contains
     units     = 'Pa'
     call this%ref_ps_perb%init(name, long_name, units, 'cell', mesh, halo)
 
-    allocate(this%f_lon       (mesh%full_jms:mesh%full_jme)); this%f_lon      = inf
-    allocate(this%f_lat       (mesh%half_jms:mesh%half_jme)); this%f_lat      = inf
-    allocate(this%tg_wgt_lon(2,mesh%full_jms:mesh%full_jme)); this%tg_wgt_lon = inf
-    allocate(this%tg_wgt_lat(2,mesh%half_jms:mesh%half_jme)); this%tg_wgt_lat = inf
-
   end subroutine static_init_stage1
 
   subroutine static_init_stage2(this, mesh)
 
     class(static_type), intent(inout) :: this
     type(latlon_mesh_type), intent(in) :: mesh
-
-    integer j
-
-    do j = mesh%full_jds, mesh%full_jde
-      this%f_lon(j) = 2 * omega * mesh%full_sin_lat(j)
-    end do
-    do j = mesh%half_jds, mesh%half_jde
-      this%f_lat(j) = 2 * omega * mesh%half_sin_lat(j)
-    end do
-
-
-    !  ____________________                 ____________________                  ____________________                  ____________________
-    ! |          |         |               |          |         |                |          |         |                |          |         |
-    ! |          |         |               |          |         |                |          |         |                |          |         |
-    ! |          |         |               |          |         |                |          |         |                |          |         |
-    ! |          |         |               |          |         |                |          |         |                |          |         |
-    ! |_____o____|____o____|   j           |_____o____|____*____|   j            |_____*____|____o____|   j            |_____o____|____o____|   j
-    ! |          |////|////|               |          |////|    |                |/////|    |         |                |     |    |         |
-    ! |          |/3//|/2//|               |          |////|    |                |/////|    |         |                |     |    |         |
-    ! |          x---------|   j           |          x---------|   j            |-----|----x         |   j            |-----|----x         |   j
-    ! |          |    |/1//|               |          |    |    |                |/////|////|         |                |     |////|         |
-    ! |_____o____|____*____|   j - 1       |_____o____|____o____|   j - 1        |_____o____|____o____|   j - 1        |_____*____|____o____|   j - 1
-    !       i    i   i+1                         i    i   i+1                          i    i   i+1                          i
-    !
-    !
-    !       [ 1    As_1 + As_2 + As_3]
-    ! w = - [--- - ------------------]
-    !       [ 2        A_{i+1,j}     ]
-    !
-    !
-
-    select case (tangent_wgt_scheme)
-    case ('classic')
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        this%tg_wgt_lon(1,j) = mesh%le_lat(j-1) / mesh%de_lon(j) * 0.25d0
-        this%tg_wgt_lon(2,j) = mesh%le_lat(j  ) / mesh%de_lon(j) * 0.25d0
-      end do
-
-      do j = mesh%half_jds, mesh%half_jde
-        this%tg_wgt_lat(1,j) = mesh%le_lon(j  ) / mesh%de_lat(j) * 0.25d0
-        this%tg_wgt_lat(2,j) = mesh%le_lon(j+1) / mesh%de_lat(j) * 0.25d0
-      end do
-    case ('th09')
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        this%tg_wgt_lon(1,j) = mesh%le_lat(j-1) / mesh%de_lon(j) * mesh%area_subcell(2,j  ) / mesh%area_cell(j  )
-        this%tg_wgt_lon(2,j) = mesh%le_lat(j  ) / mesh%de_lon(j) * mesh%area_subcell(1,j  ) / mesh%area_cell(j  )
-      end do
-
-      do j = mesh%half_jds, mesh%half_jde
-        this%tg_wgt_lat(1,j) = mesh%le_lon(j  ) / mesh%de_lat(j) * mesh%area_subcell(1,j  ) / mesh%area_cell(j  )
-        this%tg_wgt_lat(2,j) = mesh%le_lon(j+1) / mesh%de_lat(j) * mesh%area_subcell(2,j+1) / mesh%area_cell(j+1)
-      end do
-    end select
 
   end subroutine static_init_stage2
 
@@ -730,11 +666,6 @@ contains
     call this%ref_ps     %clear()
     call this%ref_ps_smth%clear()
     call this%ref_ps_perb%clear()
-
-    if (allocated(this%f_lon     )) deallocate(this%f_lon     )
-    if (allocated(this%f_lat     )) deallocate(this%f_lat     )
-    if (allocated(this%tg_wgt_lon)) deallocate(this%tg_wgt_lon)
-    if (allocated(this%tg_wgt_lat)) deallocate(this%tg_wgt_lat)
 
   end subroutine static_clear
 

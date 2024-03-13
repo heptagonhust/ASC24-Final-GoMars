@@ -670,22 +670,20 @@ contains
       end do
     end do
 
+    call interp_run(mfx_lon, mfx_lat)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
-          mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) + &
-                             block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
           u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
         end do
       end do
     end do
     call fill_halo(u_lat)
 
+    call interp_run(mfy_lat, mfy_lon)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
-          mfy_lon%d(i,j,k) = block%static%tg_wgt_lon(1,j) * (mfy_lat%d(i,j-1,k) + mfy_lat%d(i+1,j-1,k)) + &
-                             block%static%tg_wgt_lon(2,j) * (mfy_lat%d(i,j  ,k) + mfy_lat%d(i+1,j  ,k))
           v_lon%d(i,j,k) = mfy_lon%d(i,j,k) / dmg_lon%d(i,j,k)
         end do
       end do
@@ -779,7 +777,7 @@ contains
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%half_ids, mesh%half_ide
-          pv%d(i,j,k) = (vor%d(i,j,k) + block%static%f_lat(j)) / dmg_vtx%d(i,j,k)
+          pv%d(i,j,k) = (vor%d(i,j,k) + mesh%f_lat(j)) / dmg_vtx%d(i,j,k)
         end do
       end do
     end do
@@ -940,11 +938,11 @@ contains
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             tmp = - (                                                            &
-              block%static%tg_wgt_lat(1,j) * (                                   &
+              mesh%tg_wgt_lat(1,j) * (                                           &
                 mfx_lon%d(i-1,j  ,k) * (pv_lat%d(i,j,k) + pv_lon%d(i-1,j  ,k)) + &
                 mfx_lon%d(i  ,j  ,k) * (pv_lat%d(i,j,k) + pv_lon%d(i  ,j  ,k))   &
               ) +                                                                &
-              block%static%tg_wgt_lat(2,j) * (                                   &
+              mesh%tg_wgt_lat(2,j) * (                                           &
                 mfx_lon%d(i-1,j+1,k) * (pv_lat%d(i,j,k) + pv_lon%d(i-1,j+1,k)) + &
                 mfx_lon%d(i  ,j+1,k) * (pv_lat%d(i,j,k) + pv_lon%d(i  ,j+1,k))   &
               )                                                                  &
@@ -960,11 +958,11 @@ contains
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
             tmp = (                                                              &
-              block%static%tg_wgt_lon(1,j) * (                                   &
+              mesh%tg_wgt_lon(1,j) * (                                           &
                 mfy_lat%d(i  ,j-1,k) * (pv_lon%d(i,j,k) + pv_lat%d(i  ,j-1,k)) + &
                 mfy_lat%d(i+1,j-1,k) * (pv_lon%d(i,j,k) + pv_lat%d(i+1,j-1,k))   &
               ) +                                                                &
-              block%static%tg_wgt_lon(2,j) * (                                   &
+              mesh%tg_wgt_lon(2,j) * (                                           &
                 mfy_lat%d(i  ,j  ,k) * (pv_lon%d(i,j,k) + pv_lat%d(i  ,j  ,k)) + &
                 mfy_lat%d(i+1,j  ,k) * (pv_lon%d(i,j,k) + pv_lat%d(i+1,j  ,k))   &
               )                                                                  &
