@@ -892,6 +892,7 @@ contains
     real(r8) b
     integer i, j, k
     integer send_south_req, recv_south_req, send_north_req, recv_north_req
+    integer debug
 
     ! if (substep < total_substeps) then
     !   call interp_pv_midpoint(block, dstate, dt, substep)
@@ -900,7 +901,7 @@ contains
 
     call perf_start('interp_pv_upwind')
 
-
+    debug = 0
     associate (mesh   => block%mesh      , &
                un     => dstate%u_lon    , & ! in
                vn     => dstate%v_lat    , & ! in
@@ -920,7 +921,13 @@ contains
           end do
         end do
       end do
-      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute Start!"
+        end if
+      end if
+      call perf_start ('small_loop')
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -930,6 +937,12 @@ contains
           end do
         end do
       end do
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute End!"
+        end if
+      end if
+      call perf_stop ('small_loop')
     case (3)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -940,7 +953,14 @@ contains
           end do
         end do
       end do 
-      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute Start!"
+        end if
+      end if
+
+      call perf_start ('small_loop')
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -950,6 +970,12 @@ contains
           end do
         end do
       end do
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute End!"
+        end if
+      end if
+      call perf_stop ('small_loop')
     case (5)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -960,7 +986,13 @@ contains
           end do
         end do
       end do
-      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute Start!"
+        end if
+      end if
+      call perf_start ('small_loop')
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -970,9 +1002,18 @@ contains
           end do
         end do
       end do
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute End!"
+        end if
+      end if
+      call perf_stop ('small_loop')
     end select
-    ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
-    call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    call perf_start ('raw_fill')
+    ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
+    call perf_stop ('raw_fill')
+    
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)
     end associate
 
