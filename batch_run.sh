@@ -11,12 +11,6 @@ cat $0
 echo "******batch_run.sh*******"
 
 
-if [  $(hostname) != "hepnode0" ]; then
-	export UCX_RC_PATH_MTU=2048
-	export I_MPI_HYDRA_RMK=slurm
-	export OMP_NUM_THREADS=1
-fi
-
 source ./env.sh
 
 message=$2
@@ -27,7 +21,7 @@ run ( ) {
 		export UCX_RC_PATH_MTU=2048
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
-		export OMP_NUM_THREADS=1
+		export OMP_NUM_THREADS=8
 	fi
 	case_name=$1
 	node=$2
