@@ -274,7 +274,7 @@ contains
           end do
         end do
         !$omp end do
-
+        !$omp end parallel
         call perf_stop('omp2')
 
       end if
@@ -303,7 +303,7 @@ contains
           end do
         end do
         !$omp end do
-
+        !$omp end parallel
         call perf_stop('omp3')
 
       end if

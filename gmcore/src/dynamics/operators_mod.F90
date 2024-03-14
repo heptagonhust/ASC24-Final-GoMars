@@ -203,7 +203,7 @@ contains
     ! split only:                        ~91.7 per span, case: mz.360x180, 9.695
     ! rather than nothing changed..., restored
     !                                                             lxy, 2024.3.13
-    ! $omp parallel 
+    !$omp parallel 
     do k = mesh%half_kds + 1, mesh%half_kde
      !$omp do collapse(1)
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
@@ -732,8 +732,8 @@ contains
                dmg_lev => dstate%dmg_lev   , & ! out
                dmg_vtx => block%aux%dmg_vtx)   ! out
     if (baroclinic .or. advection) then
-      !$omp parallel 
-      !$omp do collapse(2)
+!      !$omp parallel 
+!      !$omp do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -750,8 +750,8 @@ contains
           end do
         end do
       end do
-      !$omp end do
-      !$omp do collapse(2)
+!      !$omp end do
+!      !$omp do collapse(2)
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -759,37 +759,37 @@ contains
           end do
         end do
       end do
-      !$omp end do
+!      !$omp end do
 
       ! Top boundary
       k = mesh%half_kds
-      !$omp do collapse(1)
+!      !$omp do collapse(1)
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dmg_lev%d(i,j,k) = mg%d(i,j,k) - mg_lev%d(i,j,k)
         end do
       end do
-      !$omp end do
+!      !$omp end do
       ! Bottom boundary
       k = mesh%half_kde
-      !$omp do collapse(1)
+!      !$omp do collapse(1)
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dmg_lev%d(i,j,k) = mg_lev%d(i,j,k) - mg%d(i,j,k-1)
         end do
       end do
-      !$omp end do
-      !$omp end parallel
+!      !$omp end do
+!      !$omp end parallel
       call fill_halo(dmg_lev)
       ! lxy: todo: overlap this
     else
-      !$omp parallel do collapse(1)
+!      !$omp parallel do collapse(1)
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dmg%d(i,j,1) = (gz%d(i,j,1) - gzs%d(i,j)) / g
         end do
       end do
-      !$omp end parallel do
+!      !$omp end parallel do
     end if
     ! maybe this part can have a overlap
     call fill_halo(dmg)
