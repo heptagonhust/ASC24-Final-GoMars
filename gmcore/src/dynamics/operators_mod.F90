@@ -148,7 +148,7 @@ contains
                mg_lev  => dstate%mg_lev , & ! out
                mg      => dstate%mg     )   ! out
     !$omp parallel
-    !$omp do collapse(2)
+    !$omp do collapse(2) private(i, j, k)
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -157,7 +157,7 @@ contains
       end do
     end do
     !$omp end do
-    !$omp do collapse(2)
+    !$omp do collapse(2) 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -479,7 +479,7 @@ contains
       !     |________u________|________u________|
       !           i-1,j-1             i,j-1
       !
-
+      ! wrong on kevtx
       !$omp parallel do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())

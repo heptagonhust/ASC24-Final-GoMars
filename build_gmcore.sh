@@ -33,7 +33,7 @@ echo "FC: $FC"
 echo "F77: $F77"
 
 export NETCDF_ROOT="$(pwd)/netcdf"
-# export GPTL_ROOT="$(pwd)/gptl"
+export GPTL_ROOT="$(pwd)/gptl"
 
 if [ x"$1" = xrebuild ]; then
   rm -rf build
