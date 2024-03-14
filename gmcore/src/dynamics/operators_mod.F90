@@ -232,7 +232,6 @@ contains
         end do
       end do
     end do
-    !$omp end parallel do
     
     call interp_run(p, p_lev)
     p_lev%d(:,:,1) = ptop
