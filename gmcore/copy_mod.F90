@@ -14,6 +14,7 @@ module operators_mod
   use adv_mod
   use interp_mod
   use filter_mod
+  use omp_lib
 
   implicit none
 
@@ -146,6 +147,8 @@ contains
                mgs     => dstate%mgs    , & ! in
                mg_lev  => dstate%mg_lev , & ! out
                mg      => dstate%mg     )   ! out
+    !$omp parallel
+    !$omp do collapse(2)
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -153,6 +156,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -160,6 +165,9 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel 
+
     end associate
 
     call perf_stop('calc_mg')
@@ -187,14 +195,38 @@ contains
     k = mesh%half_kds
     ph_lev%d(:,:,k) = mg_lev%d(:,:,k)
     pkh_lev%d(:,:,k) = ph_lev%d(:,:,k)**rd_o_cpd
+
+    ! baseline:                                                            6.465
+    ! orig(omp):                                                           8.543
+    ! split && swap loop order(j, i, k): ~92.5 per span, case: mz.360x180 
+    ! split && swap loop order(j, k, i): ~91.6 per span, case: mz.360x180, 8.519
+    ! split only:                        ~91.7 per span, case: mz.360x180, 9.695
+    ! rather than nothing changed..., restored
+    !                                                             lxy, 2024.3.13
+    !$omp  
     do k = mesh%half_kds + 1, mesh%half_kde
+     !$omp parallel do collapse(1)
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
           ph_lev%d(i,j,k) = ph_lev%d(i,j,k-1) + dmg%d(i,j,k-1) * (1 + qm%d(i,j,k-1))
           pkh_lev%d(i,j,k) = ph_lev%d(i,j,k)**rd_o_cpd
         end do
       end do
+     !$omp end do
     end do
+
+    ! !$omp do collapse(3)
+    ! do k = mesh%half_kds + 1, mesh%half_kde
+    !   do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+    !     do i = mesh%full_ids, mesh%full_ide + 1
+    !       ! ph_lev%d(i,j,k) = ph_lev%d(i,j,k-1) + dmg%d(i,j,k-1) * (1 + qm%d(i,j,k-1))
+    !       pkh_lev%d(i,j,k) = ph_lev%d(i,j,k)**rd_o_cpd ! higher strongth (power)
+    !     end do
+    !   end do
+    ! end do
+    ! !$omp end do
+
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -202,6 +234,9 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel
+
     ! NOTE: Move this to other place?
     if (hydrostatic) ps%d = phs%d
     end associate
@@ -225,6 +260,7 @@ contains
                pt    => dstate%pt   , & ! in
                p     => dstate%p    , & ! out
                p_lev => dstate%p_lev)   ! out
+    !$omp parallel do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -232,6 +268,8 @@ contains
         end do
       end do
     end do
+    !$omp end parallel do
+
     call interp_run(p, p_lev)
     p_lev%d(:,:,1) = ptop
     call fill_halo(p_lev)
@@ -258,10 +296,12 @@ contains
                div   => block%aux%div, &
                omg   => block%aux%omg)
     sum_dmf = 0
+    
     do k = mesh%full_kds, mesh%full_kde
+      !$omp parallel do collapse(1)
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          sum_dmf(i,j) = sum_dmf(i,j) + dmf%d(i,j,k)
+          sum_dmf(i,j) = sum_dmf(i,j) + dmf%d(i,j,k) ! lxy: watch here
           omg%d(i,j,k) = 0.5_r8 * ((                                              &
             u_lon%d(i  ,j,k) * (ph%d(i,j,k) + ph%d(i+1,j,k)) -                    &
             u_lon%d(i-1,j,k) * (ph%d(i,j,k) + ph%d(i-1,j,k))                      &
@@ -271,11 +311,13 @@ contains
           )) / mesh%area_cell(j) - ph%d(i,j,k) * div%d(i,j,k) - sum_dmf(i,j)
         end do
       end do
+      !$omp end parallel do
     end do
     end associate
 
   end subroutine calc_omg
 
+  ! optimizeed: ~15s, 5401 times
   subroutine calc_t(block, dstate)
 
     type(block_type), intent(in) :: block
@@ -292,6 +334,7 @@ contains
                t    => dstate%t           , & ! out
                tv   => dstate%tv          )   ! out
     if (idx_qv > 0) then
+      !$omp parallel do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
@@ -300,7 +343,9 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     else
+      !$omp parallel do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
@@ -309,6 +354,7 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     end if
     end associate
 
@@ -329,7 +375,7 @@ contains
                gz_lev => dstate%gz_lev, & ! in
                dmg    => dstate%dmg   , & ! in
                rhod   => dstate%rhod  )   ! out
-    !$omp parallel do collapse(2) private(i, j, k) 
+    !$omp parallel do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -345,7 +391,7 @@ contains
   end subroutine calc_rhod
 
   subroutine calc_we_lev(block, dstate, dtend, dt)
-
+    ! 5400 times, 17s, 3.14 ms per call
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(in) :: dtend
@@ -361,7 +407,7 @@ contains
                we_lev     => dstate%we_lev       , & ! out
                we_lev_lon => block%aux%we_lev_lon, & ! out
                we_lev_lat => block%aux%we_lev_lat)   ! out
-    !$omp parallel do collapse(3) private(i, j, k)
+    !$omp parallel do collapse(3)
     do k = mesh%half_kds + 1, mesh%half_kde - 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -396,6 +442,7 @@ contains
                u    => dstate%u_lon, & ! in
                v    => dstate%v_lat, & ! in
                ke   => block%aux%ke)   ! out
+    !$omp parallel do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -407,6 +454,7 @@ contains
         end do
       end do
     end do
+    !$omp end parallel do
 
     if (ke_scheme == 2) then
       !
@@ -431,6 +479,8 @@ contains
       !     |________u________|________u________|
       !           i-1,j-1             i,j-1
       !
+
+      !$omp parallel do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
@@ -465,38 +515,55 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     end if
 
     ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
+      !$omp parallel 
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = 0.5_r8 * (v%d(i,j,k)**2 + block%aux%u_lat%d(i,j,k)**2)
         end do
       end do
+      !$omp end do
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole / global_mesh%full_nlon
+      !$omp end master
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           ke%d(i,j,k) = pole(k)
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end if
     if (mesh%has_north_pole()) then
       j = mesh%full_jde
+      !$omp parallel 
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = 0.5_r8 * (v%d(i,j-1,k)**2 + block%aux%u_lat%d(i,j-1,k)**2)
         end do
       end do
+      !$omp end do
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole / global_mesh%full_nlon
+      !$omp end master
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           ke%d(i,j,k) = pole(k)
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end if
     end associate
 
@@ -520,6 +587,8 @@ contains
                v    => dstate%v_lat  , & ! in
                div  => block%aux%div , & ! out
                div2 => block%aux%div2)   ! out
+    !$omp parallel 
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -530,38 +599,57 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
+      !$omp parallel
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = v%d(i,j,k)
         end do
       end do
+      !$omp end do
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+      !$omp end master
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           div%d(i,j,k) = pole(k)
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end if
     if (mesh%has_north_pole()) then
       j = mesh%full_jde
+      !$omp parallel
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = -v%d(i,j-1,k)
         end do
       end do
+      !$omp end do
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+      !$omp end master
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           div%d(i,j,k) = pole(k)
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end if
     if (div_damp_order == 4) then
       call fill_halo(div)
+      !$omp parallel do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
@@ -574,6 +662,7 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     end if
     end associate
 
@@ -596,14 +685,18 @@ contains
                ph_lev => dstate%ph_lev   , & ! in
                gz_lev => dstate%gz_lev   , & ! out
                gz     => dstate%gz       )   ! out
+    !$omp parallel 
     do k = mesh%half_kde - 1, mesh%half_kds, -1
+      !$omp do collapse(1)
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
           gz_lev%d(i,j,k) = gz_lev%d(i,j,k+1) + rd * tv%d(i,j,k) * log(ph_lev%d(i,j,k+1) / ph_lev%d(i,j,k))
         end do
       end do
+      !$omp end do
     end do
     ! For output
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -611,6 +704,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel
     end associate
 
     call perf_stop('calc_gz_lev')
@@ -637,6 +732,8 @@ contains
                dmg_lev => dstate%dmg_lev   , & ! out
                dmg_vtx => block%aux%dmg_vtx)   ! out
     if (baroclinic .or. advection) then
+      !$omp parallel 
+      !$omp do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -653,7 +750,8 @@ contains
           end do
         end do
       end do
-
+      !$omp end do
+      !$omp do collapse(2)
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -661,29 +759,39 @@ contains
           end do
         end do
       end do
+      !$omp end do
+
       ! Top boundary
       k = mesh%half_kds
+      !$omp do collapse(1)
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dmg_lev%d(i,j,k) = mg%d(i,j,k) - mg_lev%d(i,j,k)
         end do
       end do
+      !$omp end do
       ! Bottom boundary
       k = mesh%half_kde
+      !$omp do collapse(1)
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dmg_lev%d(i,j,k) = mg_lev%d(i,j,k) - mg%d(i,j,k-1)
         end do
       end do
+      !$omp end do
+      !$omp end parallel
       call fill_halo(dmg_lev)
+      ! lxy: todo: overlap this
     else
+      !$omp parallel do collapse(1)
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
           dmg%d(i,j,1) = (gz%d(i,j,1) - gzs%d(i,j)) / g
         end do
       end do
+      !$omp end parallel do
     end if
-
+    ! maybe this part can have a overlap
     call fill_halo(dmg)
     call average_run(dmg, dmg_lon)
     call fill_halo(dmg_lon)
@@ -697,7 +805,7 @@ contains
   end subroutine calc_dmg
 
   subroutine calc_mf(block, dstate, dt)
-
+    ! about 10s, 5401 times
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: dt
@@ -718,6 +826,8 @@ contains
                mfy_lat => block%aux%mfy_lat, & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
+    !$omp parallel 
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_ids - 1, mesh%half_ide
@@ -725,6 +835,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -732,7 +844,8 @@ contains
         end do
       end do
     end do
-
+    !$omp end do
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -742,8 +855,12 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    ! lxy: todo: overlap, coz not found under.
+    !$omp master
     call fill_halo(u_lat)
-
+    !$omp end master
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -753,6 +870,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel
     call fill_halo(v_lon)
     end associate
 
@@ -776,6 +895,7 @@ contains
                v_lat => dstate%v_lat   , & ! in
                u_lat => block%aux%u_lat, & ! in
                vor   => block%aux%vor  )   ! out
+    !$omp parallel do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%half_ids, mesh%half_ide
@@ -786,37 +906,54 @@ contains
         end do
       end do
     end do
+    !$omp end parallel do
     if (pv_pole_stokes) then
       ! Special treatment of vorticity around Poles
       if (mesh%has_south_pole()) then
         j = mesh%half_jds
+        !$omp parallel 
+        !$omp do collapse(1)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
             work(i,k) = -u_lat%d(i,j,k) * mesh%le_lat(j)
           end do
         end do
+        !$omp end do
+        !$omp master
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon / mesh%area_cell(j)
+        !$omp end master
+        !$omp do collapse(1)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
             vor%d(i,j,k) = pole(k)
           end do
         end do
+        !$omp end do
+        !$omp end parallel
       end if
       if (mesh%has_north_pole()) then
         j = mesh%half_jde
+        !$omp parallel
+        !$omp do collapse(1)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
             work(i,k) = u_lat%d(i,j,k) * mesh%le_lat(j)
           end do
         end do
+        !$omp end do
+        !$omp master
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon / mesh%area_cell(j+1)
+        !$omp end master
+        !$omp do collapse(1)
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
             vor%d(i,j,k) = pole(k)
           end do
         end do
+        !$omp end do
+        !$omp end parallel
       end if
     end if
     end associate
@@ -839,6 +976,7 @@ contains
                vor     => block%aux%vor    , & ! in
                pv      => block%aux%pv     )   ! out
     call calc_vor(block, dstate)
+    !$omp parallel do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%half_ids, mesh%half_ide
@@ -846,6 +984,7 @@ contains
         end do
       end do
     end do
+    !$omp end parallel do
     call fill_halo(pv)
     end associate
 
@@ -866,6 +1005,8 @@ contains
                pv     => block%aux%pv    , & ! in
                pv_lon => block%aux%pv_lon, & ! out
                pv_lat => block%aux%pv_lat)   ! out
+    !$omp parallel 
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -873,6 +1014,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -880,6 +1023,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel
     call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)
     end associate
@@ -887,7 +1032,7 @@ contains
   end subroutine interp_pv_midpoint
 
   subroutine interp_pv_upwind(block, dstate, dt, substep)
-
+    ! hotspot, 60s, 5401 times, 11.5ms per call
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: dt
@@ -913,6 +1058,8 @@ contains
                pv_lat => block%aux%pv_lat)   ! out
     select case (upwind_order_pv)
     case (1)
+      !$omp parallel
+      !$omp do collapse(2) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -921,6 +1068,10 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do
+      !$omp end do
+      !$omp do collapse(2) private(b)
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
@@ -929,7 +1080,11 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     case (3)
+      !$omp parallel
+      !$omp do collapse(2) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -938,6 +1093,10 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do
+      !$omp end do
+      !$omp do collapse(2) private(b)
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b  = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
@@ -946,7 +1105,11 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     case (5)
+      !$omp parallel
+      !$omp do collapse(2) private(b)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -955,6 +1118,10 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do
+      !$omp end do
+      !$omp do collapse(2) private(b)
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
@@ -963,6 +1130,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end select
     call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)
@@ -995,6 +1164,8 @@ contains
                dv      => dtend%dv         )   ! out
     select case (coriolis_scheme)
     case (1)
+      !$omp parallel 
+      !$omp do collapse(2) private(tmp)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -1015,6 +1186,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp do collapse(2) private(tmp)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1035,7 +1208,11 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     case (2)
+      !$omp parallel
+      !$omp do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -1043,6 +1220,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1050,6 +1229,9 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
+
     end select
     end associate
 
@@ -1073,6 +1255,8 @@ contains
                ke   => block%aux%ke, & ! in
                du   => dtend%du    , & ! out
                dv   => dtend%dv    )   ! out
+    !$omp parallel 
+    !$omp do collapse(2) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -1084,6 +1268,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp do collapse(2) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1095,6 +1281,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel
     end associate
 
     call perf_stop('calc_grad_ke')
@@ -1118,7 +1306,8 @@ contains
                mfx_lon => block%aux%mfx_lon, & ! in
                mfy_lat => block%aux%mfy_lat, & ! in
                dmf     => block%aux%dmf    )   ! out
-    !$omp parallel do collapse(2) private(i,j,k)
+    !$omp parallel
+    !$omp do collapse(2) 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
@@ -1131,38 +1320,53 @@ contains
         end do
       end do
     end do
-    !$omp end parallel do
+    !$omp end do
+    !$omp end parallel
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
+      !$omp parallel
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = mfy_lat%d(i,j,k)
         end do
       end do
+      !$omp end do
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+      !$omp end master
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           dmf%d(i,j,k) = pole(k)
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end if
     if (mesh%has_north_pole()) then
       j = mesh%full_jde
+      !$omp parallel
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = -mfy_lat%d(i,j-1,k)
         end do
       end do
-
+      !$omp end do
+      !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
- 
+      !$omp end master
+      !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           dmf%d(i,j,k) = pole(k)
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end if
     end associate
 
@@ -1171,7 +1375,7 @@ contains
   end subroutine calc_grad_mf
 
   subroutine calc_grad_ptf(block, dstate, dtend, dt)
-
+    ! hotspot, 180s, 5401 times, 33.3ms per call
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type ), intent(inout) :: dtend
@@ -1199,6 +1403,10 @@ contains
     call adv_calc_tracer_hflx(block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(ptf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(ptf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
+
+    call perf_start('omp1')
+   !$omp parallel
+   !$omp do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
@@ -1211,39 +1419,65 @@ contains
         end do
       end do
     end do
+   !$omp end do
+   !$omp end parallel
+    call perf_stop('omp1')
+
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
+      call perf_start('omp2')
+     !$omp parallel 
+     !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = ptf_lat%d(i,j,k)
         end do
       end do
+     !$omp end do
+     !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+     !$omp end master
+     !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           dpt%d(i,j,k) = -pole(k)
         end do
       end do
+     !$omp end do
+     !$omp end parallel
+      call perf_stop('omp2')
     end if
     if (mesh%has_north_pole()) then
       j = mesh%full_jde
+      call perf_start('omp3')
+     !$omp parallel
+     !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = ptf_lat%d(i,j-1,k)
         end do
       end do
+     !$omp end do
+     !$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+     !$omp end master
+     !$omp do collapse(1)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           dpt%d(i,j,k) = pole(k)
         end do
       end do
+     !$omp end do
+     !$omp end parallel
+      call perf_stop('omp3')
     end if
     ! --------------------------------- FFSL -----------------------------------
     call adv_fill_vhalo(pt)
     call adv_calc_tracer_vflx(block%adv_batch_pt, pt, ptf_lev, dt)
+    call perf_start('omp4')
+   !$omp parallel do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1251,6 +1485,8 @@ contains
         end do
       end do
     end do
+   !$omp end parallel do
+    call perf_stop('omp4')
     end associate
 
     call perf_stop('calc_grad_ptf')
@@ -1272,7 +1508,7 @@ contains
                dmf  => block%aux%dmf, & ! in
                dmgs => dtend%dmgs   )   ! out
     dmgs%d = 0
-    !$omp parallel do collapse(2) private(i,j,k)
+    !$omp parallel do collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1310,7 +1546,8 @@ contains
                we_lev_lat => block%aux%we_lev_lat, & ! in
                du         => dtend%du            , & ! out
                dv         => dtend%dv            )   ! out
-    !$omp parallel do collapse(2) private(i,j,k)
+    !$omp parallel
+    !$omp do collapse(2) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -1325,8 +1562,8 @@ contains
         end do
       end do
     end do
-    !$omp end parallel do
-    !$omp parallel do collapse(2) private(i,j,k)
+    !$omp end do
+    !$omp do collapse(2) private(tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1341,7 +1578,8 @@ contains
         end do
       end do
     end do
-    !$omp end parallel do
+    !$omp end do
+    !$omp end parallel
     end associate
 
     call perf_stop('calc_wedudlev_wedvdlev')
