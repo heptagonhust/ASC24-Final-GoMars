@@ -28,7 +28,7 @@ fi
 
 cd gptl-8.1.1
 # wget https://gist.githubusercontent.com/bonfus/21dec6b966859f5f509b935f8b055a7f/raw/macros.make
-./configure --enable-pmpi --prefix=$gptl_dir
+./configure --enable-pmpi --disable-openmp --prefix=$gptl_dir
 # make check
 make install
 # wordaround: remove all shared libs
