@@ -28,8 +28,13 @@ module time_schemes_mod
   use process_mod, only: proc
   use filter_mod
   use perf_mod
+  use omp_lib
+  ! use cam_logfile, only : iulog
+
 
   implicit none
+
+
 
   private
 
@@ -155,10 +160,12 @@ contains
     type(dstate_type), intent(inout) :: new_state
     real(r8), intent(in) :: dt
 
-    integer i, j, k
+    integer i, j, k, thread_rank
+    integer num_threads
 
     call t_startf ('update_state')
-
+    ! ! 设置OpenMP线程数
+    ! call omp_set_num_threads(8)
 
     associate (mesh       => block%mesh, &
                dmgsdt     => dtend%dmgs, &
@@ -233,6 +240,12 @@ contains
       call fill_halo(dvdt, south_halo=.false., north_halo=.false.)
       call filter_run(block%big_filter, dvdt)
       ! ------------------------------------------------------------------------
+      
+      call t_startf( 'doloop_test' )
+
+      !$omp parallel private(i, j, k)
+
+      !$omp do collapse(3)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -240,13 +253,28 @@ contains
           end do
         end do
       end do
+      !$omp end do
+
+      !$omp do collapse(3)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             new_state%v_lat%d(i,j,k) = old_state%v_lat%d(i,j,k) + dt * dvdt%d(i,j,k)
+            if (proc%id .eq. 1) then 
+             thread_rank = omp_get_thread_num()
+            ! Output i, j, k, and thread rank
+             if (thread_rank .ne. 0) then
+              print *, "i:", i, "j:", j, "k:", k, "Thread Rank:", thread_rank
+            end if 
+          end if
           end do
         end do
       end do
+      !$omp end do
+      
+      !$omp end parallel 
+      call t_stopf( 'doloop_test' )
+
       call fill_halo(new_state%u_lon)
       call fill_halo(new_state%v_lat)
     end if

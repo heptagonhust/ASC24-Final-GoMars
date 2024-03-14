@@ -14,7 +14,7 @@ module operators_mod
   use adv_mod
   use interp_mod
   use filter_mod
-
+  use omp_lib
   implicit none
 
   private
@@ -232,6 +232,8 @@ contains
         end do
       end do
     end do
+    !$omp end parallel do
+    
     call interp_run(p, p_lev)
     p_lev%d(:,:,1) = ptop
     call fill_halo(p_lev)
