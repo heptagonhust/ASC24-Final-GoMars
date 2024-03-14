@@ -475,49 +475,49 @@ contains
     ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
-      !$omp parallel 
-      !$omp do collapse(1) private(k, i)
+      !!$omp parallel 
+      !!$omp do collapse(1) private(k, i)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = 0.5_r8 * (v%d(i,j,k)**2 + block%aux%u_lat%d(i,j,k)**2)
         end do
       end do
-      !$omp end do
-      !$omp master
+      !!$omp end do
+      !!$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole / global_mesh%full_nlon
-      !$omp end master
-      !$omp do collapse(1) private(k, i)
+      !!$omp end master
+      !!$omp do collapse(1) private(k, i)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           ke%d(i,j,k) = pole(k)
         end do
       end do
-      !$omp end do
-      !$omp end parallel
+      !!$omp end do
+      !!$omp end parallel
     end if
     if (mesh%has_north_pole()) then
       j = mesh%full_jde
-       !$omp parallel 
-      !$omp do collapse(1) private(k, i)
+      !!$omp parallel 
+      !!$omp do collapse(1) private(k, i)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           work(i,k) = 0.5_r8 * (v%d(i,j-1,k)**2 + block%aux%u_lat%d(i,j-1,k)**2)
         end do
       end do
-      !$omp end do
-      !$omp master
+      !!$omp end do
+      !!$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
       pole = pole / global_mesh%full_nlon
-      !$omp end master
-      !$omp do collapse(1) private(k ,i)
+      !!$omp end master
+      !!$omp do collapse(1) private(k ,i)
       do k = mesh%full_kds, mesh%full_kde
         do i = mesh%full_ids, mesh%full_ide
           ke%d(i,j,k) = pole(k)
         end do
       end do
-      !$omp end do
-      !$omp end parallel
+      !!$omp end do
+      !!$omp end parallel
     end if
     end associate
 
