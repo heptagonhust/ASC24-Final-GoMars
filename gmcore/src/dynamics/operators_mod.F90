@@ -329,7 +329,7 @@ contains
                gz_lev => dstate%gz_lev, & ! in
                dmg    => dstate%dmg   , & ! in
                rhod   => dstate%rhod  )   ! out
-    !$omp parallel do collapse(3) private(i, j, k)
+    !$omp parallel do collapse(2) private(i, j, k)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -361,7 +361,7 @@ contains
                we_lev     => dstate%we_lev       , & ! out
                we_lev_lon => block%aux%we_lev_lon, & ! out
                we_lev_lat => block%aux%we_lev_lat)   ! out
-    !$omp parallel do collapse(3) private(i, j, k) 
+    !$omp parallel do collapse(2) private(i, j, k) 
     do k = mesh%half_kds + 1, mesh%half_kde - 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1307,7 +1307,7 @@ contains
                we_lev_lat => block%aux%we_lev_lat, & ! in
                du         => dtend%du            , & ! out
                dv         => dtend%dv            )   ! out
-    !$omp parallel do collapse(3) private(i, j, k, tmp)
+    !$omp parallel do collapse(2) private(i, j, k, tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -1323,7 +1323,7 @@ contains
       end do
     end do
     !$omp end parallel do
-    !$omp parallel do collapse(3) private(i, j, k, tmp)
+    !$omp parallel do collapse(2) private(i, j, k, tmp)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
