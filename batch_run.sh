@@ -40,6 +40,18 @@ run ( ) {
 	namelist_absolute_path=$(readlink -f ${namelist_relative_path} )
 	data_path="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")"
 	# now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
+	days=$(grep 'run_days' ${namelist_absolute_path} | sed 's/.*= *\([0-9]*\).*/\1/')
+
+	check_file="/data/gomars_output/public/N${2}n${3}/${case_name}_${days}days/baseline.nc" 
+	check_dir="/data/gomars_output/public/N${2}n${3}/" 
+
+	if [ -f "$check_file" ]; then
+		echo "exist!"
+	else
+		echo "not exist, use default path at N1n16!"
+		echo "!!! You should notice days!"
+		check_file="/data/gomars_output/public/N1n16/${case_name}_${days}days/baseline.nc"
+	fi
 	cd ..
 	current_dir=$(pwd)
 	cd gmcore/
@@ -62,18 +74,7 @@ run ( ) {
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
 	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
-	days=$(grep 'run_days' ${namelist_absolute_path} | sed 's/.*= *\([0-9]*\).*/\1/')
 
-	check_file="/data/gomars_output/public/N${2}n${3}/${case_name}_${days}days/baseline.nc" 
-	check_dir="/data/gomars_output/public/N${2}n${3}/" 
-
-	if [ -f "$check_file" ]; then
-		echo "exist!"
-	else
-		echo "not exist, use default path at N1n16!"
-		echo "!!! You should notice days!"
-		check_file="/data/gomars_output/public/N1n16/${case_name}_${days}days/baseline.nc"
-	fi
 	rm -rf opt.nc
 	mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
