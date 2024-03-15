@@ -62,6 +62,7 @@ run ( ) {
 	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
 
 	check_dir="/data/gomars_output/public/N${2}n${3}/${case_name}_${days}days/baseline.nc" 
+	rm -rf opt.nc
 	mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
 
