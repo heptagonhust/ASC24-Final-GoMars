@@ -27,7 +27,7 @@ module ffsl_mod
   use adv_batch_mod
   use ppm_mod
   use limiter_mod
-
+  use perf_mod
   implicit none
 
   private
