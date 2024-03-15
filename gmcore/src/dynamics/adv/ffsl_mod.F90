@@ -470,7 +470,7 @@ contains
           end do
         end do
       end do 
-     !$omp end do
+      !$omp end do
       !$omp do private(i, j, k, ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = ks, ke
         ! Along y-axis
@@ -526,6 +526,7 @@ contains
                cflz => batch%cflz)   ! in
     select case (batch%loc)
     case ('cell')
+      !$omp parallel do private(i, j, k, ku, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -557,7 +558,9 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     case ('lev')
+      !$omp parallel do private(k, j, i, ci, cf, ku, ml, dm, m6, s1, s2, ds1, ds2, ds3) collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -587,6 +590,7 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     end select
     end associate
 

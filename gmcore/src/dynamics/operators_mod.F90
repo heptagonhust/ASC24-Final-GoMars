@@ -1281,6 +1281,7 @@ contains
     call adv_calc_tracer_hflx(block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(ptf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(ptf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
+    !$omp parallel do private(k, j, i)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
@@ -1293,6 +1294,7 @@ contains
         end do
       end do
     end do
+    !$omp end parallel do
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
       do k = mesh%full_kds, mesh%full_kde
@@ -1326,6 +1328,7 @@ contains
     ! --------------------------------- FFSL -----------------------------------
     call adv_fill_vhalo(pt)
     call adv_calc_tracer_vflx(block%adv_batch_pt, pt, ptf_lev, dt)
+    !$omp parallel do private(k, j, i)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1333,6 +1336,7 @@ contains
         end do
       end do
     end do
+    !$omp end parallel do
     end associate
 
     call perf_stop('calc_grad_ptf')
