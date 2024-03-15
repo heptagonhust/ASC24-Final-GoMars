@@ -112,6 +112,8 @@ contains
       ngrid => filter%ngrid_lon
     end select
 
+    !$omp parallel
+    !$omp do collapse(2) private(i, j, k, n, hn, tmp)
     do k = ks, ke
       do j = js, je
         if (ngrid(j) > 1) then
@@ -130,6 +132,8 @@ contains
         end if
       end do
     end do
+    !$omp end do
+    !$omp end parallel
 
     call perf_stop('filter_run_3d')
 
