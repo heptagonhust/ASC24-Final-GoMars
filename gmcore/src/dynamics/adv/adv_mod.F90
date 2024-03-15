@@ -26,6 +26,7 @@ module adv_mod
   use weno_mod
   use tvd_mod
   use physics_mod
+  use perf_mod
 
   implicit none
 
@@ -134,12 +135,14 @@ contains
     type(latlon_field3d_type), intent(inout) :: qmfy
     real(r8), intent(in), optional :: dt
 
+    call perf_start('adv_calc_tracer_hflx') 
     select case (batch%scheme)
     case ('upwind')
       call upwind_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
     case ('ffsl')
       call ffsl_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
     end select
+    call perf_stop('adv_calc_tracer_hflx') 
 
   end subroutine adv_calc_tracer_hflx
 
@@ -149,13 +152,15 @@ contains
     type(latlon_field3d_type), intent(in   ) :: q
     type(latlon_field3d_type), intent(inout) :: qmfz
     real(r8), intent(in), optional :: dt
-
+    
+    call perf_start('adv_calc_tracer_vflx') 
     select case (batch%scheme)
     case ('upwind')
       call upwind_calc_tracer_vflx(batch, q, qmfz, dt)
     case ('ffsl')
       call ffsl_calc_tracer_vflx(batch, q, qmfz, dt)
     end select
+    call perf_stop('adv_calc_tracer_vflx') 
 
   end subroutine adv_calc_tracer_vflx
 
