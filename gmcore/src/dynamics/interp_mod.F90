@@ -86,6 +86,8 @@ contains
     select case (trim(x%loc) // '>' // trim(y%loc))
     ! --------------------------------------------------------------------------
     case ('cell>lon')
+    !$omp parallel 
+    !$omp do private(i, j, k) collapse(2) 
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%full_jds_no_pole, x%mesh%full_jde_no_pole
           do i = x%mesh%half_ids, x%mesh%half_ide
@@ -95,8 +97,12 @@ contains
           end do
         end do
       end do
+    !$omp end do
+    !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('cell>lat')
+    !$omp parallel 
+    !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%half_jds, x%mesh%half_jde
           do i = x%mesh%full_ids, x%mesh%full_ide
@@ -106,6 +112,8 @@ contains
           end do
         end do
       end do
+    !$omp end do
+    !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('cell>lev')
       if (x%mesh%full_nlev == 1) return
@@ -118,6 +126,8 @@ contains
       ! ===o=== k
       !
       ! -------
+    !$omp parallel 
+    !$omp do collapse(1) private(i, j, k, a, b, x1, x2)
       do k = x%mesh%half_kds + 1, x%mesh%half_kde - 1
         a = x%mesh%full_dlev(k-1) / (2 * x%mesh%half_dlev(k))
         b = x%mesh%full_dlev(k  ) / (2 * x%mesh%half_dlev(k))
@@ -127,6 +137,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
       k = x%mesh%half_kds
       x1 = x%mesh%full_lev(k  ) - x%mesh%half_lev(k)
       x2 = x%mesh%full_lev(k+1) - x%mesh%half_lev(k)
@@ -147,8 +159,11 @@ contains
           y%d(i,j,k) = a * x%d(i,j,k-1) + b * x%d(i,j,k-2)
         end do
       end do
+
     ! --------------------------------------------------------------------------
     case ('cell>vtx')
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%half_jds, x%mesh%half_jde
           do i = x%mesh%half_ids, x%mesh%half_ide
@@ -159,8 +174,12 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('lon>cell')
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%full_jds_no_pole, x%mesh%full_jde_no_pole
           do i = x%mesh%full_ids, x%mesh%full_ide
@@ -170,8 +189,12 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('lat>cell')
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%full_jds_no_pole, x%mesh%full_jde_no_pole
           do i = x%mesh%full_ids, x%mesh%full_ide
@@ -181,6 +204,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('lev>cell')
       ! =======
@@ -192,6 +217,8 @@ contains
       ! ---o--- k+1
       !
       ! =======
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%full_jds, x%mesh%full_jde
           do i = x%mesh%full_ids, x%mesh%full_ide
@@ -199,6 +226,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('lon>lev_lon')
       ! -------
@@ -210,6 +239,8 @@ contains
       ! ===o=== k
       !
       ! ----o--
+      !$omp parallel 
+      !$omp do collapse(1) private(i, j, k, a, b)
       do k = x%mesh%half_kds + 1, x%mesh%half_kde - 1
         a = x%mesh%full_dlev(k-1) / (x%mesh%full_dlev(k-1) + x%mesh%full_dlev(k))
         b = x%mesh%full_dlev(k  ) / (x%mesh%full_dlev(k-1) + x%mesh%full_dlev(k))
@@ -219,6 +250,9 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
+
       k = x%mesh%half_kds
       ! ---?--- 1
       !
@@ -276,6 +310,8 @@ contains
       ! ===o=== k
       !
       ! -------
+      !$omp parallel 
+      !$omp do collapse(1) private(i, j, k, a, b)
       do k = x%mesh%half_kds + 1, x%mesh%half_kde - 1
         a = x%mesh%full_dlev(k-1) / (x%mesh%full_dlev(k-1) + x%mesh%full_dlev(k))
         b = x%mesh%full_dlev(k  ) / (x%mesh%full_dlev(k-1) + x%mesh%full_dlev(k))
@@ -285,6 +321,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
       k = x%mesh%half_kds
       ! ---?--- 1
       !
@@ -333,6 +371,8 @@ contains
       end do
     ! --------------------------------------------------------------------------
     case ('lev>lev_lon')
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%half_kds, x%mesh%half_kde
         do j = x%mesh%full_jds_no_pole, x%mesh%full_jde_no_pole
           do i = x%mesh%half_ids, x%mesh%half_ide
@@ -342,8 +382,12 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('lev>lev_lat')
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%half_kds, x%mesh%half_kde
         do j = x%mesh%half_jds, x%mesh%half_jde
           do i = x%mesh%full_ids, x%mesh%full_ide
@@ -353,6 +397,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end select
 
   end subroutine interp_run_3d
@@ -368,6 +414,8 @@ contains
     select case (trim(x%loc) // '>' // trim(y%loc))
     ! --------------------------------------------------------------------------
     case ('cell>lon')
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%full_jds_no_pole, x%mesh%full_jde_no_pole
           do i = x%mesh%half_ids, x%mesh%half_ide
@@ -375,8 +423,12 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     ! --------------------------------------------------------------------------
     case ('cell>lat')
+      !$omp parallel 
+      !$omp do collapse(2) private(i, j, k)
       do k = x%mesh%full_kds, x%mesh%full_kde
         do j = x%mesh%half_jds, x%mesh%half_jde
           do i = x%mesh%full_ids, x%mesh%full_ide
@@ -384,6 +436,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel
     end select
 
   end subroutine average_run_3d
