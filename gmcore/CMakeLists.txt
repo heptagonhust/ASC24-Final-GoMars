@@ -393,16 +393,25 @@ if (HAS_RRTMGP AND HAS_NOAHMP)
   add_definitions(-DHAS_WRF)
 endif ()
 
-find_package(OpenMP)
-if(OpenMP_Fortran_FOUND)
-  # 如果找到了OpenMP，为Fortran编译器设置OpenMP编译选项
-  message("Found OMP!")
+#find_package(OpenMP)
+#if(OpenMP_Fortran_FOUND)
+#  # 如果找到了OpenMP，为Fortran编译器设置OpenMP编译选项
+#  message("Found OMP!")
 #  set(OpenMP_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -qopenmp-link=static")
 #  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-  list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
-endif()
+#  message("${OpenMP_Fortran_LIB_NAMES}")
+#  message("${OpenMP_Fortran_LIBRARIES}")
+#  list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
+#endif()
 
-target_link_libraries(gmcore -fiopenmp -qopenmp-link=static fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
+if (DEFINED ENV{OMPDIR})
+  include_directories("$ENV{OMPDIR}/include")
+  link_directories("$ENV{OMPDIR}/lib")
+endif ()
+
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fiopenmp -qopenmp-link=static")
+
+target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 
 
 if (USE_CAM AND HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)
