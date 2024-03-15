@@ -146,6 +146,9 @@ contains
                mgs     => dstate%mgs    , & ! in
                mg_lev  => dstate%mg_lev , & ! out
                mg      => dstate%mg     )   ! out
+    
+    !$omp parallel 
+    !$omp do private(i, j, k) collapse(2)
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -153,6 +156,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp do private(i, j, k) collapse(2)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -160,6 +165,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel 
     end associate
 
     call perf_stop('calc_mg')
@@ -633,6 +640,8 @@ contains
                dmg_lev => dstate%dmg_lev   , & ! out
                dmg_vtx => block%aux%dmg_vtx)   ! out
     if (baroclinic .or. advection) then
+      !$omp parallel 
+      !$omp do collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -649,7 +658,8 @@ contains
           end do
         end do
       end do
-
+      !$omp end do
+      !$omp do collapse(2)
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -657,6 +667,8 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel 
       ! Top boundary
       k = mesh%half_kds
       do j = mesh%full_jds, mesh%full_jde
