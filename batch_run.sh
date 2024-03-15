@@ -14,7 +14,7 @@ echo "******batch_run.sh*******"
 source ./env.sh
 
 message=$2
-days=$3
+# days=$3
 
 run ( ) {
 	
@@ -27,6 +27,8 @@ run ( ) {
 	case_name=$1
 	node=$2
 	proc=$3
+	# days=$4
+	
 
 	adv_exe_absolute_path=$(readlink -f ./build/gmcore_adv_driver.exe)
 	swm_exe_absolute_path=$(readlink -f ./build/gmcore_swm_driver.exe)
@@ -60,14 +62,24 @@ run ( ) {
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
 	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+	days=$(grep 'run_days' ${namelist_absolute_path} | sed 's/.*= *\([0-9]*\).*/\1/')
 
-	check_dir="/data/gomars_output/public/N${2}n${3}/${case_name}_${days}days/baseline.nc" 
+	check_file="/data/gomars_output/public/N${2}n${3}/${case_name}_${days}days/baseline.nc" 
+	check_dir="/data/gomars_output/public/N${2}n${3}/" 
+
+	if [ -f "$check_file" ]; then
+		echo "exist!"
+	else
+		echo "not exist, use default path at N1n16!"
+		echo "!!! You should notice days!"
+		check_file="/data/gomars_output/public/N1n16/${case_name}_${days}days/baseline.nc"
+	fi
 	rm -rf opt.nc
 	mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
 
 	popd
-	fd1="fd1=\"${check_dir}\""
+	fd1="fd1=\"${check_file}\""
 	fd2="fd2=\"${now_dir}\""
 
 	echo $fd1 
