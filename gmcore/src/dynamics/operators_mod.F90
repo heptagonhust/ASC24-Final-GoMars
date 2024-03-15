@@ -174,7 +174,7 @@ contains
   end subroutine calc_mg
 
   subroutine calc_ph(block, dstate)
-
+  ! Attention! Dependency!
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
 
@@ -194,6 +194,7 @@ contains
     k = mesh%half_kds
     ph_lev%d(:,:,k) = mg_lev%d(:,:,k)
     pkh_lev%d(:,:,k) = ph_lev%d(:,:,k)**rd_o_cpd
+
     do k = mesh%half_kds + 1, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -202,6 +203,8 @@ contains
         end do
       end do
     end do
+    !$omp parallel 
+    !$omp do collapse(2) private(i, j, k)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -209,6 +212,8 @@ contains
         end do
       end do
     end do
+    !$omp end do
+    !$omp end parallel 
     ! NOTE: Move this to other place?
     if (hydrostatic) ps%d = phs%d
     end associate
