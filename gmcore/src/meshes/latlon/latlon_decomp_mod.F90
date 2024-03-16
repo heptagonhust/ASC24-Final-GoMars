@@ -168,8 +168,8 @@ contains
     end if
 
     ! Set grid_proc_idmap for later use.
-    write(*, *) "nlon:", nlon
-    write(*, *) "nlat:", nlat
+    ! write(*, *) "nlon:", nlon
+    ! write(*, *) "nlat:", nlat
 
     allocate(proc%grid_proc_idmap(nlon,nlat))
     allocate(proc%global_grid_id (nlon,nlat))
