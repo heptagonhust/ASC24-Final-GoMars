@@ -26,7 +26,7 @@ fi
 export H5DIR=$(spack location -i hdf5)
 export CURLDIR=$(spack location -i curl)
 export XML2DIR=$(spack location -i libxml2)
-export OPENMP_STATIC_LIB_PATH="$(spack location -i intel-oneapi-compilers@2024.0.2)/compiler/latest/lib/libiomp5.a"
+export OMPDIR="$(spack location -i intel-oneapi-compilers@2024.0.2)/compiler/latest/"
 
 echo "CC: $CC"
 echo "FC: $FC"
@@ -43,5 +43,5 @@ if [ ! -d build ]; then
   cmake -B build -G Ninja 
 fi
 cd build
-# make -j8
+#make -j64 VERBOSE=1
 ninja
