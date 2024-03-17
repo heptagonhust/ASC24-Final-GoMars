@@ -714,22 +714,16 @@ contains
                mfy_lat => block%aux%mfy_lat, & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
+    
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_ids - 1, mesh%half_ide
           mfx_lon%d(i,j,k) = dmg_lon%d(i,j,k) * u_lon%d(i,j,k)
         end do
       end do
-    end do
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide + 1
-          mfy_lat%d(i,j,k) = dmg_lat%d(i,j,k) * v_lat%d(i,j,k)
-        end do
-      end do
-    end do
 
-    do k = mesh%full_kds, mesh%full_kde
+
+    ! do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
           mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) + &
@@ -737,10 +731,14 @@ contains
           u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
         end do
       end do
-    end do
-    call fill_halo(u_lat)
 
-    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide + 1
+          mfy_lat%d(i,j,k) = dmg_lat%d(i,j,k) * v_lat%d(i,j,k)
+        end do
+      end do
+    ! end do
+    ! do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
           mfy_lon%d(i,j,k) = block%static%tg_wgt_lon(1,j) * (mfy_lat%d(i,j-1,k) + mfy_lat%d(i+1,j-1,k)) + &
@@ -749,6 +747,13 @@ contains
         end do
       end do
     end do
+
+
+    call fill_halo(u_lat)
+
+    ! do k = mesh%full_kds, mesh%full_kde
+
+    ! end do
     call fill_halo(v_lon)
     end associate
 

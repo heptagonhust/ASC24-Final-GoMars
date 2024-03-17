@@ -85,6 +85,10 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
 endif ()
 
 list(APPEND fortran_flags -heap-arrays)
+# list(APPEND fortran_flags -fstack-arrays)
+list(APPEND fortran_flags -xCORE-AVX512)
+
+
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 
 

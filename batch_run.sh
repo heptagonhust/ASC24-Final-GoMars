@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH -n 16
+#SBATCH -n 64
 #SBATCH --exclude hepnode0
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
@@ -22,8 +22,9 @@ run ( ) {
 		export UCX_RC_PATH_MTU=2048
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
-		export OMP_NUM_THREADS=8
+		export OMP_NUM_THREADS=1
 	fi
+	export I_MPI_PIN=off
 	case_name=$1
 	node=$2
 	proc=$3
