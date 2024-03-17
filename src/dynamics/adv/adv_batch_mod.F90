@@ -71,9 +71,9 @@ module adv_batch_mod
     type(latlon_field3d_type) mz0
     type(latlon_field3d_type) dmf
     type(latlon_field2d_type) dmgs
-    type(latlon_field3d_type) qmf_lon
-    type(latlon_field3d_type) qmf_lat
-    type(latlon_field3d_type) qmf_lev
+    type(latlon_field3d_type) qmfx
+    type(latlon_field3d_type) qmfy
+    type(latlon_field3d_type) qmfz
     ! FFSL variables
     type(latlon_field3d_type) cflx
     type(latlon_field3d_type) cfly
@@ -195,20 +195,20 @@ contains
         units     = ''
         call this%dmgs%init(name, long_name, units, 'cell', mesh, halo)
       end if
-      name        = trim(this%name) // '_qmf_lon'
+      name        = trim(this%name) // '_qmfx'
       long_name   = 'Tracer mass flux in x direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lon%init(name, long_name, units, 'lon', mesh, halo)
+      call this%qmfx%init(name, long_name, units, 'lon', mesh, halo)
 
-      name        = trim(this%name) // '_qmf_lat'
+      name        = trim(this%name) // '_qmfy'
       long_name   = 'Tracer mass flux in y direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lat%init(name, long_name, units, 'lat', mesh, halo)
+      call this%qmfy%init(name, long_name, units, 'lat', mesh, halo)
 
-      name        = trim(this%name) // '_qmf_lev'
+      name        = trim(this%name) // '_qmfz'
       long_name   = 'Tracer mass flux in z direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lev%init(name, long_name, units, 'lev', mesh, halo)
+      call this%qmfz%init(name, long_name, units, 'lev', mesh, halo)
       select case (this%scheme)
       case ('ffsl')
         name      = trim(this%name) // '_cflx'
@@ -248,20 +248,20 @@ contains
       end select
     case ('lev')
       ! Only for nonhydrostatic dynamic calculation.
-      name        = trim(this%name) // '_qmf_lon'
+      name        = trim(this%name) // '_qmfx'
       long_name   = 'Tracer mass flux in x direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lon%init(name, long_name, units, 'lev_lon', mesh, halo)
+      call this%qmfx%init(name, long_name, units, 'lev_lon', mesh, halo)
 
-      name        = trim(this%name) // '_qmf_lat'
+      name        = trim(this%name) // '_qmfy'
       long_name   = 'Tracer mass flux in y direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lat%init(name, long_name, units, 'lev_lat', mesh, halo)
+      call this%qmfy%init(name, long_name, units, 'lev_lat', mesh, halo)
 
-      name        = trim(this%name) // '_qmf_lev'
+      name        = trim(this%name) // '_qmfz'
       long_name   = 'Tracer mass flux in z direction'
       units       = 'Pa kg kg-1 m s-1'
-      call this%qmf_lev%init(name, long_name, units, 'cell', mesh, halo)
+      call this%qmfz%init(name, long_name, units, 'cell', mesh, halo)
       select case (this%scheme)
       case ('ffsl')
         name      = trim(this%name) // '_cflx'
@@ -319,30 +319,30 @@ contains
 
     if (allocated (this%idx)) deallocate(this%idx)
 
-    call this%old_m  %clear()
-    call this%mfx    %clear()
-    call this%mfy    %clear()
-    call this%mz     %clear()
-    call this%u      %clear()
-    call this%v      %clear()
-    call this%we     %clear()
-    call this%mfx0   %clear()
-    call this%mfy0   %clear()
-    call this%mx0    %clear()
-    call this%my0    %clear()
-    call this%mz0    %clear()
-    call this%dmf    %clear()
-    call this%dmgs   %clear()
-    call this%qmf_lon%clear()
-    call this%qmf_lat%clear()
-    call this%qmf_lev%clear()
-    call this%cflx   %clear()
-    call this%cfly   %clear()
-    call this%cflz   %clear()
-    call this%divx   %clear()
-    call this%divy   %clear()
-    call this%qx     %clear()
-    call this%qy     %clear()
+    call this%old_m%clear()
+    call this%mfx  %clear()
+    call this%mfy  %clear()
+    call this%mz   %clear()
+    call this%u    %clear()
+    call this%v    %clear()
+    call this%we   %clear()
+    call this%mfx0 %clear()
+    call this%mfy0 %clear()
+    call this%mx0  %clear()
+    call this%my0  %clear()
+    call this%mz0  %clear()
+    call this%dmf  %clear()
+    call this%dmgs %clear()
+    call this%qmfx %clear()
+    call this%qmfy %clear()
+    call this%qmfz %clear()
+    call this%cflx %clear()
+    call this%cfly %clear()
+    call this%cflz %clear()
+    call this%divx %clear()
+    call this%divy %clear()
+    call this%qx   %clear()
+    call this%qy   %clear()
 
     this%loc         = 'cell'
     this%name        = ''

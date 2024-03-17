@@ -186,15 +186,15 @@ contains
             idx = batch%idx(l)
             call q_new%link(tracers(iblk)%q, idx)
             q_old%d = q_new%d
-            associate (m_old   => batch%old_m  , & ! inout
-                       qmf_lon => batch%qmf_lon, & ! working array
-                       qmf_lat => batch%qmf_lat, & ! working array
-                       qmf_lev => batch%qmf_lev)   ! working array
+            associate (m_old => batch%old_m, & ! inout
+                       qmfx  => batch%qmfx , & ! working array
+                       qmfy  => batch%qmfy , & ! working array
+                       qmfz  => batch%qmfz )   ! working array
             ! Calculate horizontal tracer mass flux.
-            call adv_calc_tracer_hflx(batch, q_old, qmf_lon, qmf_lat)
-            call fill_halo(qmf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
-            call fill_halo(qmf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
-            call div_operator(qmf_lon, qmf_lat, dqdt)
+            call adv_calc_tracer_hflx(batch, q_old, qmfx, qmfy)
+            call fill_halo(qmfx, south_halo=.false., north_halo=.false., east_halo=.false.)
+            call fill_halo(qmfy, north_halo=.false.,  west_halo=.false., east_halo=.false.)
+            call div_operator(qmfx, qmfy, dqdt)
             ! Update tracer mixing ratio due to horizontal advection.
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
@@ -205,11 +205,11 @@ contains
             end do
             ! Calculate vertical tracer mass flux.
             call adv_fill_vhalo(q_new)
-            call adv_calc_tracer_vflx(block%adv_batches(m), q_new, qmf_lev)
+            call adv_calc_tracer_vflx(block%adv_batches(m), q_new, qmfz)
             do k = mesh%full_kds, mesh%full_kde
               do j = mesh%full_jds, mesh%full_jde
                 do i = mesh%full_ids, mesh%full_ide
-                  q_new%d(i,j,k) = q_new%d(i,j,k) - (qmf_lev%d(i,j,k+1) - qmf_lev%d(i,j,k)) * dt_adv / m_new%d(i,j,k)
+                  q_new%d(i,j,k) = q_new%d(i,j,k) - (qmfz%d(i,j,k+1) - qmfz%d(i,j,k)) * dt_adv / m_new%d(i,j,k)
                 end do
               end do
             end do

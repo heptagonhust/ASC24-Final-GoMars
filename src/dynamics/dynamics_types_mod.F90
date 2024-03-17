@@ -135,9 +135,9 @@ module dynamics_types_mod
     type(latlon_field3d_type) pkh_lev           ! Exner pressure on half levels
     type(latlon_field3d_type) we_lev_lon        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
     type(latlon_field3d_type) we_lev_lat        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
-    type(latlon_field3d_type) ptf_lon           ! Potential temperature on the zonal edge
-    type(latlon_field3d_type) ptf_lat           ! Potential temperature on the merdional edge
-    type(latlon_field3d_type) ptf_lev           ! Potential temperature on the vertical edge
+    type(latlon_field3d_type) ptfx              ! Potential temperature on the zonal edge
+    type(latlon_field3d_type) ptfy              ! Potential temperature on the merdional edge
+    type(latlon_field3d_type) ptfz              ! Potential temperature on the vertical edge
     type(latlon_field3d_type) mfx_lon           ! Normal mass flux on zonal edge
     type(latlon_field3d_type) mfy_lat           ! Normal mass flux on merdional edge
     type(latlon_field3d_type) mfx_lat           ! Tangient mass flux on zonal edge
@@ -779,25 +779,25 @@ contains
       call this%we_lev_lat%init(name, long_name, units, 'lev_lat', mesh, halo)
     end if
 
-    name      = 'ptf_lon'
+    name      = 'ptfx'
     long_name = 'Modified potential temperature flux on lon edge'
     units     = 'K m s-1'
     if (baroclinic) then
-      call this%ptf_lon%init(name, long_name, units, 'lon', mesh, halo)
+      call this%ptfx%init(name, long_name, units, 'lon', mesh, halo)
     end if
 
-    name      = 'ptf_lat'
+    name      = 'ptfy'
     long_name = 'Modified potential temperature flux on lat edge'
     units     = 'K m s-1'
     if (baroclinic) then
-      call this%ptf_lat%init(name, long_name, units, 'lat', mesh, halo)
+      call this%ptfy%init(name, long_name, units, 'lat', mesh, halo)
     end if
 
-    name      = 'ptf_lev'
+    name      = 'ptfz'
     long_name = 'Modified potential temperature flux on half level'
     units     = 'K m s-1'
     if (baroclinic) then
-      call this%ptf_lev%init(name, long_name, units, 'lev', mesh, halo)
+      call this%ptfz%init(name, long_name, units, 'lev', mesh, halo)
     end if
 
     name      = 'mfx_lon'
@@ -987,9 +987,9 @@ contains
     call this%pkh_lev    %clear()
     call this%we_lev_lon %clear()
     call this%we_lev_lat %clear()
-    call this%ptf_lon    %clear()
-    call this%ptf_lat    %clear()
-    call this%ptf_lev    %clear()
+    call this%ptfx       %clear()
+    call this%ptfy       %clear()
+    call this%ptfz       %clear()
     call this%mfx_lon    %clear()
     call this%mfy_lat    %clear()
     call this%mfx_lat    %clear()

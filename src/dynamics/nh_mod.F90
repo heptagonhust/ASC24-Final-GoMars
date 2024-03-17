@@ -106,16 +106,16 @@ contains
 
     integer i, j, k
 
-    associate (mesh        => block%mesh                , &
-               dmf_lev     => block%aux%dmf_lev         , & ! in
-               we          => block%adv_batch_nh%we     , & ! in
-               qmf_lon     => block%adv_batch_nh%qmf_lon, &
-               qmf_lat     => block%adv_batch_nh%qmf_lat, &
-               qmf_lev     => block%adv_batch_nh%qmf_lev)
-    call adv_calc_tracer_hflx(block%adv_batch_nh, q_lev, qmf_lon, qmf_lat, dt)
-    call fill_halo(qmf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
-    call fill_halo(qmf_lat, west_halo=.false., east_halo=.false., north_halo=.false.)
-    call div_operator(qmf_lon, qmf_lat, dqdt_lev)
+    associate (mesh     => block%mesh             , &
+               dmf_lev  => block%aux%dmf_lev      , & ! in
+               we       => block%adv_batch_nh%we  , & ! in
+               qmfx     => block%adv_batch_nh%qmfx, &
+               qmfy     => block%adv_batch_nh%qmfy, &
+               qmfz     => block%adv_batch_nh%qmfz)
+    call adv_calc_tracer_hflx(block%adv_batch_nh, q_lev, qmfx, qmfy, dt)
+    call fill_halo(qmfx, south_halo=.false., north_halo=.false., east_halo=.false.)
+    call fill_halo(qmfy, west_halo=.false., east_halo=.false., north_halo=.false.)
+    call div_operator(qmfx, qmfy, dqdt_lev)
     ! Remove horizontal mass flux divergence part.
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde
@@ -125,13 +125,13 @@ contains
       end do
     end do
     call adv_fill_vhalo(q_lev)
-    call adv_calc_tracer_vflx(block%adv_batch_nh, q_lev, qmf_lev, dt)
+    call adv_calc_tracer_vflx(block%adv_batch_nh, q_lev, qmfz, dt)
     ! Remove vertical mass flux divergence part.
     do k = mesh%half_kds + 1, mesh%half_kde - 1
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dqdt_lev%d(i,j,k) = dqdt_lev%d(i,j,k) - (       &
-            qmf_lev%d(i,j,k) - qmf_lev%d(i,j,k-1) -       &
+          dqdt_lev%d(i,j,k) = dqdt_lev%d(i,j,k) - ( &
+            qmfz%d(i,j,k) - qmfz%d(i,j,k-1) -       &
             q_lev%d(i,j,k) * (we%d(i,j,k) - we%d(i,j,k-1)))
         end do
       end do

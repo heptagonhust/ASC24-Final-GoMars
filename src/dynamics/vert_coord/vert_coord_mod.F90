@@ -130,13 +130,11 @@ contains
     end if
     do k = global_mesh%half_kds + 1, global_mesh%half_kde - 1
       global_mesh%half_dlev(k) = global_mesh%full_lev(k) - global_mesh%full_lev(k-1)
-      global_mesh%half_dlev_upper(k) = global_mesh%half_lev(k) - global_mesh%full_lev(k-1)
-      global_mesh%half_dlev_lower(k) = global_mesh%full_lev(k) - global_mesh%half_lev(k)
     end do
-    global_mesh%half_dlev(1) = global_mesh%full_lev(1) - global_mesh%half_lev(1)
-    global_mesh%half_dlev_lower(1) = global_mesh%half_dlev(1)
-    global_mesh%half_dlev(global_mesh%half_kde) = global_mesh%half_lev(global_mesh%half_kde) - global_mesh%full_lev(global_mesh%full_kde)
-    global_mesh%half_dlev_upper(global_mesh%half_kde) = global_mesh%half_dlev(global_mesh%half_kde)
+    k = global_mesh%half_kds
+    global_mesh%half_dlev(k) = global_mesh%full_lev(k) - global_mesh%half_lev(k)
+    k = global_mesh%half_kde
+    global_mesh%half_dlev(k) = global_mesh%half_lev(k) - global_mesh%full_lev(k)
 
   end subroutine vert_coord_init
 

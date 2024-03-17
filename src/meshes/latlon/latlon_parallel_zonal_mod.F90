@@ -12,6 +12,7 @@ module latlon_parallel_zonal_mod
   use mpi
   use latlon_mesh_mod
   use latlon_parallel_types_mod
+  use latlon_field_types_mod
 
   implicit none
 
@@ -381,29 +382,26 @@ contains
 
   end subroutine scatter_zonal_array_2d_r8
 
-  subroutine zonal_avg_3d_r8(zonal_circle, mesh, j, array)
+  subroutine zonal_avg_3d_r8(zonal_circle, f, j)
 
     type(zonal_circle_type), intent(in) :: zonal_circle
-    type(latlon_mesh_type), intent(in) :: mesh
+    type(latlon_field3d_type), intent(inout) :: f
     integer, intent(in) :: j
-    real(8), intent(inout) :: array(mesh%full_ims:mesh%full_ime, &
-                                    mesh%full_jms:mesh%full_jme, &
-                                    mesh%full_kms:mesh%full_kme)
 
-    real(8) work(mesh%full_ids:mesh%full_ide,mesh%full_kds:mesh%full_kde)
-    real(8) pole(mesh%full_kds:mesh%full_kde)
+    real(8) work(f%mesh%full_ids:f%mesh%full_ide,f%mesh%full_kds:f%mesh%full_kde)
+    real(8) pole(f%mesh%full_kds:f%mesh%full_kde)
     integer i, k
 
-    do k = mesh%full_kds, mesh%full_kde
-      do i = mesh%full_ids, mesh%full_ide
-        work(i,k) = array(i,j,k)
+    do k = f%mesh%full_kds, f%mesh%full_kde
+      do i = f%mesh%full_ids, f%mesh%full_ide
+        work(i,k) = f%d(i,j,k)
       end do
     end do
     call zonal_sum(zonal_circle, work, pole)
     pole = pole / global_mesh%full_nlon
-    do k = mesh%full_kds, mesh%full_kde
-      do i = mesh%full_ids, mesh%full_ide
-        array(i,j,k) = pole(k)
+    do k = f%mesh%full_kds, f%mesh%full_kde
+      do i = f%mesh%full_ids, f%mesh%full_ide
+        f%d(i,j,k) = pole(k)
       end do
     end do
 

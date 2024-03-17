@@ -394,30 +394,16 @@ contains
         end do
       end do
       if (mesh%has_south_pole()) then
-        if (filter_ptend) then
-          call zonal_avg(proc%zonal_circle, aux%filter_mesh, mesh%full_jds, aux%dtdt_phys)
-          do m = 1, pcnst
-            call zonal_avg(proc%zonal_circle, aux%filter_mesh, mesh%full_jds, aux%dqdt_phys(:,:,:,m))
-          end do
-        else
-          call zonal_avg(proc%zonal_circle, aux%mesh, mesh%full_jds, aux%dtdt_phys)
-          do m = 1, pcnst
-            call zonal_avg(proc%zonal_circle, aux%mesh, mesh%full_jds, aux%dqdt_phys(:,:,:,m))
-          end do
-        end if
+        call zonal_avg(proc%zonal_circle, aux%dtdt_phys, mesh%full_jds)
+        do m = 1, pcnst
+          call zonal_avg(proc%zonal_circle, aux%dqdt_phys(:,:,:,m), mesh%full_jds)
+        end do
       end if
       if (mesh%has_north_pole()) then
-        if (filter_ptend) then
-          call zonal_avg(proc%zonal_circle, aux%filter_mesh, mesh%full_jde, aux%dtdt_phys)
-          do m = 1, pcnst
-            call zonal_avg(proc%zonal_circle, aux%filter_mesh, mesh%full_jde, aux%dqdt_phys(:,:,:,m))
-          end do
-        else
-          call zonal_avg(proc%zonal_circle, aux%mesh, mesh%full_jde, aux%dtdt_phys)
-          do m = 1, pcnst
-            call zonal_avg(proc%zonal_circle, aux%mesh, mesh%full_jde, aux%dqdt_phys(:,:,:,m))
-          end do
-        end if
+        call zonal_avg(proc%zonal_circle, aux%dtdt_phys, mesh%full_jde)
+        do m = 1, pcnst
+          call zonal_avg(proc%zonal_circle, aux%dqdt_phys(:,:,:,m), mesh%full_jde)
+        end do
       end if
     else
       call log_error('cam_physics_p2d: Distributed physics columns are not supported yet!', __FILE__, __LINE__)

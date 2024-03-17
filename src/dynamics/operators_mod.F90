@@ -711,16 +711,7 @@ contains
                v_lat => dstate%v_lat   , & ! in
                u_lat => block%aux%u_lat, & ! in
                vor   => block%aux%vor  )   ! out
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%half_ids, mesh%half_ide
-          vor%d(i,j,k) = (                                                            &
-            u_lon%d(i  ,j,k) * mesh%de_lon(j) - u_lon%d(i,j+1,k) * mesh%de_lon(j+1) + &
-            v_lat%d(i+1,j,k) * mesh%de_lat(j) - v_lat%d(i,j  ,k) * mesh%de_lat(j  )   &
-          ) / mesh%area_vtx(j)
-        end do
-      end do
-    end do
+    call curl_operator(u_lon, v_lat, vor)
     if (pv_pole_stokes) then
       ! Special treatment of vorticity around Poles
       if (mesh%has_south_pole()) then
@@ -1071,29 +1062,29 @@ contains
 
     call perf_start('calc_grad_ptf')
 
-    associate (mesh     => block%filter_mesh, &
-               u_lon    => dstate%u_lon     , & ! in
-               v_lat    => dstate%v_lat     , & ! in
-               we_lev   => dstate%we_lev    , & ! in
-               mfx_lon  => block%aux%mfx_lon, & ! in
-               mfy_lat  => block%aux%mfy_lat, & ! in
-               dmg_lev  => dstate%dmg_lev   , & ! in
-               pt       => dstate%pt        , & ! in
-               ptf_lon  => block%aux%ptf_lon, & ! out
-               ptf_lat  => block%aux%ptf_lat, & ! out
-               ptf_lev  => block%aux%ptf_lev, & ! out
-               dpt      => dtend%dpt        )   ! out
+    associate (mesh    => block%filter_mesh, &
+               u_lon   => dstate%u_lon     , & ! in
+               v_lat   => dstate%v_lat     , & ! in
+               we_lev  => dstate%we_lev    , & ! in
+               mfx_lon => block%aux%mfx_lon, & ! in
+               mfy_lat => block%aux%mfy_lat, & ! in
+               dmg_lev => dstate%dmg_lev   , & ! in
+               pt      => dstate%pt        , & ! in
+               ptfx    => block%aux%ptfx   , & ! out
+               ptfy    => block%aux%ptfy   , & ! out
+               ptfz    => block%aux%ptfz   , & ! out
+               dpt     => dtend%dpt        )   ! out
     call block%adv_batch_pt%set_wind(u_lon, v_lat, we_lev, mfx_lon, mfy_lat, dmg_lev)
-    call adv_calc_tracer_hflx(block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
-    call fill_halo(ptf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
-    call fill_halo(ptf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
-    call div_operator(ptf_lon, ptf_lat, dpt)
+    call adv_calc_tracer_hflx(block%adv_batch_pt, pt, ptfx, ptfy, dt)
+    call fill_halo(ptfx, south_halo=.false., north_halo=.false., east_halo=.false.)
+    call fill_halo(ptfy, north_halo=.false.,  west_halo=.false., east_halo=.false.)
+    call div_operator(ptfx, ptfy, dpt)
     call adv_fill_vhalo(pt)
-    call adv_calc_tracer_vflx(block%adv_batch_pt, pt, ptf_lev, dt)
+    call adv_calc_tracer_vflx(block%adv_batch_pt, pt, ptfz, dt)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
-          dpt%d(i,j,k) = -dpt%d(i,j,k) - (ptf_lev%d(i,j,k+1) - ptf_lev%d(i,j,k))
+          dpt%d(i,j,k) = -dpt%d(i,j,k) - (ptfz%d(i,j,k+1) - ptfz%d(i,j,k))
         end do
       end do
     end do

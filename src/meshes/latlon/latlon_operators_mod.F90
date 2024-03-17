@@ -28,6 +28,11 @@ module latlon_operators_mod
 
   implicit none
 
+  private
+
+  public div_operator
+  public curl_operator
+
 contains
 
   subroutine div_operator(fx, fy, div, with_halo)
@@ -93,5 +98,35 @@ contains
     end associate
 
   end subroutine div_operator
+
+  subroutine curl_operator(fx, fy, curl, with_halo)
+
+    type(latlon_field3d_type), intent(in   ) :: fx
+    type(latlon_field3d_type), intent(in   ) :: fy
+    type(latlon_field3d_type), intent(inout) :: curl
+    logical, intent(in), optional :: with_halo
+
+    integer i, j, k, is, ie, js, je, ks, ke
+
+    associate (mesh => curl%mesh)
+    ks = merge(mesh%full_kds, mesh%half_kds, curl%loc == 'cell')
+    ke = merge(mesh%full_kde, mesh%half_kde, curl%loc == 'cell')
+    is = mesh%full_ids
+    ie = mesh%full_ide; if (present(with_halo)) ie = merge(ie + 1, ie, with_halo)
+    js = mesh%full_jds_no_pole
+    je = mesh%full_jde_no_pole; if (present(with_halo)) je = merge(je + 1, je, with_halo)
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%half_jds, mesh%half_jde
+        do i = mesh%half_ids, mesh%half_ide
+          curl%d(i,j,k) = (                                                     &
+            fx%d(i  ,j,k) * mesh%de_lon(j) - fx%d(i,j+1,k) * mesh%de_lon(j+1) + &
+            fy%d(i+1,j,k) * mesh%de_lat(j) - fy%d(i,j  ,k) * mesh%de_lat(j  )   &
+          ) / mesh%area_vtx(j)
+        end do
+      end do
+    end do
+    end associate
+
+  end subroutine curl_operator
 
 end module latlon_operators_mod

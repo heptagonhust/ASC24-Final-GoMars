@@ -72,10 +72,10 @@ contains
 
     logical at_south_pole_opt
     logical at_north_pole_opt
-    integer full_ids, full_ide
-    integer full_jds, full_jde
-    integer half_ids, half_ide
-    integer half_jds, half_jde
+    integer full_ihs, full_ihe
+    integer full_jhs, full_jhe
+    integer half_ihs, half_ihe
+    integer half_jhs, half_jhe
     integer array_size(3,2,2)
     integer send_subarray_size(3,2,2)
     integer recv_subarray_size(3,2,2)
@@ -102,30 +102,57 @@ contains
     ! NOTE: MPI array index starts from zero.
     select case (orient)
     case (south, north)
-      full_ids = mesh%lon_hw
-      full_ide = mesh%full_nlon + mesh%lon_hw - 1
+      full_ihs = mesh%lon_hw
+      full_ihe = mesh%full_nlon + mesh%lon_hw - 1
     case (west)
-      full_ids = 0
-      full_ide = mesh%lon_hw - 1
+      full_ihs = 0
+      full_ihe = mesh%lon_hw - 1
     case (east)
-      full_ids = mesh%full_nlon + mesh%lon_hw
-      full_ide = full_ids + mesh%lon_hw - 1
+      full_ihs = mesh%full_nlon + mesh%lon_hw
+      full_ihe = full_ihs + mesh%lon_hw - 1
     end select
-    half_ids = full_ids
-    half_ide = full_ide
+    half_ihs = full_ihs
+    half_ihe = full_ihe
     select case (orient)
     case (west, east)
-      full_jds = mesh%lat_hw
-      full_jde = mesh%full_nlat + mesh%lat_hw - 1
+      full_jhs = mesh%lat_hw
+      full_jhe = mesh%full_nlat + mesh%lat_hw - 1
     case (south)
-      full_jds = 0
-      full_jde = mesh%lat_hw - 1
+      full_jhs = 0
+      full_jhe = mesh%lat_hw - 1
     case (north)
-      full_jds = mesh%full_nlat + mesh%lat_hw
-      full_jde = full_jds + mesh%lat_hw - 1
+      full_jhs = mesh%full_nlat + mesh%lat_hw
+      full_jhe = full_jhs + mesh%lat_hw - 1
     end select
-    half_jds = merge(full_jds - 1, full_jds, mesh%has_north_pole() .and. orient == north)
-    half_jde = merge(full_jde - 1, full_jde, mesh%has_north_pole() .and. orient /= south)
+    !
+    !   South Pole           Internal           North Pole
+    !
+    !    U     V             U     V             U     V
+    !                                          _____       
+    !        _____               _____        |\\\\\|_____ 
+    !       |\\\\\|             |\\\\\|       |\\6\\|\\\\\|
+    !  _____|\\5\\|        _____|\\5\\|       |\\\\\|\\5\\|
+    ! |\\\\\|\\\\\|       |\\\\\|\\\\\|       |\\\\\|\\\\\| 
+    ! |\\5\\|\\\\\|       |\\5\\|\\\\\|       |\\5\\|\\\\\|
+    ! |\\\\\|\\4\\|       |\\\\\|\\4\\|       |\\\\\|\\4\\|
+    ! |\\\\\|\\\\\|       |\\\\\|\\\\\|       |@@@@@|\\\\\|
+    ! |\\4\\|     |       |\\4\\|     |       |@@4@@|     |
+    ! |\\\\\|  3  |       |\\\\\|  3  |       |@@@@@|  3  |
+    ! |     |_____|       |     |_____|       |     |_____|
+    ! |  3  |     |       |  3  |     |       |  3  |     |
+    ! |_____|  2  |       |_____|  2  |       |_____|  2  |
+    ! |@@@@@|_____|       |     |_____|       |     |_____|
+    ! |@@2@@|\\\\\|       |  2  |\\\\\|       |  2  |\\\\\|
+    ! |@@@@@|\\1\\|       |_____|\\1\\|       |_____|\\1\\|
+    ! |\\\\\|\\\\\|       |\\\\\|\\\\\|       |\\\\\|\\\\\|
+    ! |\\1\\|\\\\\|       |\\1\\|\\\\\|       |\\1\\|\\\\\|
+    ! |\\\\\|\\0\\|       |\\\\\|\\0\\|       |\\\\\|\\0\\|
+    ! |\\\\\|\\\\\|       |\\\\\|\\\\\|       |\\\\\|\\\\\|
+    ! |\\0\\|             |\\0\\|             |\\0\\|      
+    ! |\\\\\|             |\\\\\|             |\\\\\|      
+    !                                         
+    half_jhs = merge(full_jhs - 1, full_jhs, mesh%has_north_pole() .and. orient == north)
+    half_jhe = merge(full_jhe - 1, full_jhe, mesh%has_north_pole() .and. orient /= south)
 
     !                          wx                          nx                          wx
     !                          |                           |                           |
@@ -161,10 +188,10 @@ contains
     nlev = [mesh%full_kme-mesh%full_kms+1,mesh%half_kme-mesh%half_kms+1]
 
     if (orient == south .or. orient == north) then
-      full_ids = full_ids - this%lon_hw
-      full_ide = full_ide + this%lon_hw
-      half_ids = half_ids - this%lon_hw
-      half_ide = half_ide + this%lon_hw
+      full_ihs = full_ihs - this%lon_hw
+      full_ihe = full_ihe + this%lon_hw
+      half_ihs = half_ihs - this%lon_hw
+      half_ihe = half_ihe + this%lon_hw
     end if
 
     do k = 1, 2 ! From full level to half level
@@ -172,96 +199,96 @@ contains
       array_size(:,2,1) = [mesh%half_nlon+2*mesh%lon_hw,mesh%full_nlat+2*mesh%lat_hw,nlev(k)]
       array_size(:,1,2) = [mesh%full_nlon+2*mesh%lon_hw,mesh%half_nlat+2*mesh%lat_hw,nlev(k)]
       array_size(:,2,2) = [mesh%half_nlon+2*mesh%lon_hw,mesh%half_nlat+2*mesh%lat_hw,nlev(k)]
-      send_subarray_size(:,1,1) = [full_ide-full_ids+1,full_jde-full_jds+1,nlev(k)]
+      send_subarray_size(:,1,1) = [full_ihe-full_ihs+1,full_jhe-full_jhs+1,nlev(k)]
       recv_subarray_size(:,1,1) = send_subarray_size(:,1,1)
-      send_subarray_size(:,2,1) = [half_ide-half_ids+1,full_jde-full_jds+1,nlev(k)]
+      send_subarray_size(:,2,1) = [half_ihe-half_ihs+1,full_jhe-full_jhs+1,nlev(k)]
       recv_subarray_size(:,2,1) = send_subarray_size(:,2,1)
-      send_subarray_size(:,1,2) = [full_ide-full_ids+1,half_jde-half_jds+1,nlev(k)]
+      send_subarray_size(:,1,2) = [full_ihe-full_ihs+1,half_jhe-half_jhs+1,nlev(k)]
       recv_subarray_size(:,1,2) = send_subarray_size(:,1,2)
-      send_subarray_size(:,2,2) = [half_ide-half_ids+1,half_jde-half_jds+1,nlev(k)]
+      send_subarray_size(:,2,2) = [half_ihe-half_ihs+1,half_jhe-half_jhs+1,nlev(k)]
       recv_subarray_size(:,2,2) = send_subarray_size(:,2,2)
       select case (orient)
       case (west)
         ! full_lon + full_lat
-        send_subarray_start(:,1,1) = [full_ide+1,full_jds,0]
-        recv_subarray_start(:,1,1) = [full_ids  ,full_jds,0]
+        send_subarray_start(:,1,1) = [full_ihe+1,full_jhs,0]
+        recv_subarray_start(:,1,1) = [full_ihs  ,full_jhs,0]
         ! half_lon + full_lat
-        send_subarray_start(:,2,1) = [half_ide+1,full_jds,0]
-        recv_subarray_start(:,2,1) = [half_ids  ,full_jds,0]
+        send_subarray_start(:,2,1) = [half_ihe+1,full_jhs,0]
+        recv_subarray_start(:,2,1) = [half_ihs  ,full_jhs,0]
         ! full_lon + half_lat
-        send_subarray_start(:,1,2) = [full_ide+1,half_jds,0]
-        recv_subarray_start(:,1,2) = [full_ids  ,half_jds,0]
+        send_subarray_start(:,1,2) = [full_ihe+1,half_jhs,0]
+        recv_subarray_start(:,1,2) = [full_ihs  ,half_jhs,0]
         ! half_lon + half_lat
-        send_subarray_start(:,2,2) = [half_ide+1,half_jds,0]
-        recv_subarray_start(:,2,2) = [half_ids  ,half_jds,0]
+        send_subarray_start(:,2,2) = [half_ihe+1,half_jhs,0]
+        recv_subarray_start(:,2,2) = [half_ihs  ,half_jhs,0]
       case (east)
         ! full_lon + full_lat
-        send_subarray_start(:,1,1) = [full_ids-this%lon_hw,full_jds,0]
-        recv_subarray_start(:,1,1) = [full_ids            ,full_jds,0]
+        send_subarray_start(:,1,1) = [full_ihs-this%lon_hw,full_jhs,0]
+        recv_subarray_start(:,1,1) = [full_ihs            ,full_jhs,0]
         ! half_lon + full_lat
-        send_subarray_start(:,2,1) = [half_ids-this%lon_hw,full_jds,0]
-        recv_subarray_start(:,2,1) = [half_ids            ,full_jds,0]
+        send_subarray_start(:,2,1) = [half_ihs-this%lon_hw,full_jhs,0]
+        recv_subarray_start(:,2,1) = [half_ihs            ,full_jhs,0]
         ! full_lon + half_lat
-        send_subarray_start(:,1,2) = [full_ids-this%lon_hw,half_jds,0]
-        recv_subarray_start(:,1,2) = [full_ids            ,half_jds,0]
+        send_subarray_start(:,1,2) = [full_ihs-this%lon_hw,half_jhs,0]
+        recv_subarray_start(:,1,2) = [full_ihs            ,half_jhs,0]
         ! half_lon + half_lat
-        send_subarray_start(:,2,2) = [half_ids-this%lon_hw,half_jds,0]
-        recv_subarray_start(:,2,2) = [half_ids            ,half_jds,0]
+        send_subarray_start(:,2,2) = [half_ihs-this%lon_hw,half_jhs,0]
+        recv_subarray_start(:,2,2) = [half_ihs            ,half_jhs,0]
       case (south)
         if (at_south_pole_opt) then
           ! full_lon + full_lat
-          send_subarray_start(:,1,1) = [full_ids,full_jde+2,0]
-          recv_subarray_start(:,1,1) = [full_ids,full_jds  ,0]
+          send_subarray_start(:,1,1) = [full_ihs,full_jhe+2,0] ! Skip pole grid.
+          recv_subarray_start(:,1,1) = [full_ihs,full_jhs  ,0]
           ! half_lon + full_lat
-          send_subarray_start(:,2,1) = [half_ids,full_jde+2,0]
-          recv_subarray_start(:,2,1) = [half_ids,full_jds  ,0]
+          send_subarray_start(:,2,1) = [half_ihs,full_jhe+2,0] ! Skip pole grid.
+          recv_subarray_start(:,2,1) = [half_ihs,full_jhs  ,0]
           ! full_lon + half_lat
-          send_subarray_start(:,1,2) = [full_ids,half_jde+1,0]
-          recv_subarray_start(:,1,2) = [full_ids,half_jds  ,0]
+          send_subarray_start(:,1,2) = [full_ihs,half_jhe+1,0]
+          recv_subarray_start(:,1,2) = [full_ihs,half_jhs  ,0]
           ! half_lon + half_lat
-          send_subarray_start(:,2,2) = [half_ids,half_jde+1,0]
-          recv_subarray_start(:,2,2) = [half_ids,half_jds  ,0]
+          send_subarray_start(:,2,2) = [half_ihs,half_jhe+1,0]
+          recv_subarray_start(:,2,2) = [half_ihs,half_jhs  ,0]
         else
           ! full_lon + full_lat
-          send_subarray_start(:,1,1) = [full_ids,full_jde+1,0]
-          recv_subarray_start(:,1,1) = [full_ids,full_jds  ,0]
+          send_subarray_start(:,1,1) = [full_ihs,full_jhe+1,0]
+          recv_subarray_start(:,1,1) = [full_ihs,full_jhs  ,0]
           ! half_lon + full_lat
-          send_subarray_start(:,2,1) = [half_ids,full_jde+1,0]
-          recv_subarray_start(:,2,1) = [half_ids,full_jds  ,0]
+          send_subarray_start(:,2,1) = [half_ihs,full_jhe+1,0]
+          recv_subarray_start(:,2,1) = [half_ihs,full_jhs  ,0]
           ! full_lon + half_lat
-          send_subarray_start(:,1,2) = [full_ids,half_jde+1,0]
-          recv_subarray_start(:,1,2) = [full_ids,half_jds  ,0]
+          send_subarray_start(:,1,2) = [full_ihs,half_jhe+1,0]
+          recv_subarray_start(:,1,2) = [full_ihs,half_jhs  ,0]
           ! half_lon + half_lat
-          send_subarray_start(:,2,2) = [half_ids,half_jde+1,0]
-          recv_subarray_start(:,2,2) = [half_ids,half_jds  ,0]
+          send_subarray_start(:,2,2) = [half_ihs,half_jhe+1,0]
+          recv_subarray_start(:,2,2) = [half_ihs,half_jhs  ,0]
         end if
       case (north)
         if (at_north_pole_opt) then
           ! full_lon + full_lat
-          send_subarray_start(:,1,1) = [full_ids,full_jds-this%lat_hw-1,0]
-          recv_subarray_start(:,1,1) = [full_ids,full_jds              ,0]
+          send_subarray_start(:,1,1) = [full_ihs,full_jhs-this%lat_hw-1,0] ! Skip pole grid.
+          recv_subarray_start(:,1,1) = [full_ihs,full_jhs              ,0]
           ! half_lon + full_lat
-          send_subarray_start(:,2,1) = [half_ids,full_jds-this%lat_hw-1,0]
-          recv_subarray_start(:,2,1) = [half_ids,full_jds              ,0]
+          send_subarray_start(:,2,1) = [half_ihs,full_jhs-this%lat_hw-1,0] ! Skip pole grid.
+          recv_subarray_start(:,2,1) = [half_ihs,full_jhs              ,0]
           ! full_lon + half_lat
-          send_subarray_start(:,1,2) = [full_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,1,2) = [full_ids,half_jds              ,0]
+          send_subarray_start(:,1,2) = [full_ihs,half_jhs-this%lat_hw  ,0]
+          recv_subarray_start(:,1,2) = [full_ihs,half_jhs              ,0]
           ! half_lon + half_lat
-          send_subarray_start(:,2,2) = [half_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,2,2) = [half_ids,half_jds              ,0]
+          send_subarray_start(:,2,2) = [half_ihs,half_jhs-this%lat_hw  ,0]
+          recv_subarray_start(:,2,2) = [half_ihs,half_jhs              ,0]
         else
           ! full_lon + full_lat
-          send_subarray_start(:,1,1) = [full_ids,full_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,1,1) = [full_ids,full_jds              ,0]
+          send_subarray_start(:,1,1) = [full_ihs,full_jhs-this%lat_hw  ,0]
+          recv_subarray_start(:,1,1) = [full_ihs,full_jhs              ,0]
           ! half_lon + full_lat
-          send_subarray_start(:,2,1) = [half_ids,full_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,2,1) = [half_ids,full_jds              ,0]
+          send_subarray_start(:,2,1) = [half_ihs,full_jhs-this%lat_hw  ,0]
+          recv_subarray_start(:,2,1) = [half_ihs,full_jhs              ,0]
           ! full_lon + half_lat
-          send_subarray_start(:,1,2) = [full_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,1,2) = [full_ids,half_jds              ,0]
+          send_subarray_start(:,1,2) = [full_ihs,half_jhs-this%lat_hw  ,0]
+          recv_subarray_start(:,1,2) = [full_ihs,half_jhs              ,0]
           ! half_lon + half_lat
-          send_subarray_start(:,2,2) = [half_ids,half_jds-this%lat_hw  ,0]
-          recv_subarray_start(:,2,2) = [half_ids,half_jds              ,0]
+          send_subarray_start(:,2,2) = [half_ihs,half_jhs-this%lat_hw  ,0]
+          recv_subarray_start(:,2,2) = [half_ihs,half_jhs              ,0]
         end if
       end select
       do j = 1, 2
