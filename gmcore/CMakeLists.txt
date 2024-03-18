@@ -73,6 +73,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
       -no-wrap-margin
       -O3
       -align array64byte
+      -ipo
       # -qopenmp
       # -fp-model precise
     )

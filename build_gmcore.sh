@@ -27,6 +27,7 @@ export H5DIR=$(spack location -i hdf5)
 export CURLDIR=$(spack location -i curl)
 export XML2DIR=$(spack location -i libxml2)
 export OMPDIR="$(spack location -i intel-oneapi-compilers@2024.0.2)/compiler/latest/"
+# source /data/spack/opt/spack/linux-ubuntu22.04-icelake/gcc-11.4.0/intel-oneapi-compilers-2024.0.2-lvfe6ufintzu3ibq3loire4oz62soeqe/setvars.sh
 
 echo "CC: $CC"
 echo "FC: $FC"
@@ -40,7 +41,8 @@ if [ x"$1" = xrebuild ]; then
 fi
 
 if [ ! -d build ]; then
-  cmake -B build -G Ninja 
+  cmake -B build -G Ninja \
+    -DCMAKE_RANLIB=/data/spack/opt/spack/linux-ubuntu22.04-icelake/gcc-11.4.0/intel-oneapi-compilers-2024.0.2-lvfe6ufintzu3ibq3loire4oz62soeqe/compiler/2024.0/bin/compiler/llvm-ranlib
 fi
 cd build
 #make -j64 VERBOSE=1
