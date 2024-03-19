@@ -52,7 +52,7 @@ NFDIR=$(pwd)
   [ -f Makefile ] || [ -f makefile ] && make clean
   CPPFLAGS="-I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include " \
     LDFLAGS="-L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
-    ./configure --prefix=${CDIR}
+    ./configure --prefix=${CDIR} --enable-parallel-tests
   make install -j64
 )
 
@@ -62,7 +62,7 @@ export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
   [ -f Makefile ] || [ -f makefile ] && make clean
   CPPFLAGS="-I${NCDIR}/include -I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include" \
     LDFLAGS="-L${NCDIR}/lib -L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
-    ./configure --prefix=${NFDIR}
+    ./configure --prefix=${NFDIR} --enable-parallel-tests
   make install -j64
 )
 
