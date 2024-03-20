@@ -38,6 +38,7 @@ gmcore/lib/*
 gmcore/build/*
 gmcore/run/*
 gmcore/gptl/*
+vtune/
 *.vscode*
 *.pdf
 # *.xml
