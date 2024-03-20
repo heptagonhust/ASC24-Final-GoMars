@@ -199,7 +199,7 @@ contains
 
     if (proc%is_root()) call print_namelist()
 
-    print *, "Size of blocks array:", size(blocks)
+    ! print *, "Size of blocks array:", size(blocks)
 
     do iblk = 1, size(blocks)
       blocks(iblk)%mesh%full_lev  = global_mesh%full_lev
