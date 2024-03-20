@@ -41,7 +41,7 @@ if [ x"$1" = xrebuild ]; then
 fi
 
 if [ ! -d build ]; then
-  cmake -B build -G Ninja \
+  cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=relwithdebinfo \
     -DCMAKE_RANLIB=/data/spack/opt/spack/linux-ubuntu22.04-icelake/gcc-11.4.0/intel-oneapi-compilers-2024.0.2-lvfe6ufintzu3ibq3loire4oz62soeqe/compiler/2024.0/bin/compiler/llvm-ranlib
 fi
 cd build

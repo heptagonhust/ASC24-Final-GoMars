@@ -348,8 +348,12 @@ contains
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(in) :: dtend
     real(r8), intent(in) :: dt
-
+    
     integer i, j, k
+    integer result
+    real(r8) sum_dmf(block%mesh%full_ids:block%mesh%full_ide, &
+                     block%mesh%full_jds:block%mesh%full_jde)
+
 
     call perf_start('calc_we_lev')
 
@@ -359,10 +363,18 @@ contains
                we_lev     => dstate%we_lev       , & ! out
                we_lev_lon => block%aux%we_lev_lon, & ! out
                we_lev_lat => block%aux%we_lev_lat)   ! out
-    do k = mesh%half_kds + 1, mesh%half_kde - 1
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          we_lev%d(i,j,k) = -vert_coord_calc_dmgdt_lev(k, dmgs%d(i,j)) - sum(dmf%d(i,j,1:k-1))
+
+
+    do j = mesh%full_jds, mesh%full_jde
+      do i = mesh%full_ids, mesh%full_ide
+        do k = mesh%half_kds + 1, mesh%half_kde - 1
+          if (k .eq. mesh%half_kds + 1) then 
+            sum_dmf(i,j) = sum(dmf%d(i,j,1:k-1))
+          else 
+            sum_dmf(i,j) = sum_dmf(i,j) + dmf%d(i,j,k-1)
+          end if
+          ! we_lev%d(i,j,k) = -vert_coord_calc_dmgdt_lev(k, dmgs%d(i,j)) - sum(dmf%d(i,j,1:k-1))
+          we_lev%d(i,j,k) = -vert_coord_calc_dmgdt_lev(k, dmgs%d(i,j)) - sum_dmf(i,j)
         end do
       end do
     end do

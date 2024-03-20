@@ -40,4 +40,5 @@ gmcore/run/*
 gmcore/gptl/*
 *.vscode*
 *.pdf
+vtune/
 # *.xml
