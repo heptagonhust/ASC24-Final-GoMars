@@ -84,7 +84,13 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
   endif ()
 endif ()
 
-list(APPEND fortran_flags -heap-arrays)
+# let We(heptagon) define flags here.
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  # GCC fortran compilers save array on heap by default.
+  list(APPEND fortran_flags -fopenacc -mavx512f -fopt-info-vec-all -fopt-info-inline-all -fopt-info-omp-all)
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+  list(APPEND fortran_flags -heap-arrays)
+endif ()
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 
 

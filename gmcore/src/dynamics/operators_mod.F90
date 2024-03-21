@@ -148,8 +148,7 @@ contains
                mg_lev  => dstate%mg_lev , & ! out
                mg      => dstate%mg     )   ! out
     
-    !$omp parallel 
-    !$omp do private(i, j, k) collapse(2)
+    !$acc kernels
     do k = mesh%half_kds, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -157,8 +156,7 @@ contains
         end do
       end do
     end do
-    !$omp end do
-    !$omp do private(i, j, k) collapse(2)
+    
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -166,8 +164,7 @@ contains
         end do
       end do
     end do
-    !$omp end do
-    !$omp end parallel 
+    !$acc end kernels
     end associate
 
     call perf_stop('calc_mg')
@@ -195,7 +192,7 @@ contains
     k = mesh%half_kds
     ph_lev%d(:,:,k) = mg_lev%d(:,:,k)
     pkh_lev%d(:,:,k) = ph_lev%d(:,:,k)**rd_o_cpd
-
+    !$acc kernels
     do k = mesh%half_kds + 1, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -204,8 +201,7 @@ contains
         end do
       end do
     end do
-    !$omp parallel 
-    !$omp do collapse(2) private(i, j, k)
+
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -213,9 +209,7 @@ contains
         end do
       end do
     end do
-    !$omp end do
-    !$omp end parallel 
-    ! NOTE: Move this to other place?
+    !$acc end kernels
     if (hydrostatic) ps%d = phs%d
     end associate
 
@@ -304,8 +298,8 @@ contains
                q    => tracers(block%id)%q, & ! in
                t    => dstate%t           , & ! out
                tv   => dstate%tv          )   ! out
+    !$acc kernels
     if (idx_qv > 0) then
-      !$omp parallel do collapse(2) private(k, j, i)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
@@ -314,9 +308,7 @@ contains
           end do
         end do
       end do
-      !$omp end parallel do
     else
-      !$omp parallel do collapse(2) private(k, j, i)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
           do i = mesh%full_ids, mesh%full_ide + 1
@@ -325,8 +317,9 @@ contains
           end do
         end do
       end do
-      !$omp end parallel do
     end if
+    !$acc end kernels
+
     end associate
 
     call perf_stop('calc_t')
@@ -1348,6 +1341,7 @@ contains
     !$omp parallel do private(k, j, i)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
+        !$omp simd
         do i = mesh%full_ids, mesh%full_ide
           dpt%d(i,j,k) = dpt%d(i,j,k) - (ptf_lev%d(i,j,k+1) - ptf_lev%d(i,j,k))
         end do

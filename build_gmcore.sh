@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+# set -e
 cd "$(dirname $0)" || exit 1
 
 source ./env.sh
@@ -13,6 +13,8 @@ if [ x"$(ls -A lib)" = x"" ]; then
 fi
 
 # ./pull_libs.py
+
+
 
 # spack load cmake@3.24.4
 # spack load intel-oneapi-compilers@2024.0.1/xbteted 

@@ -17,9 +17,6 @@ cd "$(dirname $0)" || exit 1
 
 source ./env.sh
 
-export CC=mpiicx
-export FC=mpiifort
-export F77=mpiifort
 
 # export H5DIR=$(spack location -i hdf5 ~shared)
 export H5DIR=$(spack location -i hdf5)

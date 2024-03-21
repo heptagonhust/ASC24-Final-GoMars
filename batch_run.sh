@@ -20,9 +20,9 @@ run ( ) {
 	
 	if [ $(hostname) != "hepnode0" ]; then
 		export UCX_RC_PATH_MTU=2048
-		export I_MPI_HYDRA_RMK=slurm
-		export I_MPI_PIN=off
-		export OMP_NUM_THREADS=4
+		# export I_MPI_HYDRA_RMK=slurm
+		# export I_MPI_PIN=off
+		export OMP_NUM_THREADS=1
 	fi
 	case_name=$1
 	node=$2
@@ -73,8 +73,8 @@ run ( ) {
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
-	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
-
+	# srun -n $3 -N $2 --mpi=pmix ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+	srun -n $3 -N $2 --mpi=pmix $exe_absolute_path $namelist_absolute_path
 	rm -rf opt.nc
 	mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
