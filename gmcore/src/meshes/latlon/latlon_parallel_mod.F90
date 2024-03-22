@@ -211,7 +211,7 @@ contains
 
 
 
-    iftest = 0
+    iftest = 1
     call perf_start('fill_halo_3d')
 
     west_halo_opt  = .true. ; if (present(west_halo )) west_halo_opt  = west_halo
