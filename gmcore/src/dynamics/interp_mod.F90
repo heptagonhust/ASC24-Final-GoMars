@@ -13,6 +13,7 @@ module interp_mod
   use namelist_mod
   use latlon_mesh_mod, mesh_type => latlon_mesh_type
   use latlon_field_types_mod
+  use perf_mod
 
   implicit none
 
@@ -364,6 +365,9 @@ contains
 
     integer i, j, k
 
+    ! real(r8) tempx(x%mesh%full_jds:x%mesh%full_jde+1, x%mesh%full_ids:x%mesh%full_ide, x%mesh%full_kds:x%mesh%full_kde)
+
+    call t_startf ('average_run')
 
     select case (trim(x%loc) // '>' // trim(y%loc))
     ! --------------------------------------------------------------------------
@@ -384,7 +388,24 @@ contains
           end do
         end do
       end do
+    !   do k = x%mesh%full_kds, x%mesh%full_kde
+    !     do j = x%mesh%half_jds, x%mesh%half_jde+1
+    !       do i = x%mesh%full_ids, x%mesh%full_ide
+    !         tempx(j,i,k) = x%d(i,j,k)
+    !       end do
+    !     end do
+    !   end do
+
+    !   do k = x%mesh%full_kds, x%mesh%full_kde
+    !       do i = x%mesh%full_ids, x%mesh%full_ide
+    !         do j = x%mesh%half_jds, x%mesh%half_jde
+    !         y%d(i,j,k) = (tempx(j,i,k) + tempx(j+1,i,k)) * 0.5_r8
+    !       end do
+    !     end do
+    !   end do
     end select
+
+    call t_stopf ('average_run')
 
   end subroutine average_run_3d
 

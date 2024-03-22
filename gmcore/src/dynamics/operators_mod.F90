@@ -645,26 +645,39 @@ contains
                dmg_lev => dstate%dmg_lev   , & ! out
                dmg_vtx => block%aux%dmg_vtx)   ! out
     if (baroclinic .or. advection) then
-      do k = mesh%full_kds, mesh%full_kde
+
+      ! if (proc%id .eq. 1) then
+      !   write(*, *) "Full Kds:", mesh%full_kds
+      !   write(*, *) "Full Kde:", mesh%full_kde
+      !   write(*, *) "Half Kds:", mesh%half_kds
+      !   write(*, *) "Half Kde:", mesh%half_kde
+      ! end if
+      ! call t_startf ('loops')
+
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
-            dmg%d(i,j,k) = mg_lev%d(i,j,k+1) - mg_lev%d(i,j,k)
-            if (dmg%d(i,j,k) <= 0) then
-              do l = mesh%half_kds, mesh%half_kde
-                print *, l, mg_lev%d(i,j,l)
-              end do
-              print *, 'mgs(i,j) =', dstate%mgs%d(i,j)
-              print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
-              call log_warning('The dry-air weight levels are not monotonic!', __FILE__, __LINE__)
-              call process_stop(1)
-            end if
-          end do
+            do k = mesh%full_kds, mesh%full_kde
+              dmg%d(i,j,k) = mg_lev%d(i,j,k+1) - mg_lev%d(i,j,k)
+              if (dmg%d(i,j,k) <= 0) then
+                do l = mesh%half_kds, mesh%half_kde
+                  print *, l, mg_lev%d(i,j,l)
+                end do
+                print *, 'mgs(i,j) =', dstate%mgs%d(i,j)
+                print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
+                call log_warning('The dry-air weight levels are not monotonic!', __FILE__, __LINE__)
+                call process_stop(1)
+              end if
+            end do
+            ! do k = mesh%half_kds + 1, mesh%half_kde - 1
+            !   dmg_lev%d(i,j,k) = mg%d(i,j,k) - mg%d(i,j,k-1)
+            ! end do
         end do
       end do
 
-      do k = mesh%half_kds + 1, mesh%half_kde - 1
+
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
+            do k = mesh%half_kds + 1, mesh%half_kde - 1
             dmg_lev%d(i,j,k) = mg%d(i,j,k) - mg%d(i,j,k-1)
           end do
         end do
@@ -683,7 +696,11 @@ contains
           dmg_lev%d(i,j,k) = mg_lev%d(i,j,k) - mg%d(i,j,k-1)
         end do
       end do
+      ! call t_stopf ('loops')
+
+      ! call t_startf ('internal_fill')
       call fill_halo(dmg_lev)
+      ! call t_stopf ('internal_fill')
     else
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -692,12 +709,17 @@ contains
       end do
     end if
 
+    ! call t_startf ('internal_fill')
     call fill_halo(dmg)
     call average_run(dmg, dmg_lon)
     call fill_halo(dmg_lon)
     call average_run(dmg, dmg_lat)
     call fill_halo(dmg_lat)
+    ! call t_stopf ('internal_fill')
+
+    ! call t_startf ('interp_run')
     call interp_run(dmg, dmg_vtx)
+    ! call t_stopf ('interp_run')
     end associate
 
     call perf_stop('calc_dmg')
@@ -726,14 +748,25 @@ contains
                mfy_lat => block%aux%mfy_lat, & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
-    
+    ! call t_startf ('test_loop')
+    ! do k = mesh%full_kds, mesh%full_kde
+    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
+    !     do i = mesh%half_ids - 1, mesh%half_ide
+    !       mfx_lon%d(i,j,k) = dmg_lon%d(i,j,k) * u_lon%d(i,j,k)
+    !       mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) 
+    !     end do
+    !   end do
+    ! end do
+    ! call t_stopf ('test_loop')
+
+    ! call t_startf ('mfloops')
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_ids - 1, mesh%half_ide
           mfx_lon%d(i,j,k) = dmg_lon%d(i,j,k) * u_lon%d(i,j,k)
         end do
       end do
-
+    ! end do
 
     ! do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
@@ -743,12 +776,38 @@ contains
           u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
         end do
       end do
+    end do
 
+    call fill_halo(u_lat)
+      ! do j = mesh%half_jds, mesh%half_jde
+      !   do i = mesh%full_ids, mesh%full_ide
+      !     mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) 
+      !     ! + block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
+      !     ! u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
+      !   end do
+      ! end do
+      ! do j = mesh%half_jds, mesh%half_jde
+      !   do i = mesh%full_ids, mesh%full_ide
+      !     mfx_lat%d(i,j,k) = mfx_lat%d(i,j,k) + block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
+      !     ! u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
+      !   end do
+      ! end do
+      ! do j = mesh%half_jds, mesh%half_jde
+      !   do i = mesh%full_ids, mesh%full_ide
+      !     ! mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) + &
+      !     !                    block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
+      !     u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
+      !   end do
+      ! end do
+
+    do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide + 1
           mfy_lat%d(i,j,k) = dmg_lat%d(i,j,k) * v_lat%d(i,j,k)
         end do
       end do
+    ! end do
+
     ! end do
     ! do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -759,14 +818,40 @@ contains
         end do
       end do
     end do
+    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+    !     do i = mesh%half_ids, mesh%half_ide
+    !       mfy_lon%d(i,j,k) = block%static%tg_wgt_lon(1,j) * (mfy_lat%d(i,j-1,k) + mfy_lat%d(i+1,j-1,k))
+    !       !  + block%static%tg_wgt_lon(2,j) * (mfy_lat%d(i,j  ,k) + mfy_lat%d(i+1,j  ,k))
+    !       ! v_lon%d(i,j,k) = mfy_lon%d(i,j,k) / dmg_lon%d(i,j,k)
+    !     end do
+    !   end do
 
+    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+    !     do i = mesh%half_ids, mesh%half_ide
+    !       mfy_lon%d(i,j,k) = mfy_lon%d(i,j,k) + block%static%tg_wgt_lon(2,j) * (mfy_lat%d(i,j  ,k) + mfy_lat%d(i+1,j  ,k))
+    !       ! v_lon%d(i,j,k) = mfy_lon%d(i,j,k) / dmg_lon%d(i,j,k)
+    !     end do
+    !   end do
 
-    call fill_halo(u_lat)
+    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+    !     do i = mesh%half_ids, mesh%half_ide
+    !       ! mfy_lon%d(i,j,k) = block%static%tg_wgt_lon(1,j) * (mfy_lat%d(i,j-1,k) + mfy_lat%d(i+1,j-1,k)) + &
+    !                         !  block%static%tg_wgt_lon(2,j) * (mfy_lat%d(i,j  ,k) + mfy_lat%d(i+1,j  ,k))
+    !       v_lon%d(i,j,k) = mfy_lon%d(i,j,k) / dmg_lon%d(i,j,k)
+    !     end do
+    !   end do
+    ! end do
+
+    ! call t_stopf ('mfloops')
+
+    ! call t_startf ('mffill')
+
 
     ! do k = mesh%full_kds, mesh%full_kde
 
     ! end do
     call fill_halo(v_lon)
+    ! call t_stopf ('mffill')
     end associate
 
     call perf_stop('calc_mf')
@@ -852,6 +937,8 @@ contains
                vor     => block%aux%vor    , & ! in
                pv      => block%aux%pv     )   ! out
     call calc_vor(block, dstate)
+    ! xxx = xsaxkaslkijxnsa
+    ! && .and.
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%half_ids, mesh%half_ide
@@ -1204,10 +1291,19 @@ contains
                ptf_lat  => block%aux%ptf_lat, & ! out
                ptf_lev  => block%aux%ptf_lev, & ! out
                dpt      => dtend%dpt        )   ! out
+    ! call t_startf('setwind')
     call block%adv_batch_pt%set_wind(u_lon, v_lat, we_lev, mfx_lon, mfy_lat, dmg_lev)
+    ! call t_stopf('setwind')
+    ! call t_startf('hflx')
     call adv_calc_tracer_hflx(block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
+    ! call t_stopf('hflx')
+
+    ! call t_startf('halo1')
     call fill_halo(ptf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(ptf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
+    ! call t_stopf('halo1')
+
+    ! call t_startf('loop1')
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%full_ids, mesh%full_ide
@@ -1220,6 +1316,9 @@ contains
         end do
       end do
     end do
+    ! call t_stopf('loop1')
+
+    ! call t_startf('zonal')
     if (mesh%has_south_pole()) then
       j = mesh%full_jds
       do k = mesh%full_kds, mesh%full_kde
@@ -1250,9 +1349,17 @@ contains
         end do
       end do
     end if
+    ! call t_stopf('zonal')
+    ! call t_startf('vhalo')
     ! --------------------------------- FFSL -----------------------------------
     call adv_fill_vhalo(pt)
+    ! call t_stopf('vhalo')
+
+    ! call t_startf('vflx')
     call adv_calc_tracer_vflx(block%adv_batch_pt, pt, ptf_lev, dt)
+    ! call t_stopf('vflx')
+
+    ! call t_startf('loop2')
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
@@ -1260,6 +1367,7 @@ contains
         end do
       end do
     end do
+    ! call t_stopf('loop2')
     end associate
 
     call perf_stop('calc_grad_ptf')
