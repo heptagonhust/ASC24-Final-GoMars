@@ -20,9 +20,9 @@ run ( ) {
 	
 	if [ $(hostname) != "hepnode0" ]; then
 		export UCX_RC_PATH_MTU=2048
-		export I_MPI_HYDRA_RMK=slurm
-		export I_MPI_PIN=off
-		export OMP_NUM_THREADS=8
+		# export I_MPI_HYDRA_RMK=slurm
+		# export I_MPI_PIN=off
+		export OMP_NUM_THREADS=1
 	fi
 	case_name=$1
 	node=$2
@@ -59,7 +59,8 @@ run ( ) {
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
-	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+
+	mpirun -n $3 $exe_absolute_path $namelist_absolute_path
 
 	check_dir="/data/gomars_output/public/N${2}n${3}/${case_name}_${days}days/baseline.nc" 
 	mv *.nc opt.nc
@@ -89,6 +90,7 @@ run ( ) {
 	
 }
 
+spack load openmpi
 
 if [ -z $1 ]; then
 	echo "Usage: $0 <case_list> <message>"

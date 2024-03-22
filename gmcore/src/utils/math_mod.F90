@@ -16,12 +16,12 @@ module math_mod
 
   interface cross_product
     module procedure cross_product_r8
-    module procedure cross_product_r16
+    ! module procedure cross_product_r8
   end interface cross_product
 
   interface det
     module procedure det_r8
-    module procedure det_r16
+    ! module procedure det_r8
   end interface
 
   interface exp_two_values
@@ -31,47 +31,47 @@ module math_mod
 
 contains
 
-  pure function norm_vector(x) result(res)
+  pure function norm_vector(x) result(res_)
 
-    real(16), intent(in) :: x(:)
-    real(16) res(size(x))
+    real(8), intent(in) :: x(:)
+    real(8) res_(size(x))
 
-    real(16) n
+    real(8) n
 
     n = sqrt(sum(x * x))
     if (n /= 0) then
-      res = x / n
+      res_ = x / n
     else
-      res = x
+      res_ = x
     end if
 
   end function norm_vector
 
-  pure function cross_product_r8(x, y) result(res)
+  pure function cross_product_r8(x, y) result(res_)
 
     real(8), intent(in) :: x(3)
     real(8), intent(in) :: y(3)
-    real(8) res(3)
+    real(8) res_(3)
 
-    res(1) = x(2) * y(3) - x(3) * y(2)
-    res(2) = x(3) * y(1) - x(1) * y(3)
-    res(3) = x(1) * y(2) - x(2) * y(1)
+    res_(1) = x(2) * y(3) - x(3) * y(2)
+    res_(2) = x(3) * y(1) - x(1) * y(3)
+    res_(3) = x(1) * y(2) - x(2) * y(1)
 
   end function cross_product_r8
 
-  pure function cross_product_r16(x, y) result(res)
+  ! pure function cross_product_r8(x, y) result(res_)
 
-    real(16), intent(in) :: x(3)
-    real(16), intent(in) :: y(3)
-    real(16) res(3)
+  !   real(8), intent(in) :: x(3)
+  !   real(8), intent(in) :: y(3)
+  !   real(8) res_(3)
 
-    res(1) = x(2) * y(3) - x(3) * y(2)
-    res(2) = x(3) * y(1) - x(1) * y(3)
-    res(3) = x(1) * y(2) - x(2) * y(1)
+  !   res_(1) = x(2) * y(3) - x(3) * y(2)
+  !   res_(2) = x(3) * y(1) - x(1) * y(3)
+  !   res_(3) = x(1) * y(2) - x(2) * y(1)
 
-  end function cross_product_r16
+  ! end function cross_product_r8
 
-  pure recursive function det_r8(x) result(res)
+  pure recursive function det_r8(x) result(res_)
 
     real(8), intent(in) :: x(:,:)
 
@@ -80,40 +80,40 @@ contains
 
     n = size(x, 1)
     if (n == 1) then
-      res = x(1,1)
+      res_ = x(1,1)
     else
-      res = 0; s = 1
+      res_ = 0; s = 1
       do i = 1, n
         y(:,:i-1) = x(2:,:i-1)
         y(:,i:) = x(2:,i+1:)
-        res = res + s * x(1,i) * det(y)
+        res_ = res_ + s * x(1,i) * det(y)
         s = -s
       end do
     end if
 
   end function det_r8
 
-  pure recursive function det_r16(x) result(res)
+  ! pure recursive function det_r8(x) result(res_)
 
-    real(16), intent(in) :: x(:,:)
+  !   real(8), intent(in) :: x(:,:)
 
-    integer n, s, i
-    real(16) y(size(x,1)-1,size(x,2)-1)
+  !   integer n, s, i
+  !   real(8) y(size(x,1)-1,size(x,2)-1)
 
-    n = size(x, 1)
-    if (n == 1) then
-      res = x(1,1)
-    else
-      res = 0; s = 1
-      do i = 1, n
-        y(:,:i-1) = x(2:,:i-1)
-        y(:,i:) = x(2:,i+1:)
-        res = res + s * x(1,i) * det(y)
-        s = -s
-      end do
-    end if
+  !   n = size(x, 1)
+  !   if (n == 1) then
+  !     res_ = x(1,1)
+  !   else
+  !     res_ = 0; s = 1
+  !     do i = 1, n
+  !       y(:,:i-1) = x(2:,:i-1)
+  !       y(:,i:) = x(2:,i+1:)
+  !       res_ = res_ + s * x(1,i) * det(y)
+  !       s = -s
+  !     end do
+  !   end if
 
-  end function det_r16
+  ! end function det_r8
 
   subroutine math_inv_matrix(n, A, B)
 
@@ -234,7 +234,7 @@ contains
 
   end subroutine tridiag_thomas
 
-  pure real(4) function exp_two_values_r4(val1, val2, x0, x1, x) result(res)
+  pure real(4) function exp_two_values_r4(val1, val2, x0, x1, x) result(res_)
 
     real(4), intent(in) :: val1
     real(4), intent(in) :: val2
@@ -245,11 +245,11 @@ contains
     real(4) w
 
     w = exp((x - x0)**2 * log(eps) / (x1 - x0)**2)
-    res = w * val1 + (1 - w) * val2
+    res_ = w * val1 + (1 - w) * val2
 
   end function exp_two_values_r4
 
-  pure real(8) function exp_two_values_r8(val1, val2, x0, x1, x) result(res)
+  pure real(8) function exp_two_values_r8(val1, val2, x0, x1, x) result(res_)
 
     real(8), intent(in) :: val1
     real(8), intent(in) :: val2
@@ -260,7 +260,7 @@ contains
     real(8) w
 
     w = exp((x - x0)**2 * log(eps) / (x1 - x0)**2)
-    res = w * val1 + (1 - w) * val2
+    res_ = w * val1 + (1 - w) * val2
 
   end function exp_two_values_r8
 

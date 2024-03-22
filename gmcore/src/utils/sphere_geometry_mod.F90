@@ -40,13 +40,13 @@ module sphere_geometry_mod
     module procedure lonlat2xyz_1_r4
     module procedure lonlat2xyz_2_r4
     module procedure lonlat2xyz_1_r8
-    module procedure lonlat2xyz_2_r8
+    ! module procedure lonlat2xyz_2_r8
   end interface lonlat2xyz
 
   interface xyz2lonlat
     module procedure xyz2lonlat_1_r8
-    module procedure xyz2lonlat_2_r8
-    module procedure xyz2lonlat_1_r16
+    ! module procedure xyz2lonlat_2_r8
+    ! module procedure xyz2lonlat_1_r8
   end interface xyz2lonlat
 
   interface orient
@@ -56,30 +56,30 @@ module sphere_geometry_mod
   interface rotate
     module procedure rotate_r4
     module procedure rotate_r8
-    module procedure rotate_r16
+    ! module procedure rotate_r8
   end interface rotate
 
   interface rotate_back
     module procedure rotate_back_r4
     module procedure rotate_back_r8
-    module procedure rotate_back_r16
+    ! module procedure rotate_back_r8
   end interface rotate_back
 
   interface spherical_triangle_area
     module procedure spherical_triangle_area_r8
-    module procedure spherical_triangle_area_r16
+    ! module procedure spherical_triangle_area_r8
   end interface spherical_triangle_area
 
   interface spherical_rectangle_area
     module procedure spherical_rectangle_area_r8
-    module procedure spherical_rectangle_area_r16
+    ! module procedure spherical_rectangle_area_r8
   end interface spherical_rectangle_area
 
   interface great_circle
     module procedure great_circle_1_r4
     module procedure great_circle_1_r8
-    module procedure great_circle_1_r16
-    module procedure great_circle_2_r16
+    ! module procedure great_circle_1_r8
+    module procedure great_circle_2_r8
   end interface
 
   interface spherical_angle
@@ -107,9 +107,9 @@ contains
 
     real(r8), intent(in) :: R
     real(4), intent(in) :: lon, lat
-    real(16), intent(out) :: x, y, z
+    real(8), intent(out) :: x, y, z
 
-    real(16) cos_lat
+    real(8) cos_lat
 
     cos_lat = cos(lat)
     x = R * cos_lat * cos(lon)
@@ -137,9 +137,9 @@ contains
 
     real(r8), intent(in) :: R
     real(8), intent(in) :: lon, lat
-    real(16), intent(out) :: x, y, z
+    real(8), intent(out) :: x, y, z
 
-    real(16) cos_lat
+    real(8) cos_lat
 
     cos_lat = cos(lat)
     x = R * cos_lat * cos(lon)
@@ -164,7 +164,7 @@ contains
   subroutine xyz2lonlat_2_r8(R, x, y, z, lon, lat)
 
     real(r8), intent(in) :: R
-    real(16), intent(in)  :: x, y, z
+    real(8), intent(in)  :: x, y, z
     real(8), intent(out) :: lon, lat
 
     lon = atan2(y, x)
@@ -174,18 +174,18 @@ contains
 
   end subroutine xyz2lonlat_2_r8
 
-  subroutine xyz2lonlat_1_r16(R, x, y, z, lon, lat)
+  ! subroutine xyz2lonlat_1_r8(R, x, y, z, lon, lat)
 
-    real(r8), intent(in) :: R
-    real(16), intent(in)  :: x, y, z
-    real(16), intent(out) :: lon, lat
+  !   real(r8), intent(in) :: R
+  !   real(8), intent(in)  :: x, y, z
+  !   real(8), intent(out) :: lon, lat
 
-    lon = atan2(y, x)
-    lat = asin(z / R)
+  !   lon = atan2(y, x)
+  !   lat = asin(z / R)
 
-    if (lon < 0.0d0) lon = lon + pi2
+  !   if (lon < 0.0d0) lon = lon + pi2
 
-  end subroutine xyz2lonlat_1_r16
+  ! end subroutine xyz2lonlat_1_r8
 
   pure integer function orient_r8(p1, p2, p) result(res)
 
@@ -267,30 +267,30 @@ contains
 
   end subroutine rotate_r8
 
-  subroutine rotate_r16(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+  ! subroutine rotate_r8(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
-    real(16), intent(in) :: lon_p, lat_p ! Rotated pole coordinate
-    real(16), intent(in) :: lon_o, lat_o ! Original coordinate
-    real(16), intent(out), optional :: lon_r, lat_r ! Rotated coordinate
+  !   real(8), intent(in) :: lon_p, lat_p ! Rotated pole coordinate
+  !   real(8), intent(in) :: lon_o, lat_o ! Original coordinate
+  !   real(8), intent(out), optional :: lon_r, lat_r ! Rotated coordinate
 
-    real(16) tmp1, tmp2, tmp3, dlon
+  !   real(8) tmp1, tmp2, tmp3, dlon
 
-    dlon = lon_o - lon_p
-    if (present(lon_r)) then
-        tmp1 = cos(lat_o) * sin(dlon)
-        tmp2 = cos(lat_o) * sin(lat_p) * cos(dlon) - cos(lat_p) * sin(lat_o)
-        lon_r = atan2(tmp1, tmp2)
-        if (lon_r < 0.0d0) lon_r = pi2 + lon_r
-    end if
-    if (present(lat_r)) then
-        tmp1 = sin(lat_o) * sin(lat_p)
-        tmp2 = cos(lat_o) * cos(lat_p) * cos(dlon)
-        tmp3 = tmp1 + tmp2
-        tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
-        lat_r = asin(tmp3)
-    end if
+  !   dlon = lon_o - lon_p
+  !   if (present(lon_r)) then
+  !       tmp1 = cos(lat_o) * sin(dlon)
+  !       tmp2 = cos(lat_o) * sin(lat_p) * cos(dlon) - cos(lat_p) * sin(lat_o)
+  !       lon_r = atan2(tmp1, tmp2)
+  !       if (lon_r < 0.0d0) lon_r = pi2 + lon_r
+  !   end if
+  !   if (present(lat_r)) then
+  !       tmp1 = sin(lat_o) * sin(lat_p)
+  !       tmp2 = cos(lat_o) * cos(lat_p) * cos(dlon)
+  !       tmp3 = tmp1 + tmp2
+  !       tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
+  !       lat_r = asin(tmp3)
+  !   end if
 
-  end subroutine rotate_r16
+  ! end subroutine rotate_r8
 
   subroutine rotate_back_r4(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
@@ -354,36 +354,36 @@ contains
 
   end subroutine rotate_back_r8
 
-  subroutine rotate_back_r16(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+  ! subroutine rotate_back_r8(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
-      real(16), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
-      real(16), intent(out) :: lon_o, lat_o ! Original coordinate
-      real(16), intent(in)  :: lon_r, lat_r ! Rotated coordinate
+  !     real(8), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
+  !     real(8), intent(out) :: lon_o, lat_o ! Original coordinate
+  !     real(8), intent(in)  :: lon_r, lat_r ! Rotated coordinate
 
-      real(16) sin_lon_r, cos_lon_r, sin_lat_r, cos_lat_r, sin_lat_p, cos_lat_p
-      real(16) tmp1, tmp2, tmp3
+  !     real(8) sin_lon_r, cos_lon_r, sin_lat_r, cos_lat_r, sin_lat_p, cos_lat_p
+  !     real(8) tmp1, tmp2, tmp3
 
-      sin_lon_r = sin(lon_r)
-      cos_lon_r = cos(lon_r)
-      sin_lat_r = sin(lat_r)
-      cos_lat_r = cos(lat_r)
-      sin_lat_p = sin(lat_p)
-      cos_lat_p = cos(lat_p)
+  !     sin_lon_r = sin(lon_r)
+  !     cos_lon_r = cos(lon_r)
+  !     sin_lat_r = sin(lat_r)
+  !     cos_lat_r = cos(lat_r)
+  !     sin_lat_p = sin(lat_p)
+  !     cos_lat_p = cos(lat_p)
 
-      tmp1 = cos_lat_r * sin_lon_r
-      tmp2 = sin_lat_r * cos_lat_p + cos_lat_r * cos_lon_r * sin_lat_p
-      ! This trick is due to the inaccuracy of trigonometry calculation.
-      if (abs(tmp2) < eps) tmp2 = 0.0d0
-      lon_o = atan2(tmp1, tmp2)
-      lon_o = lon_p + lon_o
-      if (lon_o > pi2) lon_o = lon_o - pi2
-      tmp1 = sin_lat_r * sin_lat_p
-      tmp2 = cos_lat_r * cos_lat_p * cos_lon_r
-      tmp3 = tmp1 - tmp2
-      tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
-      lat_o = asin(tmp3)
+  !     tmp1 = cos_lat_r * sin_lon_r
+  !     tmp2 = sin_lat_r * cos_lat_p + cos_lat_r * cos_lon_r * sin_lat_p
+  !     ! This trick is due to the inaccuracy of trigonometry calculation.
+  !     if (abs(tmp2) < eps) tmp2 = 0.0d0
+  !     lon_o = atan2(tmp1, tmp2)
+  !     lon_o = lon_p + lon_o
+  !     if (lon_o > pi2) lon_o = lon_o - pi2
+  !     tmp1 = sin_lat_r * sin_lat_p
+  !     tmp2 = cos_lat_r * cos_lat_p * cos_lon_r
+  !     tmp3 = tmp1 - tmp2
+  !     tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
+  !     lat_o = asin(tmp3)
 
-  end subroutine rotate_back_r16
+  ! end subroutine rotate_back_r8
 
   pure real(4) function great_circle_1_r4(R, lon1, lat1, lon2, lat2) result(res)
 
@@ -409,40 +409,40 @@ contains
 
   end function great_circle_1_r8
 
-  pure real(16) function great_circle_1_r16(R, lon1, lat1, lon2, lat2) result(res)
+  ! pure real(8) function great_circle_1_r8(R, lon1, lat1, lon2, lat2) result(res)
 
-    real(r8), intent(in) :: R
-    real(16), intent(in) :: lon1
-    real(16), intent(in) :: lat1
-    real(16), intent(in) :: lon2
-    real(16), intent(in) :: lat2
+  !   real(r8), intent(in) :: R
+  !   real(8), intent(in) :: lon1
+  !   real(8), intent(in) :: lat1
+  !   real(8), intent(in) :: lon2
+  !   real(8), intent(in) :: lat2
 
-    res = R * acos(min(1.0d0, max(-1.0d0, sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2))))
+  !   res = R * acos(min(1.0d0, max(-1.0d0, sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2))))
 
-  end function great_circle_1_r16
+  ! end function great_circle_1_r8
 
   ! Calculate the great circle arc length from A to B by assuming A and B are on the unit sphere surface.
 
-  pure real(16) function great_circle_2_r16(R, a, b) result(res)
+  pure real(8) function great_circle_2_r8(R, a, b) result(res)
 
     real(r8), intent(in) :: R
-    real(16), intent(in) :: a(3)
-    real(16), intent(in) :: b(3)
+    real(8), intent(in) :: a(3)
+    real(8), intent(in) :: b(3)
 
     res = R * acos(max(min(dot_product(a, b), 1.0d0), -1.0d0))
 
-  end function great_circle_2_r16
+  end function great_circle_2_r8
 
-  real(16) function spherical_area(R, x, y, z, ierr) result(res)
+  real(8) function spherical_area(R, x, y, z, ierr) result(res)
 
     real(r8), intent(in) :: R
-    real(16), intent(in) :: x(:)
-    real(16), intent(in) :: y(:)
-    real(16), intent(in) :: z(:)
+    real(8), intent(in) :: x(:)
+    real(8), intent(in) :: y(:)
+    real(8), intent(in) :: z(:)
     integer, intent(out) :: ierr
 
     integer n, im1, i, ip1
-    real(16) angle
+    real(8) angle
 
     ierr = 0
     n = size(x)
@@ -461,19 +461,19 @@ contains
 
   end function spherical_area
 
-  real(16) function spherical_area_with_last_small_arc(R, x, y, z, ierr) result(res)
+  real(8) function spherical_area_with_last_small_arc(R, x, y, z, ierr) result(res)
 
     real(r8), intent(in) :: R
-    real(16), intent(in) :: x(:)
-    real(16), intent(in) :: y(:)
-    real(16), intent(in) :: z(:)
+    real(8), intent(in) :: x(:)
+    real(8), intent(in) :: y(:)
+    real(8), intent(in) :: z(:)
     integer, intent(out) :: ierr
 
     integer n
-    real(16) xv(3), yv(3), zv(3)
-    real(16) lon0, lat0, lon1, lat1, lon2, lat2
-    real(16) dlon
-    real(16) area1, area2, area3
+    real(8) xv(3), yv(3), zv(3)
+    real(8) lon0, lat0, lon1, lat1, lon2, lat2
+    real(8) dlon
+    real(8) area1, area2, area3
 
     ierr = 0
     if (size(x) /= 3) then
@@ -559,25 +559,25 @@ contains
 
   end function spherical_triangle_area_r8
 
-  real(16) function spherical_triangle_area_r16(R, p1, p2, p3) result(res)
+  ! real(8) function spherical_triangle_area_r8(R, p1, p2, p3) result(res)
 
-    real(16), intent(in) :: R
-    real(16), intent(in) :: p1(:)
-    real(16), intent(in) :: p2(:)
-    real(16), intent(in) :: p3(:)
+  !   real(8), intent(in) :: R
+  !   real(8), intent(in) :: p1(:)
+  !   real(8), intent(in) :: p2(:)
+  !   real(8), intent(in) :: p3(:)
 
-    real(16), dimension(3) :: p31, p12, p23
-    real(16) a312, a123, a231
+  !   real(8), dimension(3) :: p31, p12, p23
+  !   real(8) a312, a123, a231
 
-    p31 = cross_product(p3, p1); p31 = p31 / norm2(p31)
-    p12 = cross_product(p1, p2); p12 = p12 / norm2(p12)
-    p23 = cross_product(p2, p3); p23 = p23 / norm2(p23)
-    a312 = acos(-dot_product(p31, p12))
-    a123 = acos(-dot_product(p12, p23))
-    a231 = acos(-dot_product(p23, p31))
-    res = R**2 * (a312 + a123 + a231 - pi)
+  !   p31 = cross_product(p3, p1); p31 = p31 / norm2(p31)
+  !   p12 = cross_product(p1, p2); p12 = p12 / norm2(p12)
+  !   p23 = cross_product(p2, p3); p23 = p23 / norm2(p23)
+  !   a312 = acos(-dot_product(p31, p12))
+  !   a123 = acos(-dot_product(p12, p23))
+  !   a231 = acos(-dot_product(p23, p31))
+  !   res = R**2 * (a312 + a123 + a231 - pi)
 
-  end function spherical_triangle_area_r16
+  ! end function spherical_triangle_area_r8
 
   real(8) function spherical_rectangle_area_r8(R, p1, p2, p3, p4) result(res)
 
@@ -602,39 +602,39 @@ contains
 
   end function spherical_rectangle_area_r8
 
-  real(16) function spherical_rectangle_area_r16(R, p1, p2, p3, p4) result(res)
+  ! real(8) function spherical_rectangle_area_r8(R, p1, p2, p3, p4) result(res)
 
-    real(16), intent(in) :: R
-    real(16), intent(in) :: p1(:)
-    real(16), intent(in) :: p2(:)
-    real(16), intent(in) :: p3(:)
-    real(16), intent(in) :: p4(:)
+  !   real(8), intent(in) :: R
+  !   real(8), intent(in) :: p1(:)
+  !   real(8), intent(in) :: p2(:)
+  !   real(8), intent(in) :: p3(:)
+  !   real(8), intent(in) :: p4(:)
 
-    real(16), dimension(3) :: p41, p12, p23, p34
-    real(16) a412, a123, a234, a341
+  !   real(8), dimension(3) :: p41, p12, p23, p34
+  !   real(8) a412, a123, a234, a341
 
-    p41 = cross_product(p4, p1); p41 = p41 / norm2(p41)
-    p12 = cross_product(p1, p2); p12 = p12 / norm2(p12)
-    p23 = cross_product(p2, p3); p23 = p23 / norm2(p23)
-    p34 = cross_product(p3, p4); p34 = p34 / norm2(p34)
-    a412 = acos(-dot_product(p41, p12))
-    a123 = acos(-dot_product(p12, p23))
-    a234 = acos(-dot_product(p23, p34))
-    a341 = acos(-dot_product(p34, p41))
-    res = R**2 * (a412 + a123 + a234 + a341 - pi2)
+  !   p41 = cross_product(p4, p1); p41 = p41 / norm2(p41)
+  !   p12 = cross_product(p1, p2); p12 = p12 / norm2(p12)
+  !   p23 = cross_product(p2, p3); p23 = p23 / norm2(p23)
+  !   p34 = cross_product(p3, p4); p34 = p34 / norm2(p34)
+  !   a412 = acos(-dot_product(p41, p12))
+  !   a123 = acos(-dot_product(p12, p23))
+  !   a234 = acos(-dot_product(p23, p34))
+  !   a341 = acos(-dot_product(p34, p41))
+  !   res = R**2 * (a412 + a123 + a234 + a341 - pi2)
 
-  end function spherical_rectangle_area_r16
+  ! end function spherical_rectangle_area_r8
 
   ! Calculate the dihedra angle between plane AB and plane BC.
 
-  pure real(16) function spherical_angle_1(a, b, c) result(res)
+  pure real(8) function spherical_angle_1(a, b, c) result(res)
 
-    real(16), intent(in) :: a(3)
-    real(16), intent(in) :: b(3)
-    real(16), intent(in) :: c(3)
+    real(8), intent(in) :: a(3)
+    real(8), intent(in) :: b(3)
+    real(8), intent(in) :: c(3)
 
-    real(16) nab(3) ! Normal vector of plane AB
-    real(16) nbc(3) ! Normal vector of plane BC
+    real(8) nab(3) ! Normal vector of plane AB
+    real(8) nbc(3) ! Normal vector of plane BC
 
     nab = norm_vector(cross_product(a, b))
     nbc = norm_vector(cross_product(b, c))

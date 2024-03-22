@@ -1,15 +1,5 @@
 #!/bin/bash
 
-# spack load cmake@3.24.4
-# spack load intel-oneapi-compilers@2024.0.1/xbteted
-# spack load intel-oneapi-mpi@2021.11.0
-# # spack load libxml2
-# # spack load curl
-# # spack load hdf5/fxhrrhv
-# export CC=mpiicx
-# export FC=mpiifort
-# export F77=mpiifort
-
 cd "$(dirname $0)" || exit 1
 set -e
 
@@ -28,8 +18,8 @@ fi
 
 cd gptl-8.1.1
 # wget https://gist.githubusercontent.com/bonfus/21dec6b966859f5f509b935f8b055a7f/raw/macros.make
-./configure --enable-pmpi --disable-openmp --prefix=$gptl_dir
+./configure --enable-none --disable-openmp --prefix=$gptl_dir --enable-shared=no --enable-static=yes
 # make check
 make install
 # wordaround: remove all shared libs
-rm ${gptl_dir}/lib/*so*
+# rm ${gptl_dir}/lib/*so*

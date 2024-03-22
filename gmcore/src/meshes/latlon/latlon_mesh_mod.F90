@@ -138,7 +138,7 @@ contains
     real(8) coarse_pole_decay_opt, coarse_pole_mul_opt
     logical keep_lev_opt
     real(8) dlat0
-    real(16) x(3), y(3), z(3)
+    real(8) x(3), y(3), z(3)
     integer i, j, ierr
 
     nlev_opt              =  1; if (present(nlev             )) nlev_opt              = nlev

@@ -59,6 +59,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
 # elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" )
   add_definitions(-DFC_IS_INTEL)
+  list(APPEND fortran_flags -heap-arrays) # was add by xyw outside the 'if' block, moved here
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND fortran_flags
       -no-wrap-margin
@@ -82,9 +83,27 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
   else ()
     list(APPEND fortran_flags -mkl=sequential)
   endif ()
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+#Lxy:
+#From Manual page nvfortran(1) line 1035:
+#    -Mstack_arrays -Mnostack_arrays (default)
+#          Allocate automatic arrays on the stack (on the heap).
+  add_definitions(-DFC_IS_GNU) # Does this work?
+  # list(APPEND fortran_flags
+  #   # -ffree-line-length-none
+  #   # -fno-range-check
+  #   # -fallow-argument-mismatch
+  #   # -fallow-invalid-boz
+  # )
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    list(APPEND fortran_flags -O0 -fcheck=all -g -fbacktrace)
+  else ()
+    list(APPEND fortran_flags -Ofast)
+  endif ()
+else()
+  message(FATAL_ERROR "Unsupported Fortran compiler:" ${CMAKE_Fortran_COMPILER_ID})
 endif ()
 
-list(APPEND fortran_flags -heap-arrays)
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 
 
@@ -402,7 +421,13 @@ if(OpenMP_Fortran_FOUND)
   list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
 endif()
 
-target_link_libraries(gmcore -fiopenmp -qopenmp-link=static fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+  target_link_libraries(gmcore -fiopenmp -qopenmp-link=static fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
+elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  target_link_libraries(gmcore -fopenmp fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
+elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+  target_link_libraries(gmcore -fopenmp fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
+endif()
 
 
 if (USE_CAM AND HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)
