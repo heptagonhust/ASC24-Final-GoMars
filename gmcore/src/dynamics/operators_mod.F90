@@ -54,7 +54,7 @@ module operators_mod
     end subroutine interp_pv_interface
   end interface
 
-  procedure(interp_pv_interface), pointer :: interp_pv => null()
+  procedure(interp_pv_interface), pointer ::  interp_pv => null()
 
 contains
 
@@ -631,6 +631,7 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, l
+    integer send_south_req, recv_south_req, send_north_req, recv_north_req
 
     call perf_start('calc_dmg')
 
@@ -712,14 +713,14 @@ contains
     ! call t_startf ('internal_fill')
     call fill_halo(dmg)
     call average_run(dmg, dmg_lon)
-    call fill_halo(dmg_lon)
+    ! call fill_halo(dmg_lon)
+    call fill_halo(dmg_lon, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     call average_run(dmg, dmg_lat)
-    call fill_halo(dmg_lat)
-    ! call t_stopf ('internal_fill')
-
-    ! call t_startf ('interp_run')
+    call fill_halo(dmg_lon, isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    ! call fill_halo(dmg_lat)
+    call fill_halo(dmg_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     call interp_run(dmg, dmg_vtx)
-    ! call t_stopf ('interp_run')
+    call fill_halo(dmg_lat, isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     end associate
 
     call perf_stop('calc_dmg')
@@ -733,6 +734,7 @@ contains
     real(r8), intent(in) :: dt
 
     integer i, j, k
+    integer send_south_req, recv_south_req, send_north_req, recv_north_req
 
     call perf_start('calc_mf')
 
@@ -777,28 +779,8 @@ contains
         end do
       end do
     end do
-
-    call fill_halo(u_lat)
-      ! do j = mesh%half_jds, mesh%half_jde
-      !   do i = mesh%full_ids, mesh%full_ide
-      !     mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) 
-      !     ! + block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
-      !     ! u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
-      !   end do
-      ! end do
-      ! do j = mesh%half_jds, mesh%half_jde
-      !   do i = mesh%full_ids, mesh%full_ide
-      !     mfx_lat%d(i,j,k) = mfx_lat%d(i,j,k) + block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
-      !     ! u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
-      !   end do
-      ! end do
-      ! do j = mesh%half_jds, mesh%half_jde
-      !   do i = mesh%full_ids, mesh%full_ide
-      !     ! mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) + &
-      !     !                    block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
-      !     u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
-      !   end do
-      ! end do
+    ! call fill_halo(u_lat)
+    call fill_halo(u_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
 
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
@@ -818,7 +800,7 @@ contains
         end do
       end do
     end do
-    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+  !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
     !     do i = mesh%half_ids, mesh%half_ide
     !       mfy_lon%d(i,j,k) = block%static%tg_wgt_lon(1,j) * (mfy_lat%d(i,j-1,k) + mfy_lat%d(i+1,j-1,k))
     !       !  + block%static%tg_wgt_lon(2,j) * (mfy_lat%d(i,j  ,k) + mfy_lat%d(i+1,j  ,k))
@@ -850,7 +832,12 @@ contains
     ! do k = mesh%full_kds, mesh%full_kde
 
     ! end do
-    call fill_halo(v_lon)
+
+
+    call fill_halo(u_lat, isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    
+
+    ! call fill_halo(v_lon)
     ! call t_stopf ('mffill')
     end associate
 
@@ -995,6 +982,8 @@ contains
 
     real(r8) b
     integer i, j, k
+    integer send_south_req, recv_south_req, send_north_req, recv_north_req
+    integer debug
 
     ! if (substep < total_substeps) then
     !   call interp_pv_midpoint(block, dstate, dt, substep)
@@ -1003,6 +992,7 @@ contains
 
     call perf_start('interp_pv_upwind')
 
+    debug = 0
     associate (mesh   => block%mesh      , &
                un     => dstate%u_lon    , & ! in
                vn     => dstate%v_lat    , & ! in
@@ -1021,6 +1011,15 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute Start!"
+        end if
+      end if
+      call perf_start ('small_loop')
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
@@ -1029,6 +1028,12 @@ contains
           end do
         end do
       end do
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute End!"
+        end if
+      end if
+      call perf_stop ('small_loop')
     case (3)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -1038,6 +1043,16 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do 
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute Start!"
+        end if
+      end if
+
+      call perf_start ('small_loop')
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b  = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
@@ -1046,6 +1061,12 @@ contains
           end do
         end do
       end do
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute End!"
+        end if
+      end if
+      call perf_stop ('small_loop')
     case (5)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -1055,16 +1076,35 @@ contains
                               (1 - b) * 0.5_r8 * (pv%d(i,j-1,k) + pv%d(i,j,k))
           end do
         end do
+      end do
+      call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute Start!"
+        end if
+      end if
+      call perf_start ('small_loop')
+      do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
             b = abs(ut%d(i,j,k)) / (sqrt(ut%d(i,j,k)**2 + vn%d(i,j,k)**2) + eps)
             pv_lat%d(i,j,k) = b * upwind5(sign(1.0_r8, ut%d(i,j,k)), upwind_wgt_pv, pv%d(i-3:i+2,j,k)) + &
-                              (1 - b) * 0.5_r8 * (pv%d(i-1,j,k) + pv%d(i,j,k))
+                              (1 - b) * 0.5_r8 * (pv%d(i-1,j,k) + pv%d(i,j,k))            
           end do
         end do
       end do
+      if (debug .eq. 1) then 
+        if (proc%id .eq. 1) then 
+          PRINT *, "Compute End!"
+        end if
+      end if
+      call perf_stop ('small_loop')
     end select
-    call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
+    call perf_start ('raw_fill')
+    call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    ! call fill_halo(pv_lon, east_halo=.false., south_halo=.false.)
+    call perf_stop ('raw_fill')
+    
     call fill_halo(pv_lat, west_halo=.false., north_halo=.false.)
     end associate
 
