@@ -700,7 +700,7 @@ contains
       ! call t_stopf ('loops')
 
       ! call t_startf ('internal_fill')
-      ! call fill_halo(dmg_lev)
+      call fill_halo(dmg_lev)
       ! call t_stopf ('internal_fill')
     else
       do j = mesh%full_jds, mesh%full_jde
@@ -779,7 +779,7 @@ contains
         end do
       end do
     end do
-    ! call fill_halo(u_lat)
+    call fill_halo(u_lat)
     ! call fill_halo(u_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
 
     do k = mesh%full_kds, mesh%full_kde
@@ -837,7 +837,7 @@ contains
     ! call fill_halo(u_lat, isstart=.true., isstop=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
     
 
-    ! call fill_halo(v_lon)
+    call fill_halo(v_lon)
     ! call t_stopf ('mffill')
     end associate
 
