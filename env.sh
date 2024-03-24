@@ -19,3 +19,6 @@ export FC=mpif90
 export F77=mpif77
 
 # $FC -v
+echo '===================='
+$CC -v
+echo '===================='

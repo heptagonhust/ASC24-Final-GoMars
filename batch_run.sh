@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -N 1
-#SBATCH -n 16
+#SBATCH -N 2
+#SBATCH -n 120
 #SBATCH -w hepnode[1-4]
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
@@ -74,7 +74,9 @@ run ( ) {
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
 	# srun -n $3 -N $2 --mpi=pmix ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+	echo srun -n $3 -N $2 --mpi=pmix $exe_absolute_path $namelist_absolute_path
 	srun -n $3 -N $2 --mpi=pmix $exe_absolute_path $namelist_absolute_path
+
 	rm -rf opt.nc
 	mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"

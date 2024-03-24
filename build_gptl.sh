@@ -15,6 +15,10 @@ set -e
 
 source ./env.sh
 
+if [ x"$1" = xrebuild ]; then
+  rm -rf "$(pwd)/gmcore/gptl"
+fi
+
 gptl_dir="$(pwd)/gmcore/gptl"
 mkdir -p "$gptl_dir"
 
@@ -28,8 +32,8 @@ fi
 
 cd gptl-8.1.1
 # wget https://gist.githubusercontent.com/bonfus/21dec6b966859f5f509b935f8b055a7f/raw/macros.make
-./configure --enable-pmpi --prefix=$gptl_dir
+./configure --enable-pmpi --prefix=$gptl_dir --enable-shared=no --enable-static=yes
 # make check
 make install
 # wordaround: remove all shared libs
-rm ${gptl_dir}/lib/*so*
+# rm ${gptl_dir}/lib/*so*
