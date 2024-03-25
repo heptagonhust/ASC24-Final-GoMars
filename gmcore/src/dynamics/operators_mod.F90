@@ -126,8 +126,9 @@ contains
     ! --------------------------------------------------------------------------
     case (backward_pass)
       if (baroclinic    ) call calc_t     (block, dstate)
-      if (hydrostatic   ) call calc_gz_lev(block, dstate)
-      if (hydrostatic   ) call calc_rhod  (block, dstate)
+      ! if (hydrostatic   ) call calc_gz_lev(block, dstate)
+      ! if (hydrostatic   ) call calc_rhod  (block, dstate)
+      if (hydrostatic   ) call calc_gz_lev_rhod  (block, dstate)
       call pgf_prepare                    (block, dstate)
     end select
 
@@ -624,6 +625,53 @@ contains
     call perf_stop('calc_gz_lev')
 
   end subroutine calc_gz_lev
+
+  subroutine calc_gz_lev_rhod(block, dstate)
+
+    type(block_type), intent(in) :: block
+    type(dstate_type), intent(inout) :: dstate
+
+    integer i, j, k
+
+    call perf_start('calc_gz_lev_rhod')
+
+    associate (mesh   => block%mesh      , & ! in
+               gzs    => block%static%gzs, & ! in
+               tv     => dstate%tv       , & ! in
+               ph_lev => dstate%ph_lev   , & ! in
+               dmg    => dstate%dmg      , & ! in     
+               gz_lev => dstate%gz_lev   , & ! out
+               gz     => dstate%gz       , & ! out
+               rhod   => dstate%rhod  )   ! out
+    do k = mesh%half_kde - 1, mesh%half_kds, -1
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
+          gz_lev%d(i,j,k) = gz_lev%d(i,j,k+1) + rd * tv%d(i,j,k) * log(ph_lev%d(i,j,k+1) / ph_lev%d(i,j,k))
+        end do
+      end do
+    end do
+    ! For output
+    do k = mesh%full_kds, mesh%full_kde
+      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%full_ids, mesh%full_ide + 1
+          gz%d(i,j,k) = 0.5_r8 * (gz_lev%d(i,j,k) + gz_lev%d(i,j,k+1))
+          rhod%d(i,j,k) = dmg%d(i,j,k) / (gz_lev%d(i,j,k) - gz_lev%d(i,j,k+1))
+        end do
+      end do
+    end do
+
+    ! do k = mesh%full_kds, mesh%full_kde
+    !   do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+    !     do i = mesh%full_ids, mesh%full_ide + 1
+    !       rhod%d(i,j,k) = dmg%d(i,j,k) / (gz_lev%d(i,j,k) - gz_lev%d(i,j,k+1))
+    !     end do
+    !   end do
+    ! end do
+    end associate
+
+    call perf_stop('calc_gz_lev_rhod')
+
+  end subroutine calc_gz_lev_rhod
 
   subroutine calc_dmg(block, dstate)
 
