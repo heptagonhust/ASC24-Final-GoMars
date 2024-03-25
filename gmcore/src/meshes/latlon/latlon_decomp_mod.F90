@@ -54,8 +54,8 @@ contains
       ! User does not set process dimensions in the namelist, so we set them here.
       nproc_y(1) = min(proc%np, nlat / 3)
       if (mod(proc%np, nproc_y(1)) /= 0) then
-        if (mod(proc%np, 2) == 0) then
-          nproc_x(1) = 2
+        if (mod(proc%np, 4) == 0) then
+          nproc_x(1) = 4
         else
           ierr = 3
           return
