@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH -N 2
-#SBATCH -n 120
+#SBATCH -N 1
+#SBATCH -n 16
 #SBATCH -w hepnode[1-4]
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
-
+spack load intel-oneapi-vtune
 
 echo "******batch_run.sh*******"
 cat $0
@@ -20,9 +20,9 @@ run ( ) {
 	
 	if [ $(hostname) != "hepnode0" ]; then
 		export UCX_RC_PATH_MTU=2048
-		# export I_MPI_HYDRA_RMK=slurm
-		# export I_MPI_PIN=off
-		export OMP_NUM_THREADS=1
+		export I_MPI_HYDRA_RMK=slurm
+		export I_MPI_PIN=off
+		export OMP_NUM_THREADS=4
 	fi
 	case_name=$1
 	node=$2
@@ -71,11 +71,12 @@ run ( ) {
 		echo "normal case"
 		exe_absolute_path=$normal_exe_absolute_path
 	fi
-	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
-	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
-	# srun -n $3 -N $2 --mpi=pmix ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
-	echo srun -n $3 -N $2 --mpi=pmix $exe_absolute_path $namelist_absolute_path
-	srun -n $3 -N $2 --mpi=pmix $exe_absolute_path $namelist_absolute_path
+
+	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh \
+	vtune -collect hotspot -knob enable-stack-collection=true \
+	-knob sampling-mode=hw -knob stack-size=0 -knob sampling-injterval=100 \
+	-r ./vtune/${case_name}_r001.hs -finalization-mode=deferred -- \
+	$exe_absolute_path $namelist_absolute_path
 
 	rm -rf opt.nc
 	mv *.nc opt.nc
