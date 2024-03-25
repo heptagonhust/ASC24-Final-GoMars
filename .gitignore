@@ -33,6 +33,7 @@
 *.nc
 
 # gmcore/
+run_dir/
 vtune/
 gmcore/netcdf/
 gmcore/lib/*
