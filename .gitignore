@@ -41,3 +41,6 @@ gmcore/gptl/*
 *.vscode*
 *.pdf
 # *.xml
+
+*.log
+gmcore/data/

@@ -84,9 +84,18 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
   endif ()
 endif ()
 
-list(APPEND fortran_flags -heap-arrays)
+# let We(heptagon) define flags here.
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  # GCC fortran compilers save array on heap by default.
+  list(APPEND fortran_flags -fopenmp -mavx512f) #-fopt-info-vec-all -fopt-info-inline-all -fopt-info-omp-all)
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+  list(APPEND fortran_flags -heap-arrays)
+endif ()
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 
+
+
+  
 
 find_package(MPI)
 
@@ -137,8 +146,13 @@ if (DEFINED ENV{GPTL_ROOT})
   set(HAS_GPTL TRUE)
   include_directories("$ENV{GPTL_ROOT}/include")
   link_directories("$ENV{GPTL_ROOT}/lib")
-  list(APPEND EXTERNAL_LIBS gptlf -lm)
-  list(APPEND EXTERNAL_LIBS gptl -lm)
+  if (DEFINED ENV{OPENMP_STATIC_LIB_PATH})
+    list(APPEND EXTERNAL_LIBS gptlf "$ENV{OPENMP_STATIC_LIB_PATH}" -lm)
+    list(APPEND EXTERNAL_LIBS gptl "$ENV{OPENMP_STATIC_LIB_PATH}" -lm)
+  else ()
+    list(APPEND EXTERNAL_LIBS gptlf -fopenmp -lm)
+    list(APPEND EXTERNAL_LIBS gptl -fopenmp -lm)
+  endif ()
 endif ()
 
 if (DEFINED ENV{PIO} AND (NOT DEFINED ENV{PIO_ROOT}))
@@ -393,16 +407,19 @@ if (HAS_RRTMGP AND HAS_NOAHMP)
   add_definitions(-DHAS_WRF)
 endif ()
 
-find_package(OpenMP)
-if(OpenMP_Fortran_FOUND)
-  # 如果找到了OpenMP，为Fortran编译器设置OpenMP编译选项
-  message("Found OMP!")
-#  set(OpenMP_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -qopenmp-link=static")
-#  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-  list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
-endif()
+if (DEFINED ENV{OPENMP_STATIC_LIB_PATH})
+    message("Link OMP statically!")
+else ()
+  find_package(OpenMP)
+  if(OpenMP_Fortran_FOUND)
+    # 如果找到了OpenMP，为Fortran编译器设置OpenMP编译选项
+    message("Found OMP!")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+    list(APPEND EXTERNAL_LIBS OpenMP::OpenMP_Fortran)
+  endif()
+endif ()
 
-target_link_libraries(gmcore -fiopenmp -qopenmp-link=static fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
+target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 
 
 if (USE_CAM AND HAS_GPTL AND HAS_PIO AND HAS_LAPACK AND HAS_ESMF AND HAS_MCT)

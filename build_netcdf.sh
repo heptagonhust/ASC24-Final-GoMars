@@ -1,25 +1,14 @@
 #!/bin/bash
 
-set -e
+# set -e
 cd "$(dirname $0)" || exit 1
 
-# spack load cmake@3.24.4
-# spack load intel-oneapi-compilers@2024.0.1/xbteted
-# spack load intel-oneapi-mkl@2024.0.0
-# spack load intel-oneapi-mpi@2021.11.0
-# spack load libxml2/q66mtbb
-# spack load curl
-# # spack load hdf5 ~shared
-# spack load hdf5/fxhrrhv
-# export CC=mpiicx
-# export FC=mpiifort
-# export F77=mpiifort
 
 source ./env.sh
 
-export CC=mpiicx
-export FC=mpiifort
-export F77=mpiifort
+if [ x"$1" = xrebuild ]; then
+  rm -rf "$(pwd)/gmcore/netcdf"
+fi
 
 # export H5DIR=$(spack location -i hdf5 ~shared)
 export H5DIR=$(spack location -i hdf5)
@@ -52,8 +41,9 @@ NFDIR=$(pwd)
   [ -f Makefile ] || [ -f makefile ] && make clean
   CPPFLAGS="-I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include " \
     LDFLAGS="-L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
-    ./configure --prefix=${CDIR}
+    ./configure --prefix=${CDIR} --enable-shared=yes --enable-static=yes # the netcdf-fortran needs this shared library
   make install -j64
+  make check # cost time
 )
 
 export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
@@ -62,9 +52,10 @@ export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
   [ -f Makefile ] || [ -f makefile ] && make clean
   CPPFLAGS="-I${NCDIR}/include -I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include" \
     LDFLAGS="-L${NCDIR}/lib -L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
-    ./configure --prefix=${NFDIR}
+    ./configure --prefix=${NFDIR} --enable-shared=no --enable-static=yes 
   make install -j64
+  make check # cost time
 )
 
 # wordaround: remove all shared libs
-rm ./lib/*so*
+# rm ./lib/*so*
