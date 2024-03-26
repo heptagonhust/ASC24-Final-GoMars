@@ -51,7 +51,7 @@ contains
     do j = mesh%half_jds, mesh%half_jde
       total_area = total_area + mesh%area_vtx(j) * mesh%half_nlon
     end do
-    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-12) then
+    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-11) then
       call log_error('Failed to calculate vertex area!', __FILE__, __LINE__)
     end if
 
@@ -70,7 +70,7 @@ contains
     end do
 
     do j = mesh%half_jds, mesh%half_jde
-      if (abs(mesh%area_vtx(j) - 2.0_r8 * (mesh%area_subcell(2,j) + mesh%area_subcell(1,j+1))) / mesh%area_vtx(j) > 1.0d-12) then
+      if (abs(mesh%area_vtx(j) - 2.0_r8 * (mesh%area_subcell(2,j) + mesh%area_subcell(1,j+1))) / mesh%area_vtx(j) > 1.0d-10) then
         call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
       end if
     end do

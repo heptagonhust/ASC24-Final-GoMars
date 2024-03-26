@@ -320,12 +320,6 @@ contains
       if (ierr /= 0) then
         call log_error(sphere_geometry_error_message(ierr), __FILE__, __LINE__)
       end if
-      ! Reset up or down area to polar sector area.
-      if (this%is_south_pole(j)) then
-        this%area_lat_south(j) = this%area_cell(j)
-      else if (this%is_north_pole(j+1)) then
-        this%area_lat_north(j) = this%area_cell(j+1)
-      end if
       this%area_lat(j) = this%area_lat_north(j) + this%area_lat_south(j)
     end do
 

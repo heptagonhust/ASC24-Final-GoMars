@@ -134,14 +134,14 @@ contains
                         field%d, 1, field%halo(south)%recv_type_2d(t1,t2), field%halo(south)%proc_id, 25, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
       ! Reverse array order.
-      tmp = field%d(:,js:0)
+      tmp = field%d(:,js:js+hy-1)
       if (field%halo(south)%proc_id == proc%id) then ! 1D decompostion, also reverse in lon
-        do j = js, 0
+        do j = js, js + hy - 1
           field%d(   1:mx,j) = tmp(hx+1+mx:hx+nx,hy+js-j)
           field%d(mx+1:nx,j) = tmp(hx+1   :hx+mx,hy+js-j)
         end do
       else
-        do j = js, 0
+        do j = js, js + hy - 1
           field%d(:,j) = tmp(:,hy+js-j)
         end do
       end if
@@ -255,14 +255,14 @@ contains
                         field%d, 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 35, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
       ! Reverse array order.
-      tmp = field%d(:,js:0,:)
+      tmp = field%d(:,js:js+hy-1,:)
       if (field%halo(south)%proc_id == proc%id) then ! 1D decompostion, also reverse in lon
-        do j = js, 0
+        do j = js, js + hy - 1
           field%d(   1:mx,j,:) = tmp(hx+1+mx:hx+nx,hy+js-j,:)
           field%d(mx+1:nx,j,:) = tmp(hx+1   :hx+mx,hy+js-j,:)
         end do
       else
-        do j = js, 0
+        do j = js, js + hy - 1
           field%d(:,j,:) = tmp(:,hy+js-j,:)
         end do
       end if
@@ -377,14 +377,14 @@ contains
                         field%d(:,:,:,i4), 1, field%halo(south)%recv_type_3d(t1,t2,t3), field%halo(south)%proc_id, 45, &
                         proc%comm, MPI_STATUS_IGNORE, ierr)
       ! Reverse array order.
-      tmp = field%d(:,js:0,:,i4)
+      tmp = field%d(:,js:js+hy-1,:,i4)
       if (field%halo(south)%proc_id == proc%id) then ! 1D decompostion, also reverse in lon
-        do j = js, 0
+        do j = js, js + hy - 1
           field%d(   1:mx,j,:,i4) = tmp(hx+1+mx:hx+nx,hy+js-j,:)
           field%d(mx+1:nx,j,:,i4) = tmp(hx+1   :hx+mx,hy+js-j,:)
         end do
       else
-        do j = js, 0
+        do j = js, js + hy - 1
           field%d(:,j,:,i4) = tmp(:,hy+js-j,:)
         end do
       end if
