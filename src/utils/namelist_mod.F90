@@ -158,10 +158,7 @@ module namelist_mod
   real(r8)        :: vor_damp_coef2       = 0.001_r8
   real(r8)        :: vor_damp_top         = 1
   integer         :: vor_damp_k0          = 6
-  real(r8)        :: vor_damp_pole        = 0
-  real(r8)        :: vor_damp_pole_x      = 200
-  real(r8)        :: vor_damp_pole_y      = 200
-  real(r8)        :: vor_damp_lat0        = 60
+  real(r8)        :: vor_damp_lat0        = 70
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
@@ -294,9 +291,6 @@ module namelist_mod
     vor_damp_k0               , &
     vor_damp_coef2            , &
     vor_damp_top              , &
-    vor_damp_pole             , &
-    vor_damp_pole_x           , &
-    vor_damp_pole_y           , &
     vor_damp_lat0             , &
     rayleigh_damp_w_coef      , &
     rayleigh_damp_top         , &
@@ -367,9 +361,6 @@ contains
 
     if (.not. use_vor_damp) then
       vor_damp_order = 0
-    else if (vor_damp_pole /= 0) then
-      vor_damp_pole_x = vor_damp_pole
-      vor_damp_pole_y = vor_damp_pole
     end if
 
   end subroutine parse_namelist
@@ -445,8 +436,6 @@ contains
       write(*, *) 'vor_damp_coef2      = ', vor_damp_coef2
       write(*, *) 'vor_damp_k0         = ', to_str(vor_damp_k0)
       write(*, *) 'vor_damp_top        = ', to_str(vor_damp_top, 3)
-      write(*, *) 'vor_damp_pole_x     = ', to_str(vor_damp_pole_x, 3)
-      write(*, *) 'vor_damp_pole_y     = ', to_str(vor_damp_pole_y, 3)
       write(*, *) 'vor_damp_lat0       = ', to_str(vor_damp_lat0, 3)
     end if
     if (nonhydrostatic) then
