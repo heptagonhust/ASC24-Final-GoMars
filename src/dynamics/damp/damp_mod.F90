@@ -52,8 +52,6 @@ contains
     real(r8), intent(in) :: dt
 
     integer j
-
-    integer i, k
     real(r8) c
     associate (mesh => block%mesh, u_lon => dstate%u_lon, v_lat => dstate%v_lat)
     ! This nudging of polar v helps to keep the flow neat around the poles.
@@ -61,10 +59,10 @@ contains
     c = 0.8_r8
     do j = mesh%half_jms, mesh%half_jme
       if (mesh%is_south_pole(j)) then
-        u_lon%d(:,j+1,:) = c * u_lon%d(:,j+1,:) + (1 - c) * u_lon%d(:,j+2,:)
+        ! u_lon%d(:,j+1,:) = c * u_lon%d(:,j+1,:) + (1 - c) * u_lon%d(:,j+2,:)
         v_lat%d(:,j  ,:) = c * v_lat%d(:,j  ,:) + (1 - c) * v_lat%d(:,j+1,:)
       else if (mesh%is_north_pole(j+1)) then
-        u_lon%d(:,j  ,:) = c * u_lon%d(:,j  ,:) + (1 - c) * u_lon%d(:,j-1,:)
+        ! u_lon%d(:,j  ,:) = c * u_lon%d(:,j  ,:) + (1 - c) * u_lon%d(:,j-1,:)
         v_lat%d(:,j  ,:) = c * v_lat%d(:,j  ,:) + (1 - c) * v_lat%d(:,j-1,:)
       end if
     end do
