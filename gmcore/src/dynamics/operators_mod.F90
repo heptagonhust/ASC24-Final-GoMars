@@ -139,27 +139,38 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+    integer end_tmp
 
     call perf_start('calc_mg')
 
     associate (mesh    => block%mesh    , &
                mgs     => dstate%mgs    , & ! in
                mg_lev  => dstate%mg_lev , & ! out
+               ref_ps_perb_d => block%static%ref_ps_perb%d, &
                mg      => dstate%mg     )   ! out
+    
+    end_tmp = merge(0, 1, mesh%has_north_pole());
+    !$omp target map(to: mgs%d, ref_ps_perb_d) map(tofrom: mg_lev%d) map(from: mg%d)
+    !$omp parallel do collapse(3)
     do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+      do j = mesh%full_jds, mesh%full_jde + end_tmp
         do i = mesh%full_ids, mesh%full_ide + 1
-          mg_lev%d(i,j,k) = vert_coord_calc_mg_lev(k, mgs%d(i,j), block%static%ref_ps_perb%d(i,j))
+          mg_lev%d(i,j,k) = vert_coord_calc_mg_lev(k, mgs%d(i,j), ref_ps_perb_d(i,j))
         end do
       end do
     end do
+    !$omp end parallel do
+    
+    !$omp parallel do collapse(3)
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+      do j = mesh%full_jds, mesh%full_jde + end_tmp
         do i = mesh%full_ids, mesh%full_ide + 1
           mg%d(i,j,k) = 0.5_r8 * (mg_lev%d(i,j,k) + mg_lev%d(i,j,k+1))
         end do
       end do
     end do
+    !$omp end parallel do
+    !$omp end target
     end associate
 
     call perf_stop('calc_mg')

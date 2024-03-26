@@ -40,6 +40,8 @@ if (OUTPUT_H1_DTEND)
   add_definitions(-DOUTPUT_H1_DTEND)
 endif ()
 
+# set(CMAKE_BUILD_TYPE "Debug")
+
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR})
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   add_definitions(-DFC_IS_GNU)
@@ -48,6 +50,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     -fno-range-check
     -fallow-argument-mismatch
     -fallow-invalid-boz
+    -fcf-protection=none
   )
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND fortran_flags -O0 -fcheck=all -g -fbacktrace)
@@ -55,7 +58,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     list(APPEND fortran_flags -Ofast)
   endif ()
   # FIXME: OpenMP causes sigmentation faults.
-  # list(APPEND fortran_flags -fopenmp)
+  list(APPEND fortran_flags -fopenmp)
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
 # elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" )
   add_definitions(-DFC_IS_INTEL)
@@ -89,7 +92,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   # GCC fortran compilers save array on heap by default.
   list(APPEND fortran_flags -fopenmp -mavx512f) #-fopt-info-vec-all -fopt-info-inline-all -fopt-info-omp-all)
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-  list(APPEND fortran_flags -heap-arrays)
+  list(APPEND fortran_flags -heap-arrays -fopenmp)
 endif ()
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 

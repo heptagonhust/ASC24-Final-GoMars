@@ -44,3 +44,6 @@ gmcore/gptl/*
 
 *.log
 gmcore/data/
+
+*.log
+gmcore/data/

@@ -22,7 +22,7 @@ run ( ) {
 		export UCX_RC_PATH_MTU=2048
 		# export I_MPI_HYDRA_RMK=slurm
 		# export I_MPI_PIN=off
-		export OMP_NUM_THREADS=1
+		export OMP_NUM_THREADS=4
 	fi
 	case_name=$1
 	node=$2
