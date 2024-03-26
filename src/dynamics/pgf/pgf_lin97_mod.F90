@@ -175,7 +175,7 @@ contains
             dpp1 = p_lev  %d(i,j+1,k+1) - p_lev  %d(i,j  ,k  ) - ( &
                    ph_lev %d(i,j+1,k+1) - ph_lev %d(i,j  ,k  )) ! 2 - 4
             dpp2 = p_lev  %d(i,j  ,k+1) - p_lev  %d(i,j+1,k  ) - ( &
-                   ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j  ,k  )) ! 1 - 3
+                   ph_lev %d(i,j  ,k+1) - ph_lev %d(i,j+1,k  )) ! 1 - 3
             dpk1 = pkh_lev%d(i,j+1,k+1) - pkh_lev%d(i,j  ,k  )  ! 2 - 4
             dpk2 = pkh_lev%d(i,j  ,k+1) - pkh_lev%d(i,j+1,k  )  ! 1 - 3
             dph1 = ph_lev %d(i,j+1,k+1) - ph_lev %d(i,j  ,k  )  ! 2 - 4
