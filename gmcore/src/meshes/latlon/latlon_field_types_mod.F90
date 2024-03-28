@@ -24,6 +24,7 @@ module latlon_field_types_mod
   use const_mod
   use latlon_mesh_mod
   use latlon_halo_mod
+  use omp_lib
 
   implicit none
 
@@ -115,15 +116,19 @@ contains
     case ('cell')
       this%full_lon = .true. ; this%full_lat = .true.
       allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme))
+      !$omp target enter data map(alloc:this%d)
     case ('lon')
       this%full_lon = .false.; this%full_lat = .true.
       allocate(this%d(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme))
+      !$omp target enter data map(alloc:this%d)
     case ('lat')
       this%full_lon = .true. ; this%full_lat = .false.
       allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme))
+      !$omp target enter data map(alloc:this%d)
     case ('vtx')
       this%full_lon = .false.; this%full_lat = .false.
       allocate(this%d(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme))
+      !$omp target enter data map(alloc:this%d)
     end select
 
     this%d = 0
@@ -136,6 +141,7 @@ contains
     class(latlon_field2d_type), intent(inout) :: this
 
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) then
+      !$omp target exit data map(delete:this%d) 
       deallocate(this%d)
       this%d => null()
     end if
@@ -253,30 +259,36 @@ contains
       case ('cell')
         this%full_lon = .true. ; this%full_lat = .true. ; this%full_lev = .true.
         allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
+        !$omp target enter data map(alloc:this%d)
       case ('lon')
         this%full_lon = .false.; this%full_lat = .true. ; this%full_lev = .true.
         allocate(this%d(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme))
+        !$omp target enter data map(alloc:this%d)
       case ('lat')
         this%full_lon = .true. ; this%full_lat = .false.; this%full_lev = .true.
         allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
+        !$omp target enter data map(alloc:this%d)
       case ('vtx')
         this%full_lon = .false.; this%full_lat = .false.; this%full_lev = .true.
         allocate(this%d(mesh%half_ims:mesh%half_ime,mesh%half_jms:mesh%half_jme,mesh%full_kms:mesh%full_kme))
+        !$omp target enter data map(alloc:this%d)
       case ('lev')
         this%full_lon = .true. ; this%full_lat = .true. ; this%full_lev = .false.
         allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
+        !$omp target enter data map(alloc:this%d)
       case ('lev_lon')
         this%full_lon = .false.; this%full_lat = .true. ; this%full_lev = .false.
         allocate(this%d(mesh%half_ims:mesh%half_ime,mesh%full_jms:mesh%full_jme,mesh%half_kms:mesh%half_kme))
+        !$omp target enter data map(alloc:this%d)
       case ('lev_lat')
         this%full_lon = .true. ; this%full_lat = .false.; this%full_lev = .false.
         allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%half_jms:mesh%half_jme,mesh%half_kms:mesh%half_kme))
+        !$omp target enter data map(alloc:this%d)
       end select
     end if
 
     this%d = 0
     this%initialized = .true.
-
   end subroutine latlon_field3d_init
 
   subroutine latlon_field3d_clear(this)
@@ -284,6 +296,7 @@ contains
     class(latlon_field3d_type), intent(inout) :: this
 
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) then
+      !$omp target exit data map(delete:this%d) 
       deallocate(this%d)
       this%d => null()
     end if
@@ -418,6 +431,7 @@ contains
     case ('cell')
       this%full_lon = .true. ; this%full_lat = .true. ; this%full_lev = .true.
       allocate(this%d(mesh%full_ims:mesh%full_ime,mesh%full_jms:mesh%full_jme,mesh%full_kms:mesh%full_kme,n4))
+      !$omp target enter data map(alloc:this%d)
     end select
 
     this%d = 0
@@ -431,6 +445,7 @@ contains
     class(latlon_field4d_type), intent(inout) :: this
 
     if (this%initialized .and. .not. this%linked .and. associated(this%d)) then
+      !$omp target exit data map(delete:this%d) 
       deallocate(this%d)
       this%d => null()
     end if

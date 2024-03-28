@@ -84,9 +84,18 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
   endif ()
 endif ()
 
-list(APPEND fortran_flags -heap-arrays)
+# let We(heptagon) define flags here.
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  # GCC fortran compilers save array on heap by default.
+  list(APPEND fortran_flags -fopenmp -mavx512f -no-pie)# -fopt-info) #-fopt-info-vec-all -fopt-info-inline-all 
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+  list(APPEND fortran_flags -heap-arrays)
+endif ()
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 
+
+
+  
 
 find_package(MPI)
 
@@ -409,7 +418,7 @@ if (DEFINED ENV{OMPDIR})
   link_directories("$ENV{OMPDIR}/lib")
 endif ()
 
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fiopenmp -qopenmp-link=static")
+# set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fiopenmp -qopenmp-link=static") # what for gomp?
 
 target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 
