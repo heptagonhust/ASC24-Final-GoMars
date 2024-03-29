@@ -7,7 +7,7 @@
 # WARRANTY. You may contact authors for helping or cooperation.
 # ==============================================================================
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 project(gmcore LANGUAGES Fortran C)
 
