@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -N 5
-#SBATCH -n 320
+#SBATCH -N 3
+#SBATCH -n 120
 #SBATCH -w hepnode[0-4]
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out

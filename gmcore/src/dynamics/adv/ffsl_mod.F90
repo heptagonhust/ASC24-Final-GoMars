@@ -17,7 +17,7 @@
 ! ==============================================================================
 
 module ffsl_mod
-
+  use iso_c_binding
   use const_mod
   use namelist_mod
   use latlon_mesh_mod, only: global_mesh
@@ -62,7 +62,22 @@ module ffsl_mod
   procedure(hflx_interface), pointer :: hflx => null()
   procedure(vflx_interface), pointer :: vflx => null()
 
+  ! EXTERNAL avx512_dot_product
+  ! interface
+    ! subroutine avx512_dot_product(a, b, n, result) bind(C, name='avx512_dot_product')
+    ! subroutine avx512_dot_product(a, b, n, result) bind(C)
+    !         import :: C_DOUBLE, C_INT
+    !         real(kind=C_DOUBLE), dimension(*) :: a, b
+    !         integer(kind=C_INT) :: n
+    !         real(kind=C_DOUBLE) :: result
+    ! end subroutine avx512_dot_product
+
+  EXTERNAL  avx512_dot_product
+  ! end interface
+
 contains
+
+
 
   subroutine ffsl_init()
 
@@ -415,6 +430,8 @@ contains
 
     integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
+    ! _mm_loadu_si128 testvec
+    ! _mm512_add_epi32
     ! logical(r8) computed(u%mesh%full_ids:u%mesh%full_ide, u%mesh%half_jds:u%mesh%half_jde, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
     ! real(r8) dma(u%mesh%full_ids:u%mesh%full_ide, u%mesh%half_jds:u%mesh%half_jde, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
     ! real(r8) m6a(u%mesh%full_ids:u%mesh%full_ide, u%mesh%half_jds:u%mesh%half_jde, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
@@ -425,13 +442,40 @@ contains
     ! real(r8) m6a(u%mesh%half_ids:u%mesh%half_ide, u%mesh%full_jds_no_pole:u%mesh%full_jde_no_pole, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
     ! real(r8) mla(u%mesh%half_ids:u%mesh%half_ide, u%mesh%full_jds_no_pole:u%mesh%full_jde_no_pole, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
     
+    ! real(kind=c_double), dimension(65) :: a, b
+    ! real(kind=c_double) a(128)
+    ! real(kind=c_double) b(128)
+    
+    ! real(kind=c_double), di
+    ! real(kind=c_double) result(128)
+    ! integer(c_int) n
+    integer(c_int) n(2) 
+
+    real(kind=c_double), allocatable :: a(:)
+    real(kind=c_double), allocatable :: b(:)
+    real(kind=c_double), allocatable :: result(:)
+
+    allocate(a(128))
+    allocate(b(128))
+    allocate(result(128))
+    ! Initialize arrays
+    a = 1.0d0
+    b = 2.0d0
+    n = 64
+
+    ! Call C function to compute dot product
+    call avx512_dot_product(a, b, n, result)
+
+    deallocate(a)
+    deallocate(b)
+    deallocate(result)
+
     associate (mesh => u%mesh    , &
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
     select case (batch%loc)
     case ('cell', 'lev')
     ! computed = .false.
-
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
       ! call t_startf ('hflx_loop1')
@@ -444,14 +488,16 @@ contains
       !     end do
       !   end do
       ! end do
+      !!$omp parallel
       do k = ks, ke
         ! Along x-axis
+        !!$omp simd simdlen(16) private(i,j,cflx) 
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           ! call mm_prefetch (a(i+20, j), 1)
           do i = mesh%half_ids, mesh%half_ide 
             ci = int(cflx%d(i,j,k))
             cf = cflx%d(i,j,k) - ci
-            call mm_prefetch (mx%d(i-ci-2,j,k), 1)
+            ! call mm_prefetch (mx%d(i-ci-2,j,k), 1)
             if (abs(cflx%d(i,j,k)) < 1.0e-16_r8) then
               mfx%d(i,j,k) = 0
             else if (cflx%d(i,j,k) > 0) then
@@ -489,6 +535,7 @@ contains
         end do
       end do
 
+      !!$omp end parallel
       ! do k = ks, ke
       !   ! Along x-axis
       !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole

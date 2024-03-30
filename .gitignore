@@ -36,7 +36,15 @@
 run_dir/
 vtune/
 gmcore/netcdf/
-gmcore/lib/*
+gmcore/lib/container
+gmcore/lib/datetime
+gmcore/lib/fiona
+gmcore/lib/string
+gmcore/lib/noahmp*
+gmcore/lib/container
+gmcore/lib/rrtmgp*
+gmcore/lib/flogger
+gmcore/lib/quadpack*
 gmcore/build/*
 gmcore/run/*
 gmcore/gptl/*

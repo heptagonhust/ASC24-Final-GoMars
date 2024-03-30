@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -N 1
-#SBATCH -n 64
-#SBATCH -w hepnode4
+#SBATCH -N 4
+#SBATCH -n 240
+#SBATCH -w hepnode[0-4]
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 spack load intel-oneapi-vtune
@@ -58,11 +58,12 @@ run ( ) {
         echo "normal case"
         exe_absolute_path=$normal_exe_absolute_path
     fi
+
+
     mpirun -n $3 -ppn $( expr $3 / $2 ) \
-    vtune -collect hotspot -knob enable-stack-collection=true \
-    -knob sampling-mode=hw -knob stack-size=0 -knob sampling-interval=100 \
-    -r /home/xyw/ascgomars/ASC24-Final-GoMars/vtune/${case_name}_r001.hs -finalization-mode=deferred -- \
-    ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+    -gtool "vtune -collect hpc-performance -knob enable-stack-collection=true -result-dir ./hpc-performance-AVX512:test" \
+    ${current_dir}/bind_cpu.sh \
+    $exe_absolute_path $namelist_absolute_path
     rm -rf opt.nc
     mv *.nc opt.nc
     now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"

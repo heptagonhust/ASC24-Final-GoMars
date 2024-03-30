@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH -n 64
-#SBATCH -w hepnode[0-4]
+#SBATCH -w hepnode0
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 

@@ -73,7 +73,12 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
       -no-wrap-margin
       -O3
       -align array64byte
-      -ipo
+      # -ipo
+      # -qopt-report-phase=vec,loop,openmp  
+      # -qopt-report-file=stderr
+      # -qopt-report=2
+      # qopt-report-file=ou.txt
+      # fopt-info-vec
       # -qopenmp
       # -fp-model precise
     )
@@ -88,6 +93,11 @@ endif ()
 list(APPEND fortran_flags -heap-arrays)
 # list(APPEND fortran_flags -fstack-arrays)
 list(APPEND fortran_flags -xCORE-AVX512)
+# list(APPEND fortran_flags -xcommon-avx512)
+# list(APPEND fortran_flags -qopt-zmm-usage=high)
+# list(APPEND fortran_flags -no-prec-div)
+
+
 
 
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
@@ -381,6 +391,8 @@ target_sources(gmcore PRIVATE
   src/utils/tridiag_spk_mod.F90
 )
 
+
+
 if (HAS_RRTMGP AND HAS_NOAHMP)
   target_sources(gmcore PRIVATE
     src/physics/wrf/wrf_namelist_mod.F90
@@ -415,6 +427,7 @@ if (DEFINED ENV{OMPDIR})
 endif ()
 
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fiopenmp -qopenmp-link=static")
+target_link_libraries(gmcore ${PROJECT_SOURCE_DIR}/lib/avx/avx.o)
 
 target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 

@@ -810,7 +810,9 @@ contains
     ! call t_stopf ('test_loop')
 
     ! call t_startf ('mfloops')
+    !!$omp parallel
     do k = mesh%full_kds, mesh%full_kde
+    !!$omp simd simdlen(16)
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_ids - 1, mesh%half_ide
           mfx_lon%d(i,j,k) = dmg_lon%d(i,j,k) * u_lon%d(i,j,k)
@@ -827,9 +829,11 @@ contains
         end do
       end do
     end do
+
     ! call fill_halo(u_lat)
     ! call fill_halo(u_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
-
+    !! $omp simd
+    !!$omp simd simdlen(16)
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -838,7 +842,6 @@ contains
       end do
     ! end do
 
-    ! end do
     ! do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
         do i = mesh%half_ids, mesh%half_ide
@@ -848,6 +851,7 @@ contains
         end do
       end do
     end do
+    !!$omp end parallel
   !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
     !     do i = mesh%half_ids, mesh%half_ide
     !       mfy_lon%d(i,j,k) = block%static%tg_wgt_lon(1,j) * (mfy_lat%d(i,j-1,k) + mfy_lat%d(i+1,j-1,k))
@@ -959,10 +963,8 @@ contains
   end subroutine calc_vor
 
   subroutine calc_pv(block, dstate)
-
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-
     integer i, j, k
 
     call perf_start('calc_pv')
@@ -1051,6 +1053,8 @@ contains
                pv_lat => block%aux%pv_lat)   ! out
     select case (upwind_order_pv)
     case (1)
+    !!$omp parallel
+      !!$omp simd simdlen(16)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1060,6 +1064,7 @@ contains
           end do
         end do
       end do
+    !!$omp end parallel
       call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
       if (debug .eq. 1) then 
         if (proc%id .eq. 1) then 
@@ -1083,6 +1088,8 @@ contains
       end if
       call perf_stop ('small_loop')
     case (3)
+    !!$omp parallel
+      !!$omp simd simdlen(16)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1092,6 +1099,7 @@ contains
           end do
         end do
       end do 
+    !!$omp end parallel 
       call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
       if (debug .eq. 1) then 
         if (proc%id .eq. 1) then 
@@ -1116,6 +1124,8 @@ contains
       end if
       call perf_stop ('small_loop')
     case (5)
+    !!$omp parallel
+      !!$omp simd simdlen(16)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
           do i = mesh%half_ids, mesh%half_ide
@@ -1125,6 +1135,7 @@ contains
           end do
         end do
       end do
+    !!$omp end parallel
       call fill_halo(pv_lon, east_halo=.false., south_halo=.false., isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
       if (debug .eq. 1) then 
         if (proc%id .eq. 1) then 
