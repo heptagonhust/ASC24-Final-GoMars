@@ -77,7 +77,7 @@ module namelist_mod
 
   character(30)   :: tangent_wgt_scheme   = 'classic'
 
-  real(r8)        :: implicit_w_wgt       = 0.55_r8
+  real(r8)        :: implicit_w_wgt       = 1
 
   character(30)   :: vert_coord_scheme    = 'hybrid'
   character(30)   :: vert_coord_template  = 'N/A'
@@ -147,18 +147,18 @@ module namelist_mod
   real(r8)        :: div_damp_top         = 3
   integer         :: div_damp_k0          = 6
   real(r8)        :: div_damp_pole        = 0
-  real(r8)        :: div_damp_pole_x      = 10
-  real(r8)        :: div_damp_pole_y      = 10
+  real(r8)        :: div_damp_pole_x      = 50
+  real(r8)        :: div_damp_pole_y      = 50
   real(r8)        :: div_damp_lat0        = 70
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_cycles      = 1
   integer         :: vor_damp_order       = 2
-  real(r8)        :: vor_damp_coef2       = 0.001_r8
-  real(r8)        :: vor_damp_top         = 1
+  real(r8)        :: vor_damp_coef2       = 0.1_r8
+  real(r8)        :: vor_damp_top         = 2
   integer         :: vor_damp_k0          = 6
-  real(r8)        :: vor_damp_lat0        = 70
+  real(r8)        :: vor_damp_lat0        = 60
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
@@ -333,6 +333,12 @@ contains
       hydrostatic    = .false.
       baroclinic     = .false.
       nonhydrostatic = .false.
+    end if
+
+    ! Set default for nonhydrostatic temporally.
+    if (nonhydrostatic) then
+      pgf_scheme     = 'ptb'
+      pt_adv_scheme  = 'upwind'
     end if
 
     if (dt_dyn  == 0) dt_dyn  = dt_adv

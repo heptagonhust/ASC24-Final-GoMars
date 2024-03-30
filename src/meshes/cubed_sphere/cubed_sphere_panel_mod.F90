@@ -1,3 +1,12 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+
 module cubed_sphere_panel_mod
 
   use const_mod
@@ -15,19 +24,21 @@ module cubed_sphere_panel_mod
   end type ngb_type
 
   type grid_type
-    real(r8), allocatable, dimension(  :,:,:) :: p  ! Grid point vector (i.e. Cartesian coordinate)
-    real(r8), allocatable, dimension(      :) :: x1 ! x on cube tile for panel 1
-    real(r8), allocatable, dimension(      :) :: y1 ! y on cube tile for panel 1
-    real(r8), allocatable, dimension(    :,:) :: lx ! Edge length along x axis
-    real(r8), allocatable, dimension(    :,:) :: ly ! Edge length along y axis
-    real(r8), allocatable, dimension(    :,:) :: lon, lon_deg
-    real(r8), allocatable, dimension(    :,:) :: lat, lat_deg
-    real(r8), allocatable, dimension(    :,:) :: area
-    real(r8), allocatable, dimension(  :,:,:) :: subarea
-    real(r8), allocatable, dimension(    :,:) :: sina
-    real(r8), allocatable, dimension(    :,:) :: cosa
-    real(r8), allocatable, dimension(:,:,:,:) :: A    ! Transform matrix from cube to sphere
-    real(r8), allocatable, dimension(:,:,:,:) :: iA   ! Transform matrix from sphere to cube
+    real(r8), allocatable, dimension(  :,:,:) :: p        ! Grid point vector (i.e. Cartesian coordinate)
+    real(r8), allocatable, dimension(      :) :: x1       ! x on cube tile for panel 1
+    real(r8), allocatable, dimension(      :) :: y1       ! y on cube tile for panel 1
+    real(r8), allocatable, dimension(    :,:) :: lx       ! Edge length along x axis
+    real(r8), allocatable, dimension(    :,:) :: ly       ! Edge length along y axis
+    real(r8), allocatable, dimension(    :,:) :: lon      ! Longitude (radian)
+    real(r8), allocatable, dimension(    :,:) :: lon_deg  ! Longitude (degree)
+    real(r8), allocatable, dimension(    :,:) :: lat      ! Latitude (radian)
+    real(r8), allocatable, dimension(    :,:) :: lat_deg  ! Latitude (degree)
+    real(r8), allocatable, dimension(    :,:) :: area     ! Area of cell
+    real(r8), allocatable, dimension(  :,:,:) :: subarea  ! Subarea of cell
+    real(r8), allocatable, dimension(    :,:) :: sina     ! Sine of angle between local unit base vectors
+    real(r8), allocatable, dimension(    :,:) :: cosa     ! Cosine of angle between local unit base vectors
+    real(r8), allocatable, dimension(:,:,:,:) :: A        ! Transform matrix from cube to sphere
+    real(r8), allocatable, dimension(:,:,:,:) :: iA       ! Transform matrix from sphere to cube
   contains
     procedure :: init         => grid_init
     procedure :: clear        => grid_clear
