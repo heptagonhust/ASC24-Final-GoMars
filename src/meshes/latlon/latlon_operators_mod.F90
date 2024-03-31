@@ -73,7 +73,7 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+      pole = pole * mesh%le_lat(j) / global_mesh%area_pole_cap
       do k = ks, ke
         do i = mesh%full_ids, mesh%full_ide
           div%d(i,j,k) = pole(k)
@@ -88,7 +88,7 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+      pole = pole * mesh%le_lat(j-1) / global_mesh%area_pole_cap
       do k = ks, ke
         do i = mesh%full_ids, mesh%full_ide
           div%d(i,j,k) = -pole(k)
@@ -111,13 +111,13 @@ contains
     associate (mesh => curl%mesh)
     ks = merge(mesh%full_kds, mesh%half_kds, curl%loc == 'cell')
     ke = merge(mesh%full_kde, mesh%half_kde, curl%loc == 'cell')
-    is = mesh%full_ids
-    ie = mesh%full_ide; if (present(with_halo)) ie = merge(ie + 1, ie, with_halo)
-    js = mesh%full_jds_no_pole
-    je = mesh%full_jde_no_pole; if (present(with_halo)) je = merge(je + 1, je, with_halo)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%half_ids, mesh%half_ide
+    is = mesh%half_ids
+    ie = mesh%half_ide; if (present(with_halo)) ie = merge(ie + 1, ie, with_halo)
+    js = mesh%half_jds
+    je = mesh%half_jde; if (present(with_halo)) je = merge(je + 1, je, with_halo)
+    do k = ks, ke
+      do j = js, je
+        do i = is, ie
           curl%d(i,j,k) = (                                                     &
             fx%d(i  ,j,k) * mesh%de_lon(j) - fx%d(i,j+1,k) * mesh%de_lon(j+1) + &
             fy%d(i+1,j,k) * mesh%de_lat(j) - fy%d(i,j  ,k) * mesh%de_lat(j  )   &

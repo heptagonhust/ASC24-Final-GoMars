@@ -79,7 +79,7 @@ contains
             work(i) = fy%d(i,j)
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * f%mesh%le_lat(j) / global_mesh%full_nlon / f%mesh%area_cell(j)
+          pole = pole * f%mesh%le_lat(j) / global_mesh%area_pole_cap
           do i = f%mesh%full_ids, f%mesh%full_ide
             g2%d(i,j) = pole
           end do
@@ -90,7 +90,7 @@ contains
             work(i) = fy%d(i,j-1)
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
-          pole = -pole * f%mesh%le_lat(j-1) / global_mesh%full_nlon / f%mesh%area_cell(j)
+          pole = -pole * f%mesh%le_lat(j-1) / global_mesh%area_pole_cap
           do i = f%mesh%full_ids, f%mesh%full_ide
             g2%d(i,j) = pole
           end do
@@ -138,7 +138,7 @@ contains
           work(i) = fy%d(i,j)
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
-        pole = s * c0 * pole * f%mesh%le_lat(j) / global_mesh%full_nlon / f%mesh%area_cell(j)
+        pole = s * c0 * pole * f%mesh%le_lat(j) / global_mesh%area_pole_cap
         do i = f%mesh%full_ids, f%mesh%full_ide
           f%d(i,j) = f%d(i,j) - pole
         end do
@@ -149,7 +149,7 @@ contains
           work(i) = fy%d(i,j-1)
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
-        pole = -s * c0 * pole * f%mesh%le_lat(j-1) / global_mesh%full_nlon / f%mesh%area_cell(j)
+        pole = -s * c0 * pole * f%mesh%le_lat(j-1) / global_mesh%area_pole_cap
         do i = f%mesh%full_ids, f%mesh%full_ide
           f%d(i,j) = f%d(i,j) - pole
         end do

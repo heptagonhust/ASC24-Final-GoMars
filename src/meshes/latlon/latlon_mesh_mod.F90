@@ -46,7 +46,6 @@ module latlon_mesh_mod
     real(8) dlon, dlat
     real(8), allocatable, dimension(:  ) :: full_dlev
     real(8), allocatable, dimension(:  ) :: half_dlev
-    real(8) total_area
     real(8), allocatable, dimension(:  ) :: full_lon
     real(8), allocatable, dimension(:  ) :: half_lon
     real(8), allocatable, dimension(:  ) :: full_lat
@@ -67,6 +66,8 @@ module latlon_mesh_mod
     real(8), allocatable, dimension(:  ) :: full_lat_deg
     real(8), allocatable, dimension(:  ) :: half_lat_deg
     ! Area for weighting
+    real(8) total_area
+    real(8) area_pole_cap
     real(8), allocatable, dimension(:  ) :: area_cell
     real(8), allocatable, dimension(:  ) :: area_lon
     real(8), allocatable, dimension(:  ) :: area_lon_west
@@ -332,6 +333,8 @@ contains
         this%area_vtx(j) = this%area_lat_west(j) + this%area_lat_east(j) + this%area_lon_south(j+1) + this%area_lon_north(j)
       end if
     end do
+
+    this%area_pole_cap = 2 * pi * radius**2 * (1 - cos(0.5d0 * this%dlat))
 
     do j = this%full_jds_no_pole, this%full_jde_no_pole
       this%de_lon(j) = radius * this%full_cos_lat(j) * this%dlon

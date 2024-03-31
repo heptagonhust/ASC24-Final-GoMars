@@ -722,7 +722,7 @@ contains
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole / global_mesh%full_nlon / mesh%area_cell(j)
+        pole = pole / global_mesh%area_pole_cap
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
             vor%d(i,j,k) = pole(k)
@@ -737,7 +737,7 @@ contains
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole / global_mesh%full_nlon / mesh%area_cell(j+1)
+        pole = pole / global_mesh%area_pole_cap
         do k = mesh%full_kds, mesh%full_kde
           do i = mesh%half_ids, mesh%half_ide
             vor%d(i,j,k) = pole(k)
