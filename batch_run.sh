@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH -n 60
-#SBATCH -w hepnode0
+#SBATCH -n 16
+#SBATCH -w hepnode3
 #SBATCH --output=./output/slurm-%j.out
 
 
@@ -21,7 +21,7 @@ run ( ) {
 		export UCX_RC_PATH_MTU=2048
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
-		export OMP_NUM_THREADS=4
+		export OMP_NUM_THREADS=1
 	fi
 	case_name=$1
 	node=$2
@@ -71,7 +71,7 @@ run ( ) {
 		exe_absolute_path=$normal_exe_absolute_path
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
-	mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	mpirun -n $3 -ppn $( expr $3 / $2 ) ncu $exe_absolute_path $namelist_absolute_path
 
 	rm -rf opt.nc
 	mv *.nc opt.nc

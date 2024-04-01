@@ -11,7 +11,7 @@ module ppm_mod
 
   use const_mod
   use namelist_mod
-  use limiter_mod
+  ! use limiter_mod
 
   implicit none
 
@@ -20,6 +20,18 @@ module ppm_mod
   public ppm
 
 contains
+  real(r8) function slope(fm1, f, fp1) result(res)
+
+    real(r8), intent(in) :: fm1, f, fp1
+
+    real(r8) df, df_min, df_max
+    !$omp declare target
+    df = (fp1 - fm1) * 0.5_r8 ! Initial guess
+    df_min = 2 * (f - min(fm1, f, fp1))
+    df_max = 2 * (max(fm1, f, fp1) - f)
+    res = sign(min(abs(df), df_min, df_max), df)
+
+  end function slope
 
   subroutine ppm(fm2, fm1, f, fp1, fp2, fl, df, f6)
 
@@ -31,8 +43,16 @@ contains
     real(r8), intent(out) :: fl
     real(r8), intent(out) :: df
     real(r8), intent(out) :: f6
+    !$omp declare target
 
     real(r8) dfl, dfr, fr
+    ! interface
+    !   real(r8) function slope(fm1, f, fp1)
+    !     import r8
+    !     real(r8), intent(in) :: fm1, f, fp1
+    !     !$omp declare target
+    !   end function slope
+    ! end interface
 
     ! Calculate values at left and right cell interfaces.
     dfl = slope(fm2, fm1, f  )

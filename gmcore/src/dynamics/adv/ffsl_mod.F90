@@ -416,8 +416,7 @@ contains
     call perf_stop('vflx_van_leer')
 
   end subroutine vflx_van_leer
-
-  subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
+subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
 
     type(adv_batch_type     ), intent(inout) :: batch
     type(latlon_field3d_type), intent(in   ) :: u
@@ -428,8 +427,25 @@ contains
     type(latlon_field3d_type), intent(inout) :: mfy
 
     integer ks, ke, i, j, k, iu, ju, ci
+    integer is, ie, js, je
     real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
+    real(8), pointer, dimension(:,:,:) :: cflx_d, mfx_d, mx_d, u_d, cfly_d, mfy_d, my_d, v_d
 
+    ! interface
+    !   subroutine ppm(fm2, fm1, f, fp1, fp2, fl, df, f6)
+
+    !   real(8), intent(in ) :: fm2
+    !   real(8), intent(in ) :: fm1
+    !   real(8), intent(in ) :: f
+    !   real(8), intent(in ) :: fp1
+    !   real(8), intent(in ) :: fp2
+    !   real(8), intent(out) :: fl
+    !   real(8), intent(out) :: df
+    !   real(8), intent(out) :: f6
+    !   !$omp declare target
+
+    !   end subroutine ppm
+    ! end interface
     call perf_start('hflx_ppm')
     associate (mesh => u%mesh    , &
                cflx => batch%cflx, & ! in
@@ -438,70 +454,96 @@ contains
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
-     !$omp parallel 
-     !$omp do private(i, j, k, iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
+      js = mesh%full_jds_no_pole
+      je = mesh%full_jde_no_pole
+      is = mesh%half_ids
+      ie = mesh%half_ide
+      cflx_d =>  cflx%d
+      mfx_d  =>  mfx%d
+      mx_d   =>  mx%d
+      u_d    =>  u%d
+     !$omp target update to(cflx_d, mx_d, u_d)
+     !$omp target
+     !$omp parallel
+     !$omp do private(i, j, k, iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
       do k = ks, ke
         ! Along x-axis
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            ci = int(cflx%d(i,j,k))
-            cf = cflx%d(i,j,k) - ci
-            if (abs(cflx%d(i,j,k)) < 1.0e-16_r8) then
-              mfx%d(i,j,k) = 0
-            else if (cflx%d(i,j,k) > 0) then
+        do j = js, je
+          do i = is, ie
+            ci = int(cflx_d(i,j,k))
+            cf = cflx_d(i,j,k) - ci
+            if (abs(cflx_d(i,j,k)) < 1.0e-16_r8) then
+              mfx_d(i,j,k) = 0
+            else if (cflx_d(i,j,k) > 0) then
               iu = i - ci
-              call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
+              call ppm(mx_d(iu-2,j,k), mx_d(iu-1,j,k), mx_d(iu,j,k), mx_d(iu+1,j,k), mx_d(iu+2,j,k), ml, dm, m6)
               s1 = 1 - cf
               s2 = 1
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(iu+1:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
+              mfx_d(i,j,k) =  u_d(i,j,k) * (sum(mx_d(iu+1:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx_d(i,j,k)
             else
               iu = i - ci + 1
-              call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
+              call ppm(mx_d(iu-2,j,k), mx_d(iu-1,j,k), mx_d(iu,j,k), mx_d(iu+1,j,k), mx_d(iu+2,j,k), ml, dm, m6)
               s1 = 0
               s2 = -cf
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:iu-1,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
+              mfx_d(i,j,k) = -u_d(i,j,k) * (sum(mx_d(i+1:iu-1,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx_d(i,j,k)
             end if
           end do
         end do
       end do 
       !$omp end do
-      !$omp do private(i, j, k, ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
+      !$omp end parallel
+      !$omp end target
+      js = mesh%half_jds
+      je = mesh%half_jde
+      is = mesh%full_ids
+      ie = mesh%full_ide
+      cfly_d =>  cfly%d
+      mfy_d  =>  mfy%d
+      my_d   =>  my%d
+      v_d    =>  v%d
+      !$omp target update to(cfly_d, my_d, v_d)
+      !$omp target
+      !$omp parallel
+      !$omp do private(i, j, k, ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
       do k = ks, ke
         ! Along y-axis
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            if (abs(cfly%d(i,j,k)) < 1.0e-16_r8) then
-              mfy%d(i,j,k) = 0
-            else if (cfly%d(i,j,k) > 0) then
+        do j = js, je
+          do i = is, ie
+            if (abs(cfly_d(i,j,k)) < 1.0e-16_r8) then
+              mfy_d(i,j,k) = 0
+            else if (cfly_d(i,j,k) > 0) then
               ju = j
-              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
-              s1 = 1 - cfly%d(i,j,k)
+              call ppm(my_d(i,ju-2,k), my_d(i,ju-1,k), my_d(i,ju,k), my_d(i,ju+1,k), my_d(i,ju+2,k), ml, dm, m6)
+              s1 = 1 - cfly_d(i,j,k)
               s2 = 1
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfy%d(i,j,k) =  v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
-            else if (cfly%d(i,j,k) < 0) then
+              mfy_d(i,j,k) =  v_d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly_d(i,j,k)
+            else if (cfly_d(i,j,k) < 0) then
               ju = j + 1
-              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
+              call ppm(my_d(i,ju-2,k), my_d(i,ju-1,k), my_d(i,ju,k), my_d(i,ju+1,k), my_d(i,ju+2,k), ml, dm, m6)
               s1 = 0
-              s2 = -cfly%d(i,j,k)
+              s2 = -cfly_d(i,j,k)
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              mfy%d(i,j,k) = -v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
+              mfy_d(i,j,k) = -v_d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly_d(i,j,k)
             end if
           end do
         end do
       end do
       !$omp end do
       !$omp end parallel 
+      !$omp end target
+      !$omp target update from(mfx_d, mfy_d)
+
     case ('vtx')
     end select
     end associate

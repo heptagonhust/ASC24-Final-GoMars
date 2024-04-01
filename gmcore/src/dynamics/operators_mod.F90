@@ -139,35 +139,42 @@ contains
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
 
-    integer i, j, k
+    integer i, j, k, j_tail
 
     call perf_start('calc_mg')
 
     associate (mesh    => block%mesh    , &
                mgs     => dstate%mgs    , & ! in
                mg_lev  => dstate%mg_lev , & ! out
+               mg_lev_d => dstate%mg_lev%d, & ! out
+               mg_d    => dstate%mg%d   , & ! out
                mg      => dstate%mg     )   ! out
-    
-    !$omp parallel 
-    !$omp do private(i, j, k) collapse(2)
+    j_tail = merge(0, 1, mesh%has_north_pole())
+!    !$omp target 
+    !$omp parallel do private(i, j, k) collapse(2)
     do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+      do j = mesh%full_jds, mesh%full_jde + j_tail
         do i = mesh%full_ids, mesh%full_ide + 1
           mg_lev%d(i,j,k) = vert_coord_calc_mg_lev(k, mgs%d(i,j), block%static%ref_ps_perb%d(i,j))
         end do
       end do
     end do
-    !$omp end do
-    !$omp do private(i, j, k) collapse(2)
+    !$omp end parallel do
+!    !$omp end target
+
+!    !$omp target update to(mg_lev_d)
+!    !$omp target
+    !$omp parallel do private(i, j, k) collapse(3)
     do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+      do j = mesh%full_jds, mesh%full_jde + j_tail
         do i = mesh%full_ids, mesh%full_ide + 1
           mg%d(i,j,k) = 0.5_r8 * (mg_lev%d(i,j,k) + mg_lev%d(i,j,k+1))
         end do
       end do
     end do
-    !$omp end do
-    !$omp end parallel 
+    !$omp end parallel do
+!    !$omp end target
+!    !$omp target update from(mg_d)
     end associate
 
     call perf_stop('calc_mg')
@@ -618,8 +625,9 @@ contains
 
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-
-    integer i, j, k
+    real(8), pointer, contiguous :: p3d_1(:, :, :), p3d_2(:, :, :)
+    integer i, j, k, j_tail
+    integer ks, ke, js, je, is, ie
 
     call perf_start('calc_gz_lev')
 
@@ -628,8 +636,9 @@ contains
                tv     => dstate%tv       , & ! in
                ph_lev => dstate%ph_lev   , & ! in
                gz_lev => dstate%gz_lev   , & ! out
+               gz_d  => dstate%gz%d, &
                gz     => dstate%gz       )   ! out
-    
+    j_tail = merge(0, 1, mesh%has_north_pole())
     do k = mesh%half_kde - 1, mesh%half_kds, -1
       !$omp parallel do collapse(1) private(i, j) 
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
@@ -640,15 +649,34 @@ contains
       !$omp end parallel do
     end do
     ! For output
-    !$omp parallel do collapse(2)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_ids, mesh%full_ide + 1
-          gz%d(i,j,k) = 0.5_r8 * (gz_lev%d(i,j,k) + gz_lev%d(i,j,k+1))
+    p3d_1 => gz%d
+    p3d_2 => gz_lev%d
+    ks = mesh%full_kds
+    ke = mesh%full_kde
+    js = mesh%full_jds
+    je = mesh%full_jde + j_tail
+    is = mesh%full_ids
+    ie = mesh%full_ide + 1
+    !!$omp target update to(p3d_1)
+    !!$omp target
+
+    ! do k = mesh%full_kds, mesh%full_kde
+    !   do j = mesh%full_jds, mesh%full_jde + j_tail
+    !     do i = mesh%full_ids, mesh%full_ide + 1
+
+    !$omp parallel do collapse(3)
+    do k = ks, ke
+      do j = js, je
+        do i = is, ie
+          ! p3d_1(i,j,k) = 0.5_r8 * (p3d_2(i,j,k) + p3d_2(i,j,k+1))
+          p3d_1(i,j,k) = 0.5_r8 * p3d_1(i,j,k)
         end do
       end do
     end do
     !$omp end parallel do
+
+    !!$omp end target
+    !!$omp target update from(p3d_1)
     end associate
 
     call perf_stop('calc_gz_lev')

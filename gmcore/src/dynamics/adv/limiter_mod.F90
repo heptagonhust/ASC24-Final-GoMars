@@ -22,12 +22,13 @@ module limiter_mod
   public slope
 
   interface
-    pure real(r8) function slope_interface(fm1, f, fp1)
+    real(r8) function slope_interface(fm1, f, fp1)
       import r8
       real(r8), intent(in) :: fm1, f, fp1
+      !$omp declare target
     end function slope_interface
   end interface
-
+  !$omp declare target(slope_interface)
   procedure(slope_interface), pointer :: slope => null()
 
 contains
@@ -47,20 +48,20 @@ contains
 
   end subroutine limiter_init
 
-  pure real(r8) function slope_simple(fm1, f, fp1) result(res)
+  real(r8) function slope_simple(fm1, f, fp1) result(res)
 
     real(r8), intent(in) :: fm1, f, fp1
-
+    !$omp declare target
     res = (fp1 - fm1) * 0.5_r8
 
   end function slope_simple
 
-  pure real(r8) function slope_mono(fm1, f, fp1) result(res)
+  real(r8) function slope_mono(fm1, f, fp1) result(res)
 
     real(r8), intent(in) :: fm1, f, fp1
 
     real(r8) df, df_min, df_max
-
+    !$omp declare target
     df = (fp1 - fm1) * 0.5_r8 ! Initial guess
     df_min = 2 * (f - min(fm1, f, fp1))
     df_max = 2 * (max(fm1, f, fp1) - f)
@@ -68,12 +69,12 @@ contains
 
   end function slope_mono
 
-  pure real(r8) function slope_pd(fm1, f, fp1) result(res)
+  real(r8) function slope_pd(fm1, f, fp1) result(res)
 
     real(r8), intent(in) :: fm1, f, fp1
 
     real(r8) df
-
+    !$omp declare target
     df = (fp1 - fm1) * 0.5_r8 ! Initial guess
     res = sign(min(abs(df), 2 * f), df)
 

@@ -25,7 +25,7 @@
 # export F77=mpif77
 #================GCC + OpenMPI===================
 
-#================GCC + Intel MPI(BAD)===================
+#================GCC + Intel MPI(BAD, fixed)===================
 # spack load gcc@12 #which is bad and not support intel mpi, and doesn't have nvptx-none
 spack load cmake@3.27.7
 spack load ninja@1.11.1
@@ -36,6 +36,7 @@ spack load intel-oneapi-mpi@2021.11.0
 export CC=mpicc
 export FC=mpif90
 export F77=mpif77
+#export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/lib/x86_64-linux-gnu"
 #================GCC + Intel MPI===================
 
 #================Intel compiler + Intel MPI===================

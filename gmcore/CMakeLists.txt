@@ -40,6 +40,8 @@ if (OUTPUT_H1_DTEND)
   add_definitions(-DOUTPUT_H1_DTEND)
 endif ()
 
+#set(CMAKE_BUILD_TYPE "Debug")
+
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR})
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   add_definitions(-DFC_IS_GNU)
@@ -87,9 +89,9 @@ endif ()
 # let We(heptagon) define flags here.
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   # GCC fortran compilers save array on heap by default.
-  list(APPEND fortran_flags -fopenmp -mavx512f -no-pie)# -fopt-info) #-fopt-info-vec-all -fopt-info-inline-all 
+  list(APPEND fortran_flags -fopenmp -mavx512f -no-pie -foffload=nvptx-none)# -fopt-info) #-fopt-info-vec-all -fopt-info-inline-all 
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-  list(APPEND fortran_flags -heap-arrays)
+  list(APPEND fortran_flags -heap-arrays -fopenmp)
 endif ()
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
 

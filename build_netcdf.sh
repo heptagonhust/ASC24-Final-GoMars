@@ -17,10 +17,6 @@ cd "$(dirname $0)" || exit 1
 
 source ./env.sh
 
-export CC=mpiicx
-export FC=mpiifort
-export F77=mpiifort
-
 # export H5DIR=$(spack location -i hdf5 ~shared)
 export H5DIR=$(spack location -i hdf5)
 export CURLDIR=$(spack location -i curl)
@@ -54,6 +50,7 @@ NFDIR=$(pwd)
     LDFLAGS="-L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
     ./configure --prefix=${CDIR}
   make install -j64
+  #make check
 )
 
 export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
@@ -64,6 +61,7 @@ export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
     LDFLAGS="-L${NCDIR}/lib -L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
     ./configure --prefix=${NFDIR}
   make install -j64
+  #make check
 )
 
 # wordaround: remove all shared libs

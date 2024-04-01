@@ -30,33 +30,33 @@ module vert_coord_mod
   public hyai, hybi, hyam, hybm, nlevp
 
   interface
-    pure real(r8) function calc_mg_interface(k, mgs, ref_ps_perb)
+     real(r8) function calc_mg_interface(k, mgs, ref_ps_perb)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: mgs
       real(r8), intent(in), optional :: ref_ps_perb
     end function calc_mg_interface
 
-    pure real(r8) function calc_mg_lev_interface(k, mgs, ref_ps_perb)
+     real(r8) function calc_mg_lev_interface(k, mgs, ref_ps_perb)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: mgs
       real(r8), intent(in), optional :: ref_ps_perb
     end function calc_mg_lev_interface
 
-    pure real(r8) function calc_dmgdt_interface(k, dmgsdt)
+     real(r8) function calc_dmgdt_interface(k, dmgsdt)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: dmgsdt
     end function calc_dmgdt_interface
 
-    pure real(r8) function calc_dmgdt_lev_interface(k, dmgsdt)
+     real(r8) function calc_dmgdt_lev_interface(k, dmgsdt)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: dmgsdt
     end function calc_dmgdt_lev_interface
 
-    pure real(r8) function calc_ddmgdt_interface(k, dmgsdt)
+     real(r8) function calc_ddmgdt_interface(k, dmgsdt)
       import r8
       integer, intent(in) :: k
       real(r8), intent(in) :: dmgsdt

@@ -85,8 +85,8 @@ contains
     deallocate(sig )
 
   end subroutine sigma_coord_final
-
-  pure real(r8) function sigma_coord_calc_mg(k, mgs, ref_ps_perb) result(res)
+  !pure
+   real(r8) function sigma_coord_calc_mg(k, mgs, ref_ps_perb) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: mgs
@@ -96,7 +96,7 @@ contains
 
   end function sigma_coord_calc_mg
 
-  pure real(r8) function sigma_coord_calc_mg_lev(k, mgs, ref_ps_perb) result(res)
+   real(r8) function sigma_coord_calc_mg_lev(k, mgs, ref_ps_perb) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: mgs
@@ -106,7 +106,7 @@ contains
 
   end function sigma_coord_calc_mg_lev
 
-  pure real(r8) function sigma_coord_calc_dmgdt(k, dmgsdt) result(res)
+   real(r8) function sigma_coord_calc_dmgdt(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: dmgsdt
@@ -115,7 +115,7 @@ contains
 
   end function sigma_coord_calc_dmgdt
 
-  pure real(r8) function sigma_coord_calc_dmgdt_lev(k, dmgsdt) result(res)
+   real(r8) function sigma_coord_calc_dmgdt_lev(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: dmgsdt
@@ -124,7 +124,7 @@ contains
 
   end function sigma_coord_calc_dmgdt_lev
 
-  pure real(r8) function sigma_coord_calc_ddmgdt(k, dmgsdt) result(res)
+   real(r8) function sigma_coord_calc_ddmgdt(k, dmgsdt) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: dmgsdt

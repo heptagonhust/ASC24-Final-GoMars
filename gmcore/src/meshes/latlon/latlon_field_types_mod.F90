@@ -40,7 +40,7 @@ module latlon_field_types_mod
   integer, public, parameter :: field_long_name_len = 128
   integer, public, parameter :: field_units_len     = 32
   integer, public, parameter :: field_loc_len       = 10
-
+  
   type latlon_field_meta_type
     character(field_name_len     ) :: name      = 'N/A'
     character(field_long_name_len) :: long_name = 'N/A'
@@ -66,6 +66,8 @@ module latlon_field_types_mod
     procedure, private :: latlon_field2d_link_2d
     procedure, private :: latlon_field2d_link_3d
     generic :: link => latlon_field2d_link_2d, latlon_field2d_link_3d
+    procedure :: HostToDevice => latlon_field2d_HostToDevice 
+    procedure :: DeviceToHost => latlon_field2d_DeviceToHost
     final latlon_field2d_final
   end type latlon_field2d_type
 
@@ -77,6 +79,8 @@ module latlon_field_types_mod
     procedure, private :: latlon_field3d_link_3d
     procedure, private :: latlon_field3d_link_4d
     generic :: link => latlon_field3d_link_3d, latlon_field3d_link_4d
+    procedure :: HostToDevice => latlon_field3d_HostToDevice
+    procedure :: DeviceToHost => latlon_field3d_DeviceToHost
     final latlon_field3d_final
   end type latlon_field3d_type
 
@@ -86,6 +90,8 @@ module latlon_field_types_mod
     procedure :: init  => latlon_field4d_init
     procedure :: clear => latlon_field4d_clear
     procedure :: link  => latlon_field4d_link
+    procedure :: HostToDevice => latlon_field4d_HostToDevice
+    procedure :: DeviceToHost => latlon_field4d_DeviceToHost
     final latlon_field4d_final
   end type latlon_field4d_type
 
@@ -132,6 +138,9 @@ contains
     end select
 
     this%d = 0
+    associate(this_d => this%d)
+    !$omp target update to(this_d)
+    end associate
     this%initialized = .true.
 
   end subroutine latlon_field2d_init
@@ -179,8 +188,13 @@ contains
       this%full_lon        = other%full_lon
       this%full_lat        = other%full_lat
     end if
-    if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
+    if (this%initialized .and. .not. this%linked .and. associated(this%d)) then
+      !$omp target exit data map(delete:this%d)
+      deallocate(this%d)
+      this%d => null()
+    end if
     this%d => other%d
+    !$omp target enter data map(to:this%d)
     this%linked = .true.
     this%initialized = .true.
 
@@ -198,7 +212,10 @@ contains
     if (this%initialized .and. .not. (this%full_lon .eqv. other%full_lon .and. this%full_lat .eqv. other%full_lat)) then
       call log_error('latlon_field2d_link: cannot link fields with different loc!', __FILE__, __LINE__)
     end if
-    if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
+    if (this%initialized .and. .not. this%linked .and. associated(this%d))  then
+      !$omp target exit data map(delete:this%d)
+      deallocate(this%d)
+    end if
     select case (this%loc)
     case ('cell')
       is = this%mesh%full_ims; ie = this%mesh%full_ime
@@ -213,13 +230,32 @@ contains
       is = this%mesh%half_ims; ie = this%mesh%half_ime
       js = this%mesh%half_jms; je = this%mesh%half_jme
     end select
-    ! Use a temporary array pointer to fix compile error.
+    ! Use a temporary array pointer to fix compile error. ! lxy: What was your compile error?
     tmp => other%d(:,:,i3)
     this%d(is:ie,js:je) => tmp
+    !$omp target enter data map(to:this%d)
     this%linked = .true.
     this%initialized = .true.
 
   end subroutine latlon_field2d_link_3d
+
+  subroutine latlon_field2d_HostToDevice(this)
+
+    class(latlon_field2d_type), intent(inout) :: this
+
+    associate(this_d => this%d)
+    !$omp target update to(this_d)
+    end associate
+  end subroutine latlon_field2d_HostToDevice
+
+  subroutine latlon_field2d_DeviceToHost(this)
+
+    class(latlon_field2d_type), intent(inout) :: this
+
+    associate(this_d => this%d)
+    !$omp target update from(this_d)
+    end associate
+  end subroutine latlon_field2d_DeviceToHost
 
   subroutine latlon_field2d_final(this)
 
@@ -253,6 +289,7 @@ contains
 
     if (present(ptr_to)) then
       this%d => ptr_to%d
+      !$omp target enter data map(to:this%d)
       this%linked = .true.
     else
       select case (loc)
@@ -288,6 +325,9 @@ contains
     end if
 
     this%d = 0
+    associate(this_d => this%d)
+    !$omp target update to(this_d)
+    end associate
     this%initialized = .true.
   end subroutine latlon_field3d_init
 
@@ -336,8 +376,13 @@ contains
       this%full_lat        = other%full_lat
       this%full_lev        = other%full_lev
     end if
-    if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
+    if (this%initialized .and. .not. this%linked .and. associated(this%d)) then 
+      !$omp target exit data map(delete:this%d)
+      deallocate(this%d)
+      this%d => null()
+    end if
     this%d => other%d
+    !$omp target enter data map(to:this%d)
     this%linked = .true.
     this%initialized = .true.
 
@@ -366,7 +411,11 @@ contains
       this%full_lat        = other%full_lat
       this%full_lev        = other%full_lev
     end if
-    if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
+    if (this%initialized .and. .not. this%linked .and. associated(this%d)) then
+      !$omp target exit data map(delete:this%d)
+      deallocate(this%d)
+      this%d => null()
+    end if
     select case (this%loc)
     case ('cell')
       is = this%mesh%full_ims; ie = this%mesh%full_ime
@@ -392,10 +441,29 @@ contains
     ! Use a temporary array pointer to fix compile error.
     tmp => other%d(:,:,:,i4)
     this%d(is:ie,js:je,ks:ke) => tmp
+    !$omp target enter data map(to:this%d)
     this%linked = .true.
     this%initialized = .true.
 
   end subroutine latlon_field3d_link_4d
+
+  subroutine latlon_field3d_HostToDevice(this)
+
+    class(latlon_field3d_type), intent(inout) :: this
+
+    associate(this_d => this%d)
+    !$omp target update to(this_d)
+    end associate
+  end subroutine latlon_field3d_HostToDevice
+
+  subroutine latlon_field3d_DeviceToHost(this)
+
+    class(latlon_field3d_type), intent(inout) :: this
+
+    associate(this_d => this%d)
+    !$omp target update from(this_d)
+    end associate
+  end subroutine latlon_field3d_DeviceToHost
 
   subroutine latlon_field3d_final(this)
 
@@ -435,6 +503,9 @@ contains
     end select
 
     this%d = 0
+    associate(this_d => this%d)
+    !$omp target update to(this_d)
+    end associate
     this%linked = .false.
     this%initialized = .true.
 
@@ -482,12 +553,35 @@ contains
       this%full_lat        = other%full_lat
       this%full_lev        = other%full_lev
     end if
-    if (this%initialized .and. .not. this%linked .and. associated(this%d)) deallocate(this%d)
+    if (this%initialized .and. .not. this%linked .and. associated(this%d)) then
+      !$omp target exit data map(delete:this%d)
+      deallocate(this%d)
+      this%d => null()
+    end if
     this%d => other%d
+    !$omp target enter data map(to:this%d)
     this%linked = .true.
     this%initialized = .true.
 
   end subroutine latlon_field4d_link
+
+  subroutine latlon_field4d_HostToDevice(this)
+
+    class(latlon_field4d_type), intent(inout) :: this
+
+    associate(this_d => this%d)
+    !$omp target update to(this_d)
+    end associate
+  end subroutine latlon_field4d_HostToDevice
+
+  subroutine latlon_field4d_DeviceToHost(this)
+
+    class(latlon_field4d_type), intent(inout) :: this
+
+    associate(this_d => this%d)
+    !$omp target update from(this_d)
+    end associate
+  end subroutine latlon_field4d_DeviceToHost
 
   subroutine latlon_field4d_final(this)
 
