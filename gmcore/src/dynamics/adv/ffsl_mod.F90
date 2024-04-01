@@ -462,10 +462,19 @@ subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
       mfx_d  =>  mfx%d
       mx_d   =>  mx%d
       u_d    =>  u%d
-     !$omp target update to(cflx_d, mx_d, u_d)
-     !$omp target
-     !$omp parallel
-     !$omp do private(i, j, k, iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
+      cfly_d =>  cfly%d
+      mfy_d  =>  mfy%d
+      my_d   =>  my%d
+      v_d    =>  v%d
+      !$omp target update to(cfly_d, my_d, v_d)
+      !$omp target update to(cflx_d, mx_d, u_d)
+      ! call cflx%HostToDevice()
+      ! call mx%HostToDevice()
+      ! call u%HostToDevice()
+      ! call cfly%HostToDevice()
+      ! call my%HostToDevice()
+      ! call v%HostToDevice()
+      !$omp target teams distribute parallel do private(i, j, k, iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
       do k = ks, ke
         ! Along x-axis
         do j = js, je
@@ -496,21 +505,12 @@ subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
           end do
         end do
       end do 
-      !$omp end do
-      !$omp end parallel
-      !$omp end target
+      !$omp end target teams distribute parallel do
       js = mesh%half_jds
       je = mesh%half_jde
       is = mesh%full_ids
       ie = mesh%full_ide
-      cfly_d =>  cfly%d
-      mfy_d  =>  mfy%d
-      my_d   =>  my%d
-      v_d    =>  v%d
-      !$omp target update to(cfly_d, my_d, v_d)
-      !$omp target
-      !$omp parallel
-      !$omp do private(i, j, k, ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
+      !$omp target teams distribute parallel do private(i, j, k, ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
       do k = ks, ke
         ! Along y-axis
         do j = js, je
@@ -539,11 +539,10 @@ subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
           end do
         end do
       end do
-      !$omp end do
-      !$omp end parallel 
-      !$omp end target
+      !$omp end target teams distribute parallel do
       !$omp target update from(mfx_d, mfy_d)
-
+      ! call mfx%DeviceToHost()
+      ! call mfy%DeviceToHost()
     case ('vtx')
     end select
     end associate
