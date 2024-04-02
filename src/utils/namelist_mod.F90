@@ -135,6 +135,7 @@ module namelist_mod
   real(r8)        :: filter_coef_a        = 1.5
   real(r8)        :: filter_coef_b        = 0.2
   real(r8)        :: filter_coef_c        = 0.5
+  real(r8)        :: filter_gauss_sigma   = 7.0
   real(r8)        :: filter_min_width     = 0.0
 
   ! Damping settings
@@ -144,18 +145,18 @@ module namelist_mod
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
-  real(r8)        :: div_damp_top         = 3
+  real(r8)        :: div_damp_top         = 1
   integer         :: div_damp_k0          = 6
   real(r8)        :: div_damp_pole        = 0
   real(r8)        :: div_damp_pole_x      = 50
-  real(r8)        :: div_damp_pole_y      = 50
+  real(r8)        :: div_damp_pole_y      = 1
   real(r8)        :: div_damp_lat0        = 70
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_cycles      = 1
   integer         :: vor_damp_order       = 2
-  real(r8)        :: vor_damp_coef2       = 0.1_r8
+  real(r8)        :: vor_damp_coef2       = 0.02_r8
   real(r8)        :: vor_damp_top         = 2
   integer         :: vor_damp_k0          = 6
   real(r8)        :: vor_damp_lat0        = 60
@@ -264,6 +265,7 @@ module namelist_mod
     filter_coef_a             , &
     filter_coef_b             , &
     filter_coef_c             , &
+    filter_gauss_sigma        , &
     filter_min_width          , &
     physics_suite             , &
     mp_scheme                 , &
@@ -397,6 +399,7 @@ contains
       write(*, *) 'filter_coef_a       = ', filter_coef_a
       write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
+      write(*, *) 'filter_gauss_sigma  = ', filter_gauss_sigma
       write(*, *) 'filter_min_width    = ', filter_min_width
       write(*, *) 'filter_ptend        = ', to_str(filter_ptend)
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)

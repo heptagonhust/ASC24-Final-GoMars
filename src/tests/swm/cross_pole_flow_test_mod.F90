@@ -1,3 +1,27 @@
+! ==============================================================================
+! This file is part of GMCORE since 2019.
+!
+! GMCORE is a dynamical core for atmospheric model.
+!
+! GMCORE is distributed in the hope that it will be useful, but WITHOUT ANY
+! WARRANTY. You may contact authors for helping or cooperation.
+! ==============================================================================
+! Description:
+!
+!   This module is a test case with cross pole wind field.
+!
+! References:
+!
+!   - MacDonald, A., J. R. Bates, 1989: Semi-Lagrangian Integration of a
+!     Gridpoint Shallow Water Model on the Sphere. MWR, 117: 130-137.
+!
+! Authors:
+
+!   - Li Dong (Institute of Atmospheric Physics, Chinese Academy of Sciences)
+!   - Jianghao Li
+! ==============================================================================
+
+
 module cross_pole_flow_test_mod
 
   use flogger

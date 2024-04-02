@@ -78,7 +78,7 @@ contains
       nx = field%mesh%full_nlon
       mx = field%mesh%full_nlon / 2
     else
-      nx = field%mesh%full_nlon
+      nx = field%mesh%half_nlon
       mx = field%mesh%half_nlon / 2
     end if
     if (field%full_lat) then
