@@ -302,7 +302,7 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
-    real(r8), contiguous, pointer :: t_d, tv_d, pt_d, ph_d, q_d
+    real(r8), contiguous, pointer :: t_d(:, :, :), tv_d(:, :, :), pt_d(:, :, :), ph_d(:, :, :), q_d(:, :, :, :)
     integer :: mesh_full_kds, mesh_full_kde, mesh_full_jds, mesh_full_jde, mesh_full_ids, mesh_full_ide, j_tail
 
     call perf_start('calc_t')
@@ -785,12 +785,15 @@ contains
 
   subroutine calc_mf(block, dstate, dt)
 
-    type(block_type), intent(inout) :: block
+    type(block_type), intent(inout), target :: block
     type(dstate_type), intent(inout) :: dstate
     real(r8), intent(in) :: dt
 
     integer i, j, k
 
+    real(r8), contiguous, pointer :: block_static_tg_wgt_lon(:, :), block_static_tg_wgt_lat(:, :)
+    real(r8), contiguous, pointer :: mfx_lon_d(:, :, :), dmg_lon_d(:, :, :), u_lon_d(:, :, :), mfy_lat_d(:, :, :), dmg_lat_d(:, :, :), v_lat_d(:, :, :), mfx_lat_d(:, :, :), u_lat_d(:, :, :), mfy_lon_d(:, :, :), v_lon_d(:, :, :)
+    integer :: mesh_full_kds, mesh_full_kde, mesh_full_jds_no_pole, mesh_full_jde_no_pole, mesh_half_ids, mesh_half_ide, mesh_half_jds, mesh_half_jde, mesh_full_ids, mesh_full_ide, j_tail
     call perf_start('calc_mf')
 
     associate (mesh    => block%mesh       , &
