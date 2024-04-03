@@ -418,7 +418,7 @@ contains
 
   subroutine calc_ke(block, dstate)
 
-    type(block_type), intent(inout) :: block
+    type(block_type), intent(inout), target :: block
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
@@ -426,21 +426,55 @@ contains
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
 
+    real(r8), contiguous, pointer :: mesh_area_lon_west(:), mesh_area_lon_east(:), mesh_area_lat_north(:), mesh_area_lat_south(:), mesh_area_cell(:), u_d(:, :, :), v_d(:, :, :), ke_d(:, :, :), mesh_area_vtx(:), mesh_area_lat_west(:), mesh_area_lat_east(:), mesh_area_lon_north(:), mesh_area_lon_south(:), mesh_area_subcell(:, :), block_aux_u_lat_d(:, :, :)
+    integer :: mesh_full_kds, mesh_full_kde, mesh_full_jds_no_pole, mesh_full_jde_no_pole, mesh_full_ids, mesh_full_ide, mesh_full_jds, mesh_full_jde, global_mesh_full_nlon, j_tail
+    logical :: south_pole, north_pole
+
     call perf_start('calc_ke')
 
     associate (mesh => block%mesh  , &
                u    => dstate%u_lon, & ! in
                v    => dstate%v_lat, & ! in
                ke   => block%aux%ke)   ! out
+
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_jds_no_pole = mesh%full_jds_no_pole
+    mesh_full_jde_no_pole = mesh%full_jde_no_pole
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide
+    mesh_full_jds = mesh%full_jds
+    mesh_full_jde = mesh%full_jde
+    global_mesh_full_nlon = global_mesh%full_nlon
+    j_tail = merge(0, 1, mesh%has_north_pole())
+    south_pole = mesh%has_south_pole()
+    north_pole = mesh%has_north_pole()
+
+    ke_d => ke%d
+    u_d => u%d
+    v_d => v%d
+    mesh_area_lon_west => mesh%area_lon_west
+    mesh_area_lon_east => mesh%area_lon_east
+    mesh_area_lat_north => mesh%area_lat_north
+    mesh_area_lat_south => mesh%area_lat_south
+    mesh_area_cell => mesh%area_cell
+    mesh_area_vtx => mesh%area_vtx
+    mesh_area_lat_west => mesh%area_lat_west
+    mesh_area_lat_east => mesh%area_lat_east
+    mesh_area_lon_north => mesh%area_lon_north
+    mesh_area_lon_south => mesh%area_lon_south
+    mesh_area_subcell => mesh%area_subcell
+    block_aux_u_lat_d => block%aux%u_lat%d
+
     !$omp parallel do collapse(2) private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_ids, mesh%full_ide + 1
-          ke%d(i,j,k) = (mesh%area_lon_west (j  ) * u%d(i-1,j  ,k)**2 + &
-                         mesh%area_lon_east (j  ) * u%d(i  ,j  ,k)**2 + &
-                         mesh%area_lat_north(j-1) * v%d(i  ,j-1,k)**2 + &
-                         mesh%area_lat_south(j  ) * v%d(i  ,j  ,k)**2   &
-                        ) / mesh%area_cell(j)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole + j_tail
+        do i = mesh_full_ids, mesh_full_ide + 1
+          ke_d(i,j,k) = (mesh_area_lon_west (j  ) * u_d(i-1,j  ,k)**2 + &
+                         mesh_area_lon_east (j  ) * u_d(i  ,j  ,k)**2 + &
+                         mesh_area_lat_north(j-1) * v_d(i  ,j-1,k)**2 + &
+                         mesh_area_lat_south(j  ) * v_d(i  ,j  ,k)**2   &
+                        ) / mesh_area_cell(j)
         end do
       end do
     end do
@@ -470,37 +504,37 @@ contains
       !           i-1,j-1             i,j-1
       !
       !$omp parallel do collapse(2) private(i, j, k, ke_vtx_1, ke_vtx_2, ke_vtx_3, ke_vtx_4)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
-          do i = mesh%full_ids, mesh%full_ide + 1
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole + j_tail
+          do i = mesh_full_ids, mesh_full_ide + 1
             ke_vtx_1 = (                                    &
-              mesh%area_lat_east (j  ) * v%d(i-1,j  ,k)**2 + &
-              mesh%area_lat_west (j  ) * v%d(i  ,j  ,k)**2 + &
-              mesh%area_lon_north(j  ) * u%d(i-1,j  ,k)**2 + &
-              mesh%area_lon_south(j+1) * u%d(i-1,j+1,k)**2   &
-            ) / mesh%area_vtx(j)
+              mesh_area_lat_east (j  ) * v_d(i-1,j  ,k)**2 + &
+              mesh_area_lat_west (j  ) * v_d(i  ,j  ,k)**2 + &
+              mesh_area_lon_north(j  ) * u_d(i-1,j  ,k)**2 + &
+              mesh_area_lon_south(j+1) * u_d(i-1,j+1,k)**2   &
+            ) / mesh_area_vtx(j)
             ke_vtx_2 = (                                    &
-              mesh%area_lat_east (j-1) * v%d(i-1,j-1,k)**2 + &
-              mesh%area_lat_west (j-1) * v%d(i  ,j-1,k)**2 + &
-              mesh%area_lon_north(j-1) * u%d(i-1,j-1,k)**2 + &
-              mesh%area_lon_south(j  ) * u%d(i-1,j  ,k)**2   &
-            ) / mesh%area_vtx(j-1)
+              mesh_area_lat_east (j-1) * v_d(i-1,j-1,k)**2 + &
+              mesh_area_lat_west (j-1) * v_d(i  ,j-1,k)**2 + &
+              mesh_area_lon_north(j-1) * u_d(i-1,j-1,k)**2 + &
+              mesh_area_lon_south(j  ) * u_d(i-1,j  ,k)**2   &
+            ) / mesh_area_vtx(j-1)
             ke_vtx_3 = (                                    &
-              mesh%area_lat_east (j-1) * v%d(i  ,j-1,k)**2 + &
-              mesh%area_lat_west (j-1) * v%d(i+1,j-1,k)**2 + &
-              mesh%area_lon_north(j-1) * u%d(i  ,j-1,k)**2 + &
-              mesh%area_lon_south(j  ) * u%d(i  ,j  ,k)**2   &
-            ) / mesh%area_vtx(j-1)
+              mesh_area_lat_east (j-1) * v_d(i  ,j-1,k)**2 + &
+              mesh_area_lat_west (j-1) * v_d(i+1,j-1,k)**2 + &
+              mesh_area_lon_north(j-1) * u_d(i  ,j-1,k)**2 + &
+              mesh_area_lon_south(j  ) * u_d(i  ,j  ,k)**2   &
+            ) / mesh_area_vtx(j-1)
             ke_vtx_4 = (                                    &
-              mesh%area_lat_east (j  ) * v%d(i  ,j  ,k)**2 + &
-              mesh%area_lat_west (j  ) * v%d(i+1,j  ,k)**2 + &
-              mesh%area_lon_north(j  ) * u%d(i  ,j  ,k)**2 + &
-              mesh%area_lon_south(j+1) * u%d(i  ,j+1,k)**2   &
-            ) / mesh%area_vtx(j)
-            ke%d(i,j,k) = (1.0_r8 - ke_cell_wgt) * (             &
-              (ke_vtx_1 + ke_vtx_4) * mesh%area_subcell(2,j) + &
-              (ke_vtx_2 + ke_vtx_3) * mesh%area_subcell(1,j)   &
-            ) / mesh%area_cell(j) + ke_cell_wgt * ke%d(i,j,k)
+              mesh_area_lat_east (j  ) * v_d(i  ,j  ,k)**2 + &
+              mesh_area_lat_west (j  ) * v_d(i+1,j  ,k)**2 + &
+              mesh_area_lon_north(j  ) * u_d(i  ,j  ,k)**2 + &
+              mesh_area_lon_south(j+1) * u_d(i  ,j+1,k)**2   &
+            ) / mesh_area_vtx(j)
+            ke_d(i,j,k) = (1.0_r8 - ke_cell_wgt) * (             &
+              (ke_vtx_1 + ke_vtx_4) * mesh_area_subcell(2,j) + &
+              (ke_vtx_2 + ke_vtx_3) * mesh_area_subcell(1,j)   &
+            ) / mesh_area_cell(j) + ke_cell_wgt * ke_d(i,j,k)
           end do
         end do
       end do
@@ -508,47 +542,47 @@ contains
     end if
 
     ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
-    if (mesh%has_south_pole()) then
-      j = mesh%full_jds
+    if (south_pole) then
+      j = mesh_full_jds
       !!$omp parallel 
       !!$omp do collapse(1) private(k, i)
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = 0.5_r8 * (v%d(i,j,k)**2 + block%aux%u_lat%d(i,j,k)**2)
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          work(i,k) = 0.5_r8 * (v_d(i,j,k)**2 + block_aux_u_lat_d(i,j,k)**2)
         end do
       end do
       !!$omp end do
       !!$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole / global_mesh%full_nlon
+      pole = pole / global_mesh_full_nlon
       !!$omp end master
       !!$omp do collapse(1) private(k, i)
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          ke%d(i,j,k) = pole(k)
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          ke_d(i,j,k) = pole(k)
         end do
       end do
       !!$omp end do
       !!$omp end parallel
     end if
-    if (mesh%has_north_pole()) then
-      j = mesh%full_jde
+    if (north_pole) then
+      j = mesh_full_jde
       !!$omp parallel 
       !!$omp do collapse(1) private(k, i)
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = 0.5_r8 * (v%d(i,j-1,k)**2 + block%aux%u_lat%d(i,j-1,k)**2)
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          work(i,k) = 0.5_r8 * (v_d(i,j-1,k)**2 + block_aux_u_lat_d(i,j-1,k)**2)
         end do
       end do
       !!$omp end do
       !!$omp master
       call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole / global_mesh%full_nlon
+      pole = pole / global_mesh_full_nlon
       !!$omp end master
       !!$omp do collapse(1) private(k ,i)
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          ke%d(i,j,k) = pole(k)
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          ke_d(i,j,k) = pole(k)
         end do
       end do
       !!$omp end do
