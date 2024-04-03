@@ -47,7 +47,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     -ffree-line-length-none
     -fno-range-check
   )
-  if (CMAKE_Fortran_COMPILER_VERSION GREATER 8)
+  if (CMAKE_Fortran_COMPILER_VERSION GREATER 9)
     list(APPEND fortran_flags
       -fallow-argument-mismatch
       -fallow-invalid-boz
