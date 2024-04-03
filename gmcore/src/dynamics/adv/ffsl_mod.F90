@@ -468,13 +468,7 @@ subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
       v_d    =>  v%d
       !$omp target update to(cfly_d, my_d, v_d)
       !$omp target update to(cflx_d, mx_d, u_d)
-      ! call cflx%HostToDevice()
-      ! call mx%HostToDevice()
-      ! call u%HostToDevice()
-      ! call cfly%HostToDevice()
-      ! call my%HostToDevice()
-      ! call v%HostToDevice()
-      !$omp target teams distribute parallel do private(i, j, k, iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
+      !$omp target teams distribute parallel do firstprivate(iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
       do k = ks, ke
         ! Along x-axis
         do j = js, je
@@ -510,7 +504,7 @@ subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
       je = mesh%half_jde
       is = mesh%full_ids
       ie = mesh%full_ide
-      !$omp target teams distribute parallel do private(i, j, k, ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
+      !$omp target teams distribute parallel do firstprivate(ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(3)
       do k = ks, ke
         ! Along y-axis
         do j = js, je
@@ -541,8 +535,7 @@ subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
       end do
       !$omp end target teams distribute parallel do
       !$omp target update from(mfx_d, mfy_d)
-      ! call mfx%DeviceToHost()
-      ! call mfy%DeviceToHost()
+
     case ('vtx')
     end select
     end associate

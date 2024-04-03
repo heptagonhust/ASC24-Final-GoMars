@@ -668,8 +668,8 @@ contains
     do k = ks, ke
       do j = js, je
         do i = is, ie
-          ! p3d_1(i,j,k) = 0.5_r8 * (p3d_2(i,j,k) + p3d_2(i,j,k+1))
-          p3d_1(i,j,k) = 0.5_r8 * p3d_1(i,j,k)
+          p3d_1(i,j,k) = 0.5_r8 * (p3d_2(i,j,k) + p3d_2(i,j,k+1))
+          ! p3d_1(i,j,k) = 0.5_r8 * p3d_1(i,j,k)
         end do
       end do
     end do
@@ -1104,14 +1104,27 @@ contains
   end subroutine interp_pv_upwind
 
   subroutine calc_coriolis(block, dstate, dtend, dt)
-
-    type(block_type), intent(inout) :: block
+    ! rename test passed
+    type(block_type), intent(inout), target :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(inout) :: dtend
     real(r8), intent(in) :: dt
 
     real(r8) tmp
     integer i, j, k
+
+    real(r8), contiguous, pointer :: du_d(:,:,:), dv_d(:,:,:), mesh_de_lat(:), &
+                                    mesh_de_lon(:), &
+                                    mfx_lon_d(:,:,:), mfy_lat_d(:,:,:), mfy_lon_d(:,:,:), &
+                                    mfx_lat_d(:,:,:), pv_lon_d(:,:,:), pv_lat_d(:,:,:), &
+                                    dtend_dvdt_coriolis_d(:,:,:), dtend_dudt_coriolis_d(:,:,:), &
+                                    block_static_tg_wgt_lat(:,:), block_static_tg_wgt_lon(:,:)
+    integer :: mesh_full_ids, mesh_full_ide,                 &
+                mesh_full_jds_no_pole, mesh_full_jde_no_pole, &
+                mesh_full_kds, mesh_full_kde,                   &
+                mesh_half_ids, mesh_half_ide,                   &
+                mesh_half_jds, mesh_half_jde,                   &
+                mesh_half_kds, mesh_half_kde
 
     call perf_start('calc_coriolis')
 
@@ -1124,60 +1137,98 @@ contains
                pv_lat  => block%aux%pv_lat , & ! in
                du      => dtend%du         , & ! out
                dv      => dtend%dv         )   ! out
+
+    du_d => du%d
+    dv_d => dv%d
+    mesh_de_lat => mesh%de_lat
+    mesh_de_lon => mesh%de_lon
+    mfx_lon_d => mfx_lon%d
+    mfy_lat_d => mfy_lat%d
+    mfy_lon_d => mfy_lon%d
+    mfx_lat_d => mfx_lat%d
+    pv_lon_d => pv_lon%d
+    pv_lat_d => pv_lat%d
+#ifdef OUTPUT_H1_DTEND
+    dtend_dvdt_coriolis_d => dtend%dvdt_coriolis%d
+    dtend_dudt_coriolis_d => dtend%dudt_coriolis%d
+#endif
+    block_static_tg_wgt_lat => block%static%tg_wgt_lat
+    block_static_tg_wgt_lon => block%static%tg_wgt_lon
+
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide
+    mesh_full_jds_no_pole = mesh%full_jds_no_pole
+    mesh_full_jde_no_pole = mesh%full_jde_no_pole
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_half_ids = mesh%half_ids
+    mesh_half_ide = mesh%half_ide
+    mesh_half_jds = mesh%half_jds
+    mesh_half_jde = mesh%half_jde
+    mesh_half_kds = mesh%half_kds
+    mesh_half_kde = mesh%half_kde
+
     select case (coriolis_scheme)
     case (1)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
+      !$omp parallel do collapse(2) private(tmp, k, j, i)
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_half_jds, mesh_half_jde
+          do i = mesh_full_ids, mesh_full_ide
             tmp = - (                                                            &
-              block%static%tg_wgt_lat(1,j) * (                                   &
-                mfx_lon%d(i-1,j  ,k) * (pv_lat%d(i,j,k) + pv_lon%d(i-1,j  ,k)) + &
-                mfx_lon%d(i  ,j  ,k) * (pv_lat%d(i,j,k) + pv_lon%d(i  ,j  ,k))   &
+              block_static_tg_wgt_lat(1,j) * (                                   &
+                mfx_lon_d(i-1,j  ,k) * (pv_lat_d(i,j,k) + pv_lon_d(i-1,j  ,k)) + &
+                mfx_lon_d(i  ,j  ,k) * (pv_lat_d(i,j,k) + pv_lon_d(i  ,j  ,k))   &
               ) +                                                                &
               block%static%tg_wgt_lat(2,j) * (                                   &
-                mfx_lon%d(i-1,j+1,k) * (pv_lat%d(i,j,k) + pv_lon%d(i-1,j+1,k)) + &
-                mfx_lon%d(i  ,j+1,k) * (pv_lat%d(i,j,k) + pv_lon%d(i  ,j+1,k))   &
+                mfx_lon_d(i-1,j+1,k) * (pv_lat_d(i,j,k) + pv_lon_d(i-1,j+1,k)) + &
+                mfx_lon_d(i  ,j+1,k) * (pv_lat_d(i,j,k) + pv_lon_d(i  ,j+1,k))   &
               )                                                                  &
             ) * 0.5_r8
-            dv%d(i,j,k) = dv%d(i,j,k) + tmp
+            dv_d(i,j,k) = dv_d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
-            dtend%dvdt_coriolis%d(i,j,k) = tmp
+            dtend_dvdt_coriolis_d(i,j,k) = tmp
 #endif
           end do
         end do
       end do
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
+
+      !$omp parallel do collapse(2) private(tmp, k, j, i)
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole
+          do i = mesh_half_ids, mesh_half_ide
             tmp = (                                                              &
-              block%static%tg_wgt_lon(1,j) * (                                   &
-                mfy_lat%d(i  ,j-1,k) * (pv_lon%d(i,j,k) + pv_lat%d(i  ,j-1,k)) + &
-                mfy_lat%d(i+1,j-1,k) * (pv_lon%d(i,j,k) + pv_lat%d(i+1,j-1,k))   &
+              block_static_tg_wgt_lon(1,j) * (                                   &
+                mfy_lat_d(i  ,j-1,k) * (pv_lon_d(i,j,k) + pv_lat_d(i  ,j-1,k)) + &
+                mfy_lat_d(i+1,j-1,k) * (pv_lon_d(i,j,k) + pv_lat_d(i+1,j-1,k))   &
               ) +                                                                &
               block%static%tg_wgt_lon(2,j) * (                                   &
-                mfy_lat%d(i  ,j  ,k) * (pv_lon%d(i,j,k) + pv_lat%d(i  ,j  ,k)) + &
-                mfy_lat%d(i+1,j  ,k) * (pv_lon%d(i,j,k) + pv_lat%d(i+1,j  ,k))   &
+                mfy_lat_d(i  ,j  ,k) * (pv_lon_d(i,j,k) + pv_lat_d(i  ,j  ,k)) + &
+                mfy_lat_d(i+1,j  ,k) * (pv_lon_d(i,j,k) + pv_lat_d(i+1,j  ,k))   &
               )                                                                  &
             ) * 0.5_r8
-            du%d(i,j,k) = du%d(i,j,k) + tmp
+            du_d(i,j,k) = du_d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
-            dtend%dudt_coriolis%d(i,j,k) = tmp
+            dtend_dudt_coriolis_d(i,j,k) = tmp
 #endif
           end do
         end do
       end do
     case (2)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%half_jds, mesh%half_jde
-          do i = mesh%full_ids, mesh%full_ide
-            dv%d(i,j,k) = dv%d(i,j,k) - mfx_lat%d(i,j,k) * pv_lat%d(i,j,k)
+
+      !$omp parallel do collapse(2) private(tmp, k, j, i)
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_half_jds, mesh_half_jde
+          do i = mesh_full_ids, mesh_full_ide
+            dv_d(i,j,k) = dv_d(i,j,k) - mfx_lat_d(i,j,k) * pv_lat_d(i,j,k)
           end do
         end do
       end do
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          do i = mesh%half_ids, mesh%half_ide
-            du%d(i,j,k) = du%d(i,j,k) + mfy_lon%d(i,j,k) * pv_lon%d(i,j,k)
+
+      !$omp parallel do collapse(2) private(tmp, k, j, i)
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole
+          do i = mesh_half_ids, mesh_half_ide
+            du_d(i,j,k) = du_d(i,j,k) + mfy_lon_d(i,j,k) * pv_lon_d(i,j,k)
           end do
         end do
       end do
@@ -1189,14 +1240,25 @@ contains
   end subroutine calc_coriolis
 
   subroutine calc_grad_ke(block, dstate, dtend, dt)
-
-    type(block_type), intent(inout) :: block
+    ! rename test passed
+    type(block_type), intent(inout), target :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type), intent(inout) :: dtend
     real(r8), intent(in) :: dt
 
+
     real(r8) tmp
     integer i, j, k
+
+    real(r8), contiguous, pointer :: ke_d(:,:,:), mesh_de_lat(:), &
+                                    mesh_de_lon(:), &
+                                    du_d(:,:,:), dv_d(:,:,:), &
+                                    dtend_dvdt_dkedy_d(:,:,:),  dtend_dudt_dkedx_d(:,:,:)
+    integer ::  mesh_full_ids, mesh_full_ide,                 &
+                mesh_full_jds_no_pole, mesh_full_jde_no_pole, &
+                mesh_full_kds, mesh_full_kde,                 &
+                mesh_half_ids, mesh_half_ide,                 &
+                mesh_half_jds, mesh_half_jde
 
     call perf_start('calc_grad_ke')
 
@@ -1204,22 +1266,46 @@ contains
                ke   => block%aux%ke, & ! in
                du   => dtend%du    , & ! out
                dv   => dtend%dv    )   ! out
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          tmp = -(ke%d(i+1,j,k) - ke%d(i,j,k)) / mesh%de_lon(j)
-          du%d(i,j,k) = du%d(i,j,k) + tmp
+    ke_d => ke%d
+    mesh_de_lat => mesh%de_lat
+    mesh_de_lon => mesh%de_lon
+    du_d => du%d
+    dv_d => dv%d
 #ifdef OUTPUT_H1_DTEND
-          dtend%dudt_dkedx%d(i,j,k) = tmp
+    dtend_dudt_dkedx_d => dtend%dudt_dkedx%d
+    dtend_dvdt_dkedy_d => dtend%dvdt_dkedy%d
+#endif
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide
+    mesh_full_jds_no_pole = mesh%full_jds_no_pole
+    mesh_full_jde_no_pole = mesh%full_jde_no_pole
+    mesh_half_ids = mesh%half_ids
+    mesh_half_ide = mesh%half_ide
+    mesh_half_jds = mesh%half_jds
+    mesh_half_jde = mesh%half_jde
+
+
+    !$omp parallel do collapse(2) private(tmp, k, j, i)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole
+        do i = mesh_half_ids, mesh_half_ide
+          tmp = -(ke_d(i+1,j,k) - ke_d(i,j,k)) / mesh_de_lon(j)
+          du_d(i,j,k) = du_d(i,j,k) + tmp
+#ifdef OUTPUT_H1_DTEND
+          dtend_dudt_dkedx_d(i,j,k) = tmp
 #endif
         end do
       end do
     end do
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          tmp = -(ke%d(i,j+1,k) - ke%d(i,j,k)) / mesh%de_lat(j)
-          dv%d(i,j,k) = dv%d(i,j,k) + tmp
+
+    !$omp parallel do collapse(2) private(tmp, k, j, i)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_half_jds, mesh_half_jde
+        do i = mesh_full_ids, mesh_full_ide
+          tmp = -(ke_d(i,j+1,k) - ke_d(i,j,k)) / mesh_de_lat(j)
+          dv_d(i,j,k) = dv_d(i,j,k) + tmp
 #ifdef OUTPUT_H1_DTEND
           dtend%dvdt_dkedy%d(i,j,k) = tmp
 #endif
@@ -1299,7 +1385,7 @@ contains
 
   subroutine calc_grad_ptf(block, dstate, dtend, dt)
 
-    type(block_type), intent(inout) :: block
+    type(block_type), intent(inout), target :: block
     type(dstate_type), intent(inout) :: dstate
     type(dtend_type ), intent(inout) :: dtend
     real(r8), intent(in) :: dt
@@ -1307,6 +1393,18 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
+
+    real(r8), contiguous, pointer :: dpt_d(:,:,:), ptf_lon_d(:,:,:), ptf_lat_d(:,:,:), &
+                                    ptf_lev_d(:,:,:), mesh_le_lon(:), mesh_le_lat(:), &
+                                    mesh_area_cell(:), mfx_lon_d(:,:,:), mfy_lat_d(:,:,:), &
+                                    dmg_lev_d(:,:,:)
+    integer :: mesh_full_ids, mesh_full_ide,                 &
+                mesh_full_jds_no_pole, mesh_full_jde_no_pole,&
+                mesh_full_jds, mesh_full_jde,                &  
+                mesh_full_kds, mesh_full_kde,                &
+                global_mesh_full_nlon
+
+    logical :: mesh_has_south_pole, mesh_has_north_pole
 
     call perf_start('calc_grad_ptf')
 
@@ -1322,51 +1420,76 @@ contains
                ptf_lat  => block%aux%ptf_lat, & ! out
                ptf_lev  => block%aux%ptf_lev, & ! out
                dpt      => dtend%dpt        )   ! out
+    
+    dpt_d => dpt%d
+    ptf_lon_d => ptf_lon%d
+    ptf_lat_d => ptf_lat%d
+    ptf_lev_d => ptf_lev%d
+    mesh_le_lon => mesh%le_lon
+    mesh_le_lat => mesh%le_lat
+    mesh_area_cell => mesh%area_cell
+    mfx_lon_d => mfx_lon%d
+    mfy_lat_d => mfy_lat%d
+    dmg_lev_d => dmg_lev%d
+
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide
+    mesh_full_jds_no_pole = mesh%full_jds_no_pole
+    mesh_full_jde_no_pole = mesh%full_jde_no_pole
+    mesh_full_jds = mesh%full_jds
+    mesh_full_jde = mesh%full_jde
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    global_mesh_full_nlon = global_mesh%full_nlon
+    mesh_has_north_pole = mesh%has_north_pole()
+    mesh_has_south_pole = mesh%has_south_pole()
+
+
     call block%adv_batch_pt%set_wind(u_lon, v_lat, we_lev, mfx_lon, mfy_lat, dmg_lev)
     call adv_calc_tracer_hflx(block%adv_batch_pt, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(ptf_lon, south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(ptf_lat, north_halo=.false.,  west_halo=.false., east_halo=.false.)
     !$omp parallel do private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%full_ids, mesh%full_ide
-          dpt%d(i,j,k) = -((                        &
-            ptf_lon%d(i,j,k) - ptf_lon%d(i-1,j,k)   &
-          ) * mesh%le_lon(j) + (                    &
-            ptf_lat%d(i,j  ,k) * mesh%le_lat(j  ) - &
-            ptf_lat%d(i,j-1,k) * mesh%le_lat(j-1)   &
-          )) / mesh%area_cell(j)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole
+        do i = mesh_full_ids, mesh_full_ide
+          dpt_d(i,j,k) = -((                        &
+            ptf_lon_d(i,j,k) - ptf_lon_d(i-1,j,k)   &
+          ) * mesh_le_lon(j) + (                    &
+            ptf_lat_d(i,j  ,k) * mesh_le_lat(j  ) - &
+            ptf_lat_d(i,j-1,k) * mesh_le_lat(j-1)   &
+          )) / mesh_area_cell(j)
         end do
       end do
     end do
     !$omp end parallel do
-    if (mesh%has_south_pole()) then
-      j = mesh%full_jds
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = ptf_lat%d(i,j,k)
+    if (mesh_has_south_pole) then
+      j = mesh_full_jds
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          work(i,k) = ptf_lat_d(i,j,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          dpt%d(i,j,k) = -pole(k)
+      pole = pole * mesh_le_lat(j) / global_mesh_full_nlon / mesh_area_cell(j)
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          dpt_d(i,j,k) = -pole(k)
         end do
       end do
     end if
-    if (mesh%has_north_pole()) then
-      j = mesh%full_jde
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          work(i,k) = ptf_lat%d(i,j-1,k)
+    if (mesh_has_north_pole) then
+      j = mesh_full_jde
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          work(i,k) = ptf_lat_d(i,j-1,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
-      pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
-      do k = mesh%full_kds, mesh%full_kde
-        do i = mesh%full_ids, mesh%full_ide
-          dpt%d(i,j,k) = pole(k)
+      pole = pole * mesh_le_lat(j-1) / global_mesh_full_nlon / mesh_area_cell(j)
+      do k = mesh_full_kds, mesh_full_kde
+        do i = mesh_full_ids, mesh_full_ide
+          dpt_d(i,j,k) = pole(k)
         end do
       end do
     end if
@@ -1374,10 +1497,10 @@ contains
     call adv_fill_vhalo(pt)
     call adv_calc_tracer_vflx(block%adv_batch_pt, pt, ptf_lev, dt)
     !$omp parallel do private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde
-        do i = mesh%full_ids, mesh%full_ide
-          dpt%d(i,j,k) = dpt%d(i,j,k) - (ptf_lev%d(i,j,k+1) - ptf_lev%d(i,j,k))
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds, mesh_full_jde
+        do i = mesh_full_ids, mesh_full_ide
+          dpt_d(i,j,k) = dpt_d(i,j,k) - (ptf_lev_d(i,j,k+1) - ptf_lev_d(i,j,k))
         end do
       end do
     end do
