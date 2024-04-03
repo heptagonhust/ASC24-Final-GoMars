@@ -302,6 +302,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+    real(r8), contiguous, pointer :: t_d, tv_d, pt_d, ph_d, q_d
+    integer :: mesh_full_kds, mesh_full_kde, mesh_full_jds, mesh_full_jde, mesh_full_ids, mesh_full_ide, j_tail
 
     call perf_start('calc_t')
 
@@ -311,24 +313,38 @@ contains
                q    => tracers(block%id)%q, & ! in
                t    => dstate%t           , & ! out
                tv   => dstate%tv          )   ! out
+    
+    t_d => t%d
+    tv_d => tv%d
+    pt_d => pt%d
+    ph_d => ph%d
+    q_d => q%d
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_jds = mesh%full_jds
+    mesh_full_jde = mesh%full_jde
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide
+    j_tail = merge(0, 1, mesh%has_north_pole())
+
     if (idx_qv > 0) then
       !$omp parallel do collapse(2) private(k, j, i)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-          do i = mesh%full_ids, mesh%full_ide + 1
-            t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), q%d(i,j,k,idx_qv))
-            tv%d(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt%d(i,j,k), ph%d(i,j,k)**rd_o_cpd, q%d(i,j,k,idx_qv))
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds, mesh_full_jde + j_tail
+          do i = mesh_full_ids, mesh_full_ide + 1
+            t_d(i,j,k) = temperature(pt_d(i,j,k), ph_d(i,j,k), q_d(i,j,k,idx_qv))
+            tv_d(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt_d(i,j,k), ph_d(i,j,k)**rd_o_cpd, q_d(i,j,k,idx_qv))
           end do
         end do
       end do
       !$omp end parallel do
     else
       !$omp parallel do collapse(2) private(k, j, i)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-          do i = mesh%full_ids, mesh%full_ide + 1
-            t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), 0.0_r8)
-            tv%d(i,j,k) = t%d(i,j,k)
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds, mesh_full_jde + j_tail
+          do i = mesh_full_ids, mesh_full_ide + 1
+            t_d(i,j,k) = temperature(pt_d(i,j,k), ph_d(i,j,k), 0.0_r8)
+            tv_d(i,j,k) = t_d(i,j,k)
           end do
         end do
       end do
@@ -789,32 +805,57 @@ contains
                mfy_lat => block%aux%mfy_lat, & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
                mfx_lat => block%aux%mfx_lat)   ! out
+
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_jds_no_pole = mesh%full_jds_no_pole
+    mesh_full_jde_no_pole = mesh%full_jde_no_pole
+    mesh_half_ids = mesh%half_ids
+    mesh_half_ide = mesh%half_ide
+    mesh_half_jds = mesh%half_jds
+    mesh_half_jde = mesh%half_jde
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide
+    mfx_lon_d => mfx_lon%d
+    dmg_lon_d => dmg_lon%d
+    u_lon_d => u_lon%d
+    mfy_lat_d => mfy_lat%d
+    dmg_lat_d => dmg_lat%d
+    v_lat_d => v_lat%d
+    mfx_lat_d => mfx_lat%d
+    u_lat_d => u_lat%d
+    block_static_tg_wgt_lat => block%static%tg_wgt_lat
+    mfy_lon_d => mfy_lon%d
+    v_lon_d => v_lon%d
+    block_static_tg_wgt_lon => block%static%tg_wgt_lon
+
+    j_tail = merge(0, 1, mesh%has_south_pole())
     !$omp parallel 
     !$omp do collapse(2) private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%half_ids - 1, mesh%half_ide
-          mfx_lon%d(i,j,k) = dmg_lon%d(i,j,k) * u_lon%d(i,j,k)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole + j_tail
+        do i = mesh_half_ids - 1, mesh_half_ide
+          mfx_lon_d(i,j,k) = dmg_lon_d(i,j,k) * u_lon_d(i,j,k)
         end do
       end do
     end do
     !$omp end do
     !$omp do collapse(2) private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide + 1
-          mfy_lat%d(i,j,k) = dmg_lat%d(i,j,k) * v_lat%d(i,j,k)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_half_jds - j_tail, mesh_half_jde
+        do i = mesh_full_ids, mesh_full_ide + 1
+          mfy_lat_d(i,j,k) = dmg_lat_d(i,j,k) * v_lat_d(i,j,k)
         end do
       end do
     end do
     !$omp end do
     !$omp do collapse(2) private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds, mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide
-          mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) + &
-                             block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
-          u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_half_jds, mesh_half_jde
+        do i = mesh_full_ids, mesh_full_ide
+          mfx_lat_d(i,j,k) = block_static_tg_wgt_lat(1,j) * (mfx_lon_d(i-1,j  ,k) + mfx_lon_d(i,j  ,k)) + &
+                             block_static_tg_wgt_lat(2,j) * (mfx_lon_d(i-1,j+1,k) + mfx_lon_d(i,j+1,k))
+          u_lat_d(i,j,k) = mfx_lat_d(i,j,k) / dmg_lat_d(i,j,k)
         end do
       end do
     end do
@@ -825,12 +866,12 @@ contains
     !$omp end master
 
     !$omp do collapse(2) private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-        do i = mesh%half_ids, mesh%half_ide
-          mfy_lon%d(i,j,k) = block%static%tg_wgt_lon(1,j) * (mfy_lat%d(i,j-1,k) + mfy_lat%d(i+1,j-1,k)) + &
-                             block%static%tg_wgt_lon(2,j) * (mfy_lat%d(i,j  ,k) + mfy_lat%d(i+1,j  ,k))
-          v_lon%d(i,j,k) = mfy_lon%d(i,j,k) / dmg_lon%d(i,j,k)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole
+        do i = mesh_half_ids, mesh_half_ide
+          mfy_lon_d(i,j,k) = block_static_tg_wgt_lon(1,j) * (mfy_lat_d(i,j-1,k) + mfy_lat_d(i+1,j-1,k)) + &
+                             block_static_tg_wgt_lon(2,j) * (mfy_lat_d(i,j  ,k) + mfy_lat_d(i+1,j  ,k))
+          v_lon_d(i,j,k) = mfy_lon_d(i,j,k) / dmg_lon_d(i,j,k)
         end do
       end do
     end do

@@ -71,8 +71,9 @@ run ( ) {
 		exe_absolute_path=$normal_exe_absolute_path
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
-	mpirun -n $3 -ppn $( expr $3 / $2 ) ncu $exe_absolute_path $namelist_absolute_path
-
+	echo mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+    mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	
 	rm -rf opt.nc
 	mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"

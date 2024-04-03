@@ -67,7 +67,7 @@ contains
 
   end function modified_potential_temperature
 
-  pure elemental real(r8) function temperature(pt, p, qv) result(res)
+  elemental real(r8) function temperature(pt, p, qv) result(res)
 
     real(r8), intent(in) :: pt  ! Modified potential temperature (K)
     real(r8), intent(in) :: p   ! Full pressure (Pa)
@@ -93,7 +93,7 @@ contains
 
   end function virtual_temperature
 
-  pure elemental real(r8) function virtual_temperature_from_modified_potential_temperature(pt, pk, qm) result(res)
+  elemental real(r8) function virtual_temperature_from_modified_potential_temperature(pt, pk, qm) result(res)
 
     real(r8), intent(in) :: pt  ! Modified potential temperature (K)
     real(r8), intent(in) :: pk  ! p**(rd/cpd)
