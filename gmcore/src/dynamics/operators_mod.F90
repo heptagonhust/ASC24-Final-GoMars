@@ -991,10 +991,6 @@ contains
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon / area_cell(j)
         !!$omp end master
-        ks = mesh%full_kds
-        ke = mesh%full_kde
-        is = mesh%half_ids
-        ie = mesh%half_ide
         !!$omp do collapse(2) private(k, i)
         do k = ks, ke
           do i = is, ie
@@ -1022,10 +1018,6 @@ contains
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%full_nlon / area_cell(j+1)
         !!$omp end master
-        ks = mesh%full_kds
-        ke = mesh%full_kde
-        is = mesh%half_ids
-        ie = mesh%half_ide
         !!$omp do collapse(1) private(k, i)
         do k = ks, ke
           do i = is, ie
