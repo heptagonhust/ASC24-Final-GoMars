@@ -156,10 +156,10 @@ module namelist_mod
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_cycles      = 1
   integer         :: vor_damp_order       = 2
-  real(r8)        :: vor_damp_coef2       = 0.02_r8
-  real(r8)        :: vor_damp_top         = 2
+  real(r8)        :: vor_damp_coef2       = 0.01_r8
+  real(r8)        :: vor_damp_top         = 1
   integer         :: vor_damp_k0          = 6
-  real(r8)        :: vor_damp_lat0        = 60
+  real(r8)        :: vor_damp_lat0        = 70
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.

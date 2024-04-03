@@ -89,13 +89,13 @@ contains
     select case (vor_damp_order)
     case (2)
       call fill_halo(vor, east_halo=.false., north_halo=.false.)
-      ! do k = mesh%full_kds, mesh%full_kde
-      !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      !     do i = mesh%half_ids, mesh%half_ide
-      !       u%d(i,j,k) = u%d(i,j,k) - dt * cx(j,k) * (vor%d(i,j,k) - vor%d(i,j-1,k)) / mesh%le_lon(j)
-      !     end do
-      !   end do
-      ! end do
+      do k = mesh%full_kds, mesh%full_kde
+        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+          do i = mesh%half_ids, mesh%half_ide
+            u%d(i,j,k) = u%d(i,j,k) - dt * cx(j,k) * (vor%d(i,j,k) - vor%d(i,j-1,k)) / mesh%le_lon(j)
+          end do
+        end do
+      end do
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide

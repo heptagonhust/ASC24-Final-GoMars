@@ -59,10 +59,8 @@ contains
     c = 0.8_r8
     do j = mesh%half_jms, mesh%half_jme
       if (mesh%is_south_pole(j)) then
-        ! u_lon%d(:,j+1,:) = c * u_lon%d(:,j+1,:) + (1 - c) * u_lon%d(:,j+2,:)
         v_lat%d(:,j  ,:) = c * v_lat%d(:,j  ,:) + (1 - c) * v_lat%d(:,j+1,:)
       else if (mesh%is_north_pole(j+1)) then
-        ! u_lon%d(:,j  ,:) = c * u_lon%d(:,j  ,:) + (1 - c) * u_lon%d(:,j-1,:)
         v_lat%d(:,j  ,:) = c * v_lat%d(:,j  ,:) + (1 - c) * v_lat%d(:,j-1,:)
       end if
     end do
