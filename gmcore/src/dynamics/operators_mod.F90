@@ -647,18 +647,27 @@ contains
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
           gz_lev%d(i,j,k) = gz_lev%d(i,j,k+1) + rd * tv%d(i,j,k) * log(ph_lev%d(i,j,k+1) / ph_lev%d(i,j,k))
+          gz%d(i,j,k) = 0.5_r8 * (gz_lev%d(i,j,k) + gz_lev%d(i,j,k+1))
+          rhod%d(i,j,k) = dmg%d(i,j,k) / (gz_lev%d(i,j,k) - gz_lev%d(i,j,k+1))
         end do
       end do
     end do
-    ! For output
-    do k = mesh%full_kds, mesh%full_kde
+    ! ! For output
+    ! do k = mesh%full_kds, mesh%full_kde
+    !   do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+    !     do i = mesh%full_ids, mesh%full_ide + 1
+    !       gz%d(i,j,k) = 0.5_r8 * (gz_lev%d(i,j,k) + gz_lev%d(i,j,k+1))
+    !       rhod%d(i,j,k) = dmg%d(i,j,k) / (gz_lev%d(i,j,k) - gz_lev%d(i,j,k+1))
+    !     end do
+    !   end do
+    ! end do
+   k = mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
         do i = mesh%full_ids, mesh%full_ide + 1
           gz%d(i,j,k) = 0.5_r8 * (gz_lev%d(i,j,k) + gz_lev%d(i,j,k+1))
           rhod%d(i,j,k) = dmg%d(i,j,k) / (gz_lev%d(i,j,k) - gz_lev%d(i,j,k+1))
         end do
       end do
-    end do
 
     ! do k = mesh%full_kds, mesh%full_kde
     !   do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
