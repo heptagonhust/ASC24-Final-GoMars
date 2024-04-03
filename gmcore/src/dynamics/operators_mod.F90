@@ -925,13 +925,11 @@ contains
 
     integer i, j, k
     integer ks, ke, js, je, is, ie
-    integer process_rank, ierror
     real(r8) work(block%mesh%half_ids:block%mesh%half_ide,block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
 
     real(8), pointer, dimension(:,:,:) :: u_lon_d, v_lat_d, u_lat_d, vor_d
 
-    call MPI_COMM_RANK(MPI_COMM_WORLD, process_rank, ierror)
 
     call perf_start('calc_vor')
 
