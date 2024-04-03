@@ -46,9 +46,13 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   list(APPEND fortran_flags
     -ffree-line-length-none
     -fno-range-check
-    -fallow-argument-mismatch
-    -fallow-invalid-boz
   )
+  if (CMAKE_Fortran_COMPILER_VERSION GREATER 8)
+    list(APPEND fortran_flags
+      -fallow-argument-mismatch
+      -fallow-invalid-boz
+    )
+  endif ()
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND fortran_flags -O0 -fcheck=all -g -fbacktrace)
   else ()
@@ -262,9 +266,6 @@ target_sources(gmcore PRIVATE
   src/dynamics/vert_coord/smooth_coord_mod.F90
   src/dynamics/vert_coord/vert_coord_mod.F90
   src/dynamics/vert_coord/wrf_vert_coord_mod.F90
-  src/meshes/cubed_sphere/cubed_sphere_panel_mod.F90
-  src/meshes/cubed_sphere/cubed_sphere_mesh_mod.F90
-  src/meshes/cubed_sphere/cubed_sphere_array_mod.F90
   src/meshes/latlon/latlon_mesh_mod.F90
   src/meshes/latlon/latlon_halo_mod.F90
   src/meshes/latlon/latlon_field_types_mod.F90
@@ -357,6 +358,21 @@ target_sources(gmcore PRIVATE
   src/utils/tridiag_mod.F90
   src/utils/tridiag_spk_mod.F90
 )
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_Fortran_COMPILER_VERSION GREATER 8)
+    target_sources(gmcore PRIVATE
+      src/meshes/cubed_sphere/cubed_sphere_panel_mod.F90
+      src/meshes/cubed_sphere/cubed_sphere_mesh_mod.F90
+      src/meshes/cubed_sphere/cubed_sphere_array_mod.F90
+    )
+  endif ()
+else ()
+  target_sources(gmcore PRIVATE
+    src/meshes/cubed_sphere/cubed_sphere_panel_mod.F90
+    src/meshes/cubed_sphere/cubed_sphere_mesh_mod.F90
+    src/meshes/cubed_sphere/cubed_sphere_array_mod.F90
+  )
+endif ()
 
 if (HAS_RRTMGP AND HAS_NOAHMP)
   target_sources(gmcore PRIVATE
