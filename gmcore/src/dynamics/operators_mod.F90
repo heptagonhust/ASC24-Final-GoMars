@@ -140,7 +140,7 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, j_tail
-    integer hks,hke,fjs,fje,fis,fie
+    integer mesh_half_kds,mesh_half_kde,mesh_full_jds,mesh_full_jde,mesh_full_ids,mesh_full_ide,mesh_full_kds,mesh_full_kde
 
     real(8), pointer, dimension(:,:,:) :: mg_lev_d2
     real(8), pointer, dimension(:,:) :: mgs_d,block_static_ref_ps_perb_d
@@ -154,31 +154,40 @@ contains
                mg_d    => dstate%mg%d   , & ! out
                mg      => dstate%mg     )   ! out
     j_tail = merge(0, 1, mesh%has_north_pole())
-    hks = mesh%half_kds
-    hke = mesh%half_kde
-    fjs = mesh%full_jds
-    fje = mesh%full_jde
-    fis = mesh%full_ids
-    fie = mesh%full_ide
+    mesh_half_kds = mesh%half_kds
+    mesh_half_kde = mesh%half_kde
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_jds = mesh%full_jds
+    mesh_full_jde = mesh%full_jde + j_tail
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide + 1
 
     mg_lev_d2 => mg_lev%d
     mgs_d => mgs%d
     block_static_ref_ps_perb_d => block%static%ref_ps_perb%d
-
-    !$omp parallel do private(i, j, k) collapse(2)
-    do k = hks, hke
-      do j = fjs, fje + j_tail
-        do i = fis, fie + 1
+!    !$omp target update to(mgs_d,block_static_ref_ps_perb_d)
+!    !$omp target teams distribute parallel do private(i, j, k) collapse(2)
+    do k = mesh_half_kds, mesh_half_kde
+      do j = mesh_full_jds, mesh_full_jde
+        do i = mesh_full_ids, mesh_full_ide
           mg_lev_d2(i,j,k) = vert_coord_calc_mg_lev(k, mgs_d(i,j), block_static_ref_ps_perb_d(i,j))
         end do
       end do
     end do
-    !$omp end parallel do
+!    !$omp end target teams distribute parallel do
+!    !$omp target update from(mg_lev_d2)
 !    !$omp end target
 
 !    !$omp target update to(mg_lev_d)
 !    !$omp target
-    !$omp parallel do private(i, j, k) collapse(3)
+!    !$omp target update to(mg_lev_d2)
+!    !$omp target teams distribute parallel do private(i, j, k) collapse(3)
+    ! do k = mesh_full_kds, mesh_full_kde
+    !   do j = mesh_full_jds, mesh_full_jde
+    !     do i = mesh_full_ids, mesh_full_ide
+    !       mg_lev_d2(i,j,k) = 0.5_r8 * (mg_lev_d2(i,j,k) + mg_lev_d2(i,j,k+1))
+    ! TODO: correct this
     do k = mesh%full_kds, mesh%full_kde
       do j = mesh%full_jds, mesh%full_jde + j_tail
         do i = mesh%full_ids, mesh%full_ide + 1
@@ -186,7 +195,8 @@ contains
         end do
       end do
     end do
-    !$omp end parallel do
+!    !$omp end target teams distribute parallel do
+!    !$omp target update from(mg_lev_d2)
 !    !$omp end target
 !    !$omp target update from(mg_d)
     end associate
@@ -201,6 +211,8 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k
+    integer mesh_full_kds,mesh_full_kde,mesh_full_jds,mesh_full_jde,mesh_full_ids,mesh_full_ide
+    real(8), pointer, dimension(:,:,:) :: ph_d,ph_lev_d
 
     call perf_start('calc_ph')
 
@@ -216,6 +228,15 @@ contains
     k = mesh%half_kds
     ph_lev%d(:,:,k) = mg_lev%d(:,:,k)
     pkh_lev%d(:,:,k) = ph_lev%d(:,:,k)**rd_o_cpd
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_jds = mesh%full_jds
+    mesh_full_jde = mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide + 1
+    
+    ph_d => ph%d
+    ph_lev_d => ph_lev%d
 
     do k = mesh%half_kds + 1, mesh%half_kde
       do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
@@ -225,12 +246,14 @@ contains
         end do
       end do
     end do
+
+
     !$omp parallel 
     !$omp do collapse(2) private(i, j, k)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_ids, mesh%full_ide + 1
-          ph%d(i,j,k) = 0.5_r8 * (ph_lev%d(i,j,k) + ph_lev%d(i,j,k+1))
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds, mesh_full_jde
+        do i = mesh_full_ids, mesh_full_ide
+          ph_d(i,j,k) = 0.5_r8 * (ph_lev_d(i,j,k) + ph_lev_d(i,j,k+1))
         end do
       end do
     end do
@@ -311,48 +334,66 @@ contains
   end subroutine calc_omg
 
   subroutine calc_t(block, dstate)
-
     type(block_type), intent(in) :: block
     type(dstate_type), intent(inout) :: dstate
-
+  
     integer i, j, k
-
+    integer mesh_full_kds, mesh_full_kde, mesh_full_jds, mesh_full_jde, mesh_full_ids, mesh_full_ide
+    real(8), pointer, dimension(:,:,:) :: t_d, tv_d, pt_d, ph_d
+    real(8), pointer, dimension(:,:,:,:) :: q_d
+  
     call perf_start('calc_t')
-
+  
     associate (mesh => block%mesh         , &
                pt   => dstate%pt          , & ! in
                ph   => dstate%ph          , & ! in
                q    => tracers(block%id)%q, & ! in
                t    => dstate%t           , & ! out
                tv   => dstate%tv          )   ! out
+               
+    ! Precompute mesh indices for OpenMP loops
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_jds = mesh%full_jds
+    mesh_full_jde = mesh%full_jde + merge(0, 1, mesh%has_north_pole())
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide = mesh%full_ide + 1
+  
+    ! Associate pointers for OpenMP region
+    pt_d => pt%d
+    ph_d => ph%d
+    q_d => q%d
+    t_d => t%d
+    tv_d => tv%d
+  
     if (idx_qv > 0) then
       !$omp parallel do collapse(2) private(k, j, i)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-          do i = mesh%full_ids, mesh%full_ide + 1
-            t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), q%d(i,j,k,idx_qv))
-            tv%d(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt%d(i,j,k), ph%d(i,j,k)**rd_o_cpd, q%d(i,j,k,idx_qv))
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds, mesh_full_jde
+          do i = mesh_full_ids, mesh_full_ide
+            t_d(i,j,k) = temperature(pt_d(i,j,k), ph_d(i,j,k), q_d(i,j,k,idx_qv))
+            tv_d(i,j,k) = virtual_temperature_from_modified_potential_temperature(pt_d(i,j,k), ph_d(i,j,k)**rd_o_cpd, q_d(i,j,k,idx_qv))
           end do
         end do
       end do
       !$omp end parallel do
     else
       !$omp parallel do collapse(2) private(k, j, i)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds, mesh%full_jde + merge(0, 1, mesh%has_north_pole())
-          do i = mesh%full_ids, mesh%full_ide + 1
-            t%d(i,j,k) = temperature(pt%d(i,j,k), ph%d(i,j,k), 0.0_r8)
-            tv%d(i,j,k) = t%d(i,j,k)
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds, mesh_full_jde
+          do i = mesh_full_ids, mesh_full_ide
+            t_d(i,j,k) = temperature(pt_d(i,j,k), ph_d(i,j,k), 0.0_r8)
+            tv_d(i,j,k) = t_d(i,j,k)
           end do
         end do
       end do
       !$omp end parallel do
     end if
     end associate
-
+  
     call perf_stop('calc_t')
-
   end subroutine calc_t
+  
 
   subroutine calc_rhod(block, dstate)
 
@@ -418,27 +459,52 @@ contains
 
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
-
+  
     integer i, j, k
     real(r8) ke_vtx_1, ke_vtx_2, ke_vtx_3, ke_vtx_4
-    real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
+    real(r8) work(block%mesh%full_ids:block%mesh%full_ide, block%mesh%full_nlev)
     real(r8) pole(block%mesh%full_nlev)
-
+  
+    integer mesh_full_kds, mesh_full_kde, mesh_full_jds_no_pole, mesh_full_jde_no_pole_plus, mesh_full_ids, mesh_full_ide_plus
+    real(r8), pointer, dimension(:,:,:) :: u_d, v_d, ke_d
+  
     call perf_start('calc_ke')
-
+  
     associate (mesh => block%mesh  , &
                u    => dstate%u_lon, & ! in
                v    => dstate%v_lat, & ! in
+               mesh_area_lon_west => block%mesh%area_lon_west, & ! in
+               mesh_area_lon_east => block%mesh%area_lon_east, & ! in
+               mesh_area_lat_north => block%mesh%area_lat_north, & ! in
+               mesh_area_lat_south => block%mesh%area_lat_south, & ! in
+               mesh_area_cell => block%mesh%area_cell, & ! in
+               mesh_area_lat_east => block%mesh%area_lat_east, & ! in
+               mesh_area_lat_west => block%mesh%area_lat_west, & ! in
+               mesh_area_vtx => block%mesh%area_vtx, & ! in
+               mesh_area_subcell => block%mesh%area_subcell, & ! in
+               mesh_area_lon_north => block%mesh%area_lon_north, & ! in
+               mesh_area_lon_south => block%mesh%area_lon_south, & ! in
                ke   => block%aux%ke)   ! out
+    
+    mesh_full_kds = mesh%full_kds
+    mesh_full_kde = mesh%full_kde
+    mesh_full_jds_no_pole = mesh%full_jds_no_pole
+    mesh_full_jde_no_pole_plus = mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
+    mesh_full_ids = mesh%full_ids
+    mesh_full_ide_plus = mesh%full_ide + 1
+  
+    u_d => u%d
+    v_d => v%d
+    ke_d => ke%d
+  
     !$omp parallel do collapse(2) private(k, j, i)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_ids, mesh%full_ide + 1
-          ke%d(i,j,k) = (mesh%area_lon_west (j  ) * u%d(i-1,j  ,k)**2 + &
-                         mesh%area_lon_east (j  ) * u%d(i  ,j  ,k)**2 + &
-                         mesh%area_lat_north(j-1) * v%d(i  ,j-1,k)**2 + &
-                         mesh%area_lat_south(j  ) * v%d(i  ,j  ,k)**2   &
-                        ) / mesh%area_cell(j)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole_plus
+        do i = mesh_full_ids, mesh_full_ide_plus
+          ke_d(i,j,k) = (mesh_area_lon_west(j) * u_d(i-1,j,k)**2 + &
+                         mesh_area_lon_east(j) * u_d(i,j,k)**2 + &
+                         mesh_area_lat_north(j-1) * v_d(i,j-1,k)**2 + &
+                         mesh_area_lat_south(j) * v_d(i,j,k)**2) / mesh_area_cell(j)
         end do
       end do
     end do
@@ -468,41 +534,42 @@ contains
       !           i-1,j-1             i,j-1
       !
       !$omp parallel do collapse(2) private(i, j, k, ke_vtx_1, ke_vtx_2, ke_vtx_3, ke_vtx_4)
-      do k = mesh%full_kds, mesh%full_kde
-        do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
-          do i = mesh%full_ids, mesh%full_ide + 1
-            ke_vtx_1 = (                                    &
-              mesh%area_lat_east (j  ) * v%d(i-1,j  ,k)**2 + &
-              mesh%area_lat_west (j  ) * v%d(i  ,j  ,k)**2 + &
-              mesh%area_lon_north(j  ) * u%d(i-1,j  ,k)**2 + &
-              mesh%area_lon_south(j+1) * u%d(i-1,j+1,k)**2   &
-            ) / mesh%area_vtx(j)
-            ke_vtx_2 = (                                    &
-              mesh%area_lat_east (j-1) * v%d(i-1,j-1,k)**2 + &
-              mesh%area_lat_west (j-1) * v%d(i  ,j-1,k)**2 + &
-              mesh%area_lon_north(j-1) * u%d(i-1,j-1,k)**2 + &
-              mesh%area_lon_south(j  ) * u%d(i-1,j  ,k)**2   &
-            ) / mesh%area_vtx(j-1)
-            ke_vtx_3 = (                                    &
-              mesh%area_lat_east (j-1) * v%d(i  ,j-1,k)**2 + &
-              mesh%area_lat_west (j-1) * v%d(i+1,j-1,k)**2 + &
-              mesh%area_lon_north(j-1) * u%d(i  ,j-1,k)**2 + &
-              mesh%area_lon_south(j  ) * u%d(i  ,j  ,k)**2   &
-            ) / mesh%area_vtx(j-1)
-            ke_vtx_4 = (                                    &
-              mesh%area_lat_east (j  ) * v%d(i  ,j  ,k)**2 + &
-              mesh%area_lat_west (j  ) * v%d(i+1,j  ,k)**2 + &
-              mesh%area_lon_north(j  ) * u%d(i  ,j  ,k)**2 + &
-              mesh%area_lon_south(j+1) * u%d(i  ,j+1,k)**2   &
-            ) / mesh%area_vtx(j)
-            ke%d(i,j,k) = (1.0_r8 - ke_cell_wgt) * (             &
-              (ke_vtx_1 + ke_vtx_4) * mesh%area_subcell(2,j) + &
-              (ke_vtx_2 + ke_vtx_3) * mesh%area_subcell(1,j)   &
-            ) / mesh%area_cell(j) + ke_cell_wgt * ke%d(i,j,k)
+      do k = mesh_full_kds, mesh_full_kde
+        do j = mesh_full_jds_no_pole, mesh_full_jde_no_pole_plus
+          do i = mesh_full_ids, mesh_full_ide_plus
+            ke_vtx_1 = (                                       &
+              mesh_area_lat_east(j) * v_d(i-1,j,k)**2 +        &
+              mesh_area_lat_west(j) * v_d(i,j,k)**2 +          &
+              mesh_area_lon_north(j) * u_d(i-1,j,k)**2 +       &
+              mesh_area_lon_south(j+1) * u_d(i-1,j+1,k)**2     &
+            ) / mesh_area_vtx(j)
+            ke_vtx_2 = (                                       &
+              mesh_area_lat_east(j-1) * v_d(i-1,j-1,k)**2 +    &
+              mesh_area_lat_west(j-1) * v_d(i,j-1,k)**2 +      &
+              mesh_area_lon_north(j-1) * u_d(i-1,j-1,k)**2 +   &
+              mesh_area_lon_south(j) * u_d(i-1,j,k)**2         &
+            ) / mesh_area_vtx(j-1)
+            ke_vtx_3 = (                                       &
+              mesh_area_lat_east(j-1) * v_d(i,j-1,k)**2 +      &
+              mesh_area_lat_west(j-1) * v_d(i+1,j-1,k)**2 +    &
+              mesh_area_lon_north(j-1) * u_d(i,j-1,k)**2 +     &
+              mesh_area_lon_south(j) * u_d(i,j,k)**2           &
+            ) / mesh_area_vtx(j-1)
+            ke_vtx_4 = (                                       &
+              mesh_area_lat_east(j) * v_d(i,j,k)**2 +          &
+              mesh_area_lat_west(j) * v_d(i+1,j,k)**2 +        &
+              mesh_area_lon_north(j) * u_d(i,j,k)**2 +         &
+              mesh_area_lon_south(j+1) * u_d(i,j+1,k)**2       &
+            ) / mesh_area_vtx(j)
+            ke_d(i,j,k) = (1.0_r8 - ke_cell_wgt) * (           &
+              (ke_vtx_1 + ke_vtx_4) * mesh_area_subcell(2,j) + &
+              (ke_vtx_2 + ke_vtx_3) * mesh_area_subcell(1,j)   &
+            ) / mesh_area_cell(j) + ke_cell_wgt * ke_d(i,j,k)
           end do
         end do
       end do
       !$omp end parallel do
+
     end if
 
     ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
