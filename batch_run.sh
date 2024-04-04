@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH -n 16
-#SBATCH -w hepnode3
+#SBATCH -w hepnode[2-4]
 #SBATCH --output=./output/slurm-%j.out
 
 
@@ -71,7 +71,7 @@ run ( ) {
 		exe_absolute_path=$normal_exe_absolute_path
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
-	mpirun -n $3 -ppn $( expr $3 / $2 ) ncu $exe_absolute_path $namelist_absolute_path
+	mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
 
 	rm -rf opt.nc
 	mv *.nc opt.nc

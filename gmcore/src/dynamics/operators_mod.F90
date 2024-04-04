@@ -140,6 +140,10 @@ contains
     type(dstate_type), intent(inout) :: dstate
 
     integer i, j, k, j_tail
+    integer hks,hke,fjs,fje,fis,fie
+
+    real(8), pointer, dimension(:,:,:) :: mg_lev_d2
+    real(8), pointer, dimension(:,:) :: mgs_d,block_static_ref_ps_perb_d
 
     call perf_start('calc_mg')
 
@@ -150,12 +154,22 @@ contains
                mg_d    => dstate%mg%d   , & ! out
                mg      => dstate%mg     )   ! out
     j_tail = merge(0, 1, mesh%has_north_pole())
-!    !$omp target 
+    hks = mesh%half_kds
+    hke = mesh%half_kde
+    fjs = mesh%full_jds
+    fje = mesh%full_jde
+    fis = mesh%full_ids
+    fie = mesh%full_ide
+
+    mg_lev_d2 => mg_lev%d
+    mgs_d => mgs%d
+    block_static_ref_ps_perb_d => block%static%ref_ps_perb%d
+
     !$omp parallel do private(i, j, k) collapse(2)
-    do k = mesh%half_kds, mesh%half_kde
-      do j = mesh%full_jds, mesh%full_jde + j_tail
-        do i = mesh%full_ids, mesh%full_ide + 1
-          mg_lev%d(i,j,k) = vert_coord_calc_mg_lev(k, mgs%d(i,j), block%static%ref_ps_perb%d(i,j))
+    do k = hks, hke
+      do j = fjs, fje + j_tail
+        do i = fis, fie + 1
+          mg_lev_d2(i,j,k) = vert_coord_calc_mg_lev(k, mgs_d(i,j), block_static_ref_ps_perb_d(i,j))
         end do
       end do
     end do
