@@ -15,6 +15,7 @@ module pgf_lin97_mod
   use latlon_parallel_mod
   use block_mod
   use tracer_mod
+  use perf_mod
 
   implicit none
 
@@ -53,6 +54,7 @@ contains
     !          | /
     !          |/
     !          o
+    call t_startf ('pgf_lin97_run')
     associate (mesh    => block%mesh          , & ! in
                qm      => tracers(block%id)%qm, & ! in
                pkh_lev => block%aux%pkh_lev   , & ! in
@@ -196,6 +198,7 @@ contains
     end if
     end associate
 
+    call t_stopf ('pgf_lin97_run')
   end subroutine pgf_lin97_run
 
 end module pgf_lin97_mod

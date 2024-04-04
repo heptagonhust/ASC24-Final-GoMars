@@ -21,6 +21,7 @@ module nh_mod
   use tracer_mod
   use operators_mod
   use filter_mod
+  use perf_mod
 
   implicit none
 
@@ -38,6 +39,7 @@ contains
     type(dstate_type), intent(inout) :: new_dstate
     real(r8), intent(in) :: dt
 
+    call t_startf ('nh_solve')
     call interp_wind(block, star_dstate)
     call calc_adv_lev(block, star_dstate%w_lev , block%aux%adv_w_lev , star_dstate%dmg_lev, dt)
     call calc_adv_lev(block, star_dstate%gz_lev, block%aux%adv_gz_lev, star_dstate%dmg_lev, dt)
@@ -46,6 +48,7 @@ contains
     call calc_p(block, new_dstate)
     call interp_run(new_dstate%gz_lev, new_dstate%gz)
     call fill_halo(new_dstate%gz, west_halo=.false., south_halo=.false.)
+    call t_stopf ('nh_solve')
 
   end subroutine nh_solve
 

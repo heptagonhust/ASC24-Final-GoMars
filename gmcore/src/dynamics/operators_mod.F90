@@ -792,6 +792,8 @@ contains
 
     integer i, j, k
     integer send_south_req, recv_south_req, send_north_req, recv_north_req
+    ! real(r8) work(block%mesh%full_ids:block%mesh%full_ide,block%mesh%full_nlev)
+    ! real(r8) pole(block%mesh%full_nlev)
 
     call perf_start('calc_mf')
 
@@ -806,7 +808,8 @@ contains
                mfx_lon => block%aux%mfx_lon, & ! out
                mfy_lat => block%aux%mfy_lat, & ! out
                mfy_lon => block%aux%mfy_lon, & ! out
-               mfx_lat => block%aux%mfx_lat)   ! out
+               mfx_lat => block%aux%mfx_lat, & ! out
+               dmf     => block%aux%dmf    )   ! out
     ! call t_startf ('test_loop')
     ! do k = mesh%full_kds, mesh%full_kde
     !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole + merge(0, 1, mesh%has_north_pole())
@@ -830,23 +833,36 @@ contains
     ! end do
 
     ! do k = mesh%full_kds, mesh%full_kde
+
+    ! end do
+      do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
+        do i = mesh%full_ids, mesh%full_ide + 1
+          mfy_lat%d(i,j,k) = dmg_lat%d(i,j,k) * v_lat%d(i,j,k)
+        end do
+      end do
+
+
+
+      ! do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+      !   do i = mesh%full_ids, mesh%full_ide
+      !     dmf%d(i,j,k) = ((                         &
+      !       mfx_lon%d(i,j,k) - mfx_lon%d(i-1,j,k)   &
+      !     ) * mesh%le_lon(j) + (                    &
+      !       mfy_lat%d(i,j  ,k) * mesh%le_lat(j  ) - &
+      !       mfy_lat%d(i,j-1,k) * mesh%le_lat(j-1)   &
+      !     )) / mesh%area_cell(j)
+      !   end do
+      ! end do
+    ! call fill_halo(u_lat)
+    ! call fill_halo(u_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
+    !! $omp simd
+    !!$omp simd simdlen(16)
+    ! do k = mesh%full_kds, mesh%full_kde
       do j = mesh%half_jds, mesh%half_jde
         do i = mesh%full_ids, mesh%full_ide
           mfx_lat%d(i,j,k) = block%static%tg_wgt_lat(1,j) * (mfx_lon%d(i-1,j  ,k) + mfx_lon%d(i,j  ,k)) + &
                              block%static%tg_wgt_lat(2,j) * (mfx_lon%d(i-1,j+1,k) + mfx_lon%d(i,j+1,k))
           u_lat%d(i,j,k) = mfx_lat%d(i,j,k) / dmg_lat%d(i,j,k)
-        end do
-      end do
-    end do
-
-    ! call fill_halo(u_lat)
-    ! call fill_halo(u_lat, isstart=.true., send_south_req=send_south_req, recv_south_req=recv_south_req, send_north_req=send_north_req, recv_north_req=recv_north_req)
-    !! $omp simd
-    !!$omp simd simdlen(16)
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%half_jds - merge(0, 1, mesh%has_south_pole()), mesh%half_jde
-        do i = mesh%full_ids, mesh%full_ide + 1
-          mfy_lat%d(i,j,k) = dmg_lat%d(i,j,k) * v_lat%d(i,j,k)
         end do
       end do
     ! end do
@@ -860,6 +876,49 @@ contains
         end do
       end do
     end do
+
+    ! do k = mesh%full_kds, mesh%full_kde
+    !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+    !     do i = mesh%full_ids, mesh%full_ide
+    !       dmf%d(i,j,k) = ((                         &
+    !         mfx_lon%d(i,j,k) - mfx_lon%d(i-1,j,k)   &
+    !       ) * mesh%le_lon(j) + (                    &
+    !         mfy_lat%d(i,j  ,k) * mesh%le_lat(j  ) - &
+    !         mfy_lat%d(i,j-1,k) * mesh%le_lat(j-1)   &
+    !       )) / mesh%area_cell(j)
+    !     end do
+    !   end do
+    ! end do
+    ! if (mesh%has_south_pole()) then
+    !   j = mesh%full_jds
+    !   do k = mesh%full_kds, mesh%full_kde
+    !     do i = mesh%full_ids, mesh%full_ide
+    !       work(i,k) = mfy_lat%d(i,j,k)
+    !     end do
+    !   end do
+    !   call zonal_sum(proc%zonal_circle, work, pole)
+    !   pole = pole * mesh%le_lat(j) / global_mesh%full_nlon / mesh%area_cell(j)
+    !   do k = mesh%full_kds, mesh%full_kde
+    !     do i = mesh%full_ids, mesh%full_ide
+    !       dmf%d(i,j,k) = pole(k)
+    !     end do
+    !   end do
+    ! end if
+    ! if (mesh%has_north_pole()) then
+    !   j = mesh%full_jde
+    !   do k = mesh%full_kds, mesh%full_kde
+    !     do i = mesh%full_ids, mesh%full_ide
+    !       work(i,k) = -mfy_lat%d(i,j-1,k)
+    !     end do
+    !   end do
+    !   call zonal_sum(proc%zonal_circle, work, pole)
+    !   pole = pole * mesh%le_lat(j-1) / global_mesh%full_nlon / mesh%area_cell(j)
+    !   do k = mesh%full_kds, mesh%full_kde
+    !     do i = mesh%full_ids, mesh%full_ide
+    !       dmf%d(i,j,k) = pole(k)
+    !     end do
+    !   end do
+    ! end if
     !!$omp end parallel
   !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
     !     do i = mesh%half_ids, mesh%half_ide

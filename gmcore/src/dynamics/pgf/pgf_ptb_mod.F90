@@ -29,6 +29,7 @@ module pgf_ptb_mod
   use tracer_mod
   use latlon_field_types_mod
   use latlon_parallel_mod
+  use perf_mod
 
   implicit none
 
@@ -161,7 +162,7 @@ contains
 
     real(r8) L, tmp1, tmp2, tmp3, tmp4, tmp
     integer i, j, k
-
+    call t_startf('pgf_ptb_run')
     associate (mesh   => block%mesh                  , &
                qm     => tracers(block%id)%qm        , & ! in
                dmgdx  => ref_profiles(block%id)%dmgdx, & ! in
@@ -210,6 +211,7 @@ contains
       end do
     end do
     end associate
+    call t_stopf('pgf_ptb_run')
 
   end subroutine pgf_ptb_run
 
