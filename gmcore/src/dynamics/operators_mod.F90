@@ -142,7 +142,7 @@ contains
     integer i, j, k, j_tail
     integer mesh_half_kds,mesh_half_kde,mesh_full_jds,mesh_full_jde,mesh_full_ids,mesh_full_ide,mesh_full_kds,mesh_full_kde
 
-    real(8), pointer, dimension(:,:,:) :: mg_lev_d2
+    real(8), pointer, dimension(:,:,:) :: mg_lev_d2,mg_d2
     real(8), pointer, dimension(:,:) :: mgs_d,block_static_ref_ps_perb_d
 
     call perf_start('calc_mg')
@@ -163,6 +163,7 @@ contains
     mesh_full_ids = mesh%full_ids
     mesh_full_ide = mesh%full_ide + 1
 
+    mg_d2 => mg%d
     mg_lev_d2 => mg_lev%d
     mgs_d => mgs%d
     block_static_ref_ps_perb_d => block%static%ref_ps_perb%d
@@ -181,22 +182,17 @@ contains
 
 !    !$omp target update to(mg_lev_d)
 !    !$omp target
-!    !$omp target update to(mg_lev_d2)
-!    !$omp target teams distribute parallel do private(i, j, k) collapse(3)
-    ! do k = mesh_full_kds, mesh_full_kde
-    !   do j = mesh_full_jds, mesh_full_jde
-    !     do i = mesh_full_ids, mesh_full_ide
-    !       mg_lev_d2(i,j,k) = 0.5_r8 * (mg_lev_d2(i,j,k) + mg_lev_d2(i,j,k+1))
-    ! TODO: correct this
-    do k = mesh%full_kds, mesh%full_kde
-      do j = mesh%full_jds, mesh%full_jde + j_tail
-        do i = mesh%full_ids, mesh%full_ide + 1
-          mg%d(i,j,k) = 0.5_r8 * (mg_lev%d(i,j,k) + mg_lev%d(i,j,k+1))
+!  !$omp target update to(mg_lev_d2)
+!  !$omp target teams distribute parallel do private(i, j, k) collapse(2)
+    do k = mesh_full_kds, mesh_full_kde
+      do j = mesh_full_jds, mesh_full_jde
+        do i = mesh_full_ids, mesh_full_ide
+          mg_d2(i,j,k) = 0.5_r8 * (mg_lev_d2(i,j,k) + mg_lev_d2(i,j,k+1))
         end do
       end do
     end do
-!    !$omp end target teams distribute parallel do
-!    !$omp target update from(mg_lev_d2)
+!  !$omp end target teams distribute parallel do
+!  !$omp target update from(mg_d2)
 !    !$omp end target
 !    !$omp target update from(mg_d)
     end associate
@@ -248,8 +244,10 @@ contains
     end do
 
 
-    !$omp parallel 
-    !$omp do collapse(2) private(i, j, k)
+!    !$omp parallel 
+!    !$omp do collapse(2) private(i, j, k)
+!    !$omp target update to(ph_lev_d)
+!    !$omp target teams distribute parallel do private(i, j, k) collapse(2)
     do k = mesh_full_kds, mesh_full_kde
       do j = mesh_full_jds, mesh_full_jde
         do i = mesh_full_ids, mesh_full_ide
@@ -257,8 +255,11 @@ contains
         end do
       end do
     end do
-    !$omp end do
-    !$omp end parallel 
+!    !$omp end target teams distribute parallel do
+!    !$omp target update from(ph_d)
+
+!    !$omp end do
+!    !$omp end parallel 
     ! NOTE: Move this to other place?
     if (hydrostatic) ps%d = phs%d
     end associate
