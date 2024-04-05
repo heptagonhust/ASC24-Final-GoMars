@@ -189,14 +189,14 @@ contains
       this%half_sin_lon(i) = sin(this%half_lon(i))
     end do
     do j = this%full_jms, this%full_jme
-      this%full_lat_deg(j) = this%full_lat(j) * deg
+      this%full_lat_deg(j) = merge(this%full_lat(j) * deg, inf, this%full_lat(j) /= inf)
       if (this%full_lat(j) >= -pi05 .and. this%full_lat(j) <= pi05) then
         this%full_cos_lat(j) = cos(this%full_lat(j))
         this%full_sin_lat(j) = sin(this%full_lat(j))
       end if
     end do
     do j = this%half_jms, this%half_jme
-      this%half_lat_deg(j) = this%half_lat(j) * deg
+      this%half_lat_deg(j) = merge(this%half_lat(j) * deg, inf, this%half_lat(j) /= inf)
       if (this%half_lat(j) >= -pi05 .and. this%half_lat(j) <= pi05) then
         this%half_cos_lat(j) = cos(this%half_lat(j))
         this%half_sin_lat(j) = sin(this%half_lat(j))
