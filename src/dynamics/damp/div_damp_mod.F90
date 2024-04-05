@@ -52,7 +52,7 @@ contains
             exp_two_values(div_damp_top, 1.0_r8, 1.0_r8, real(div_damp_k0, r8), real(k, r8)) * &
             global_mesh%le_lon(j) * global_mesh%de_lon(j) / dt_dyn
           cx_pole(j,k) = cx(j,k) * &
-            exp_two_values(div_damp_pole_x, 0.0_r8, lat0, div_damp_lat0, abs(global_mesh%full_lat_deg(j)))
+            exp_two_values(div_damp_pole, 0.0_r8, lat0, div_damp_lat0, abs(global_mesh%full_lat_deg(j)))
         end do
       end do
       lat0 = abs(global_mesh%half_lat_deg(1))
@@ -124,25 +124,24 @@ contains
         end do
       end do
       ! ------------------------------------------------------------------------
-      ! call fill_halo(u)
-      ! call fill_halo(v)
-      ! call calc_div(block, dstate)
-      ! do k = mesh%full_kds, mesh%full_kde
-      !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      !     do i = mesh%half_ids, mesh%half_ide
-      !       du%d(i,j,k) = dt * cx_pole(j,k) * (div%d(i+1,j,k) - div%d(i,j,k)) / mesh%de_lon(j)
-      !     end do
-      !   end do
-      ! end do
-      ! call fill_halo(du, south_halo=.false., north_halo=.false.)
-      ! call filter_run(block%big_filter, du)
-      ! do k = mesh%full_kds, mesh%full_kde
-      !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      !     do i = mesh%half_ids, mesh%half_ide
-      !       u%d(i,j,k) = u%d(i,j,k) + du%d(i,j,k)
-      !     end do
-      !   end do
-      ! end do
+      if (div_damp_pole > 0) then
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%half_ids, mesh%half_ide
+              du%d(i,j,k) = dt * cx_pole(j,k) * (div%d(i+1,j,k) - div%d(i,j,k)) / mesh%de_lon(j)
+            end do
+          end do
+        end do
+        call fill_halo(du, south_halo=.false., north_halo=.false.)
+        call filter_run(block%small_filter, du)
+        do k = mesh%full_kds, mesh%full_kde
+          do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
+            do i = mesh%half_ids, mesh%half_ide
+              u%d(i,j,k) = u%d(i,j,k) + du%d(i,j,k)
+            end do
+          end do
+        end do
+      end if
       ! ------------------------------------------------------------------------
     case (4)
       do k = mesh%full_kds, mesh%full_kde

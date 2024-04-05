@@ -148,8 +148,6 @@ module namelist_mod
   real(r8)        :: div_damp_top         = 1
   integer         :: div_damp_k0          = 6
   real(r8)        :: div_damp_pole        = 0
-  real(r8)        :: div_damp_pole_x      = 50
-  real(r8)        :: div_damp_pole_y      = 1
   real(r8)        :: div_damp_lat0        = 70
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.001_r8
@@ -284,8 +282,6 @@ module namelist_mod
     div_damp_k0               , &
     div_damp_top              , &
     div_damp_pole             , &
-    div_damp_pole_x           , &
-    div_damp_pole_y           , &
     div_damp_lat0             , &
     use_vor_damp              , &
     vor_damp_cycles           , &
@@ -362,9 +358,6 @@ contains
 
     if (.not. use_div_damp) then
       div_damp_order = 0
-    else if (div_damp_pole /= 0) then
-      div_damp_pole_x = div_damp_pole
-      div_damp_pole_y = div_damp_pole
     end if
 
     if (.not. use_vor_damp) then
@@ -435,8 +428,7 @@ contains
       write(*, *) 'div_damp_coef2      = ', div_damp_coef2
       write(*, *) 'div_damp_coef4      = ', div_damp_coef4
       write(*, *) 'div_damp_top        = ', to_str(div_damp_top, 3)
-      write(*, *) 'div_damp_pole_x     = ', to_str(div_damp_pole_x, 3)
-      write(*, *) 'div_damp_pole_y     = ', to_str(div_damp_pole_y, 3)
+      write(*, *) 'div_damp_pole       = ', to_str(div_damp_pole, 3)
       write(*, *) 'div_damp_lat0       = ', to_str(div_damp_lat0, 3)
     end if
     if (use_vor_damp) then
