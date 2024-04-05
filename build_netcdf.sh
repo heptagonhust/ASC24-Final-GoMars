@@ -5,8 +5,7 @@ cd "$(dirname $0)" || exit 1
 
 source ./env.sh
 
-# export H5DIR=$(spack location -i hdf5 ~shared)
-export H5DIR=$(spack location -i hdf5)
+export H5DIR="/usr/local/HDF_Group/HDF5/1.14.3"
 export CURLDIR=$(spack location -i curl)
 export XML2DIR=$(spack location -i libxml2)
 
@@ -36,16 +35,16 @@ NFDIR=$(pwd)
   [ -f Makefile ] || [ -f makefile ] && make clean
   CPPFLAGS="-I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include " \
     LDFLAGS="-L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
-    ./configure --prefix=${CDIR} --enable-shared=yes --enable-static=yes
+    ./configure --prefix=${CDIR} --enable-shared=yes --enable-static=no
   make install -j64
 )
 
-export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${NCDIR}/lib:${H5DIR}/lib:${LD_LIBRARY_PATH}
 (
   cd ./netcdf-fortran-4.6.1
   [ -f Makefile ] || [ -f makefile ] && make clean
   CPPFLAGS="-I${NCDIR}/include -I${H5DIR}/include -I${CURLDIR}/include -I${XML2DIR}/include" \
-    LDFLAGS="-L${NCDIR}/lib -L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
+    LDFLAGS="-L${NCDIR}/lib -lnetcdf -L${H5DIR}/lib -L${CURLDIR}/lib -L${XML2DIR}/lib" \
     ./configure --prefix=${NFDIR} --enable-shared=no --enable-static=yes
   make install -j64
 )

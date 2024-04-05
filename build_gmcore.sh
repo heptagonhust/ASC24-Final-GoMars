@@ -14,7 +14,7 @@ fi
 
 # ./pull_libs.py
 
-export H5DIR=$(spack location -i hdf5)
+export H5DIR="/usr/local/HDF_Group/HDF5/1.14.3"
 export CURLDIR=$(spack location -i curl)
 export XML2DIR=$(spack location -i libxml2)
 
