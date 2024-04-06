@@ -17,7 +17,7 @@ option(ENSURE_ORDER "Ensure computation order in parallel" OFF)
 option(USE_BULK_AERO "Use bulk aerosol model" ON)
 option(USE_MODAL_AERO "Use modal aerosol model" OFF)
 option(USE_CHEM "Use chemistry" OFF)
-option(USE_CAM "Use CAM physics" OFF)
+option(USE_CAM "Use CAM physics" ON)
 option(OUTPUT_H1_DTEND "Output each dynamics tendency in h1 file" OFF)
 
 if (R4)
@@ -427,7 +427,7 @@ if (DEFINED ENV{OMPDIR})
 endif ()
 
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fiopenmp -qopenmp-link=static")
-target_link_libraries(gmcore ${PROJECT_SOURCE_DIR}/lib/avx/avx.o)
+# target_link_libraries(gmcore ${PROJECT_SOURCE_DIR}/lib/avx/avx.o)
 
 target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 
