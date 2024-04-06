@@ -49,10 +49,10 @@ gmcore/build/*
 gmcore/run/*
 gmcore/gptl/*
 vtune/
-gmcore/ParallelIO/*
-gmcore/esmf/*
-gmcore/fox/*
-gmcore/MCT/*
+gmcore/ParallelIO/
+gmcore/esmf/
+gmcore/fox/
+gmcore/MCT/
 *.vscode*
 *.pdf
 vtune/
