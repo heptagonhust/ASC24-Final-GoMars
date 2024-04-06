@@ -35,6 +35,18 @@ if [ ! -d "$current_dir/gmcore/gptl" ]; then
     ./build_gptl.sh
 fi
 
+if [ ! -d "$current_dir/gmcore/ParallelIO" ]; then
+    ./build_pio.sh
+fi
+
+if [ ! -d "$current_dir/gmcore/MCT" ]; then
+    ./build_mct.sh
+fi
+
+if [ ! -d "$current_dir/gmcore/esmf" ]; then
+    ./build_esmf.sh
+fi
+
 if [ ! -d "$current_dir/gmcore/run" ]; then
     pushd gmcore
     mkdir run
