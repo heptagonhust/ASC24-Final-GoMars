@@ -57,3 +57,4 @@ gmcore/MCT/
 *.pdf
 vtune/
 # *.xml
+gmcore/esmf
