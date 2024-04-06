@@ -13,7 +13,7 @@
 cd "$(dirname $0)" || exit 1
 set -e
 
-source ./env.sh
+source ./env_xyw.sh
 
 gptl_dir="$(pwd)/gmcore/gptl"
 mkdir -p "$gptl_dir"

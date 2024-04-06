@@ -15,7 +15,7 @@ cd "$(dirname $0)" || exit 1
 # export FC=mpiifort
 # export F77=mpiifort
 
-source ./env.sh
+source ./env_xyw.sh
 
 export CC=mpiicx
 export FC=mpiifort
@@ -67,4 +67,4 @@ export LD_LIBRARY_PATH=${NCDIR}/lib:${LD_LIBRARY_PATH}
 )
 
 # wordaround: remove all shared libs
-rm ./lib/*so*
+# rm ./lib/*so*
