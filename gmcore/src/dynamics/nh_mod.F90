@@ -57,6 +57,8 @@ contains
     type(block_type ), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
 
+    integer, dimension(4) :: handle_u_lev_lon, handke_mfx_lev_lon, handle_v_lev_lat, handle_mfy_lev_lat
+    
     associate (u_lon       => dstate%u_lon         , & ! in
                v_lat       => dstate%v_lat         , & ! in
                we_lev      => dstate%we_lev        , & ! in
@@ -71,13 +73,18 @@ contains
     call interp_run(v_lat, v_lev_lat)
     call interp_run(dmg_lev, mfx_lev_lon)
     mfx_lev_lon%d = mfx_lev_lon%d * u_lev_lon%d
+    call fill_halo(u_lev_lon, isstart=.true., send_south_req=handle_u_lev_lon(1), recv_south_req=handle_u_lev_lon(2), send_north_req=handle_u_lev_lon(3), recv_north_req=handle_u_lev_lon(4))
+    call fill_halo(mfx_lev_lon, isstart=.true., send_south_req=handke_mfx_lev_lon(1), recv_south_req=handke_mfx_lev_lon(2), send_north_req=handke_mfx_lev_lon(3), recv_north_req=handke_mfx_lev_lon(4))
     call interp_run(dmg_lev, mfy_lev_lat)
     mfy_lev_lat%d = mfy_lev_lat%d * v_lev_lat%d
+    call fill_halo(v_lev_lat, isstart=.true., send_south_req=handle_v_lev_lat(1), recv_south_req=handle_v_lev_lat(2), send_north_req=handle_v_lev_lat(3), recv_north_req=handle_v_lev_lat(4))
+    call fill_halo(mfy_lev_lat, isstart=.true., send_south_req=handle_mfy_lev_lat(1), recv_south_req=handle_mfy_lev_lat(2), send_north_req=handle_mfy_lev_lat(3), recv_north_req=handle_mfy_lev_lat(4))
+    !----------------------------------------------------
     call interp_run(we_lev, we)
-    call fill_halo(u_lev_lon)
-    call fill_halo(v_lev_lat)
-    call fill_halo(mfx_lev_lon)
-    call fill_halo(mfy_lev_lat)
+    call fill_halo(u_lev_lon, isstart=.true., isstop=.true., send_south_req=handle_u_lev_lon(1), recv_south_req=handle_u_lev_lon(2), send_north_req=handle_u_lev_lon(3), recv_north_req=handle_u_lev_lon(4))
+    call fill_halo(mfx_lev_lon, isstart=.true., isstop=.true., send_south_req=handke_mfx_lev_lon(1), recv_south_req=handke_mfx_lev_lon(2), send_north_req=handke_mfx_lev_lon(3), recv_north_req=handke_mfx_lev_lon(4))
+    call fill_halo(v_lev_lat, isstart=.true., isstop=.true., send_south_req=handle_v_lev_lat(1), recv_south_req=handle_v_lev_lat(2), send_north_req=handle_v_lev_lat(3), recv_north_req=handle_v_lev_lat(4))
+    call fill_halo(mfy_lev_lat, isstart=.true., isstop=.true., send_south_req=handle_mfy_lev_lat(1), recv_south_req=handle_mfy_lev_lat(2), send_north_req=handle_mfy_lev_lat(3), recv_north_req=handle_mfy_lev_lat(4))
     call block%adv_batch_nh%set_wind(u_lev_lon, v_lev_lat, we, mfx_lev_lon, mfy_lev_lat, dmg)
     end associate
 
