@@ -73,6 +73,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID 
       -no-wrap-margin
       -O3
       -align array64byte
+      # -ipo
       # -qopenmp
       # -fp-model precise
     )
@@ -87,7 +88,6 @@ endif ()
 list(APPEND fortran_flags -heap-arrays)
 # list(APPEND fortran_flags -fstack-arrays)
 list(APPEND fortran_flags -xCORE-AVX512)
-list(APPEND fortran_flags -ipo)
 
 
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
