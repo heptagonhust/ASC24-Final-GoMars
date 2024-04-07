@@ -42,6 +42,9 @@ __pycache__
 *.nc
 *.png
 *.ps
+gmcore/gptl/
+gmcore/lib/
+gmcore/netcdf/
 
 # CCPP
 src/physics/ccpp/host/CCPP_CAPS.*
