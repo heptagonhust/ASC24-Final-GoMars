@@ -87,6 +87,7 @@ endif ()
 list(APPEND fortran_flags -heap-arrays)
 # list(APPEND fortran_flags -fstack-arrays)
 list(APPEND fortran_flags -xCORE-AVX512)
+list(APPEND fortran_flags -ipo)
 
 
 string(REPLACE ";" " " CMAKE_Fortran_FLAGS "${fortran_flags}")
