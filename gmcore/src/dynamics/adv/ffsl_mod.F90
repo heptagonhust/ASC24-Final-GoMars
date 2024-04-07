@@ -415,229 +415,73 @@ contains
 
     integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
-    ! logical(r8) computed(u%mesh%full_ids:u%mesh%full_ide, u%mesh%half_jds:u%mesh%half_jde, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-    ! real(r8) dma(u%mesh%full_ids:u%mesh%full_ide, u%mesh%half_jds:u%mesh%half_jde, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-    ! real(r8) m6a(u%mesh%full_ids:u%mesh%full_ide, u%mesh%half_jds:u%mesh%half_jde, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-    ! real(r8) mla(u%mesh%full_ids:u%mesh%full_ide, u%mesh%half_jds:u%mesh%half_jde, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-
-    real(r8) sum_mx(u%mesh%half_ids:u%mesh%half_ide, u%mesh%full_jds_no_pole:u%mesh%full_jde_no_pole, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-    ! real(r8) dma(u%mesh%half_ids:u%mesh%half_ide, u%mesh%full_jds_no_pole:u%mesh%full_jde_no_pole, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-    ! real(r8) m6a(u%mesh%half_ids:u%mesh%half_ide, u%mesh%full_jds_no_pole:u%mesh%full_jde_no_pole, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-    ! real(r8) mla(u%mesh%half_ids:u%mesh%half_ide, u%mesh%full_jds_no_pole:u%mesh%full_jde_no_pole, merge(u%mesh%full_kds, u%mesh%half_kds, batch%loc == 'cell'):merge(u%mesh%full_kde, u%mesh%half_kde, batch%loc == 'cell'))
-    
     associate (mesh => u%mesh    , &
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
     select case (batch%loc)
     case ('cell', 'lev')
-    ! computed = .false.
-
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
-      ! call t_startf ('hflx_loop1')
-      ! do k = ks, ke
-      !   ! Along x-axis
-      !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      !     do i = mesh%half_ids, mesh%half_ide
-      !         sum_mx(i,j,k) = sum_mx(i-1,j,k) + sum_mx(i,j,k)
-      !       ! end if
-      !     end do
-      !   end do
-      ! end do
+
       do k = ks, ke
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-          ! call mm_prefetch (a(i+20, j), 1)
-          do i = mesh%half_ids, mesh%half_ide 
+          do i = mesh%half_ids, mesh%half_ide
             ci = int(cflx%d(i,j,k))
             cf = cflx%d(i,j,k) - ci
-            call mm_prefetch (mx%d(i-ci-2,j,k), 1)
             if (abs(cflx%d(i,j,k)) < 1.0e-16_r8) then
               mfx%d(i,j,k) = 0
             else if (cflx%d(i,j,k) > 0) then
+              iu = i - ci
+              call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
               s1 = 1 - cf
               s2 = 1
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              iu = i - ci
-              call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
-              ! if (computed(iu,j,k) .eq. .false.) then 
-                ! call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), mla(iu,j,k), dma(iu,j,k), m6a(iu,j,k))
-                ! computed(iu,j,k) = .true.
-              ! end if
               mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(iu+1:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-              ! mfx%d(i,j,k) =  u%d(i,j,k) * (sum_mx(i,j,k) - sum_mx(iu,j,k) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-              ! mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(iu+1:i,j,k)) + mla(iu,j,k) * ds1 + 0.5_r8 * dma(iu,j,k) * ds2 + m6a(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
             else
-              ! if (computed(iu,j,k) .eq. .false.) then 
-              !   call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), mla(iu,j,k), dma(iu,j,k), m6a(iu,j,k))
-              !   computed(iu,j,k) = .true.
-              ! end if
-              s1 = 0
-              s2 = -cf
-              ds1 = s2
-              ds2 = s2**2
-              ds3 = s2**3
               iu = i - ci + 1
               call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
+              s1 = 0
+              s2 = -cf
+              ds1 = s2    - s1
+              ds2 = s2**2 - s1**2
+              ds3 = s2**3 - s1**3
               mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:iu-1,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-              ! mfx%d(i,j,k) = -u%d(i,j,k) * (sum_mx(iu-1,j,k) - sum_mx(i,j,k) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-              ! mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:iu-1,j,k)) + mla(iu,j,k) * ds1 + 0.5_r8 * dma(iu,j,k) * ds2 + m6a(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
             end if
           end do
         end do
       end do
 
-      ! do k = ks, ke
-      !   ! Along x-axis
-      !   do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
-      !     do i = mesh%half_ids, mesh%half_ide 
-      !       ci = int(cflx%d(i,j,k))
-      !       cf = cflx%d(i,j,k) - ci
-      !       if (abs(cflx%d(i,j,k)) < 1.0e-16_r8) then
-      !         mfx%d(i,j,k) = 0
-      !       else if (cflx%d(i,j,k) > 0) then
-      !         iu = i - ci
-      !         call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
-      !         ! if (computed(iu,j,k) .eq. .false.) then 
-      !           ! call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), mla(iu,j,k), dma(iu,j,k), m6a(iu,j,k))
-      !           ! computed(iu,j,k) = .true.
-      !         ! end if
-      !         s1 = 1 - cf
-      !         s2 = 1
-      !         ds1 = s2    - s1
-      !         ds2 = s2**2 - s1**2
-      !         ds3 = s2**3 - s1**3
-      !         mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(iu+1:i,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-      !         ! mfx%d(i,j,k) =  u%d(i,j,k) * (sum_mx(i,j,k) - sum_mx(iu,j,k) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-      !         ! mfx%d(i,j,k) =  u%d(i,j,k) * (sum(mx%d(iu+1:i,j,k)) + mla(iu,j,k) * ds1 + 0.5_r8 * dma(iu,j,k) * ds2 + m6a(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-      !       else
-      !         iu = i - ci + 1
-      !         ! if (computed(iu,j,k) .eq. .false.) then 
-      !         !   call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), mla(iu,j,k), dma(iu,j,k), m6a(iu,j,k))
-      !         !   computed(iu,j,k) = .true.
-      !         ! end if
-      !         call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), ml, dm, m6)
-      !         s1 = 0
-      !         s2 = -cf
-      !         ds1 = s2    - s1
-      !         ds2 = s2**2 - s1**2
-      !         ds3 = s2**3 - s1**3
-      !         mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:iu-1,j,k)) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-      !         ! mfx%d(i,j,k) = -u%d(i,j,k) * (sum_mx(iu-1,j,k) - sum_mx(i,j,k) + ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-      !         ! mfx%d(i,j,k) = -u%d(i,j,k) * (sum(mx%d(i+1:iu-1,j,k)) + mla(iu,j,k) * ds1 + 0.5_r8 * dma(iu,j,k) * ds2 + m6a(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx%d(i,j,k)
-      !       end if
-      !     end do
-      !   end do
-      ! end do
-      
-      ! call t_stopf ('hflx_loop1')
-
-      ! call t_startf ('hflx_loop2')
-      ! do k = ks, ke
-      !   ! Along y-axis
-      !   do j = mesh%half_jds, mesh%half_jde
-      !     do i = mesh%full_ids, mesh%full_ide
-
-      !       if (abs(cfly%d(i,j,k)) < 1.0e-16_r8) then
-      !         ! mfy%d(i,j,k) = 0
-      !       else if (cfly%d(i,j,k) > 0) then
-      !         ju = j
-      !         call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
-      !         ! s1 = 1 - cfly%d(i,j,k)
-      !         ! s2 = 1
-      !         ! ds1 = s2    - s1
-      !         ! ds2 = s2**2 - s1**2
-      !         ! ds3 = s2**3 - s1**3
-      !         ! mfy%d(i,j,k) =  v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
-      !       else if (cfly%d(i,j,k) < 0) then
-      !         ju = j + 1
-      !         call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
-      !         ! s1 = 0
-      !         ! s2 = -cfly%d(i,j,k)
-      !         ! ds1 = s2    - s1
-      !         ! ds2 = s2**2 - s1**2
-      !         ! ds3 = s2**3 - s1**3
-      !         ! mfy%d(i,j,k) = -v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
-      !       end if
-      !     end do
-      !   end do
-      ! end do
-      ! call t_stopf ('hflx_loop2')
-      
-      ! call t_startf ('hflx_loop3')
-      ! do k = ks, ke
-      !   ! Along y-axis
-      !   do j = mesh%half_jds, mesh%half_jde
-      !     do i = mesh%full_ids, mesh%full_ide
-      !       if (abs(cfly%d(i,j,k)) < 1.0e-16_r8) then
-      !         mfy%d(i,j,k) = 0
-      !       else if (cfly%d(i,j,k) > 0) then
-      !         ! ju = j
-      !         ! call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
-      !         s1 = 1 - cfly%d(i,j,k)
-      !         s2 = 1
-      !         ds1 = s2    - s1
-      !         ds2 = s2**2 - s1**2
-      !         ds3 = s2**3 - s1**3
-      !         mfy%d(i,j,k) =  v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
-      !       else if (cfly%d(i,j,k) < 0) then
-      !         ! ju = j + 1
-      !         ! call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
-      !         s1 = 0
-      !         s2 = -cfly%d(i,j,k)
-      !         ds1 = s2    - s1
-      !         ds2 = s2**2 - s1**2
-      !         ds3 = s2**3 - s1**3
-      !         mfy%d(i,j,k) = -v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
-      !       end if
-      !     end do
-      !   end do
-      ! end do
-      ! call t_stopf ('hflx_loop3')
-
-      ! call t_startf ('hflx_loop4')
       do k = ks, ke
         ! Along y-axis
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
-            call mm_prefetch (my%d(i,j-2,k), 1)
-            call mm_prefetch (my%d(i,j,k), 1)
-            call mm_prefetch (my%d(i,j-1,k), 1)
-            call mm_prefetch (my%d(i,j+1,k), 1)
-            call mm_prefetch (my%d(i,j+2,k), 1)
             if (abs(cfly%d(i,j,k)) < 1.0e-16_r8) then
               mfy%d(i,j,k) = 0
             else if (cfly%d(i,j,k) > 0) then
               ju = j
-              ! if (computed(i,ju,k) .eq. .false.) then 
-              !   call ppm(mx%d(iu-2,j,k), mx%d(iu-1,j,k), mx%d(iu,j,k), mx%d(iu+1,j,k), mx%d(iu+2,j,k), mla(iu,j,k), dma(iu,j,k), m6a(iu,j,k))
-              !   computed(iu,j,k) = .true.
-              ! end if
-
+              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
               s1 = 1 - cfly%d(i,j,k)
               s2 = 1
               ds1 = s2    - s1
               ds2 = s2**2 - s1**2
               ds3 = s2**3 - s1**3
-              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
               mfy%d(i,j,k) =  v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
             else if (cfly%d(i,j,k) < 0) then
               ju = j + 1
+              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
               s1 = 0
               s2 = -cfly%d(i,j,k)
-              ds1 = s2    
-              ds2 = s2**2 
-              ds3 = s2**3
-
-              call ppm(my%d(i,ju-2,k), my%d(i,ju-1,k), my%d(i,ju,k), my%d(i,ju+1,k), my%d(i,ju+2,k), ml, dm, m6)
+              ds1 = s2    - s1
+              ds2 = s2**2 - s1**2
+              ds3 = s2**3 - s1**3
               mfy%d(i,j,k) = -v%d(i,j,k) * (ml * ds1 + 0.5_r8 * dm * ds2 + m6 * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly%d(i,j,k)
             end if
           end do
         end do
       end do
-      ! call t_stopf ('hflx_loop4')
     case ('vtx')
     end select
     end associate

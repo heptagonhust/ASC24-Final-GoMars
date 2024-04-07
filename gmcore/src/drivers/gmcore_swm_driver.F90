@@ -22,7 +22,6 @@ program gmcore_swm_driver
 
   character(256) namelist_path
   integer iblk
-  real(r8), save :: time1 = 0, time2
 
   interface
     subroutine set_ic_interface(block)
@@ -87,10 +86,7 @@ program gmcore_swm_driver
     ! print *, "Size of blocks array:", size(blocks)
 
   call t_startf ( 'gmcore_run' )
-  time1 = MPI_WTIME()
   call gmcore_run()
-  time2 = MPI_WTIME()
-  if (proc%is_root()) call log_notice('Total time cost ' // to_str(time2 - time1, 5) // ' seconds.')
   ! call exbdrift_ion_vels( lchnk, ncol, pbuf)
   call t_stopf  ( 'gmcore_run' )
 

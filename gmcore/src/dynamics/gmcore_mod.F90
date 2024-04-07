@@ -307,7 +307,6 @@ contains
   end subroutine gmcore_run
 
   subroutine gmcore_final()
-
     call log_final()
     call time_final()
     call interp_final()
@@ -330,6 +329,7 @@ contains
     logical, save :: first_call = .true.
     real(8), save :: time1, time2
 
+    call t_startf ( 'output' )
     if (first_call .or. time_is_alerted('history_write')) then
       if (first_call) time1 = MPI_WTIME()
       call process_barrier()
@@ -344,7 +344,8 @@ contains
     if (time_is_alerted('restart_write')) then
       call restart_write(itime)
     end if
-    first_call = .false.
+    first_call = .false.    
+    call t_stopf ( 'output' )
 
   end subroutine output
 

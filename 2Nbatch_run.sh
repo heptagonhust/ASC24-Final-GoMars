@@ -19,36 +19,12 @@ message=$2
 run ( ) {
 	
 	if [ $(hostname) != "hepnode0" ]; then
-		# export I_MPI_FABRICS=ofa:ofa
-		export I_MPI_SHM=clx_avx512
-		export UCX_RC_PATH_MTU=4096
+		export UCX_RC_PATH_MTU=2048
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
 		export OMP_NUM_THREADS=1
-		# export I_MPI_ASYNC_PROGRESS=1
-		export I_MPI_DEBUG=10
-		export I_MPI_VAR_CHECK_SPELLING=1
-		# export I_MPI_INTRANODE_EAGER_THRESHLOD=1024
-  		# export FI_OFI_RXM_RX_SIZE=4096
-  		# export FI_OFI_RXM_TX_SIZE=4096
-
-
-		# export I_MPI_STATS=2
-		# export I_MPI_SHM_HEAP_CSIZE=-1
-		# export I_MPI_CACHE_BYPASS=1
-		# export I_MPI_WAIT_=1
-		# export I_MPI_SHM_NUM_BUFFERS=-1
-		# export I_MPI_SHM_BUFFER_SIZE=102400
-		export I_MPI_MALLOC=1
 	fi
 	export I_MPI_PIN=off
-
-
-	# export I_MPI_SHM_HEAP=1
-	# export I_MPI_PLATFORM=auto
-	# export I_MPI_TUNING_MODE=auto
-	# export I_MPI_TUNING_AUTO_POLICY=max
-	# export I_MPI_EAGER_THRESHOLD=1024
 	case_name=$1
 	node=$2
 	proc=$3
@@ -79,7 +55,6 @@ run ( ) {
 	fi
 	cd ..
 	current_dir=$(pwd)
-	# mpitune_fast -f ./hostfile
 	cd gmcore/
 
 	if [ ! -d ${data_path} ]; then    
@@ -99,8 +74,6 @@ run ( ) {
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
-	# mpitune_fast -hf hosts
-	# mpirun -genv I_MPI_PIN_PROCESSOR_LIST map=scatter -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
 	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
 
 	rm -rf opt.nc

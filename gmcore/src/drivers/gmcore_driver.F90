@@ -42,7 +42,6 @@ program gmcore_driver
 
   character(256) namelist_path
   integer iblk
-  real(r8), save :: time1 = 0, time2
 
   call get_command_argument(1, namelist_path)
   if (namelist_path == '') then
@@ -119,11 +118,7 @@ program gmcore_driver
   call t_stopf ( 'gmcore_inits' )
 
   call t_startf ( 'gmcore_run' )
-  time1 = MPI_WTIME()
   call gmcore_run()
-  time2 = MPI_WTIME()
-  if (proc%is_root()) call log_notice('Total time cost ' // to_str(time2 - time1, 5) // ' seconds.')
-  ! call gmcore_run()
   call t_stopf  ( 'gmcore_run' )
 
   ! call t_startf ( 'gmcore_final' )
