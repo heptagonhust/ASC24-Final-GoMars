@@ -19,7 +19,7 @@ if [ ! -d "$current_dir/gmcore/data" ]; then
     mkdir "$current_dir/gmcore/data"
     # ./pull_data.py -p earth
     # ./pull_data.py -p mars
-    cp /data/gomars_data/data/* ./data/
+    cp -r /data/gomars_data/data/* ./data/
 fi
 
 if [ ! -d "$current_dir/gmcore/output" ]; then
