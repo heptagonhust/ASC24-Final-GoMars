@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH -N 4
-#SBATCH -n 240
-#SBATCH -w hepnode[0-4]
+#SBATCH -N 1
+#SBATCH -n 64
+#SBATCH -w hepnode1
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
 
-echo "******batch_run.sh*******"
+echo "******ramfsrun.sh*******"
 cat $0
-echo "******batch_run.sh*******"
+echo "******ramfsrun.sh*******"
 
 
 source ./env.sh
@@ -19,12 +19,38 @@ message=$2
 run ( ) {
 	
 	if [ $(hostname) != "hepnode0" ]; then
-		export UCX_RC_PATH_MTU=2048
+		# export I_MPI_FABRICS=ofa:ofa
+		export I_MPI_SHM=clx_avx512
+		export UCX_RC_PATH_MTU=4096
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
 		export OMP_NUM_THREADS=1
+		# export I_MPI_ASYNC_PROGRESS=1
+		export I_MPI_DEBUG=10
+		export I_MPI_VAR_CHECK_SPELLING=1
+		# export I_MPI_INTRANODE_EAGER_THRESHLOD=1024
+  		# export FI_OFI_RXM_RX_SIZE=4096
+  		# export FI_OFI_RXM_TX_SIZE=4096
+
+
+		# export I_MPI_STATS=2
+		# export I_MPI_SHM_HEAP_CSIZE=-1
+		# export I_MPI_CACHE_BYPASS=1
+		# export I_MPI_WAIT_=1
+		# export I_MPI_SHM_NUM_BUFFERS=-1
+		# export I_MPI_SHM_BUFFER_SIZE=102400
+		export I_MPI_MALLOC=1
 	fi
 	export I_MPI_PIN=off
+ 	# export I_MPI_FILESYSTEM=1
+	# export I_MPI_FILESYSTEM_CB_CONFIG_LIST="hepnode0:1" 
+	# export I_MPI_FILESYSTEM_CB_CONFIG_LIST="*:1"
+
+	# export I_MPI_SHM_HEAP=1
+	# export I_MPI_PLATFORM=auto
+	# export I_MPI_TUNING_MODE=auto
+	# export I_MPI_TUNING_AUTO_POLICY=max
+	# export I_MPI_EAGER_THRESHOLD=1024
 	case_name=$1
 	node=$2
 	proc=$3
@@ -55,29 +81,36 @@ run ( ) {
 	fi
 	cd ..
 	current_dir=$(pwd)
+	# mpitune_fast -f ./hostfile
 	cd gmcore/
 
 	if [ ! -d ${data_path} ]; then    
 		mkdir -p ${data_path}
 	fi
 
-	pushd ${data_path}
-	if [[ $namelist_absolute_path == *"adv"* ]]; then
-		echo "adv case"
-		exe_absolute_path=$adv_exe_absolute_path
-	elif [[ $namelist_absolute_path == *"swm"* ]]; then
-		echo "swm case"
-		exe_absolute_path=$swm_exe_absolute_path
-	else
-		echo "normal case"
-		exe_absolute_path=$normal_exe_absolute_path
-	fi
+	# pushd ${data_path}
+	# pushd /ramdisk
+	pushd /data/tmpfs
+	# pushd /tmp
+	# touch xywnmmsl
+	# if [[ $namelist_absolute_path == *"adv"* ]]; then
+	# 	echo "adv case"
+	# 	exe_absolute_path=$adv_exe_absolute_path
+	# elif [[ $namelist_absolute_path == *"swm"* ]]; then
+	# 	echo "swm case"
+	# 	exe_absolute_path=$swm_exe_absolute_path
+	# else
+	# 	echo "normal case"
+	# 	exe_absolute_path=$normal_exe_absolute_path
+	# fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	# mpitune_fast -hf hosts
+	# mpirun -genv I_MPI_PIN_PROCESSOR_LIST map=scatter -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
 	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
 
-	rm -rf opt.nc
-	mv *.nc opt.nc
+	# rm -rf opt.nc
+	# mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
 
 	popd
@@ -86,20 +119,20 @@ run ( ) {
 
 	echo $fd1 
 	echo $fd2
-	source activate ncl_stable
-	if [[ $namelist_absolute_path == *"adv"* ]]; then
-		echo "adv case"
-		exe_absolute_path=$adv_exe_absolute_path
-		ncl ../script/ncl/adv_verify_answer.ncl $fd1 $fd2
-	elif [[ $namelist_absolute_path == *"swm"* ]]; then
-		echo "swm case"
-		exe_absolute_path=$swm_exe_absolute_path
-		ncl ../script/ncl/swm_verify_answer.ncl $fd1 $fd2
-	else
-		echo "normal case"
-		exe_absolute_path=$normal_exe_absolute_path
-		ncl ../script/ncl/normal_verify_answer.ncl $fd1 $fd2
-	fi
+	# source activate ncl_stable
+	# if [[ $namelist_absolute_path == *"adv"* ]]; then
+	# 	echo "adv case"
+	# 	exe_absolute_path=$adv_exe_absolute_path
+	# 	ncl ../script/ncl/adv_verify_answer.ncl $fd1 $fd2
+	# elif [[ $namelist_absolute_path == *"swm"* ]]; then
+	# 	echo "swm case"
+	# 	exe_absolute_path=$swm_exe_absolute_path
+	# 	ncl ../script/ncl/swm_verify_answer.ncl $fd1 $fd2
+	# else
+	# 	echo "normal case"
+	# 	exe_absolute_path=$normal_exe_absolute_path
+	# 	ncl ../script/ncl/normal_verify_answer.ncl $fd1 $fd2
+	# fi
 
 	
 }
