@@ -9,16 +9,17 @@ if [ ! -d "/data/gomars_output/$current_user" ]; then
     echo "The current user is: me"
 fi
 
-if [ ! -d "$current_dir/gmcore" ]; then
-    git clone https://gitee.com/dongli85/GMCORE gmcore
-fi
+# if [ ! -d "$current_dir/gmcore" ]; then
+#     git clone https://gitee.com/dongli85/GMCORE gmcore
+# fi
 
 # pull libs and data
 pushd gmcore
 if [ ! -d "$current_dir/gmcore/data" ]; then
-    # ./pull_libs.py
-    ./pull_data.py -p earth
-    ./pull_data.py -p mars
+    mkdir "$current_dir/gmcore/data"
+    # ./pull_data.py -p earth
+    # ./pull_data.py -p mars
+    cp /data/gomars_data/data/* ./data/
 fi
 
 if [ ! -d "$current_dir/gmcore/output" ]; then
@@ -39,7 +40,8 @@ if [ ! -d "$current_dir/gmcore/run" ]; then
     pushd gmcore
     mkdir run
     pushd run
-    git clone https://gitee.com/dongli85/GMCORE-TESTBED
+    # git clone https://gitee.com/dongli85/GMCORE-TESTBED
+    cp -r /data/gomars_data/namelist/GMCORE-TESTBED .
     popd
     popd
 fi
@@ -70,7 +72,7 @@ fi
 # build gmcore
 ./build_gmcore.sh
 
-pushd gmcore
+# pushd gmcore
 
 # run a case
-sbatch select_run.sh -c swm_mz.360x180
+# sbatch select_run.sh -c swm_mz.360x180
