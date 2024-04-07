@@ -829,14 +829,7 @@ contains
         end do
       end do
     end do
-
-
-    call fill_halo(u_lat)
-
-    ! do k = mesh%full_kds, mesh%full_kde
-
-    ! end do
-    call fill_halo(v_lon)
+    ! call fill_halo(v_lon)
     end associate
 
     call perf_stop('calc_mf')
