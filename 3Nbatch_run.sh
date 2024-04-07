@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 3
 #SBATCH -n 120
-#SBATCH -w hepnode[0-4]
+#SBATCH -w hepnode[2-4]
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
@@ -10,21 +10,25 @@ echo "******batch_run.sh*******"
 cat $0
 echo "******batch_run.sh*******"
 
-
 source ./env.sh
 
+# echo $NVCOMPILERS
+NVARCH=`uname -s`_`uname -m`; export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk; export NVCOMPILERS
+export PATH=$NVCOMPILERS/$NVARCH/24.3/comm_libs/mpi/bin:$PATH
+export MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/24.3/com
+echo $NVCOMPILERS
+# m_libs/mpi/man
 message=$2
 # days=$3 
-
-run ( ) {
-	
-	if [ $(hostname) != "hepnode0" ]; then
-		export UCX_RC_PATH_MTU=2048
-		export I_MPI_HYDRA_RMK=slurm
-		export I_MPI_PIN=off
-		export OMP_NUM_THREADS=1
-	fi
-	export I_MPI_PIN=off
+run ( ) {	
+	# if [ $(hostname) != "hepnode0" ]; then
+		# export UCX_RC_PATH_MTU=2048
+		# export I_MPI_HYDRA_RMK=slurm
+		# export I_MPI_PIN=off
+		# export OMP_NUM_THREADS=1
+	# fi
+	# export I_MPI_PIN=off
 	case_name=$1
 	node=$2
 	proc=$3
@@ -53,6 +57,7 @@ run ( ) {
 		echo "!!! You should notice days!"
 		check_file="/data/gomars_output/public/N1n16/${case_name}_${days}days/baseline.nc"
 	fi
+
 	cd ..
 	current_dir=$(pwd)
 	cd gmcore/
@@ -74,8 +79,13 @@ run ( ) {
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
 	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
-	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+	# mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+	# /opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/hpcx/bin/mpirun -np $3 -npernode $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+	# /opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/hpcx/bin/mpirun -np $3 -npernode $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	which mpirun
+	mpirun -np $3 $exe_absolute_path $namelist_absolute_path
 
+	
 	rm -rf opt.nc
 	mv *.nc opt.nc
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
