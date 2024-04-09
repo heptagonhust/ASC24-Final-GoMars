@@ -90,7 +90,7 @@ contains
   end subroutine div_damp_final
 
   subroutine div_damp_run(block, dstate, dt)
-
+    ! Add omp here cause errors
     type(block_type), intent(inout) :: block
     type(dstate_type), intent(inout) :: dstate
     real(8), intent(in) :: dt

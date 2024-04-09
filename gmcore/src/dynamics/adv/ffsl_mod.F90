@@ -28,7 +28,6 @@ module ffsl_mod
   use ppm_mod
   use limiter_mod
   use perf_mod
-
   implicit none
 
   private
@@ -93,6 +92,8 @@ contains
     real(r8) work(m%mesh%full_ids:m%mesh%full_ide,m%mesh%full_nlev)
     real(r8) pole(m%mesh%full_nlev)
     real(r8) dt_opt
+
+    call perf_start('ffsl_calc_mass_hflx')
 
     dt_opt = batch%dt; if (present(dt)) dt_opt = dt
 
@@ -167,6 +168,8 @@ contains
     call hflx(batch, u, v, my, mx, mfx, mfy)
     end associate
 
+    call perf_stop('ffsl_calc_mass_hflx')
+
   end subroutine ffsl_calc_mass_hflx
 
   subroutine ffsl_calc_mass_vflx(batch, m, mfz, dt)
@@ -175,9 +178,9 @@ contains
     type(latlon_field3d_type), intent(in   ) :: m
     type(latlon_field3d_type), intent(inout) :: mfz
     real(r8), intent(in), optional :: dt
-
+    call perf_start('ffsl_calc_mass_vflx')
     call vflx(batch, batch%we, m, mfz)
-
+    call perf_stop('ffsl_calc_mass_vflx')
   end subroutine ffsl_calc_mass_vflx
 
   subroutine ffsl_calc_tracer_hflx(batch, q, qmfx, qmfy, dt)
@@ -192,6 +195,8 @@ contains
     real(r8) work(q%mesh%full_ids:q%mesh%full_ide,q%mesh%half_nlev)
     real(r8) pole(q%mesh%half_nlev)
     real(r8) dt_opt
+
+    call perf_start('ffsl_calc_tracer_hflx')
 
     dt_opt = batch%dt; if (present(dt)) dt_opt = dt
 
@@ -276,7 +281,7 @@ contains
     ! Run outer flux form operators.
     call hflx(batch, mfx, mfy, qy, qx, qmfx, qmfy)
     end associate
-
+    call perf_stop('ffsl_calc_tracer_hflx')
   end subroutine ffsl_calc_tracer_hflx
 
   subroutine ffsl_calc_tracer_vflx(batch, q, qmfz, dt)
@@ -285,9 +290,11 @@ contains
     type(latlon_field3d_type), intent(in   ) :: q
     type(latlon_field3d_type), intent(inout) :: qmfz
     real(r8), intent(in), optional :: dt
-
+    
+    call perf_start('ffsl_calc_tracer_vflx')
     call vflx(batch, batch%we, q, qmfz)
 
+    call perf_stop('ffsl_calc_tracer_vflx')
   end subroutine ffsl_calc_tracer_vflx
 
   subroutine hflx_van_leer(batch, u, v, mx, my, mfx, mfy)
@@ -303,6 +310,7 @@ contains
     integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, dm
 
+    call perf_start('hflx_van_leer')
     associate (mesh => u%mesh    , &
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
@@ -343,6 +351,8 @@ contains
     end select
     end associate
 
+    call perf_stop('hflx_van_leer')
+
   end subroutine hflx_van_leer
 
   subroutine vflx_van_leer(batch, w, m, mfz)
@@ -354,6 +364,9 @@ contains
 
     integer i, j, k, ku, ci
     real(r8) cf, dm
+
+
+    call perf_start('vflx_van_leer')
 
     associate (mesh => m%mesh    , &
                cflz => batch%cflz)   ! in
@@ -401,6 +414,8 @@ contains
     end select
     end associate
 
+    call perf_stop('vflx_van_leer')
+
   end subroutine vflx_van_leer
 
   subroutine hflx_ppm(batch, u, v, mx, my, mfx, mfy)
@@ -415,6 +430,8 @@ contains
 
     integer ks, ke, i, j, k, iu, ju, ci
     real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
+
+    call perf_start('hflx_ppm')
     associate (mesh => u%mesh    , &
                cflx => batch%cflx, & ! in
                cfly => batch%cfly)   ! in
@@ -422,6 +439,8 @@ contains
     case ('cell', 'lev')
       ks = merge(mesh%full_kds, mesh%half_kds, batch%loc == 'cell')
       ke = merge(mesh%full_kde, mesh%half_kde, batch%loc == 'cell')
+     !$omp parallel 
+     !$omp do private(i, j, k, iu, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = ks, ke
         ! Along x-axis
         do j = mesh%full_jds_no_pole, mesh%full_jde_no_pole
@@ -451,6 +470,10 @@ contains
             end if
           end do
         end do
+      end do 
+      !$omp end do
+      !$omp do private(i, j, k, ju, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
+      do k = ks, ke
         ! Along y-axis
         do j = mesh%half_jds, mesh%half_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -478,10 +501,14 @@ contains
           end do
         end do
       end do
+      !$omp end do
+      !$omp end parallel 
     case ('vtx')
     end select
     end associate
 
+    call perf_stop('hflx_ppm')
+  
   end subroutine hflx_ppm
 
   subroutine vflx_ppm(batch, w, m, mfz)
@@ -494,10 +521,13 @@ contains
     integer i, j, k, ku, ci
     real(r8) cf, s1, s2, ds1, ds2, ds3, ml, dm, m6
 
+    call perf_start('vflx_ppm')
+    
     associate (mesh => m%mesh    , &
                cflz => batch%cflz)   ! in
     select case (batch%loc)
     case ('cell')
+      !$omp parallel do private(i, j, k, ku, ml, dm, m6, s1, s2, ds1, ds2, ds3, cf, ci) collapse(2)
       do k = mesh%half_kds + 1, mesh%half_kde - 1
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -529,7 +559,9 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     case ('lev')
+      !$omp parallel do private(k, j, i, ci, cf, ku, ml, dm, m6, s1, s2, ds1, ds2, ds3) collapse(2)
       do k = mesh%full_kds, mesh%full_kde
         do j = mesh%full_jds, mesh%full_jde
           do i = mesh%full_ids, mesh%full_ide
@@ -559,8 +591,11 @@ contains
           end do
         end do
       end do
+      !$omp end parallel do
     end select
     end associate
+
+    call perf_stop('vflx_ppm')
 
   end subroutine vflx_ppm
 
