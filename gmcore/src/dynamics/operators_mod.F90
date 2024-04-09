@@ -743,7 +743,7 @@ contains
           dmg_lev%d(i,j,k) = mg_lev%d(i,j,k) - mg%d(i,j,k-1)
         end do
       end do
-      call fill_halo(dmg_lev)
+      ! call fill_halo(dmg_lev)
     else
       do j = mesh%full_jds, mesh%full_jde
         do i = mesh%full_ids, mesh%full_ide
