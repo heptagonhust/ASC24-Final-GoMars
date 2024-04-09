@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -N 1
-#SBATCH -n 16
-#SBATCH -w hepnode[1-4]
+#SBATCH -N 2
+#SBATCH -n 60
+#SBATCH -w hepnode[1,3]
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
@@ -22,7 +22,7 @@ run ( ) {
 		export UCX_RC_PATH_MTU=2048
 		export I_MPI_HYDRA_RMK=slurm
 		export I_MPI_PIN=off
-		export OMP_NUM_THREADS=4
+		export OMP_NUM_THREADS=2
 	fi
 	case_name=$1
 	node=$2
