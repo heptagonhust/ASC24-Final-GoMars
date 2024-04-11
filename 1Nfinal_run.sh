@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH -n 64
-#SBATCH -w hepnode[1-4]
+#SBATCH -w hepnode0
 #SBATCH --exclusive
 #SBATCH --output=./output/slurm-%j.out
 
@@ -39,6 +39,7 @@ run ( ) {
 	suffix="/namelist"
 	namelist_relative_path="${prefix}${case_name}/${suffix}"
 	namelist_absolute_path=$(readlink -f ${namelist_relative_path} )
+	echo namelist_absolute_path: ${namelist_absolute_path}
 	data_path="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")"
 	# now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
 	days=$(grep 'run_days' ${namelist_absolute_path} | sed 's/.*= *\([0-9]*\).*/\1/')
@@ -73,8 +74,8 @@ run ( ) {
 		exe_absolute_path=$normal_exe_absolute_path
 	fi
 	# bash -c "mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path" #doesn't work
-	# mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
-	mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
+	mpirun -n $3 -ppn $( expr $3 / $2 ) $exe_absolute_path $namelist_absolute_path
+	# mpirun -n $3 -ppn $( expr $3 / $2 ) ${current_dir}/bind_cpu.sh $exe_absolute_path $namelist_absolute_path
 
 
 	now_dir="/data/gomars_output/$(whoami)/${case_name}/N${2}n${3}/"${message}"-$(date +"%y-%m-%d")/opt.nc"
