@@ -1,20 +1,22 @@
 # Introduction to optimization methods 
-<!-- - 自动向量化
-- 通信-计算掩盖：实现了MPI异步通信接口， 将部分通信和计算相互掩盖，发掘了并行计算潜力。
-- MPI进程切分调优：在南北方向都进行合适的切分，减少单次MPI_ISEND/RECV的最大通信量，从而降低通信延迟
-- MPI+OpenMP 并行优化：实现了MPI和OpenMP混合并行化，提高了并行计算的灵活性和对不同网格分辨率的适应能力。
-- IPO
-- 减少冗余通信：部分通信的网格区域未被计算更新，减少了这部分不必要的通信。 -->
+
+## Compile time optimization
 - Automatic vectorization
-- Communication-Computation Overlap: Implemented  asynchronous communication interface based on MPI, overlapping partial communication and computation to exploit the potential of parallel computing.
-- MPI Process Splitting Optimization: Proper splitting in both north and south directions to reduce the maximum communication volume of single MPI_ISEND/RECV, thereby reducing communication latency.
-- MPI+OpenMP Parallel Optimization: Implemented hybrid parallelization of MPI and OpenMP, enhancing the flexibility of parallel computing and adaptability to different grid resolutions.
 - IPO (Interprocedural Optimization)
+- Static Linking: link all libraries to enhance performance. This change enables more efficient compiler and linker optimizations and reduces the overhead associated with library calls.
+
+## Communication and Parallelization
+- Communication-Computation Overlap: Implemented asynchronous communication interface based on MPI, overlapping partial communication and computation to exploit the potential of parallel computing.
+- MPI Process Splitting Optimization: Proper splitting in both north and south directions to reduce the maximum communication volume of single MPI_ISEND/RECV, thereby reducing communication latency.
+- MPI & OpenMP Hybrid Parallel Optimization: Implemented hybrid parallelization of MPI and OpenMP, enhancing the flexibility of parallel computing and adaptability to different grid resolutions.
 - Reduced Redundant Communication: Grid regions of partial communication are not computed or updated, reducing unnecessary communication in those areas.
+
+## Numa System
+- Numa system optimization: Utilized specific binding strategies and tools like Slurm, MPI, and numactl to manage processor allocations efficiently, which eliminates memory access delays and reduces cache misses.
 
 
  
-## Code Modification Details 
+# Code Modification Details 
 **CMakeLists.txt**
 ```cmake
 diff --git a/gmcore/CMakeLists.txt b/gmcore/CMakeLists.txt
